@@ -18,81 +18,200 @@
 
 package com.github.bfollon.linecapp.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.linecapp.data.BusTimetable
+import com.github.bfollon.linecapp.data.DayType
+import com.github.bfollon.linecapp.services.TimetableService
+import kotlinx.coroutines.launch
 
 /**
  * Main screen for LineCapp.
  *
- * Phase 7 (UI Layer) - Minimal Implementation
+ * Phase 5 Implementation - PDF Parsing Demo
  *
- * This is a placeholder screen to get the app compiling and launching.
- * Will be expanded in future phases with:
- * - Route selection (urban/interurban bus routes)
- * - Route cards with route info
- * - Settings/About buttons
- * - Offline warning indicators
+ * Displays M4 route timetable parsed from PDF.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
+    val context = LocalContext.current
+    val timetableService = remember { TimetableService(context) }
+    val scope = rememberCoroutineScope()
+
+    var timetables by remember { mutableStateOf<List<BusTimetable>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Load M4 timetables on launch
+    LaunchedEffect(Unit) {
+        isLoading = true
+        errorMessage = null
+        try {
+            val loaded = timetableService.loadTimetables("M4", forceRefresh = true)
+            timetables = loaded
+        } catch (e: Exception) {
+            errorMessage = "Error: ${e.message}"
+        } finally {
+            isLoading = false
+        }
+    }
+
     Scaffold(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = { Text("LineCapp - Línea M4") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
     ) { paddingValues ->
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Cargando horarios de M4...")
+                    }
+                }
+            }
+            errorMessage != null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = errorMessage ?: "",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            timetables.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No se encontraron horarios",
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "🚌 La Lastrilla - El Sotillo",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
+                    items(timetables) { timetable ->
+                        TimetableCard(timetable = timetable)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimetableCard(timetable: BusTimetable) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
+            // Day type header
             Text(
-                text = "🚌",
-                style = MaterialTheme.typography.displayLarge,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            Text(
-                text = "LineCapp",
-                style = MaterialTheme.typography.headlineLarge,
+                text = when (timetable.dayType) {
+                    DayType.WEEKDAY -> "Lunes a Viernes (Laborables)"
+                    DayType.WEEKEND -> "Sábados"
+                    DayType.HOLIDAY -> "Festivos"
+                },
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
+            // Departure count
             Text(
-                text = "Horarios de autobuses de Segovia",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
-
-            Text(
-                text = "Phase 7 - UI Layer (Minimal)",
+                text = "${timetable.departureCount} salidas",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.secondary,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 8.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            Text(
-                text = "App shell ready for development\n\nNext: Implement route selection and timetable screens",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            // Display departure times in a grid
+            val departures = timetable.departures
+            val columns = 6 // Times per row
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                departures.chunked(columns).forEach { rowDepartures ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowDepartures.forEach { departure ->
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = departure.toDisplayString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                        // Fill remaining columns with empty space
+                        repeat(columns - rowDepartures.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
     }
 }

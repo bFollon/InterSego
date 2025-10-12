@@ -75,10 +75,13 @@ class PDFDownloadService(private val context: Context) {
 
             // Create hostname verifier that's more lenient for our known domains
             val hostnameVerifier = HostnameVerifier { hostname, _ ->
-                // Allow bus website domains - customize based on your bus provider
+                // Allow Linecar website domains
+                hostname.equals("linecar.es", ignoreCase = true) ||
+                hostname.equals("www.linecar.es", ignoreCase = true) ||
+                hostname.endsWith(".linecar.es", ignoreCase = true) ||
+                // Allow other bus website domains
                 hostname.equals("avilabus.es", ignoreCase = true) ||
-                hostname.endsWith(".avilabus.es", ignoreCase = true) ||
-                hostname.equals("www.avilabus.es", ignoreCase = true)
+                hostname.endsWith(".avilabus.es", ignoreCase = true)
             }
 
             OkHttpClient.Builder()

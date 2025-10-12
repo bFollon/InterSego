@@ -38,6 +38,9 @@ class TimetableService(private val context: Context) {
     // Persistent cache service (tier 2)
     private val cacheService = TimetableCacheService(context)
 
+    // PDF processing service (tier 3)
+    private val pdfProcessingService = PDFProcessingService(context)
+
     /**
      * Load timetables for a specific route
      * @param routeId The route ID to load timetables for
@@ -63,21 +66,30 @@ class TimetableService(private val context: Context) {
             }
         }
 
-        // TODO: Phase 7 - PDF Parsing Integration
-        // When PDF parsing is implemented, add tier 3 here:
-        // 1. Download PDF for route (PDFDownloadService)
-        // 2. Parse PDF to extract timetables (PDFParsingService)
-        // 3. Cache the results (both memory and persistent)
-        // 4. Return parsed timetables
+        // Tier 3: Parse PDF (slowest, source of truth)
+        DebugConfig.debugPrint("TimetableService: Parsing PDF for route $routeId")
 
-        // For now, return empty list (Phase 7 will implement PDF parsing)
-        DebugConfig.debugPrint("TimetableService: PDF parsing not yet implemented (Phase 7)")
-        val emptyList = emptyList<BusTimetable>()
+        try {
+            // Parse the PDF
+            val timetables = pdfProcessingService.parseTimetables(routeId)
 
-        // Cache the empty result to avoid repeated attempts
-        cachedTimetables[routeId] = emptyList
+            // Cache in both memory and persistent storage
+            cachedTimetables[routeId] = timetables
+            cacheService.saveTimetablesToCache(routeId, timetables)
 
-        return emptyList
+            DebugConfig.debugPrint("TimetableService: Successfully loaded and cached ${timetables.size} timetables for $routeId")
+
+            return timetables
+
+        } catch (e: Exception) {
+            DebugConfig.debugError("TimetableService: Failed to parse PDF for $routeId", e)
+
+            // Return empty list and cache it to avoid repeated failures
+            val emptyList = emptyList<BusTimetable>()
+            cachedTimetables[routeId] = emptyList
+
+            return emptyList
+        }
     }
 
     /**
