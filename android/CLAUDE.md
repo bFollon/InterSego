@@ -351,3 +351,6 @@ when (val result = repository.resolveURLWithHealing("M1")) {
 - Linecar website: https://www.linecar.es/metropolitano/segovia/
 - Material3 Compose: https://developer.android.com/jetpack/compose/designsystems/material3
 - iText7 PDF: https://itextpdf.com/en/resources/api-documentation
+- Commit after completing every feature.
+- Do not put any claude co-authorig reference of link to claude.ai in the commits. No promotion.
+- Before committing, allow the user to test the changes via launching the app. Only commit after confirmation.
