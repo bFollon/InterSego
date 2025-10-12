@@ -23,14 +23,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.github.bfollon.linecapp.repositories.PDFURLRepository
 import com.github.bfollon.linecapp.services.CoordinateCache
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.NetworkMonitor
 import com.github.bfollon.linecapp.ui.screens.MainScreen
 import com.github.bfollon.linecapp.ui.theme.LineCappTheme
+import kotlinx.coroutines.launch
 
 /**
  * Main activity for LineCapp.
@@ -52,6 +55,19 @@ class MainActivity : ComponentActivity() {
 
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()
+
+        // Initialize PDF URL repository and scrape URLs
+        val pdfUrlRepository = PDFURLRepository.getInstance(this)
+        lifecycleScope.launch {
+            DebugConfig.debugPrint("🌐 Initializing PDF URLs...")
+            val success = pdfUrlRepository.initializeURLs()
+            if (success) {
+                DebugConfig.debugPrint("✅ PDF URLs initialized successfully")
+                DebugConfig.debugPrint(pdfUrlRepository.getStatus())
+            } else {
+                DebugConfig.debugWarn("⚠️ PDF URL initialization failed, using fallback URLs")
+            }
+        }
 
         DebugConfig.debugPrint("✅ Services initialized")
 

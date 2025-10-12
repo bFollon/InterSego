@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
 object PDFURLScrapingService {
 
     private const val TAG = "PDFURLScrapingService"
-    private const val BASE_URL = "https://avilabus.es/horarios/" // TODO: Update with actual bus website
+    private const val BASE_URL = "https://www.linecar.es/metropolitano/segovia/"
 
     // Cache for scraped PDF URLs by route ID
     private val scrapedURLs = mutableMapOf<String, String>()
@@ -128,18 +128,21 @@ object PDFURLScrapingService {
     /**
      * Extract PDF data from HTML content using regex patterns
      * Much simpler and lighter than DOM parsing!
+     *
+     * Linecar-specific: Extracts PDFs matching pattern "SEGOVIA-***.pdf"
+     * Route ID is extracted from the filename after "SEGOVIA-" (e.g., "SEGOVIA-M1" -> "M1")
      */
     private fun extractPDFDataFromHTML(htmlContent: String): List<ScrapedPDFData> {
         val scrapedData = mutableListOf<ScrapedPDFData>()
 
         try {
-            // Use the simple pattern that works and remove duplicates
-            val simplePdfPattern = Regex("""href="([^"]*\.pdf)"""", RegexOption.IGNORE_CASE)
-            val simpleMatches = simplePdfPattern.findAll(htmlContent)
-            DebugConfig.debugPrint("$TAG: Found ${simpleMatches.count()} PDF links in HTML")
+            // Pattern specifically for Linecar PDFs: must contain "SEGOVIA-" and end with ".pdf"
+            val linecarPattern = Regex("""href="([^"]*SEGOVIA-[^"]*\.pdf)"""", RegexOption.IGNORE_CASE)
+            val matches = linecarPattern.findAll(htmlContent)
+            DebugConfig.debugPrint("$TAG: Found ${matches.count()} Linecar PDF links in HTML")
 
             // Convert to set to remove duplicates, then back to list
-            val uniquePdfUrls = simpleMatches.map { it.groupValues[1] }.toSet()
+            val uniquePdfUrls = matches.map { it.groupValues[1] }.toSet()
             DebugConfig.debugPrint("$TAG: After removing duplicates: ${uniquePdfUrls.size} unique PDF URLs")
 
             // Process each unique PDF link
@@ -148,14 +151,14 @@ object PDFURLScrapingService {
                 val absoluteUrl = if (pdfUrl.startsWith("http")) {
                     pdfUrl
                 } else if (pdfUrl.startsWith("/")) {
-                    "https://avilabus.es$pdfUrl" // TODO: Update with actual bus website domain
+                    "https://www.linecar.es$pdfUrl"
                 } else {
-                    "https://avilabus.es/$pdfUrl" // TODO: Update with actual bus website domain
+                    "https://www.linecar.es/metropolitano/segovia/$pdfUrl"
                 }
 
-                // Try to determine the route ID from context
-                // Since we don't have link text from the simple pattern, we'll use the URL and surrounding context
-                val routeId = determineRouteIdFromURL(absoluteUrl, htmlContent)
+                // Extract route ID from filename
+                // Pattern: "SEGOVIA-M1.pdf" -> "M1", "SEGOVIA-M2-LABORABLES.pdf" -> "M2"
+                val routeId = extractRouteIdFromLinecarURL(absoluteUrl)
 
                 if (routeId.isNotEmpty()) {
                     scrapedData.add(
@@ -165,16 +168,10 @@ object PDFURLScrapingService {
                             lastUpdated = extractLastUpdatedDateFromHTML(htmlContent)
                         )
                     )
+                    DebugConfig.debugPrint("$TAG: ✅ Extracted route $routeId from $absoluteUrl")
                 } else {
-                    DebugConfig.debugWarn("$TAG: Could not determine route for PDF: $absoluteUrl")
+                    DebugConfig.debugWarn("$TAG: Could not extract route ID from: $absoluteUrl")
                 }
-            }
-
-            // If we didn't find any route-specific PDFs, try alternative extraction methods
-            if (scrapedData.isEmpty()) {
-                DebugConfig.debugPrint("$TAG: No route-specific PDFs found, trying alternative extraction...")
-                val alternativeData = extractPDFsByRouteSections(htmlContent)
-                scrapedData.addAll(alternativeData)
             }
 
         } catch (e: Exception) {
@@ -182,6 +179,35 @@ object PDFURLScrapingService {
         }
 
         return scrapedData
+    }
+
+    /**
+     * Extract route ID from Linecar PDF URL
+     * Examples:
+     * - "https://www.linecar.es/.../SEGOVIA-M1.pdf" -> "M1"
+     * - "https://www.linecar.es/.../SEGOVIA-M2-LABORABLES.pdf" -> "M2"
+     * - "https://www.linecar.es/.../SEGOVIA-M10.pdf" -> "M10"
+     */
+    private fun extractRouteIdFromLinecarURL(url: String): String {
+        return try {
+            // Extract filename from URL
+            val filename = url.substringAfterLast("/")
+
+            // Pattern: SEGOVIA-{ROUTE_ID} (may have additional parts after route ID)
+            // Match: SEGOVIA- followed by alphanumeric characters until next dash or dot
+            val routePattern = Regex("""SEGOVIA-([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
+            val match = routePattern.find(filename)
+
+            if (match != null) {
+                match.groupValues[1].uppercase()
+            } else {
+                DebugConfig.debugWarn("$TAG: Could not match route pattern in filename: $filename")
+                ""
+            }
+        } catch (e: Exception) {
+            DebugConfig.debugError("$TAG: Error extracting route ID from URL", e)
+            ""
+        }
     }
 
     /**
