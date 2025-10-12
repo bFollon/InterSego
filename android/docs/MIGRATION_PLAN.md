@@ -51,10 +51,10 @@ Copy domain-agnostic services that work regardless of domain (pharmacy vs bus):
 | `services/NetworkMonitor.kt` | Network connectivity monitoring | Package name only |
 | `services/DebugConfig.kt` | Debug logging configuration | Package name only |
 | `services/CoordinateCache.kt` | Geocoding cache for addresses | Package name only |
-| `services/RouteCache.kt` | Maps routing cache | Package name only |
 | `services/GeocodingService.kt` | Address-to-coordinate conversion | Package name only |
 | `services/LocationManager.kt` | User location services | Package name only |
-| `services/RoutingService.kt` | Find nearest location logic | Package name only |
+
+**Note:** `RouteCache.kt` and `RoutingService.kt` are not needed for LineCapp as we don't require route caching to bus stops.
 
 #### Utilities to Copy
 | **File** | **Purpose** | **Changes Needed** |
@@ -573,15 +573,17 @@ Update `proguard-rules.pro` for release builds:
 - [ ] `services/NetworkMonitor.kt`
 - [ ] `services/DebugConfig.kt`
 - [ ] `services/CoordinateCache.kt`
-- [ ] `services/RouteCache.kt`
 - [ ] `services/GeocodingService.kt`
 - [ ] `services/LocationManager.kt`
-- [ ] `services/RoutingService.kt`
 - [ ] `utils/MapUtils.kt`
 - [ ] `ui/theme/Color.kt` (update colors)
 - [ ] `ui/theme/Theme.kt` (update theme name)
 - [ ] `ui/theme/Type.kt`
 - [ ] `ui/components/OfflineWarningCard.kt`
+
+**Skipped (Not needed for LineCapp):**
+- ~~`services/RouteCache.kt`~~ - Route caching not required
+- ~~`services/RoutingService.kt`~~ - Route calculation not required
 
 ### 🔄 Adapt/Rename
 - [ ] `services/PDFDownloadService.kt`
@@ -755,3 +757,4 @@ Data Layer (Models, Cache, Network)
 |----------|-------------|-------------|
 | 2025-10-12 | 1.0 | Initial migration plan created |
 | 2025-10-12 | 1.1 | Phase 1 completed, documented |
+| 2025-10-12 | 1.2 | Removed RouteCache and RoutingService from Phase 2 (not needed for LineCapp) |
