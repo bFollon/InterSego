@@ -7,7 +7,15 @@
       "Bash(./gradlew:*)",
       "Bash(git add:*)",
       "Bash(git restore:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(adb devices:*)",
+      "Read(//Users/bruno.follon/Library/Android/sdk/**)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb devices:*)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb install:*)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb shell am start -n com.github.bfollon.linecapp/.MainActivity)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb logcat:*)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb logcat LineCapp:D *:S)",
+      "Bash(~/Library/Android/sdk/platform-tools/adb shell am force-stop com.github.bfollon.linecapp)"
     ],
     "deny": [],
     "ask": []

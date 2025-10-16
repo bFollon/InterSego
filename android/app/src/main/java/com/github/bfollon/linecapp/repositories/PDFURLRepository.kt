@@ -65,12 +65,15 @@ class PDFURLRepository private constructor(private val context: Context) {
         private const val LAST_SCRAPE_KEY = "last_scrape_timestamp"
 
         // Hardcoded fallback URLs for bus routes
-        // TODO: Update these with actual bus route PDF URLs
         private val FALLBACK_URLS = mapOf(
-            "L1" to "https://avilabus.es/horarios/linea-1.pdf",
-            "L2" to "https://avilabus.es/horarios/linea-2.pdf",
-            "L3" to "https://avilabus.es/horarios/linea-3.pdf",
-            "L4" to "https://avilabus.es/horarios/linea-4.pdf"
+            "M1" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M1.pdf",
+            "M2" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M2.pdf",
+            "M3" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf",
+            "M4" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M4.pdf",
+            "M5" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M5.pdf",
+            "M10" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M10.pdf",
+            "M11" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M11.pdf",
+            "M12" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M12.pdf"
         )
 
         /**
