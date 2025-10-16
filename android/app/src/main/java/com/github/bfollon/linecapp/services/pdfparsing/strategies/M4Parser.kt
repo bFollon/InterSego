@@ -25,21 +25,11 @@ import com.github.bfollon.linecapp.data.ScheduleDate
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.BusTimetableParser
 import com.github.bfollon.linecapp.services.pdfparsing.PDFParsingException
+import com.github.bfollon.linecapp.services.pdfparsing.PDFTextDecoder
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
-import com.itextpdf.kernel.font.PdfFont
-import com.itextpdf.kernel.pdf.PdfDictionary
-import com.itextpdf.kernel.pdf.PdfName
-import com.itextpdf.kernel.pdf.PdfStream
-import com.itextpdf.kernel.pdf.canvas.parser.listener.ITextExtractionStrategy
-import com.itextpdf.kernel.pdf.canvas.parser.listener.LocationTextExtractionStrategy
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
-import com.itextpdf.kernel.pdf.canvas.parser.listener.IEventListener
-import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData
-import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
-import com.itextpdf.kernel.pdf.canvas.parser.EventType
-import com.itextpdf.io.font.PdfEncodings
 import java.io.File
 
 /**
@@ -51,93 +41,13 @@ import java.io.File
  * - Times formatted as HH:MM (e.g., "7:10", "14:46")
  * - Some rows marked with * for July/August only
  *
- * Font Encoding Issue:
- * - The PDF uses ASCII control codes instead of normal text
- * - Characters are mapped: DC4(0x14)='1', NAK(0x15)='2', SYN(0x16)='3', etc.
- * - This decoder function maps the control codes back to readable text
+ * NOTE: Linecar has updated their PDFs:
+ * - Old PDFs (2024/07): Broken font encoding (needs +29 character offset decoding)
+ * - New PDFs (2025/10): Standard encoding (works with iText out of the box)
  *
  * TODO: Implement actual parsing logic to extract timetables from PDF text
  */
 class M4Parser : BusTimetableParser {
-
-    /**
-     * Custom extraction strategy that captures raw glyph codes from PDF
-     * instead of letting iText convert them to Unicode (which fails for this broken PDF)
-     */
-    private class RawGlyphExtractionStrategy : ITextExtractionStrategy {
-        private val result = StringBuilder()
-
-        override fun getResultantText(): String = result.toString()
-
-        override fun eventOccurred(data: IEventData, type: EventType) {
-            if (type == EventType.RENDER_TEXT) {
-                val renderInfo = data as TextRenderInfo
-
-                // Get the raw PDF string bytes
-                try {
-                    val pdfString = renderInfo.pdfString
-
-                    // Extract raw bytes from the PDF string
-                    if (pdfString != null) {
-                        // Get the text value (which contains the raw CID codes as character codes)
-                        val text = pdfString.value
-
-                        // Just append the text as-is - the character codes ARE the CID codes
-                        result.append(text)
-                    }
-                } catch (e: Exception) {
-                    DebugConfig.debugWarn("Failed to extract raw glyphs: ${e.message}")
-                }
-            }
-        }
-
-        override fun getSupportedEvents(): Set<EventType> {
-            return setOf(EventType.RENDER_TEXT)
-        }
-    }
-
-    /**
-     * Decode text from the broken PDF font encoding
-     * The PDF uses a character offset of +29 for all text
-     *
-     * Based on analysis:
-     * - 0x00 bytes are separator characters (skip them)
-     * - All other characters need +29 added to get the correct character
-     * - Examples:
-     *   - 'U' (0x55) + 29 = 'r' (0x72)
-     *   - '3' (0x33) + 29 = 'P' (0x50)
-     *   - 0x14 (DC4) + 29 = '7' (0x31 + 6 = 0x37)... wait that's wrong
-     * - Actually it's: character_code + 29 = actual_character
-     *   - So 0x14 + 29 = 0x31 = '1' ✓
-     *   - 0x15 + 29 = 0x32 = '2' ✓
-     *   - 0x16 + 29 = 0x33 = '3' ✓
-     */
-    private fun decodeControlCodeText(text: String): String {
-        val decoded = StringBuilder()
-
-        for (char in text) {
-            val code = char.code
-
-            when (code) {
-                // Skip null bytes (0x00) - these are part of the 2-byte CID encoding
-                0x00 -> continue
-
-                // All other characters: add 29 to get the actual character
-                else -> {
-                    val actualCode = code + 29
-                    // Make sure it's in valid character range
-                    if (actualCode in 0x20..0x7E || actualCode == 0x0A || actualCode == 0x0D) {
-                        decoded.append(actualCode.toChar())
-                    } else {
-                        // For characters outside printable ASCII, keep for debugging
-                        decoded.append('?')
-                    }
-                }
-            }
-        }
-
-        return decoded.toString()
-    }
 
     /**
      * Parse M4 timetables from decoded PDF text
@@ -207,29 +117,39 @@ class M4Parser : BusTimetableParser {
                 DebugConfig.debugPrint("M4Parser: Processing page $pageNum")
                 val page = pdfDocument.getPage(pageNum)
 
-                // Use custom strategy to extract raw glyph codes (with +29 offset encoding)
-                val strategy = RawGlyphExtractionStrategy()
-                val processor = PdfCanvasProcessor(strategy)
-                processor.processPageContent(page)
-                val rawText = strategy.resultantText
+                // Try standard iText extraction first
+                var extractedText = PdfTextExtractor.getTextFromPage(page)
 
-                // Decode the text from control codes to readable characters
-                val decodedText = decodeControlCodeText(rawText)
+                // Check if text needs decoding (broken PDF encoding)
+                if (PDFTextDecoder.needsDecoding(extractedText)) {
+                    DebugConfig.debugPrint("M4Parser: Detected broken encoding, using custom decoder...")
 
-                // Split into lines for easier processing
-                val lines = decodedText.lines()
+                    // Use raw glyph extraction for broken PDFs
+                    val strategy = PDFTextDecoder.RawGlyphExtractionStrategy()
+                    val processor = PdfCanvasProcessor(strategy)
+                    processor.processPageContent(page)
+                    val rawText = strategy.resultantText
+
+                    // Decode with +29 character offset (old Linecar PDFs)
+                    extractedText = PDFTextDecoder.decodeWithCharacterOffset(rawText, offset = 29)
+                    DebugConfig.debugPrint("M4Parser: Successfully decoded broken PDF")
+                }
+
+                val lines = extractedText.lines()
 
                 DebugConfig.debugPrint("M4Parser: Page $pageNum has ${lines.size} lines")
+                DebugConfig.debugPrint("M4Parser: Total text length: ${extractedText.length} characters")
 
-                // Print decoded text for debugging
-                DebugConfig.debugPrint("M4Parser: ===== DECODED TEXT =====")
-                lines.take(10).forEachIndexed { index, line ->
-                    DebugConfig.debugPrint("  Line $index: ${line.take(200)}${if (line.length > 200) "..." else ""}")
+                // Print first few lines for debugging
+                DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
+                lines.take(5).forEachIndexed { index, line ->
+                    if (line.isNotEmpty()) {
+                        DebugConfig.debugPrint("  Line $index: ${line.take(80)}")
+                    }
                 }
-                DebugConfig.debugPrint("M4Parser: ========================")
+                DebugConfig.debugPrint("M4Parser: ==========================")
 
-                // TODO: Parse the decoded text and create BusTimetable objects
-                // Call your parsing function here
+                // Parse the text and create BusTimetable objects
                 val parsedTimetables = parseM4Timetables(lines, routeId)
                 timetables.addAll(parsedTimetables)
             }

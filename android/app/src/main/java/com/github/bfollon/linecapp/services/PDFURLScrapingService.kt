@@ -129,17 +129,20 @@ object PDFURLScrapingService {
      * Extract PDF data from HTML content using regex patterns
      * Much simpler and lighter than DOM parsing!
      *
-     * Linecar-specific: Extracts PDFs matching pattern "SEGOVIA-***.pdf"
-     * Route ID is extracted from the filename after "SEGOVIA-" (e.g., "SEGOVIA-M1" -> "M1")
+     * Linecar-specific: Extracts ALL .pdf files and tries to determine route ID from filename
+     * Supports both formats:
+     * - Old format: "SEGOVIA-M4.pdf" -> "M4"
+     * - New format: "M4.pdf" -> "M4"
+     * - New format with dates: "M5-septiembre-2024.pdf" -> "M5"
      */
     private fun extractPDFDataFromHTML(htmlContent: String): List<ScrapedPDFData> {
         val scrapedData = mutableListOf<ScrapedPDFData>()
 
         try {
-            // Pattern specifically for Linecar PDFs: must contain "SEGOVIA-" and end with ".pdf"
-            val linecarPattern = Regex("""href="([^"]*SEGOVIA-[^"]*\.pdf)"""", RegexOption.IGNORE_CASE)
-            val matches = linecarPattern.findAll(htmlContent)
-            DebugConfig.debugPrint("$TAG: Found ${matches.count()} Linecar PDF links in HTML")
+            // Pattern for ALL PDF links (no SEGOVIA requirement)
+            val pdfPattern = Regex("""href="([^"]*\.pdf)"""", RegexOption.IGNORE_CASE)
+            val matches = pdfPattern.findAll(htmlContent)
+            DebugConfig.debugPrint("$TAG: Found ${matches.count()} PDF links in HTML")
 
             // Convert to set to remove duplicates, then back to list
             val uniquePdfUrls = matches.map { it.groupValues[1] }.toSet()
@@ -183,27 +186,40 @@ object PDFURLScrapingService {
 
     /**
      * Extract route ID from Linecar PDF URL
-     * Examples:
-     * - "https://www.linecar.es/.../SEGOVIA-M1.pdf" -> "M1"
-     * - "https://www.linecar.es/.../SEGOVIA-M2-LABORABLES.pdf" -> "M2"
-     * - "https://www.linecar.es/.../SEGOVIA-M10.pdf" -> "M10"
+     * Handles multiple filename formats:
+     * - Old format: "https://www.linecar.es/.../SEGOVIA-M1.pdf" -> "M1"
+     * - Old format with suffix: "https://www.linecar.es/.../SEGOVIA-M2-LABORABLES.pdf" -> "M2"
+     * - New format: "https://www.linecar.es/.../M4.pdf" -> "M4"
+     * - New format with date: "https://www.linecar.es/.../M5-septiembre-2024.pdf" -> "M5"
      */
     private fun extractRouteIdFromLinecarURL(url: String): String {
         return try {
             // Extract filename from URL
             val filename = url.substringAfterLast("/")
 
-            // Pattern: SEGOVIA-{ROUTE_ID} (may have additional parts after route ID)
-            // Match: SEGOVIA- followed by alphanumeric characters until next dash or dot
-            val routePattern = Regex("""SEGOVIA-([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
-            val match = routePattern.find(filename)
-
-            if (match != null) {
-                match.groupValues[1].uppercase()
-            } else {
-                DebugConfig.debugWarn("$TAG: Could not match route pattern in filename: $filename")
-                ""
+            // Try pattern 1: SEGOVIA-{ROUTE_ID} (old format)
+            val segoviaPattern = Regex("""SEGOVIA-([A-Z0-9]+)""", RegexOption.IGNORE_CASE)
+            val segoviaMatch = segoviaPattern.find(filename)
+            if (segoviaMatch != null) {
+                return segoviaMatch.groupValues[1].uppercase()
             }
+
+            // Try pattern 2: M{number}.pdf (new format)
+            val simplePattern = Regex("""^(M[0-9]+)\.pdf$""", RegexOption.IGNORE_CASE)
+            val simpleMatch = simplePattern.find(filename)
+            if (simpleMatch != null) {
+                return simpleMatch.groupValues[1].uppercase()
+            }
+
+            // Try pattern 3: M{number}-{anything}.pdf (new format with suffix)
+            val suffixPattern = Regex("""^(M[0-9]+)-.*\.pdf$""", RegexOption.IGNORE_CASE)
+            val suffixMatch = suffixPattern.find(filename)
+            if (suffixMatch != null) {
+                return suffixMatch.groupValues[1].uppercase()
+            }
+
+            DebugConfig.debugWarn("$TAG: Could not match any route pattern in filename: $filename")
+            ""
         } catch (e: Exception) {
             DebugConfig.debugError("$TAG: Error extracting route ID from URL", e)
             ""

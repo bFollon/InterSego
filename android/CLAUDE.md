@@ -41,15 +41,42 @@ adb shell am start -n com.github.bfollon.linecapp/.MainActivity
 ```
 
 ### Debugging
-```bash
-# View app logs (filtered)
-adb logcat | grep -E "LineCapp|PDFURLScrapingService|PDFURLRepository|TimetableService"
 
-# View all app logs
-adb logcat -s "LineCappDebug"
+**Quick Commands (Pre-approved in `.claude/settings.local.json`):**
+```bash
+# Check connected devices
+~/Library/Android/sdk/platform-tools/adb devices
+
+# Launch the app
+~/Library/Android/sdk/platform-tools/adb shell am start -n com.github.bfollon.linecapp/.MainActivity
+
+# Stop the app
+~/Library/Android/sdk/platform-tools/adb shell am force-stop com.github.bfollon.linecapp
+
+# View filtered logs (LineCapp only)
+~/Library/Android/sdk/platform-tools/adb logcat LineCapp:D *:S
+
+# View all logcat output
+~/Library/Android/sdk/platform-tools/adb logcat
 
 # Clear app data (for testing cache)
 adb shell pm clear com.github.bfollon.linecapp
+```
+
+**Common Debug Tags:**
+- `LineCapp` - General app logs
+- `PDFURLScrapingService` - PDF URL scraping
+- `PDFDownloadService` - PDF downloads
+- `PDFURLRepository` - URL repository operations
+- `M4Parser` - M4 route PDF parsing
+- `NetworkMonitor` - Network connectivity
+- `TimetableService` - Timetable loading
+
+**Quick Restart & Debug:**
+```bash
+~/Library/Android/sdk/platform-tools/adb shell am force-stop com.github.bfollon.linecapp && \
+~/Library/Android/sdk/platform-tools/adb shell am start -n com.github.bfollon.linecapp/.MainActivity && \
+~/Library/Android/sdk/platform-tools/adb logcat LineCapp:D *:S
 ```
 
 ### Testing
@@ -239,7 +266,12 @@ val pdfUrlRepository = PDFURLRepository.getInstance(this)
 val success = pdfUrlRepository.initializeURLs()
 ```
 
-Extract route ID from Linecar PDFs: `SEGOVIA-{ROUTE_ID}.pdf` → Route ID extracted with regex `SEGOVIA-([A-Z0-9]+)`
+**Supported PDF Filename Formats:**
+- Old format: `SEGOVIA-M4.pdf` → Route ID: "M4"
+- New format: `M4.pdf` → Route ID: "M4"
+- New with date: `M5-septiembre-2024.pdf` → Route ID: "M5"
+
+The scraper (`PDFURLScrapingService`) finds ALL .pdf files and tries multiple regex patterns to extract route IDs.
 
 ## Code Organization
 
