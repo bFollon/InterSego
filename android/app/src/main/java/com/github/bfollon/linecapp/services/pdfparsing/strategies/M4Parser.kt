@@ -98,13 +98,19 @@ class M4Parser : BusTimetableParser {
 
     /**
      * Decode text from the broken PDF font encoding
-     * The PDF uses 2-byte CID encoding where characters are interleaved with 0x00 bytes
+     * The PDF uses a character offset of +29 for all text
      *
      * Based on analysis:
      * - 0x00 bytes are separator characters (skip them)
-     * - 0x03 = ':' (time separator)
-     * - Standard ASCII digits and letters mostly work correctly
-     * - Need to map special character codes
+     * - All other characters need +29 added to get the correct character
+     * - Examples:
+     *   - 'U' (0x55) + 29 = 'r' (0x72)
+     *   - '3' (0x33) + 29 = 'P' (0x50)
+     *   - 0x14 (DC4) + 29 = '7' (0x31 + 6 = 0x37)... wait that's wrong
+     * - Actually it's: character_code + 29 = actual_character
+     *   - So 0x14 + 29 = 0x31 = '1' ✓
+     *   - 0x15 + 29 = 0x32 = '2' ✓
+     *   - 0x16 + 29 = 0x33 = '3' ✓
      */
     private fun decodeControlCodeText(text: String): String {
         val decoded = StringBuilder()
@@ -112,28 +118,70 @@ class M4Parser : BusTimetableParser {
         for (char in text) {
             val code = char.code
 
-            val decodedChar = when (code) {
+            when (code) {
                 // Skip null bytes (0x00) - these are part of the 2-byte CID encoding
                 0x00 -> continue
 
-                // Time separator
-                0x03 -> ':'
-
-                // Standard printable characters (keep as-is)
-                in 0x20..0x7E -> char  // Space through tilde (~)
-
-                // Newline and carriage return
-                0x0A -> '\n'
-                0x0D -> '\r'
-
-                // Unknown characters - for debugging, keep them
-                else -> char
+                // All other characters: add 29 to get the actual character
+                else -> {
+                    val actualCode = code + 29
+                    // Make sure it's in valid character range
+                    if (actualCode in 0x20..0x7E || actualCode == 0x0A || actualCode == 0x0D) {
+                        decoded.append(actualCode.toChar())
+                    } else {
+                        // For characters outside printable ASCII, keep for debugging
+                        decoded.append('?')
+                    }
+                }
             }
-
-            decoded.append(decodedChar)
         }
 
         return decoded.toString()
+    }
+
+    /**
+     * Parse M4 timetables from decoded PDF text
+     *
+     * @param lines The decoded text lines from the PDF (usually just 1 big line!)
+     * @param routeId The route ID (M4)
+     * @return List of BusTimetable objects (one for weekdays, one for saturdays)
+     *
+     * The text contains:
+     * - Times in format "HH:MM" (e.g., "7:10", "14:30")
+     * - Section markers: "LUNES A VIERNES LABORABLES" (weekdays), "SÁBADOS" (saturdays)
+     * - Special markers: "*" for July/August only services
+     * - Separator text: "JULIO Y AGOSTO" between time groups
+     *
+     * TODO: Implement your parsing logic here!
+     */
+    private fun parseM4Timetables(lines: List<String>, routeId: String): List<BusTimetable> {
+        DebugConfig.debugPrint("M4Parser: Starting timetable parsing for ${lines.size} lines")
+
+        val timetables = mutableListOf<BusTimetable>()
+
+        // TODO: Your parsing implementation goes here!
+        //
+        // Suggested approach:
+        // 1. Join all lines into one text (or work with lines[0] since it's usually one line)
+        // 2. Split by "LUNES A VIERNES LABORABLES" and "SÁBADOS" to get sections
+        // 3. Extract all time patterns (HH:MM) using regex
+        // 4. Create DepartureTime objects from the extracted times
+        // 5. Create BusTimetable objects for each day type
+        //
+        // Example time extraction regex: """\d{1,2}:\d{2}""".toRegex()
+        //
+        // Example BusTimetable creation:
+        // val weekdayTimetable = BusTimetable(
+        //     routeId = routeId,
+        //     stopId = "M4_LA_LASTRILLA", // or appropriate stop ID
+        //     date = ScheduleDate.today(),
+        //     departures = listOf(...), // Your parsed DepartureTime objects
+        //     dayType = DayType.WEEKDAY
+        // )
+        // timetables.add(weekdayTimetable)
+
+        DebugConfig.debugPrint("M4Parser: Parsed ${timetables.size} timetables")
+        return timetables
     }
 
     override fun canParse(routeId: String): Boolean {
@@ -159,47 +207,7 @@ class M4Parser : BusTimetableParser {
                 DebugConfig.debugPrint("M4Parser: Processing page $pageNum")
                 val page = pdfDocument.getPage(pageNum)
 
-                // Inspect fonts on this page
-                val resources = page.resources
-                val fontDictionary = resources?.getResource(PdfName.Font) as? PdfDictionary
-
-                if (fontDictionary != null) {
-                    DebugConfig.debugPrint("M4Parser: Fonts found on page $pageNum:")
-                    fontDictionary.keySet().forEach { fontName ->
-                        val fontObject = fontDictionary.get(fontName)
-                        DebugConfig.debugPrint("  Font: $fontName")
-                        DebugConfig.debugPrint("    Object: $fontObject")
-
-                        // Try to get font details
-                        if (fontObject is PdfDictionary) {
-                            val baseFont = fontObject.get(PdfName.BaseFont)
-                            val encoding = fontObject.get(PdfName.Encoding)
-                            val subtype = fontObject.get(PdfName.Subtype)
-                            val toUnicode = fontObject.get(PdfName.ToUnicode)
-
-                            DebugConfig.debugPrint("    BaseFont: $baseFont")
-                            DebugConfig.debugPrint("    Encoding: $encoding")
-                            DebugConfig.debugPrint("    Subtype: $subtype")
-                            DebugConfig.debugPrint("    ToUnicode: $toUnicode")
-
-                            // Try to read ToUnicode CMap
-                            if (toUnicode is PdfStream) {
-                                try {
-                                    val cmapBytes = toUnicode.getBytes()
-                                    val cmapString = String(cmapBytes, Charsets.UTF_8)
-                                    DebugConfig.debugPrint("    ToUnicode CMap (first 500 chars):")
-                                    DebugConfig.debugPrint(cmapString.take(500))
-                                } catch (e: Exception) {
-                                    DebugConfig.debugWarn("    Failed to read ToUnicode CMap: ${e.message}")
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    DebugConfig.debugPrint("M4Parser: No fonts found on page $pageNum")
-                }
-
-                // Use custom strategy to extract raw glyph codes
+                // Use custom strategy to extract raw glyph codes (with +29 offset encoding)
                 val strategy = RawGlyphExtractionStrategy()
                 val processor = PdfCanvasProcessor(strategy)
                 processor.processPageContent(page)
@@ -213,37 +221,17 @@ class M4Parser : BusTimetableParser {
 
                 DebugConfig.debugPrint("M4Parser: Page $pageNum has ${lines.size} lines")
 
-                // Print raw glyph codes (BEFORE decoding)
-                if (rawText.isNotEmpty()) {
-                    val first100 = rawText.take(100)
-                    val codes = first100.map { it.code }
-                    DebugConfig.debugPrint("M4Parser: First 100 RAW glyph codes: ${codes.joinToString(" ") { "0x%02x".format(it) }}")
-                }
-
-                // Print decoded lines
+                // Print decoded text for debugging
                 DebugConfig.debugPrint("M4Parser: ===== DECODED TEXT =====")
-                lines.take(20).forEachIndexed { index, line ->
-                    DebugConfig.debugPrint("  Line $index: $line")
+                lines.take(10).forEachIndexed { index, line ->
+                    DebugConfig.debugPrint("  Line $index: ${line.take(200)}${if (line.length > 200) "..." else ""}")
                 }
                 DebugConfig.debugPrint("M4Parser: ========================")
 
-                // TODO: Implement your parsing logic here
-                // You have access to:
-                // - lines: List<String> - all DECODED lines from the PDF page
-                // - decodedText: String - full decoded text of the page
-                // - routeId: String - the route ID (M4)
-                // - dayType can be determined from section headers
-
-                // TODO: Parse the lines and create BusTimetable objects
-                // Example structure:
-                // val weekdayTimetable = BusTimetable(
-                //     routeId = routeId,
-                //     stopId = "M4_STOP_ID",
-                //     date = ScheduleDate.today(),
-                //     departures = listOf(...), // Your parsed departure times
-                //     dayType = DayType.WEEKDAY
-                // )
-                // timetables.add(weekdayTimetable)
+                // TODO: Parse the decoded text and create BusTimetable objects
+                // Call your parsing function here
+                val parsedTimetables = parseM4Timetables(lines, routeId)
+                timetables.addAll(parsedTimetables)
             }
 
             pdfDocument.close()
