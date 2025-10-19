@@ -28,7 +28,6 @@ data class BusTimetable(
     val id: String = UUID.randomUUID().toString(),
     val routeId: String,                // Route this timetable belongs to
     val stopId: String,                 // Stop this timetable is for
-    val date: ScheduleDate? = null,     // Optional specific date (null if applies to all days of type)
     val dayType: DayType,               // WEEKDAY, WEEKEND, or HOLIDAY
     val departures: List<DepartureTime>, // List of departure times
     val direction: String? = null       // Optional direction: "Ida" or "Vuelta"
@@ -79,9 +78,8 @@ data class BusTimetable(
         }
 
         val directionStr = direction?.let { " - $it" } ?: ""
-        val dateStr = date?.let { " (${it.toDisplayString()})" } ?: ""
 
-        return "$dayTypeStr$directionStr$dateStr"
+        return "$dayTypeStr$directionStr"
     }
 
     companion object {
