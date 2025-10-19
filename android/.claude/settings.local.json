@@ -16,7 +16,8 @@
       "Bash(~/Library/Android/sdk/platform-tools/adb logcat:*)",
       "Bash(~/Library/Android/sdk/platform-tools/adb logcat LineCapp:D *:S)",
       "Bash(~/Library/Android/sdk/platform-tools/adb shell am force-stop com.github.bfollon.linecapp)",
-      "Bash(~/Library/Android/sdk/platform-tools/adb shell pm clear:*)"
+      "Bash(~/Library/Android/sdk/platform-tools/adb shell pm clear:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []
