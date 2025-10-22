@@ -26,7 +26,8 @@ import kotlinx.serialization.Serializable
 data class DepartureTime(
     val hour: Int,                      // 0-23
     val minute: Int,                    // 0-59
-    val notes: String? = null           // Optional notes: "Solo laborables", etc.
+    val notes: String? = null,          // Optional notes: "Solo laborables", etc.
+    val runsInSummer: Boolean = true    // true = runs year-round (including July/August), false = only runs Sept-June
 ) : Comparable<DepartureTime> {
 
     init {
