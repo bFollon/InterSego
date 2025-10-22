@@ -51,12 +51,15 @@ import java.time.format.DateTimeFormatter
 class M4Parser : BusTimetableParser {
 
     /**
-     * Internal state used during parsing to track day type and accumulate results
+     * Internal state used during parsing to track day type and accumulate timetables
      */
     private data class ParsingState(
         val currentDayType: DayType,
         val incompleteJourney: List<LocalTime>,
-        val flatMatches: List<Triple<BusStop, LocalTime, DayType>>
+        val regularRouteWeekdayTimetables: List<BusTimetable>,
+        val regularRouteWeekendTimetables: List<BusTimetable>,
+        val reverseRouteWeekdayTimetables: List<BusTimetable>,
+        val reverseRouteWeekendTimetables: List<BusTimetable>
     )
 
     companion object {
@@ -292,15 +295,46 @@ class M4Parser : BusTimetableParser {
         }
     }
 
-    fun parseTimeTable(lines: List<String>): List<BusTimetable> {
-        // Fold through lines, tracking day type and accumulating stop/time/dayType triples
-        val finalState = lines.fold(
-            ParsingState(
-                currentDayType = DayType.WEEKDAY, // Default to weekday
-                incompleteJourney = emptyList(),
-                flatMatches = emptyList()
+    /**
+     * Create initial empty timetables for a route
+     */
+    private fun createInitialTimetables(stops: List<BusStop>, dayType: DayType, direction: String): List<BusTimetable> {
+        return stops.map { stop ->
+            BusTimetable(
+                routeId = "M4",
+                stopId = stop.name,
+                dayType = dayType,
+                direction = direction,
+                departures = emptyList()
             )
-        ) { state, line ->
+        }
+    }
+
+    /**
+     * Update timetables with new departure times
+     * Zips times with timetables and adds each time to the corresponding timetable
+     */
+    private fun updateTimetables(timetables: List<BusTimetable>, times: List<LocalTime>): List<BusTimetable> {
+        return timetables.zip(times).map { (timetable, time) ->
+            timetable.copy(
+                departures = timetable.departures + DepartureTime(time.hour, time.minute)
+            )
+        }
+    }
+
+    fun parseTimeTable(lines: List<String>): List<BusTimetable> {
+        // Create initial empty timetables for all routes and day types
+        val initialState = ParsingState(
+            currentDayType = DayType.WEEKDAY,
+            incompleteJourney = emptyList(),
+            regularRouteWeekdayTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKDAY, "Lastrilla → Sotillo"),
+            regularRouteWeekendTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKEND, "Lastrilla → Sotillo"),
+            reverseRouteWeekdayTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKDAY, "Sotillo → Lastrilla"),
+            reverseRouteWeekendTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKEND, "Sotillo → Lastrilla")
+        )
+
+        // Fold through lines, building timetables on-the-fly
+        val finalState = lines.fold(initialState) { state, line ->
             // Check if line contains a day type marker
             val newDayType = detectDayType(line)
 
@@ -313,42 +347,60 @@ class M4Parser : BusTimetableParser {
                 hasTimes(line) && isReverseRoute(line) -> {
                     val times = sortTimes(state.incompleteJourney + extractTimes(line))
 
+                    // Select the correct timetables list based on current day type
+                    val currentTimetables = if (state.currentDayType == DayType.WEEKDAY) {
+                        state.reverseRouteWeekdayTimetables
+                    } else {
+                        state.reverseRouteWeekendTimetables
+                    }
+
                     when (times.size) {
-                        m4ReverseRoute.size -> { // School route with extra church stop
-                            val newMatches = m4ReverseRoute.zip(times).map { (stop, time) ->
-                                Triple(stop, time, state.currentDayType)
+                        m4ReverseRoute.size -> { // Full route
+                            val updatedTimetables = updateTimetables(currentTimetables, times)
+                            if (state.currentDayType == DayType.WEEKDAY) {
+                                state.copy(incompleteJourney = emptyList(), reverseRouteWeekdayTimetables = updatedTimetables)
+                            } else {
+                                state.copy(incompleteJourney = emptyList(), reverseRouteWeekendTimetables = updatedTimetables)
                             }
-                            state.copy(
-                                incompleteJourney = emptyList(),
-                                flatMatches = state.flatMatches + newMatches
-                            )
                         }
 
-                        m4ReverseRoute.size - 1 -> { // School route
-                            val route = m4ReverseRoute.filterIndexed { index, _ ->
+                        m4ReverseRoute.size - 1 -> { // Route without last stop
+                            val filteredTimetables = currentTimetables.filterIndexed { index, _ ->
                                 index != m4ReverseRoute.size - 1
                             }
-                            val newMatches = route.zip(times).map { (stop, time) ->
-                                Triple(stop, time, state.currentDayType)
+                            val updatedTimetables = updateTimetables(filteredTimetables, times)
+                            // Merge back into full list
+                            val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
+                                if (index == m4ReverseRoute.size - 1) tt else updatedTimetables[if (index < m4ReverseRoute.size - 1) index else index - 1]
                             }
-                            state.copy(
-                                incompleteJourney = emptyList(),
-                                flatMatches = state.flatMatches + newMatches
-                            )
+                            if (state.currentDayType == DayType.WEEKDAY) {
+                                state.copy(incompleteJourney = emptyList(), reverseRouteWeekdayTimetables = mergedTimetables)
+                            } else {
+                                state.copy(incompleteJourney = emptyList(), reverseRouteWeekendTimetables = mergedTimetables)
+                            }
                         }
 
-                        else -> { // Regular route
-                            val route = m4ReverseRoute.filterIndexed { index, _ ->
+                        else -> { // Route without last stop and school stop
+                            val filteredTimetables = currentTimetables.filterIndexed { index, _ ->
                                 index != m4ReverseRoute.size - 1 &&
                                         index != m4ReverseRoute.indexOf(Stops.PASEO_CABANILLAS)
                             }
-                            val newMatches = route.zip(times).map { (stop, time) ->
-                                Triple(stop, time, state.currentDayType)
+                            val updatedTimetables = updateTimetables(filteredTimetables, times)
+                            // Merge back into full list
+                            val schoolIndex = m4ReverseRoute.indexOf(Stops.PASEO_CABANILLAS)
+                            val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
+                                when {
+                                    index == m4ReverseRoute.size - 1 || index == schoolIndex -> tt
+                                    index < schoolIndex -> updatedTimetables[index]
+                                    index < m4ReverseRoute.size - 1 -> updatedTimetables[index - 1]
+                                    else -> updatedTimetables[index - 2]
+                                }
                             }
-                            state.copy(
-                                incompleteJourney = emptyList(),
-                                flatMatches = state.flatMatches + newMatches
-                            )
+                            if (state.currentDayType == DayType.WEEKDAY) {
+                                state.copy(incompleteJourney = emptyList(), reverseRouteWeekdayTimetables = mergedTimetables)
+                            } else {
+                                state.copy(incompleteJourney = emptyList(), reverseRouteWeekendTimetables = mergedTimetables)
+                            }
                         }
                     }
                 }
@@ -356,27 +408,44 @@ class M4Parser : BusTimetableParser {
                 hasTimes(line) -> {
                     val times = sortTimes(state.incompleteJourney + extractTimes(line))
 
+                    // Select the correct timetables list based on current day type
+                    val currentTimetables = if (state.currentDayType == DayType.WEEKDAY) {
+                        state.regularRouteWeekdayTimetables
+                    } else {
+                        state.regularRouteWeekendTimetables
+                    }
+
                     when (times.size) {
-                        m4RegularRoute.size -> { // School route
-                            val newMatches = m4RegularRoute.zip(times).map { (stop, time) ->
-                                Triple(stop, time, state.currentDayType)
+                        m4RegularRoute.size -> { // Full route
+                            val updatedTimetables = updateTimetables(currentTimetables, times)
+                            if (state.currentDayType == DayType.WEEKDAY) {
+                                state.copy(incompleteJourney = emptyList(), regularRouteWeekdayTimetables = updatedTimetables)
+                            } else {
+                                state.copy(incompleteJourney = emptyList(), regularRouteWeekendTimetables = updatedTimetables)
                             }
-                            state.copy(
-                                incompleteJourney = emptyList(),
-                                flatMatches = state.flatMatches + newMatches
-                            )
                         }
 
-                        m4RegularRoute.size - 1 -> { // Non-school route
-                            val route =
-                                m4RegularRoute.filter { stop -> stop != Stops.PASEO_CABANILLAS }
-                            val newMatches = route.zip(times).map { (stop, time) ->
-                                Triple(stop, time, state.currentDayType)
+                        m4RegularRoute.size - 1 -> { // Route without school stop
+                            val filteredTimetables = currentTimetables.filter { tt ->
+                                tt.stopId != Stops.PASEO_CABANILLAS.name
                             }
-                            state.copy(
-                                incompleteJourney = emptyList(),
-                                flatMatches = state.flatMatches + newMatches
-                            )
+                            val updatedTimetables = updateTimetables(filteredTimetables, times)
+                            // Merge back into full list
+                            val schoolIndex = m4RegularRoute.indexOf(Stops.PASEO_CABANILLAS)
+                            val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
+                                if (index == schoolIndex) {
+                                    tt
+                                } else if (index < schoolIndex) {
+                                    updatedTimetables[index]
+                                } else {
+                                    updatedTimetables[index - 1]
+                                }
+                            }
+                            if (state.currentDayType == DayType.WEEKDAY) {
+                                state.copy(incompleteJourney = emptyList(), regularRouteWeekdayTimetables = mergedTimetables)
+                            } else {
+                                state.copy(incompleteJourney = emptyList(), regularRouteWeekendTimetables = mergedTimetables)
+                            }
                         }
 
                         else -> { // Incomplete route. Accumulate for next pass
@@ -390,31 +459,28 @@ class M4Parser : BusTimetableParser {
             }
         }
 
-        // Debug output
-        DebugConfig.debugPrint("Parsed ${finalState.flatMatches.size} stop/time pairs")
-        finalState.flatMatches.take(10).forEach { (stop, time, dayType) ->
-            DebugConfig.debugPrint("${stop.name} at $time ($dayType)")
+        // Flatten all 4 timetable lists into a single list
+        val allTimetables = finalState.regularRouteWeekdayTimetables +
+                finalState.regularRouteWeekendTimetables +
+                finalState.reverseRouteWeekdayTimetables +
+                finalState.reverseRouteWeekendTimetables
+
+        // Sort departures within each timetable
+        val sortedTimetables = allTimetables.map { timetable ->
+            timetable.copy(
+                departures = timetable.departures.sortedBy { it.hour * 60 + it.minute }
+            )
         }
 
-        // Group by (stop, dayType) and create BusTimetable objects
-        val timetables = finalState.flatMatches
-            .groupBy { (stop, _, dayType) -> Pair(stop, dayType) }
-            .map { (key, triples) ->
-                val (stop, dayType) = key
-                BusTimetable(
-                    routeId = "M4",
-                    stopId = stop.name,
-                    dayType = dayType,
-                    departures = triples
-                        .map { (_, time, _) -> DepartureTime(time.hour, time.minute) }
-                        .sortedBy { it.hour * 60 + it.minute }
-                )
-            }
+        DebugConfig.debugPrint("Created ${sortedTimetables.size} timetables")
 
-        DebugConfig.debugPrint("Created ${timetables.size} timetables")
-        timetables.forEach { DebugConfig.debugPrint("$it") }
+        // Show first 5 and some with reverse direction
+        sortedTimetables.take(5).forEach { DebugConfig.debugPrint("$it") }
+        sortedTimetables.filter { it.direction == "Sotillo → Lastrilla" }.take(5).forEach {
+            DebugConfig.debugPrint("$it")
+        }
 
-        return timetables
+        return sortedTimetables
     }
 
     fun hasTimes(line: String): Boolean = TIME_PATTERN.containsMatchIn(line)
@@ -445,4 +511,5 @@ class M4Parser : BusTimetableParser {
         return times.sorted() // LocalTime implements Comparable, so we can just call sorted()
     }
 }
+
 
