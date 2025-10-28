@@ -59,7 +59,7 @@ class TimetableCacheService(private val context: Context) {
 
         try {
             val metadata = json.decodeFromString<CacheMetadata>(metadataFile.readText())
-            val pdfFile = File(context.filesDir, "pdfs/$routeId.pdf")
+            val pdfFile = File(context.filesDir, "BusTimetablePDFs/$routeId.pdf")
 
             // Check if PDF file exists and hasn't been modified since cache was created
             if (!pdfFile.exists()) {
@@ -129,7 +129,7 @@ class TimetableCacheService(private val context: Context) {
             cacheFile.writeText(json.encodeToString(cachedData))
 
             // Save metadata
-            val pdfFile = File(context.filesDir, "pdfs/$routeId.pdf")
+            val pdfFile = File(context.filesDir, "BusTimetablePDFs/$routeId.pdf")
             val metadata = CacheMetadata(
                 routeId = routeId,
                 timetableCount = timetables.size,

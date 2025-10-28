@@ -65,15 +65,17 @@ class PDFURLRepository private constructor(private val context: Context) {
         private const val LAST_SCRAPE_KEY = "last_scrape_timestamp"
 
         // Hardcoded fallback URLs for bus routes
+        // Note: These may become outdated. The scraping service should provide current URLs.
+        // Actual routes: M1-M8 (no M9, M10, M11, M12)
         private val FALLBACK_URLS = mapOf(
             "M1" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M1.pdf",
-            "M2" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M2.pdf",
+            "M2" to "https://www.linecar.es/wp-content/uploads/2024/09/M2-septiembre-2024.pdf",
             "M3" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf",
-            "M4" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M4.pdf",
-            "M5" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M5.pdf",
-            "M10" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M10.pdf",
-            "M11" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M11.pdf",
-            "M12" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M12.pdf"
+            "M4" to "https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf",
+            "M5" to "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf",
+            "M6" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M6.pdf",
+            "M7" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf",
+            "M8" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf"
         )
 
         /**

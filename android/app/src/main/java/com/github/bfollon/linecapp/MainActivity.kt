@@ -41,10 +41,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.github.bfollon.linecapp.data.BusRoute
+import com.github.bfollon.linecapp.data.RouteType
 import com.github.bfollon.linecapp.repositories.PDFURLRepository
 import com.github.bfollon.linecapp.services.CoordinateCache
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.NetworkMonitor
+import com.github.bfollon.linecapp.services.PDFCacheManager
 import com.github.bfollon.linecapp.ui.screens.MainScreen
 import com.github.bfollon.linecapp.ui.theme.LineCappTheme
 import kotlinx.coroutines.launch
@@ -56,6 +59,94 @@ import kotlinx.coroutines.launch
  */
 class MainActivity : ComponentActivity() {
     private var isInitialized by mutableStateOf(false)
+
+    /**
+     * Get list of known bus routes for update checking
+     * Based on actual routes available on Linecar website
+     * Routes: M1-M8 (no M9, M10, M11, M12 exist)
+     */
+    private fun getKnownRoutes(): List<BusRoute> {
+        // Metropolitan routes M1-M8
+        // URLs will be resolved dynamically via PDFURLRepository
+        return listOf(
+            BusRoute(
+                id = "M1",
+                number = "M1",
+                name = "Metropolitano 1",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "", // Will be resolved by PDFURLRepository
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M2",
+                number = "M2",
+                name = "Metropolitano 2",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M3",
+                number = "M3",
+                name = "Metropolitano 3",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M4",
+                number = "M4",
+                name = "Metropolitano 4",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M5",
+                number = "M5",
+                name = "Metropolitano 5",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M6",
+                number = "M6",
+                name = "Metropolitano 6",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M7",
+                number = "M7",
+                name = "Metropolitano 7",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            ),
+            BusRoute(
+                id = "M8",
+                number = "M8",
+                name = "Metropolitano 8",
+                origin = "Segovia",
+                destination = "Área Metropolitana",
+                pdfURL = "",
+                routeType = RouteType.URBAN
+            )
+        ).map { route ->
+            // Resolve PDF URLs from PDFURLRepository
+            val pdfUrlRepository = PDFURLRepository.getInstance(this)
+            route.copy(pdfURL = pdfUrlRepository.getURL(route.id))
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +163,10 @@ class MainActivity : ComponentActivity() {
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()
 
+        // Initialize PDF Cache Manager
+        val pdfCacheManager = PDFCacheManager.getInstance(this)
+        pdfCacheManager.initialize()
+
         // Initialize PDF URL repository and scrape URLs
         val pdfUrlRepository = PDFURLRepository.getInstance(this)
         lifecycleScope.launch {
@@ -83,6 +178,11 @@ class MainActivity : ComponentActivity() {
             } else {
                 DebugConfig.debugWarn("⚠️ PDF URL initialization failed, using fallback URLs")
             }
+
+            // Check for PDF updates (respects 24-hour limit)
+            DebugConfig.debugPrint("🔍 Checking for PDF updates...")
+            val allRoutes = getKnownRoutes()
+            pdfCacheManager.checkForUpdatesIfNeeded(allRoutes)
 
             // Mark initialization as complete
             isInitialized = true

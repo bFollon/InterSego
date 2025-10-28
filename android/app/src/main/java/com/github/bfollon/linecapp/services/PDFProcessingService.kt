@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
  */
 class PDFProcessingService(private val context: Context) {
 
-    private val pdfDownloadService = PDFDownloadService(context)
+    private val pdfCacheManager = PDFCacheManager.getInstance(context)
     private val pdfUrlRepository = PDFURLRepository.getInstance(context)
 
     // Map of route IDs to their parsing strategies
@@ -89,16 +89,16 @@ class PDFProcessingService(private val context: Context) {
             throw PDFParsingException("No PDF URL available for route $routeId")
         }
 
-        DebugConfig.debugPrint("PDFProcessingService: Downloading PDF from $pdfUrl")
+        DebugConfig.debugPrint("PDFProcessingService: Getting effective PDF (cached or download if needed)")
 
-        // Download the PDF
-        val pdfFile = pdfDownloadService.downloadPDF(pdfUrl, "route-$routeId.pdf", forceDownload = false)
+        // Get effective PDF file (uses version-aware caching with automatic update detection)
+        val pdfFile = pdfCacheManager.getEffectivePDFFile(routeId, pdfUrl)
         if (pdfFile == null) {
-            DebugConfig.debugError("PDFProcessingService: Failed to download PDF for $routeId", null)
-            throw PDFParsingException("Failed to download PDF for route $routeId")
+            DebugConfig.debugError("PDFProcessingService: Failed to get PDF for $routeId", null)
+            throw PDFParsingException("Failed to get PDF for route $routeId")
         }
 
-        DebugConfig.debugPrint("PDFProcessingService: PDF downloaded to ${pdfFile.absolutePath}")
+        DebugConfig.debugPrint("PDFProcessingService: Using PDF at ${pdfFile.absolutePath}")
 
         // Parse the PDF
         try {
