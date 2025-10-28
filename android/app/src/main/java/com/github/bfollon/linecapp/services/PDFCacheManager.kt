@@ -131,7 +131,7 @@ class PDFCacheManager private constructor(private val context: Context) {
      */
     fun cachedFileURL(routeId: String): File? {
         val fileName = cacheFileName(routeId)
-        val pdfDir = File(context.filesDir, "BusTimetablePDFs")
+        val pdfDir = File(context.filesDir, "pdfs")
         val file = File(pdfDir, fileName)
 
         return if (file.exists()) file else null
@@ -320,7 +320,7 @@ class PDFCacheManager private constructor(private val context: Context) {
      */
     fun clearCache(routeId: String) {
         val fileName = cacheFileName(routeId)
-        val pdfDir = File(context.filesDir, "BusTimetablePDFs")
+        val pdfDir = File(context.filesDir, "pdfs")
         val file = File(pdfDir, fileName)
 
         if (file.exists()) {
@@ -373,7 +373,7 @@ class PDFCacheManager private constructor(private val context: Context) {
      * Get cache info for debugging
      */
     fun getCacheInfo(): String {
-        val pdfDir = File(context.filesDir, "BusTimetablePDFs")
+        val pdfDir = File(context.filesDir, "pdfs")
 
         val info = StringBuilder()
         info.append("PDFCacheManager Status:\n")

@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,8 @@ import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.NetworkMonitor
 import com.github.bfollon.linecapp.services.PDFCacheManager
 import com.github.bfollon.linecapp.ui.screens.MainScreen
+import com.github.bfollon.linecapp.ui.screens.RouteSelectionScreen
+import com.github.bfollon.linecapp.ui.screens.TimetableScreen
 import com.github.bfollon.linecapp.ui.theme.LineCappTheme
 import kotlinx.coroutines.launch
 
@@ -65,14 +68,14 @@ class MainActivity : ComponentActivity() {
      * Based on actual routes available on Linecar website
      * Routes: M1-M8 (no M9, M10, M11, M12 exist)
      */
-    private fun getKnownRoutes(): List<BusRoute> {
+    fun getKnownRoutes(): List<BusRoute> {
         // Metropolitan routes M1-M8
         // URLs will be resolved dynamically via PDFURLRepository
         return listOf(
             BusRoute(
                 id = "M1",
                 number = "M1",
-                name = "Metropolitano 1",
+                name = "Línea Metropolitana 1",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "", // Will be resolved by PDFURLRepository
@@ -81,7 +84,7 @@ class MainActivity : ComponentActivity() {
             BusRoute(
                 id = "M2",
                 number = "M2",
-                name = "Metropolitano 2",
+                name = "Línea Metropolitana 2",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "",
@@ -90,7 +93,7 @@ class MainActivity : ComponentActivity() {
             BusRoute(
                 id = "M3",
                 number = "M3",
-                name = "Metropolitano 3",
+                name = "Línea Metropolitana 3",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "",
@@ -99,16 +102,16 @@ class MainActivity : ComponentActivity() {
             BusRoute(
                 id = "M4",
                 number = "M4",
-                name = "Metropolitano 4",
-                origin = "Segovia",
-                destination = "Área Metropolitana",
+                name = "La Lastrilla - El Sotillo",
+                origin = "La Lastrilla",
+                destination = "El Sotillo",
                 pdfURL = "",
                 routeType = RouteType.URBAN
             ),
             BusRoute(
                 id = "M5",
                 number = "M5",
-                name = "Metropolitano 5",
+                name = "Línea Metropolitana 5",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "",
@@ -117,7 +120,7 @@ class MainActivity : ComponentActivity() {
             BusRoute(
                 id = "M6",
                 number = "M6",
-                name = "Metropolitano 6",
+                name = "Línea Metropolitana 6",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "",
@@ -126,7 +129,7 @@ class MainActivity : ComponentActivity() {
             BusRoute(
                 id = "M7",
                 number = "M7",
-                name = "Metropolitano 7",
+                name = "Línea Metropolitana 7",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "",
@@ -135,7 +138,7 @@ class MainActivity : ComponentActivity() {
             BusRoute(
                 id = "M8",
                 number = "M8",
-                name = "Metropolitano 8",
+                name = "Línea Metropolitana 8",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "",
@@ -220,23 +223,40 @@ fun LoadingScreen() {
 
 /**
  * App navigation structure.
- *
- * Currently minimal - will be expanded in future phases with:
- * - Splash screen
- * - Route selection
- * - Timetable display
- * - Settings/About modals
  */
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
+    // Get list of routes once
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val routes = remember {
+        (context as MainActivity).getKnownRoutes()
+    }
+
     NavHost(
         navController = navController,
-        startDestination = "main"
+        startDestination = "route_selection"
     ) {
-        composable("main") {
-            MainScreen()
+        composable("route_selection") {
+            RouteSelectionScreen(
+                routes = routes,
+                onRouteSelected = { route ->
+                    navController.navigate("timetable/${route.id}")
+                }
+            )
+        }
+
+        composable("timetable/{routeId}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            TimetableScreen(
+                route = route,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

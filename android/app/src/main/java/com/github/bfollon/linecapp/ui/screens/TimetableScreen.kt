@@ -21,6 +21,8 @@ package com.github.bfollon.linecapp.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,21 +31,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.services.TimetableService
 import kotlinx.coroutines.launch
 
 /**
- * Main screen for LineCapp.
+ * Screen displaying bus timetables for a selected route.
  *
- * Phase 5 Implementation - PDF Parsing Demo
- *
- * Displays M4 route timetable parsed from PDF.
+ * Shows all departure times organized by day type (weekday/weekend).
+ * Currently only M4 has a working parser.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun TimetableScreen(
+    route: BusRoute,
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
     val scope = rememberCoroutineScope()
@@ -52,15 +57,15 @@ fun MainScreen() {
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Load M4 timetables on launch
-    LaunchedEffect(Unit) {
+    // Load timetables on launch
+    LaunchedEffect(route.id) {
         isLoading = true
         errorMessage = null
         try {
-            val loaded = timetableService.loadTimetables("M4", forceRefresh = true)
+            val loaded = timetableService.loadTimetables(route.id, forceRefresh = false)
             timetables = loaded
         } catch (e: Exception) {
-            errorMessage = "Error: ${e.message}"
+            errorMessage = "Error al cargar horarios: ${e.message}"
         } finally {
             isLoading = false
         }
@@ -70,7 +75,23 @@ fun MainScreen() {
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("LineCapp - Línea M4") },
+                title = {
+                    Column {
+                        Text("Línea ${route.number}")
+                        Text(
+                            text = route.name,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -89,7 +110,7 @@ fun MainScreen() {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("Cargando horarios de M4...")
+                        Text("Cargando horarios...")
                     }
                 }
             }
@@ -117,7 +138,7 @@ fun MainScreen() {
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No se encontraron horarios",
+                        text = "No se encontraron horarios para esta línea",
                         textAlign = TextAlign.Center
                     )
                 }
@@ -130,17 +151,13 @@ fun MainScreen() {
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item {
-                        Text(
-                            text = "🚌 La Lastrilla - El Sotillo",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
+                    items(timetables) { timetable ->
+                        TimetableCard(timetable = timetable)
                     }
 
-                    items(timetables) { timetable ->
-                        M4TimetableCard(timetable = timetable)
+                    // Bottom spacing
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
@@ -148,8 +165,13 @@ fun MainScreen() {
     }
 }
 
+/**
+ * Card displaying a single timetable (for a specific day type).
+ *
+ * Shows the day type header and all departure times in a grid format.
+ */
 @Composable
-fun M4TimetableCard(timetable: BusTimetable) {
+fun TimetableCard(timetable: BusTimetable) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
