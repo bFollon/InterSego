@@ -50,6 +50,7 @@ import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.NetworkMonitor
 import com.github.bfollon.linecapp.services.PDFCacheManager
 import com.github.bfollon.linecapp.ui.screens.MainScreen
+import com.github.bfollon.linecapp.ui.screens.NextDepartureScreen
 import com.github.bfollon.linecapp.ui.screens.RouteSelectionScreen
 import com.github.bfollon.linecapp.ui.screens.RouteStopsScreen
 import com.github.bfollon.linecapp.ui.screens.TimetableScreen
@@ -258,9 +259,26 @@ fun AppNavigation() {
                     navController.popBackStack()
                 },
                 onStopSelected = { stop ->
-                    // TODO: Navigate to stop-specific timetable screen
-                    // For now, navigate to the old timetable screen
-                    navController.navigate("timetable/${route.id}")
+                    // Navigate to next departure screen for this stop
+                    navController.navigate("next_departure/${route.id}/${stop.name}")
+                }
+            )
+        }
+
+        composable("next_departure/{routeId}/{stopName}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val stopName = backStackEntry.arguments?.getString("stopName") ?: return@composable
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            // Find the stop by name (we need to get it from M4Parser or similar)
+            // For now, create a basic stop object with the name
+            val stop = com.github.bfollon.linecapp.data.BusStop(name = stopName, address = "")
+
+            NextDepartureScreen(
+                route = route,
+                stop = stop,
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }
