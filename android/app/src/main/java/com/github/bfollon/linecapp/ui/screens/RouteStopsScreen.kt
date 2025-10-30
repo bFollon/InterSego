@@ -50,7 +50,7 @@ import com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser
 fun RouteStopsScreen(
     route: BusRoute,
     onBack: () -> Unit,
-    onStopSelected: (BusStop) -> Unit
+    onStopSelected: (BusStop, String) -> Unit  // Now passes stop AND direction
 ) {
     // State for direction toggle (true = regular, false = reverse)
     var isRegularDirection by remember { mutableStateOf(true) }
@@ -62,11 +62,17 @@ fun RouteStopsScreen(
         M4Parser.m4ReverseRoute
     }
 
-    // Determine direction labels
+    // Determine direction labels and direction string for timetables
     val directionLabel = if (isRegularDirection) {
         "La Lastrilla → El Sotillo"
     } else {
         "El Sotillo → La Lastrilla"
+    }
+
+    val directionString = if (isRegularDirection) {
+        "Lastrilla → Sotillo"
+    } else {
+        "Sotillo → Lastrilla"
     }
 
     Scaffold(
@@ -124,7 +130,7 @@ fun RouteStopsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onStopSelected(stop) },
+                        .clickable { onStopSelected(stop, directionString) },
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Left side: Route line indicator

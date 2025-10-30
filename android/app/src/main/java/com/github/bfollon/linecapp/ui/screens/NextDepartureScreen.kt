@@ -53,6 +53,7 @@ import java.util.Calendar
 fun NextDepartureScreen(
     route: BusRoute,
     stop: BusStop,
+    direction: String,  // e.g., "Lastrilla → Sotillo" or "Sotillo → Lastrilla"
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -97,9 +98,13 @@ fun NextDepartureScreen(
         }
     }
 
-    // Filter timetable for current stop (by name) and day type
-    val todayTimetable = remember(timetables, currentDayType, stop) {
-        timetables.find { it.dayType == currentDayType && it.stopId == stop.name }
+    // Filter timetable for current stop (by name), day type, AND direction
+    val todayTimetable = remember(timetables, currentDayType, stop, direction) {
+        timetables.find {
+            it.dayType == currentDayType &&
+            it.stopId == stop.name &&
+            it.direction == direction
+        }
     }
 
     // Find next departures
