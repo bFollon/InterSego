@@ -181,26 +181,54 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
 
 ### Navigation & UI
 
-**Current State (Phase 7 - In Progress):**
-- **RouteSelectionScreen** - Basic route selection (needs redesign)
-  - Simple list of M1-M8 routes
-  - Basic status indicators
-  - Placeholder implementation
-- **TimetableScreen** - Basic timetable display (needs complete redesign)
-  - Simple grid layout
-  - Grouped by day type
-  - Needs significant enhancement
-- **Navigation Flow:** Basic setup (RouteSelection → Timetable → Back)
-- **Theme:** `LineCappTheme` (bus-themed blue/orange colors)
-- **LoadingScreen:** Shown during app initialization
+**Current State (Phase 7 - Active Development):**
 
-**Status:** Basic placeholder screens exist. Active UI development in progress.
+**✅ Fully Functional Screens:**
+- **RouteSelectionScreen** - Route selection interface
+  - List of M1-M8 routes with cache status indicators
+  - Material3 Card-based design
+  - Navigates to RouteStopsScreen
 
-**TODO:**
-- Design and implement proper M4 route screen
-- Enhance route selection UI
-- Redesign timetable display
-- Add `SettingsScreen`, `AboutScreen`, `CacheStatusScreen`
+- **RouteStopsScreen** - Visual route display (NEW - Oct 31)
+  - Continuous vertical line connecting all stops
+  - Chevron indicators for start/end stops
+  - Circles for intermediate stops
+  - Direction toggle button (Regular ↔ Reverse)
+  - Tap to select stop and see departures
+  - Status: ✅ Complete and polished
+
+- **NextDepartureScreen** - Live departure information (NEW - Oct 31)
+  - Prominent next departure with large time display
+  - Real-time countdown timer (updates every 60 seconds)
+  - Following 5 departures shown in compact pills
+  - Auto day-type detection (Weekday/Weekend/Holiday)
+  - Direction-aware timetable filtering
+  - Handles edge cases (no more buses today)
+  - Spanish localization
+  - Status: ✅ Complete and functional
+
+- **TimetableScreen** - Complete timetable view
+  - Full departure times grouped by day type
+  - Alternative to NextDepartureScreen for viewing all times
+
+- **Navigation Flow:**
+  - RouteSelection → RouteStops → NextDeparture (primary flow)
+  - RouteSelection → Timetable (alternative view)
+  - Direction passed through navigation chain
+  - Status: ✅ Working correctly
+
+**Theme & Resources:**
+- `LineCappTheme` - Bus-themed blue/orange Material3 design
+- `ic_route_start_chevron.xml` - Downward chevron SVG (NEW)
+- `ic_route_end_chevron.xml` - Upward chevron SVG (NEW)
+- `LoadingScreen` - Shown during app initialization
+
+**🎉 M4 Route Status:** Complete end-to-end user flow operational
+
+**📋 Future Enhancements (Optional):**
+- `SettingsScreen` - App configuration
+- `AboutScreen` - App information
+- `CacheStatusScreen` - Cache management UI
 
 ## Development Phases & Current Status
 
@@ -211,24 +239,26 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
 - Phase 2: Infrastructure services (NetworkMonitor, location, geocoding, caching)
 - Phase 3: PDF infrastructure (download, cache, URL scraping)
 - Phase 4: Bus domain data models
-- Phase 5: PDF parsing (M4 complete, 7 routes pending)
+- Phase 5: PDF parsing for M4 (complete with full UI workflow)
 - Phase 6: Business logic services (TimetableService, ClosestBusStopService)
 - Phase 7 (Minimal): Basic UI shell (theme + placeholder screen)
-
-**🟡 In Progress:**
-- Phase 7 (Full): UI development - basic screens exist, need enhancement
+- Phase 7 (M4 Route): Complete UI workflow for M4 ✅ (Oct 31, 2025)
+  - RouteStopsScreen with visual route display
+  - NextDepartureScreen with live countdown
+  - Direction-aware filtering
+  - Complete end-to-end user experience
 
 **⚠️ Partially Implemented:**
-- Phase 5: PDF parsing strategies (M4 complete, M1-M3, M5-M8 needed)
+- Phase 5: PDF parsing strategies (M4 ✅ complete, M1-M3, M5-M8 pending)
 
 **❌ Not Yet Implemented:**
-- Phase 7 (Complete): Full UI implementation with proper design
-- Phase 8: ViewModels and state management
+- Phase 7 (Other Routes): UI for M1-M3, M5-M8 (parsers needed first)
+- Phase 8: ViewModels and state management (optional - direct service calls work)
 - Phase 9: Repository layer (optional, may integrate into services)
 - Phase 10: Testing, configuration, polish
 
 **Current Priority:**
-- Design and implement proper UI for M4 route (Phase 7 active development)
+- Implement PDF parsers for M1-M3, M5-M8 (same UI screens can be reused)
 
 See `docs/CURRENT_STATUS.md` for detailed status and `docs/MIGRATION_PLAN.md` for complete roadmap.
 
@@ -310,10 +340,17 @@ app/src/main/java/com/github/bfollon/linecapp/
 ├── ui/
 │   ├── theme/                    # Compose theme (Color, Theme, Type)
 │   ├── screens/                  # Screen composables
-│   │   └── MainScreen.kt        # Placeholder main screen
+│   │   ├── RouteSelectionScreen.kt  # Route selection list
+│   │   ├── RouteStopsScreen.kt      # Visual route display ✅ NEW
+│   │   ├── NextDepartureScreen.kt   # Live countdown timer ✅ NEW
+│   │   ├── TimetableScreen.kt       # Complete timetable view
+│   │   └── MainScreen.kt            # Legacy demo screen (unused)
 │   └── components/               # (Future: reusable UI components)
-└── utils/
-    └── MapUtils.kt               # Distance calculations, map intents
+├── utils/
+│   └── MapUtils.kt               # Distance calculations, map intents
+└── res/drawable/                 # Vector drawables
+    ├── ic_route_start_chevron.xml   # Start indicator ✅ NEW
+    └── ic_route_end_chevron.xml     # End indicator ✅ NEW
 ```
 
 ## Key Configuration Files

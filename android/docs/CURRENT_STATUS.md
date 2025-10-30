@@ -1,17 +1,17 @@
 # LineCapp Android - Current Status
 
-**Last Updated:** October 30, 2025
+**Last Updated:** October 31, 2025
 
 ## 🎯 Overall Status
 
 **LineCapp backend is complete, UI work in progress.**
 
 - ✅ **Core Backend:** 100% Complete (PDF scraping, caching, version tracking)
-- 🟡 **UI Layer:** Started (basic screens exist, need redesign/enhancement)
-- ✅ **M4 Route:** Backend complete (PDF parsing works)
+- 🟡 **UI Layer:** Actively developing (route visualization and next departure screens functional)
+- ✅ **M4 Route:** Fully functional (PDF parsing + complete UI workflow)
 - ⚠️ **Remaining Routes:** 7 parsers needed (M1-M3, M5-M8)
 
-**App Status:** Backend ready. UI needs development work.
+**App Status:** M4 route fully operational with complete user flow. Other routes need parsers.
 
 **See [PARITY_WITH_FARMACIAS.md](./PARITY_WITH_FARMACIAS.md) for detailed comparison.**
 
@@ -44,39 +44,59 @@
 
 ---
 
-## 🚀 Recent Achievements (October 28, 2025)
+## 🚀 Recent Achievements (October 31, 2025)
 
 ### UI Implementation (Phase 7 - In Progress)
 
-**🟡 Basic Screens Implemented (Need Enhancement):**
-1. **RouteSelectionScreen** - Initial route selection
-   - Basic list of 8 metropolitan routes (M1-M8)
-   - Simple status indicators
+**✅ Fully Functional Screens:**
+
+1. **RouteSelectionScreen** - Route selection
+   - List of 8 metropolitan routes (M1-M8)
+   - Status indicators showing cache state
    - Material3 Card-based design
-   - **Status:** Placeholder implementation, needs redesign
+   - **Status:** Basic implementation complete
 
-2. **TimetableScreen** - Initial timetable display
-   - Basic departure time display
+2. **RouteStopsScreen** - Visual route display (NEW)
+   - Continuous vertical line connecting all stops
+   - Chevron indicators for start/end stops
+   - Circles for intermediate stops
+   - Direction toggle (Regular ↔ Reverse)
+   - Stop selection with tap
+   - **Status:** ✅ Complete and polished
+
+3. **NextDepartureScreen** - Live departure times (NEW)
+   - Prominent next departure with large time display
+   - Real-time countdown timer (updates every minute)
+   - Following 5 departures in compact pills
+   - Auto day-type detection (Weekday/Weekend/Holiday)
+   - Direction-aware filtering
+   - Edge cases handled (no more buses today)
+   - Spanish localization
+   - **Status:** ✅ Complete and functional
+
+4. **TimetableScreen** - Complete timetable view
+   - Full departure time display
    - Groups by day type (Weekday/Weekend/Holiday)
-   - Simple grid layout
-   - **Status:** Placeholder implementation, needs complete redesign
+   - Grid layout
+   - **Status:** Basic implementation complete
 
-3. **Navigation Flow**
-   - Basic navigation setup exists
-   - RouteSelection → Timetable → Back
+5. **Navigation Flow**
+   - RouteSelection → RouteStops → NextDeparture
+   - Alternative: RouteSelection → Timetable
+   - Direction parameter passed through navigation chain
+   - **Status:** ✅ Working correctly
 
-**⚠️ Current Limitations:**
-- UI is basic/placeholder quality
-- Design needs significant enhancement
-- User experience needs improvement
-- M4 screen far from complete
+**🎉 M4 Route - Complete User Flow:**
+1. Select M4 route from list
+2. View visual route map with all stops
+3. Toggle between directions (Lastrilla → Sotillo / Sotillo → Lastrilla)
+4. Tap any stop to see next departure
+5. View countdown timer and upcoming buses
+6. All data correctly filtered by direction and day type
 
-**📋 TODO:**
-- Design and implement proper M4 route screen
-- Enhance route selection UI
-- Improve timetable display
-- Add proper loading/error states
-- Settings/About/Cache status screens
+**📋 Remaining TODO:**
+- Implement PDF parsers for M1-M3, M5-M8 routes
+- Settings/About/Cache status screens (optional enhancements)
 
 ### PDF Scraping & Caching System (100% Complete)
 
@@ -139,6 +159,9 @@ Cache Location: /data/data/com.github.bfollon.linecapp/files/
 - Three-tier caching: ✅ Working (memory → JSON → PDF)
 - Self-healing URLs: ✅ Working (404 detection active)
 - Offline mode: ✅ Working (cache fallbacks functional)
+- **UI Navigation: ✅ Complete flow for M4 route**
+- **Direction filtering: ✅ Working (separate timetables per direction)**
+- **Live countdown: ✅ Updates every minute**
 
 ### ⚠️ Known Development Notes
 
@@ -246,11 +269,13 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified
 | M1 Parser | ❌ Not started | 0% |
 | M2 Parser | ❌ Not started | 0% |
 | M3 Parser | ❌ Not started | 0% |
-| M4 Parser | ✅ Complete | 100% |
+| M4 Parser | ✅ Complete + UI | 100% |
 | M5 Parser | ❌ Not started | 0% |
 | M6 Parser | ❌ Not started | 0% |
 | M7 Parser | ❌ Not started | 0% |
 | M8 Parser | ❌ Not started | 0% |
+
+**Note:** M4 is the only route with full UI implementation. Once other parsers are implemented, they can use the same UI screens.
 
 ---
 
@@ -371,15 +396,22 @@ If session crashes or context is lost:
 - `M2Parser.kt` - ❌ Not implemented
 - (etc. for M3, M5-M8)
 
-### UI (In Development)
-- `MainActivity.kt` - App entry point with service initialization and navigation setup
-- `RouteSelectionScreen.kt` - Basic route selection (needs redesign)
-- `TimetableScreen.kt` - Basic timetable display (needs redesign)
+### UI (Active Development)
+- `MainActivity.kt` - App entry point with service initialization and complete navigation
+- `RouteSelectionScreen.kt` - Route selection screen ✅
+- `RouteStopsScreen.kt` - Visual route display with continuous line ✅ (NEW)
+- `NextDepartureScreen.kt` - Live departure times with countdown ✅ (NEW)
+- `TimetableScreen.kt` - Complete timetable view ✅
 - `MainScreen.kt` - Legacy M4 demo screen (not used in navigation)
 - `LineCappTheme` - Bus-themed Material3 design
+- SVG resources: `ic_route_start_chevron.xml`, `ic_route_end_chevron.xml` ✅ (NEW)
 
 ---
 
-**Document Status:** Fully updated as of October 30, 2025
-**Last Changes:** Added UI implementation documentation (Phase 7 Full)
+**Document Status:** Fully updated as of October 31, 2025
+**Last Changes:**
+- Added RouteStopsScreen documentation (visual route display)
+- Added NextDepartureScreen documentation (live countdown timer)
+- Updated M4 route status to "Complete + UI"
+- Documented complete user flow for M4 route
 **Next Update:** After implementing additional PDF parsers
