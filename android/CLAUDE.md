@@ -181,40 +181,54 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
 
 ### Navigation & UI
 
-**Current State (Phase 7 - Minimal):**
-- Single screen: `MainScreen` (placeholder)
-- Theme: `LineCappTheme` (bus-themed blue/orange colors)
-- Navigation: Single route via `NavHost`
+**Current State (Phase 7 - In Progress):**
+- **RouteSelectionScreen** - Basic route selection (needs redesign)
+  - Simple list of M1-M8 routes
+  - Basic status indicators
+  - Placeholder implementation
+- **TimetableScreen** - Basic timetable display (needs complete redesign)
+  - Simple grid layout
+  - Grouped by day type
+  - Needs significant enhancement
+- **Navigation Flow:** Basic setup (RouteSelection → Timetable → Back)
+- **Theme:** `LineCappTheme` (bus-themed blue/orange colors)
+- **LoadingScreen:** Shown during app initialization
 
-**Future Screens (Full Phase 7):**
-- `RouteSelectionScreen` - Choose bus route
-- `StopSelectionScreen` - Choose stop for route
-- `TimetableScreen` - Display departure times
-- `SettingsScreen`, `AboutScreen`, `CacheStatusScreen`
+**Status:** Basic placeholder screens exist. Active UI development in progress.
+
+**TODO:**
+- Design and implement proper M4 route screen
+- Enhance route selection UI
+- Redesign timetable display
+- Add `SettingsScreen`, `AboutScreen`, `CacheStatusScreen`
 
 ## Development Phases & Current Status
 
-**Project Status:** Phase 7 (Minimal) complete - app compiles and launches
+**Project Status:** Backend complete. Active UI development (Phase 7).
 
 **✅ Completed Phases:**
 - Phase 1: Project setup, dependencies, build config
 - Phase 2: Infrastructure services (NetworkMonitor, location, geocoding, caching)
 - Phase 3: PDF infrastructure (download, cache, URL scraping)
 - Phase 4: Bus domain data models
+- Phase 5: PDF parsing (M4 complete, 7 routes pending)
 - Phase 6: Business logic services (TimetableService, ClosestBusStopService)
 - Phase 7 (Minimal): Basic UI shell (theme + placeholder screen)
 
+**🟡 In Progress:**
+- Phase 7 (Full): UI development - basic screens exist, need enhancement
+
+**⚠️ Partially Implemented:**
+- Phase 5: PDF parsing strategies (M4 complete, M1-M3, M5-M8 needed)
+
 **❌ Not Yet Implemented:**
-- Phase 5: PDF parsing strategies (requires working app to test)
-- Phase 7 (Full): Route selection, timetable display, settings screens
+- Phase 7 (Complete): Full UI implementation with proper design
 - Phase 8: ViewModels and state management
 - Phase 9: Repository layer (optional, may integrate into services)
 - Phase 10: Testing, configuration, polish
 
-**Key Blockers Resolved:**
-- MainActivity.kt created (resolves manifest error)
-- Theme conflicts resolved (minimal XML theme)
-- App now compiles and launches
+**Current Priority:**
+- Design and implement proper UI for M4 route (Phase 7 active development)
 
 See `docs/CURRENT_STATUS.md` for detailed status and `docs/MIGRATION_PLAN.md` for complete roadmap.
 
@@ -349,19 +363,24 @@ when (val result = repository.resolveURLWithHealing("M1")) {
 
 ## Known Issues & TODOs
 
-**Phase 5 TODOs:**
-- Implement PDF parsing strategies
-- Integrate parsing with TimetableService (see `TimetableService.kt:66-71`)
+**Phase 5 TODOs (HIGH PRIORITY):**
+- Implement PDF parsing strategies for M1-M3, M5-M8
+- Use M4Parser as template/reference
+- Test each parser with real PDF files
 
-**Phase 7 TODOs:**
-- Implement actual UI screens (route selection, timetable display)
-- Add reusable UI components (cards, buttons)
+**Phase 7 TODOs (HIGH PRIORITY - ACTIVE DEVELOPMENT):**
+- Design and implement proper M4 route screen
+- Enhance route selection UI
+- Redesign timetable display
+- Add proper loading/error states
+- Add Settings screen (backend APIs ready)
+- Add About screen
+- Add Cache Status screen
 - Add offline warning banner
-- Implement navigation between screens
 
-**Phase 8 TODOs:**
-- Create ViewModels for state management
-- Connect UI to business logic services
+**Phase 8 TODOs (OPTIONAL):**
+- Create ViewModels for state management (currently using direct service calls)
+- Add proper state hoisting patterns
 
 **Build Warnings:**
 - 39 lint warnings (non-blocking, can be addressed in Phase 10)

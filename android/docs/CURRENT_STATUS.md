@@ -1,15 +1,17 @@
 # LineCapp Android - Current Status
 
-**Last Updated:** October 28, 2025
+**Last Updated:** October 30, 2025
 
 ## 🎯 Overall Status
 
-**LineCapp is 95% feature-complete** with full backend parity achieved with FarmaciasDeGuardia.
+**LineCapp backend is complete, UI work in progress.**
 
 - ✅ **Core Backend:** 100% Complete (PDF scraping, caching, version tracking)
-- ✅ **M4 Route:** Fully functional (PDF parsing working)
+- 🟡 **UI Layer:** Started (basic screens exist, need redesign/enhancement)
+- ✅ **M4 Route:** Backend complete (PDF parsing works)
 - ⚠️ **Remaining Routes:** 7 parsers needed (M1-M3, M5-M8)
-- 🟡 **Optional UI:** Backend APIs ready, UI implementation pending
+
+**App Status:** Backend ready. UI needs development work.
 
 **See [PARITY_WITH_FARMACIAS.md](./PARITY_WITH_FARMACIAS.md) for detailed comparison.**
 
@@ -28,13 +30,14 @@
 | **Phase 5** | PDF Parsing Strategy | ⚠️ Partial (1/8 parsers) | M4Parser complete |
 | **Phase 6** | Business logic services | ✅ Complete | [MIGRATION_PHASE_6.md](./MIGRATION_PHASE_6.md) |
 | **Phase 7** | UI Layer (Minimal) | ✅ Complete | [MIGRATION_PHASE_7_MINIMAL.md](./MIGRATION_PHASE_7_MINIMAL.md) |
+| **Phase 7** | UI Layer (Full) | 🟡 In Progress | Basic screens exist, need enhancement |
 
 ### ❌ Pending Phases
 
 | Phase | Description | Status | Priority |
 |-------|-------------|--------|----------|
 | **Phase 5** | Remaining PDF Parsers (M1-M3, M5-M8) | 7 parsers needed | MEDIUM |
-| **Phase 7** | UI Layer (Full) | Not started | LOW (minimal UI works) |
+| **Phase 7** | UI Layer (Full) | Basic implementation started | HIGH (active development) |
 | **Phase 8** | ViewModels | Not started | LOW (direct service calls work) |
 | **Phase 9** | Repositories | Not started | LOW (optional refactoring) |
 | **Phase 10** | Testing & Configuration | Not started | LOW (polish phase) |
@@ -42,6 +45,38 @@
 ---
 
 ## 🚀 Recent Achievements (October 28, 2025)
+
+### UI Implementation (Phase 7 - In Progress)
+
+**🟡 Basic Screens Implemented (Need Enhancement):**
+1. **RouteSelectionScreen** - Initial route selection
+   - Basic list of 8 metropolitan routes (M1-M8)
+   - Simple status indicators
+   - Material3 Card-based design
+   - **Status:** Placeholder implementation, needs redesign
+
+2. **TimetableScreen** - Initial timetable display
+   - Basic departure time display
+   - Groups by day type (Weekday/Weekend/Holiday)
+   - Simple grid layout
+   - **Status:** Placeholder implementation, needs complete redesign
+
+3. **Navigation Flow**
+   - Basic navigation setup exists
+   - RouteSelection → Timetable → Back
+
+**⚠️ Current Limitations:**
+- UI is basic/placeholder quality
+- Design needs significant enhancement
+- User experience needs improvement
+- M4 screen far from complete
+
+**📋 TODO:**
+- Design and implement proper M4 route screen
+- Enhance route selection UI
+- Improve timetable display
+- Add proper loading/error states
+- Settings/About/Cache status screens
 
 ### PDF Scraping & Caching System (100% Complete)
 
@@ -190,6 +225,10 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified
 | Offline Support | ✅ 100% | Full offline mode with cache fallbacks |
 | Network Monitoring | ✅ 100% | Real-time connectivity detection |
 | M4 Route Parsing | ✅ 100% | 66 timetables parsed and cached |
+| **UI Navigation** | 🟡 Started | Basic navigation setup exists |
+| **Route Selection UI** | 🟡 Started | Placeholder implementation, needs work |
+| **Timetable Display UI** | 🟡 Started | Basic screen exists, needs redesign |
+| **Material3 Design** | 🟡 Started | Theme exists, needs application |
 
 ### 🟡 Backend Ready / UI Pending
 
@@ -332,12 +371,15 @@ If session crashes or context is lost:
 - `M2Parser.kt` - ❌ Not implemented
 - (etc. for M3, M5-M8)
 
-### UI (Minimal)
-- `MainActivity.kt` - App entry point with service initialization
-- `MainScreen.kt` - M4 route demonstration (forceRefresh=true for testing)
+### UI (In Development)
+- `MainActivity.kt` - App entry point with service initialization and navigation setup
+- `RouteSelectionScreen.kt` - Basic route selection (needs redesign)
+- `TimetableScreen.kt` - Basic timetable display (needs redesign)
+- `MainScreen.kt` - Legacy M4 demo screen (not used in navigation)
 - `LineCappTheme` - Bus-themed Material3 design
 
 ---
 
-**Document Status:** Fully updated as of October 28, 2025
+**Document Status:** Fully updated as of October 30, 2025
+**Last Changes:** Added UI implementation documentation (Phase 7 Full)
 **Next Update:** After implementing additional PDF parsers
