@@ -31,8 +31,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.linecapp.R
 import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser
@@ -131,37 +133,80 @@ fun RouteStopsScreen(
                             .width(40.dp)
                             .height(80.dp) // Fixed height for proper spacing
                     ) {
-                        // Vertical line coming from above (except first item)
-                        if (index > 0) {
-                            Box(
-                                modifier = Modifier
-                                    .width(4.dp)
-                                    .height(24.dp) // Line from top to circle
-                                    .offset(x = 18.dp, y = 0.dp)
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
-                        }
-
-                        // Circle aligned with stop name
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .offset(x = 12.dp, y = 20.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = CircleShape
+                        when {
+                            index == 0 -> {
+                                // First stop: Start chevron (downward V) with line below
+                                // Chevron centered horizontally, aligned with stop name
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_route_start_chevron),
+                                    contentDescription = "Inicio",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .offset(x = 8.dp, y = 12.dp) // Center at x=20dp (8+12), align with text
                                 )
-                        )
 
-                        // Vertical line going down (except last item)
-                        if (index < stops.lastIndex) {
-                            Box(
-                                modifier = Modifier
-                                    .width(4.dp)
-                                    .height(80.dp) // Line from circle to bottom and beyond
-                                    .offset(x = 18.dp, y = 28.dp) // Start below circle
-                                    .background(MaterialTheme.colorScheme.primary)
-                            )
+                                // Line extending down from chevron tip
+                                Box(
+                                    modifier = Modifier
+                                        .width(4.dp)
+                                        .height(80.dp)
+                                        .offset(x = 18.dp, y = 28.dp) // Start below chevron tip
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            }
+                            index == stops.lastIndex -> {
+                                // Last stop: Line coming from above + end chevron (upward ^)
+                                // Line coming from above, stopping before chevron
+                                Box(
+                                    modifier = Modifier
+                                        .width(4.dp)
+                                        .height(16.dp) // Shorter line, stops before chevron
+                                        .offset(x = 18.dp, y = 0.dp)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+
+                                // Chevron centered horizontally, aligned with stop name
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_route_end_chevron),
+                                    contentDescription = "Final",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .offset(x = 8.dp, y = 16.dp) // Align with text (same as circle y=20dp center)
+                                )
+                            }
+                            else -> {
+                                // Middle stops: Circle with lines above and below
+                                // Vertical line coming from above
+                                Box(
+                                    modifier = Modifier
+                                        .width(4.dp)
+                                        .height(24.dp)
+                                        .offset(x = 18.dp, y = 0.dp)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+
+                                // Circle aligned with stop name
+                                Box(
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .offset(x = 12.dp, y = 20.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = CircleShape
+                                        )
+                                )
+
+                                // Vertical line going down
+                                Box(
+                                    modifier = Modifier
+                                        .width(4.dp)
+                                        .height(80.dp)
+                                        .offset(x = 18.dp, y = 28.dp)
+                                        .background(MaterialTheme.colorScheme.primary)
+                                )
+                            }
                         }
                     }
 
