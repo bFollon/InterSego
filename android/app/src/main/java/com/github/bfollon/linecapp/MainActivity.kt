@@ -51,6 +51,7 @@ import com.github.bfollon.linecapp.services.NetworkMonitor
 import com.github.bfollon.linecapp.services.PDFCacheManager
 import com.github.bfollon.linecapp.ui.screens.MainScreen
 import com.github.bfollon.linecapp.ui.screens.RouteSelectionScreen
+import com.github.bfollon.linecapp.ui.screens.RouteStopsScreen
 import com.github.bfollon.linecapp.ui.screens.TimetableScreen
 import com.github.bfollon.linecapp.ui.theme.LineCappTheme
 import kotlinx.coroutines.launch
@@ -242,6 +243,23 @@ fun AppNavigation() {
             RouteSelectionScreen(
                 routes = routes,
                 onRouteSelected = { route ->
+                    navController.navigate("route_stops/${route.id}")
+                }
+            )
+        }
+
+        composable("route_stops/{routeId}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            RouteStopsScreen(
+                route = route,
+                onBack = {
+                    navController.popBackStack()
+                },
+                onStopSelected = { stop ->
+                    // TODO: Navigate to stop-specific timetable screen
+                    // For now, navigate to the old timetable screen
                     navController.navigate("timetable/${route.id}")
                 }
             )
