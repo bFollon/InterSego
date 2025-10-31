@@ -1,8 +1,10 @@
-# CLAUDE.md
+# Android CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides Android-specific guidance for LineCapp development.
 
-## Project Overview
+**For project overview and repository structure, see `../CLAUDE.md` at repository root.**
+
+## Android Implementation
 
 **LineCapp** is an Android bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
 
