@@ -83,7 +83,3 @@ lint/tmp/
 
 # Claude Code local settings
 .claude/settings.local.json
-
-# macOS system files
-.DS_Store
-**/.DS_Store
