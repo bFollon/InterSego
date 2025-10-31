@@ -348,10 +348,20 @@ app/src/main/java/com/github/bfollon/linecapp/
 │   └── components/               # (Future: reusable UI components)
 ├── utils/
 │   └── MapUtils.kt               # Distance calculations, map intents
-└── res/drawable/                 # Vector drawables
-    ├── ic_route_start_chevron.xml   # Start indicator ✅ NEW
-    └── ic_route_end_chevron.xml     # End indicator ✅ NEW
+└── res/
+    ├── drawable/                 # Vector drawables
+    │   ├── ic_route_start_chevron.xml   # Start indicator ✅ NEW
+    │   └── ic_route_end_chevron.xml     # End indicator ✅ NEW
+    └── mipmap-*/                # App launcher icons
+        ├── ic_launcher.png           # Main app icon
+        ├── ic_launcher_round.png     # Rounded app icon
+        └── ic_launcher_foreground.png # Adaptive icon foreground
 ```
+
+**App Icon:**
+- Minimalistic bus timetable design with blue (#1c74d3) and orange theme colors
+- Adaptive icon support for Android 8.0+ (API 26+)
+- Source files: `../resources/icons/ic_launcher-6905343ae8c3c/`
 
 ## Key Configuration Files
 

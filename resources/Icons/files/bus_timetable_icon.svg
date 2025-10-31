@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="#1976D2"/>
+  
+  <!-- Bus simplified shape -->
+  <g transform="translate(512, 512) scale(14)">
+    <!-- Main bus body -->
+    <rect x="-20" y="-18" width="40" height="32" rx="4" fill="#FFFFFF"/>
+    
+    <!-- Windshield -->
+    <rect x="-16" y="-14" width="32" height="12" rx="2" fill="#1976D2"/>
+    
+    <!-- Bus windows split -->
+    <line x1="0" y1="-14" x2="0" y2="-2" stroke="#FFFFFF" stroke-width="1.5"/>
+    
+    <!-- Wheels -->
+    <circle cx="-12" cy="16" r="4" fill="#424242"/>
+    <circle cx="12" cy="16" r="4" fill="#424242"/>
+    <circle cx="-12" cy="16" r="2" fill="#757575"/>
+    <circle cx="12" cy="16" r="2" fill="#757575"/>
+    
+    <!-- Time/Schedule indicator - Clock hand accent -->
+    <g transform="translate(16, -16)">
+      <!-- Small clock circle background -->
+      <circle cx="0" cy="0" r="8" fill="#FF9800"/>
+      <!-- Clock hands simplified -->
+      <line x1="0" y1="0" x2="0" y2="-4" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="0" y1="0" x2="3" y2="0" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+    
+    <!-- Bottom detail line -->
+    <line x1="-20" y1="3" x2="20" y2="3" stroke="#E0E0E0" stroke-width="1"/>
+  </g>
+  
+  <!-- Subtle grid pattern suggestion (timetable reference) - very subtle -->
+  <g opacity="0.1">
+    <line x1="280" y1="680" x2="744" y2="680" stroke="#FFFFFF" stroke-width="5"/>
+    <line x1="280" y1="720" x2="744" y2="720" stroke="#FFFFFF" stroke-width="5"/>
+    <line x1="280" y1="760" x2="744" y2="760" stroke="#FFFFFF" stroke-width="5"/>
+  </g>
+</svg>
