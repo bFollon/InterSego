@@ -260,20 +260,29 @@ fun AppNavigation() {
                 },
                 onStopSelected = { stop, direction ->
                     // Navigate to next departure screen for this stop with direction
-                    navController.navigate("next_departure/${route.id}/${stop.name}/$direction")
+                    // We'll pass the stop ID and reconstruct from M4Parser in the destination
+                    navController.navigate("next_departure/${route.id}/${stop.id}/$direction")
                 }
             )
         }
 
-        composable("next_departure/{routeId}/{stopName}/{direction}") { backStackEntry ->
+        composable("next_departure/{routeId}/{stopId}/{direction}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
-            val stopName = backStackEntry.arguments?.getString("stopName") ?: return@composable
+            val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
             val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Find the stop by name (we need to get it from M4Parser or similar)
-            // For now, create a basic stop object with the name
-            val stop = com.github.bfollon.linecapp.data.BusStop(name = stopName, address = "")
+            // Find the stop from M4Parser by ID
+            val stop = when (routeId) {
+                "M4" -> {
+                    // Check both regular and reverse routes
+                    (com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser.m4RegularRoute +
+                     com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser.m4ReverseRoute)
+                        .find { it.id == stopId }
+                }
+                // Add other routes here as parsers are implemented
+                else -> null
+            } ?: return@composable
 
             NextDepartureScreen(
                 route = route,

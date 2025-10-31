@@ -18,6 +18,9 @@
 
 package com.github.bfollon.linecapp.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,13 +33,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
+import com.github.bfollon.linecapp.services.GeocodingService
 import com.github.bfollon.linecapp.services.TimetableService
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
@@ -98,6 +104,17 @@ fun NextDepartureScreen(
         }
     }
 
+    // Calculate tomorrow's day type
+    val tomorrowDayType = remember {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, 1)
+        when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.SATURDAY -> DayType.WEEKEND
+            Calendar.SUNDAY -> DayType.HOLIDAY
+            else -> DayType.WEEKDAY
+        }
+    }
+
     // Filter timetable for current stop (by name), day type, AND direction
     val todayTimetable = remember(timetables, currentDayType, stop, direction) {
         timetables.find {
@@ -107,34 +124,57 @@ fun NextDepartureScreen(
         }
     }
 
-    // Find next departures
-    val (nextDeparture, followingDepartures) = remember(todayTimetable, currentTime) {
+    val tomorrowTimetable = remember(timetables, tomorrowDayType, stop, direction) {
+        timetables.find {
+            it.dayType == tomorrowDayType &&
+            it.stopId == stop.name &&
+            it.direction == direction
+        }
+    }
+
+    // Find next departures (including tomorrow if no more today)
+    data class DepartureInfo(
+        val departure: DepartureTime?,
+        val following: List<DepartureTime>,
+        val isNextDay: Boolean
+    )
+
+    val departureInfo = remember(todayTimetable, tomorrowTimetable, currentTime) {
         if (todayTimetable == null) {
-            Pair(null, emptyList())
+            DepartureInfo(null, emptyList(), false)
         } else {
             val upcoming = todayTimetable.departures.filter { departure ->
                 val departureTime = LocalTime.of(departure.hour, departure.minute)
                 departureTime.isAfter(currentTime) || departureTime == currentTime
             }.sortedBy { LocalTime.of(it.hour, it.minute) }
 
-            val next = upcoming.firstOrNull()
-            val following = upcoming.drop(1).take(5)
-            Pair(next, following)
+            if (upcoming.isNotEmpty()) {
+                // Found departures today
+                val next = upcoming.firstOrNull()
+                val following = upcoming.drop(1).take(5)
+                DepartureInfo(next, following, false)
+            } else if (tomorrowTimetable != null) {
+                // No more today, get tomorrow's first departure
+                val tomorrowFirst = tomorrowTimetable.departures
+                    .sortedBy { LocalTime.of(it.hour, it.minute) }
+                    .firstOrNull()
+                DepartureInfo(tomorrowFirst, emptyList(), true)
+            } else {
+                DepartureInfo(null, emptyList(), false)
+            }
         }
     }
+
+    val nextDeparture = departureInfo.departure
+    val followingDepartures = departureInfo.following
+    val isNextDayDeparture = departureInfo.isNextDay
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Línea ${route.number}")
-                        Text(
-                            text = stop.name,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    Text("Línea ${route.number}")
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -196,7 +236,7 @@ fun NextDepartureScreen(
                 }
             }
             nextDeparture == null -> {
-                // No more buses today
+                // No departures available at all (shouldn't happen normally)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -204,60 +244,93 @@ fun NextDepartureScreen(
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "No hay más autobuses hoy",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Última salida: ${todayTimetable.departures.lastOrNull()?.toDisplayString() ?: "N/A"}",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    Text(
+                        text = "No hay horarios disponibles",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
             else -> {
-                LazyColumn(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item {
-                        Text(
-                            text = "Próxima salida",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    // Sticky stop info card
+                    StopInfoCard(
+                        route = route,
+                        stop = stop,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    )
 
-                    // Next departure - prominent pill
-                    item {
-                        NextDeparturePill(
-                            departure = nextDeparture,
-                            currentTime = currentTime
-                        )
-                    }
+                    // Scrollable content
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Tomorrow warning card (if showing next day's first bus)
+                        if (isNextDayDeparture) {
+                            item {
+                                HorizontalDivider()
+                            }
 
-                    // Following departures
-                    if (followingDepartures.isNotEmpty()) {
+                            item {
+                                TomorrowWarningCard()
+                            }
+                        }
+
+                        // Próxima salida section
+                        if (!isNextDayDeparture) {
+                            item {
+                                HorizontalDivider()
+                            }
+                        }
+
                         item {
-                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Siguientes salidas",
+                                text = "Próxima salida",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
-                        items(followingDepartures) { departure ->
-                            FollowingDeparturePill(departure = departure)
+                        item {
+                            NextDeparturePill(
+                                departure = nextDeparture,
+                                currentTime = currentTime,
+                                isNextDay = isNextDayDeparture
+                            )
+                        }
+
+                        // Following departures section
+                        if (followingDepartures.isNotEmpty()) {
+                            item {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                HorizontalDivider()
+                            }
+
+                            item {
+                                Text(
+                                    text = "Siguientes salidas",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            items(followingDepartures) { departure ->
+                                FollowingDeparturePill(departure = departure)
+                            }
+                        }
+
+                        // Bottom spacing
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                     }
                 }
@@ -267,15 +340,25 @@ fun NextDepartureScreen(
 }
 
 /**
- * Prominent pill container showing the next bus departure with countdown.
+ * Prominent pill container showing the next bus departure with both time and countdown.
  */
 @Composable
 fun NextDeparturePill(
     departure: DepartureTime,
-    currentTime: LocalTime
+    currentTime: LocalTime,
+    isNextDay: Boolean = false
 ) {
     val departureTime = LocalTime.of(departure.hour, departure.minute)
-    val minutesUntil = currentTime.until(departureTime, ChronoUnit.MINUTES)
+
+    // Calculate minutes until departure (accounting for next day)
+    val minutesUntil = if (isNextDay) {
+        // Calculate time until midnight + time from midnight to departure
+        val minutesUntilMidnight = currentTime.until(LocalTime.MAX, ChronoUnit.MINUTES)
+        val minutesFromMidnight = LocalTime.MIN.until(departureTime, ChronoUnit.MINUTES)
+        minutesUntilMidnight + minutesFromMidnight + 1 // +1 for the midnight minute
+    } else {
+        currentTime.until(departureTime, ChronoUnit.MINUTES)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -284,49 +367,187 @@ fun NextDeparturePill(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Large time display
-            Text(
-                text = departure.toDisplayString(),
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            // Left side: Actual departure time
+            Column {
+                Text(
+                    text = departure.toDisplayString(),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                // Notes if any
+                if (!departure.notes.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = departure.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
 
-            // Countdown
+            // Right side: Countdown
             Text(
                 text = when {
-                    minutesUntil < 1 -> "Saliendo ahora"
-                    minutesUntil == 1L -> "en 1 minuto"
-                    minutesUntil < 60 -> "en $minutesUntil minutos"
+                    minutesUntil < 1 -> "Saliendo\nahora"
+                    minutesUntil == 1L -> "en 1\nminuto"
+                    minutesUntil < 60 -> "en $minutesUntil\nminutos"
                     else -> {
                         val hours = minutesUntil / 60
                         val mins = minutesUntil % 60
-                        if (mins == 0L) "en $hours hora${if (hours > 1) "s" else ""}"
-                        else "en ${hours}h ${mins}m"
+                        if (mins == 0L) "en $hours\nhora${if (hours > 1) "s" else ""}"
+                        else "en ${hours}h\n${mins}m"
                     }
                 },
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                textAlign = TextAlign.End
+            )
+        }
+    }
+}
+
+/**
+ * Stop information card with route badge and tappable address.
+ */
+@Composable
+fun StopInfoCard(
+    route: BusRoute,
+    stop: BusStop,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val geocodingService = remember { GeocodingService(context) }
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            // Stop name with route badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stop.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Route badge
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = route.number,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Tappable address
+            Text(
+                text = stop.address,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable {
+                    scope.launch {
+                        openMapsForStop(context, geocodingService, stop)
+                    }
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Opens the system default maps app for navigation to a bus stop.
+ */
+suspend fun openMapsForStop(
+    context: android.content.Context,
+    geocodingService: GeocodingService,
+    stop: BusStop
+) {
+    // Try to get coordinates from stop first, then geocode if needed
+    val location = if (stop.latitude != null && stop.longitude != null) {
+        android.location.Location("").apply {
+            latitude = stop.latitude
+            longitude = stop.longitude
+        }
+    } else {
+        geocodingService.getCoordinatesForBusStop(stop)
+    }
+
+    val intent = if (location != null) {
+        // Use geo: URI with coordinates
+        Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("geo:${location.latitude},${location.longitude}?q=${location.latitude},${location.longitude}(${Uri.encode(stop.name)})")
+        }
+    } else {
+        // Fallback to address-based search
+        Intent(Intent.ACTION_VIEW).apply {
+            data = Uri.parse("geo:0,0?q=${Uri.encode("${stop.address}, Segovia, España")}")
+        }
+    }
+
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
+    }
+}
+
+/**
+ * Warning card shown when displaying tomorrow's first bus.
+ */
+@Composable
+fun TomorrowWarningCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "⚠️",
+                style = MaterialTheme.typography.headlineMedium
             )
 
-            // Notes if any
-            if (!departure.notes.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = departure.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
-                )
-            }
+            Text(
+                text = "No hay más autobuses hoy. Mostrando horario de mañana.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
         }
     }
 }
