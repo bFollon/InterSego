@@ -199,14 +199,24 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
   - Tap to select stop and see departures
   - Status: ✅ Complete and polished
 
-- **NextDepartureScreen** - Live departure information (NEW - Oct 31)
-  - Prominent next departure with large time display
-  - Real-time countdown timer (updates every 60 seconds)
-  - Following 5 departures shown in compact pills
-  - Auto day-type detection (Weekday/Weekend/Holiday)
-  - Direction-aware timetable filtering
-  - Handles edge cases (no more buses today)
-  - Spanish localization
+- **NextDepartureScreen** - Live departure information (REDESIGNED - Nov 1)
+  - **Card-Based Layout:**
+    - Sticky stop info card with route badge and tappable address for maps
+    - Balanced next departure display (time + countdown side-by-side)
+    - Clear section headers with dividers ("Próxima salida" / "Siguientes salidas")
+    - Maps integration using geocoding service with geo: URI intents
+  - **Smart Multi-Day Departure Lookup:**
+    - Searches up to 7 days ahead for next available departure
+    - Handles weekend/holiday gaps automatically (e.g., Saturday → Monday)
+    - Shows following departures from future day (up to 5)
+    - Dynamic warning messages based on days ahead
+    - Accurate countdown calculation across multiple days
+  - **Technical Features:**
+    - Real-time countdown timer (updates every 60 seconds)
+    - Auto day-type detection (Weekday/Weekend/Holiday)
+    - Direction-aware timetable filtering
+    - Comprehensive debug logging for troubleshooting
+    - Spanish localization
   - Status: ✅ Complete and functional
 
 - **TimetableScreen** - Complete timetable view
