@@ -199,22 +199,32 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
   - Tap to select stop and see departures
   - Status: ✅ Complete and polished
 
-- **NextDepartureScreen** - Live departure information (REDESIGNED - Nov 1)
-  - **Card-Based Layout:**
-    - Sticky stop info card with route badge and tappable address for maps
-    - Balanced next departure display (time + countdown side-by-side)
-    - Clear section headers with dividers ("Próxima salida" / "Siguientes salidas")
+- **NextDepartureScreen** - Live departure information (REDESIGNED - Nov 2)
+  - **Integrated Layout Design:**
+    - Hero header with gradient background (primary → surface)
+    - Circular progress clock showing visual countdown (60-min arc)
+    - Timeline-style following departures with connecting lines
+    - Time-of-day indicators (morning/afternoon/evening badges with icons)
+    - Reduced whitespace, tighter visual hierarchy
     - Maps integration using geocoding service with geo: URI intents
+  - **New Components:**
+    - `StopHeroHeader` - Gradient hero section replacing plain card
+    - `CircularProgressClock` - Progress indicator around departure time
+    - `TimeOfDayIndicator` - Morning/afternoon/evening badges
+    - `NextDepartureWithProgress` - Enhanced next departure with circular progress
+    - `DepartureTimeline` - Timeline-style departures with dots and lines
   - **Smart Multi-Day Departure Lookup:**
     - Searches up to 7 days ahead for next available departure
-    - Handles weekend/holiday gaps automatically (e.g., Saturday → Monday)
+    - Handles weekend/holiday gaps automatically (e.g., Sunday → Monday)
     - Shows following departures from future day (up to 5)
     - Dynamic warning messages based on days ahead
     - Accurate countdown calculation across multiple days
+    - Fixed logic to show future departures when today has no service
   - **Technical Features:**
     - Real-time countdown timer (updates every 60 seconds)
     - Auto day-type detection (Weekday/Weekend/Holiday)
     - Direction-aware timetable filtering
+    - TimeOfDay enum: morning (6-12), afternoon (13-19), evening (20-5)
     - Comprehensive debug logging for troubleshooting
     - Spanish localization
   - Status: ✅ Complete and functional
@@ -419,6 +429,20 @@ when (val result = repository.resolveURLWithHealing("M1")) {
 3. Integrate with `TimetableService.loadTimetables()` (see TODO comments)
 4. Use column-based extraction (similar to FarmaciasDeGuardia)
 5. Cache parsed results
+
+### Development Best Practices
+
+**IMPORTANT: Always Update Documentation After Significant Changes**
+
+When completing major features or making significant changes:
+1. **Update this file (`android/CLAUDE.md`)** with:
+   - New components/screens in the "Navigation & UI" section
+   - Updated technical details in relevant sections
+   - Date changes with descriptive tags (e.g., "REDESIGNED - Nov 2")
+2. **Update `docs/CURRENT_STATUS.md`** if phase status changes
+3. **Commit documentation changes** along with code changes
+
+This ensures future work has accurate context about what's been implemented.
 
 ## Known Issues & TODOs
 
