@@ -49,7 +49,6 @@ import com.github.bfollon.linecapp.services.CoordinateCache
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.NetworkMonitor
 import com.github.bfollon.linecapp.services.PDFCacheManager
-import com.github.bfollon.linecapp.ui.screens.MainScreen
 import com.github.bfollon.linecapp.ui.screens.NextDepartureScreen
 import com.github.bfollon.linecapp.ui.screens.RouteSelectionScreen
 import com.github.bfollon.linecapp.ui.screens.RouteStopsScreen
