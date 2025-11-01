@@ -39,6 +39,7 @@ import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
+import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.GeocodingService
 import com.github.bfollon.linecapp.services.TimetableService
 import kotlinx.coroutines.delay
@@ -104,70 +105,112 @@ fun NextDepartureScreen(
         }
     }
 
-    // Calculate tomorrow's day type
-    val tomorrowDayType = remember {
-        val calendar = Calendar.getInstance()
-        calendar.add(Calendar.DAY_OF_YEAR, 1)
-        when (calendar.get(Calendar.DAY_OF_WEEK)) {
-            Calendar.SATURDAY -> DayType.WEEKEND
-            Calendar.SUNDAY -> DayType.HOLIDAY
-            else -> DayType.WEEKDAY
-        }
-    }
-
     // Filter timetable for current stop (by name), day type, AND direction
     val todayTimetable = remember(timetables, currentDayType, stop, direction) {
-        timetables.find {
+        DebugConfig.debugPrint("🔍 Filtering timetables: dayType=$currentDayType, stop=${stop.name}, direction=$direction")
+        DebugConfig.debugPrint("📊 Total timetables: ${timetables.size}")
+        DebugConfig.debugPrint("📋 Available timetables: ${timetables.joinToString("\n") { "  - ${it.stopId} / ${it.direction} / ${it.dayType} (${it.departures.size} departures)" }}")
+
+        val result = timetables.find {
             it.dayType == currentDayType &&
             it.stopId == stop.name &&
             it.direction == direction
         }
+
+        DebugConfig.debugPrint("✅ Found timetable: ${result != null} (${result?.departures?.size ?: 0} departures)")
+        result
     }
 
-    val tomorrowTimetable = remember(timetables, tomorrowDayType, stop, direction) {
-        timetables.find {
-            it.dayType == tomorrowDayType &&
-            it.stopId == stop.name &&
-            it.direction == direction
+    // Find next available timetable (checking up to 7 days ahead)
+    data class NextTimetableInfo(
+        val timetable: com.github.bfollon.linecapp.data.BusTimetable?,
+        val daysAhead: Int
+    )
+
+    val nextTimetableInfo = remember(timetables, currentDayType, stop, direction) {
+        var result: NextTimetableInfo? = null
+
+        // Check up to 7 days ahead for the next available timetable
+        for (daysAhead in 1..7) {
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
+            val futureDayType = when (calendar.get(Calendar.DAY_OF_WEEK)) {
+                Calendar.SATURDAY -> DayType.WEEKEND
+                Calendar.SUNDAY -> DayType.HOLIDAY
+                else -> DayType.WEEKDAY
+            }
+
+            val timetable = timetables.find {
+                it.dayType == futureDayType &&
+                it.stopId == stop.name &&
+                it.direction == direction &&
+                it.departures.isNotEmpty()
+            }
+
+            if (timetable != null) {
+                DebugConfig.debugPrint("✅ Found next timetable in $daysAhead day(s): $futureDayType with ${timetable.departures.size} departures")
+                result = NextTimetableInfo(timetable, daysAhead)
+                break
+            }
         }
+
+        if (result == null) {
+            DebugConfig.debugPrint("❌ No timetable found in next 7 days")
+        }
+
+        result
     }
 
-    // Find next departures (including tomorrow if no more today)
+    // Find next departures (including future days if no more today)
     data class DepartureInfo(
         val departure: DepartureTime?,
         val following: List<DepartureTime>,
-        val isNextDay: Boolean
+        val daysAhead: Int  // 0 = today, 1 = tomorrow, 2+ = future
     )
 
-    val departureInfo = remember(todayTimetable, tomorrowTimetable, currentTime) {
+    val departureInfo = remember(todayTimetable, nextTimetableInfo, currentTime) {
+        DebugConfig.debugPrint("⏰ Current time: $currentTime")
+
         if (todayTimetable == null) {
-            DepartureInfo(null, emptyList(), false)
+            DebugConfig.debugPrint("❌ No timetable for today")
+            DepartureInfo(null, emptyList(), 0)
         } else {
+            DebugConfig.debugPrint("📅 Today's departures: ${todayTimetable.departures.map { it.toDisplayString() }}")
+
             val upcoming = todayTimetable.departures.filter { departure ->
                 val departureTime = LocalTime.of(departure.hour, departure.minute)
                 departureTime.isAfter(currentTime) || departureTime == currentTime
             }.sortedBy { LocalTime.of(it.hour, it.minute) }
 
+            DebugConfig.debugPrint("🚌 Upcoming departures today: ${upcoming.size} (${upcoming.map { it.toDisplayString() }})")
+
             if (upcoming.isNotEmpty()) {
                 // Found departures today
                 val next = upcoming.firstOrNull()
                 val following = upcoming.drop(1).take(5)
-                DepartureInfo(next, following, false)
-            } else if (tomorrowTimetable != null) {
-                // No more today, get tomorrow's first departure
-                val tomorrowFirst = tomorrowTimetable.departures
-                    .sortedBy { LocalTime.of(it.hour, it.minute) }
-                    .firstOrNull()
-                DepartureInfo(tomorrowFirst, emptyList(), true)
+                DebugConfig.debugPrint("✅ Next departure today: ${next?.toDisplayString()}")
+                DepartureInfo(next, following, 0)
+            } else if (nextTimetableInfo != null) {
+                // No more today, get next available day's first departure
+                DebugConfig.debugPrint("🌙 No more departures today, checking next available day...")
+                DebugConfig.debugPrint("📅 Next day's departures (+${nextTimetableInfo.daysAhead} days): ${nextTimetableInfo.timetable?.departures?.map { it.toDisplayString() }}")
+                val allDepartures = nextTimetableInfo.timetable?.departures
+                    ?.sortedBy { LocalTime.of(it.hour, it.minute) } ?: emptyList()
+                val nextFirst = allDepartures.firstOrNull()
+                val following = allDepartures.drop(1).take(5)
+                DebugConfig.debugPrint("✅ Next available departure: ${nextFirst?.toDisplayString()}")
+                DebugConfig.debugPrint("📋 Following departures that day: ${following.map { it.toDisplayString() }}")
+                DepartureInfo(nextFirst, following, nextTimetableInfo.daysAhead)
             } else {
-                DepartureInfo(null, emptyList(), false)
+                DebugConfig.debugPrint("❌ No timetable found in next 7 days")
+                DepartureInfo(null, emptyList(), 0)
             }
         }
     }
 
     val nextDeparture = departureInfo.departure
     val followingDepartures = departureInfo.following
-    val isNextDayDeparture = departureInfo.isNextDay
+    val daysAhead = departureInfo.daysAhead
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -272,19 +315,19 @@ fun NextDepartureScreen(
                             .padding(horizontal = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Tomorrow warning card (if showing next day's first bus)
-                        if (isNextDayDeparture) {
+                        // Future day warning card (if showing future departure)
+                        if (daysAhead > 0) {
                             item {
                                 HorizontalDivider()
                             }
 
                             item {
-                                TomorrowWarningCard()
+                                FutureDayWarningCard(daysAhead = daysAhead)
                             }
                         }
 
                         // Próxima salida section
-                        if (!isNextDayDeparture) {
+                        if (daysAhead == 0) {
                             item {
                                 HorizontalDivider()
                             }
@@ -303,7 +346,7 @@ fun NextDepartureScreen(
                             NextDeparturePill(
                                 departure = nextDeparture,
                                 currentTime = currentTime,
-                                isNextDay = isNextDayDeparture
+                                daysAhead = daysAhead
                             )
                         }
 
@@ -346,16 +389,17 @@ fun NextDepartureScreen(
 fun NextDeparturePill(
     departure: DepartureTime,
     currentTime: LocalTime,
-    isNextDay: Boolean = false
+    daysAhead: Int = 0
 ) {
     val departureTime = LocalTime.of(departure.hour, departure.minute)
 
-    // Calculate minutes until departure (accounting for next day)
-    val minutesUntil = if (isNextDay) {
-        // Calculate time until midnight + time from midnight to departure
+    // Calculate minutes until departure (accounting for days ahead)
+    val minutesUntil = if (daysAhead > 0) {
+        // Calculate time until midnight + full days + time from midnight to departure
         val minutesUntilMidnight = currentTime.until(LocalTime.MAX, ChronoUnit.MINUTES)
         val minutesFromMidnight = LocalTime.MIN.until(departureTime, ChronoUnit.MINUTES)
-        minutesUntilMidnight + minutesFromMidnight + 1 // +1 for the midnight minute
+        val fullDaysMinutes = (daysAhead - 1) * 24 * 60
+        minutesUntilMidnight + fullDaysMinutes + minutesFromMidnight + 1 // +1 for the midnight minute
     } else {
         currentTime.until(departureTime, ChronoUnit.MINUTES)
     }
@@ -520,10 +564,16 @@ suspend fun openMapsForStop(
 }
 
 /**
- * Warning card shown when displaying tomorrow's first bus.
+ * Warning card shown when displaying a future day's first bus.
  */
 @Composable
-fun TomorrowWarningCard() {
+fun FutureDayWarningCard(daysAhead: Int) {
+    val message = when (daysAhead) {
+        1 -> "No hay más autobuses hoy. Mostrando horario de mañana."
+        2 -> "No hay más autobuses hoy ni mañana. Mostrando horario de pasado mañana."
+        else -> "No hay más autobuses en los próximos días. Mostrando próximo horario disponible."
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -544,7 +594,7 @@ fun TomorrowWarningCard() {
             )
 
             Text(
-                text = "No hay más autobuses hoy. Mostrando horario de mañana.",
+                text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onTertiaryContainer
             )
