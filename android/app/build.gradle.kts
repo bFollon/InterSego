@@ -79,6 +79,9 @@ dependencies {
     // Location services
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    // Image loading
+    implementation(libs.coil.compose)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

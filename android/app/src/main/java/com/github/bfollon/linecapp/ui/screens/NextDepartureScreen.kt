@@ -55,8 +55,12 @@ import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.GeocodingService
+import com.github.bfollon.linecapp.services.StaticMapService
 import com.github.bfollon.linecapp.services.TimetableService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -328,6 +332,20 @@ fun NextDepartureScreen(
                                 }
                             }
                         )
+                    }
+
+                    // Map card showing bus stop location
+                    item {
+                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            StopMapCard(
+                                stop = stop,
+                                onMapClick = {
+                                    scope.launch {
+                                        openMapsForStop(context, geocodingService, stop)
+                                    }
+                                }
+                            )
+                        }
                     }
 
                     // Future day warning card (if showing future departure)
@@ -1018,6 +1036,164 @@ fun DepartureTimeline(
                     TimeOfDayIndicator(timeOfDay = timeOfDay)
                 }
             }
+        }
+    }
+}
+
+/**
+ * Card displaying a static map of the bus stop location.
+ *
+ * Shows an OpenStreetMap static image with a marker at the bus stop coordinates.
+ * Tapping the map opens the external maps application for directions.
+ *
+ * @param stop The bus stop to display on the map
+ * @param onMapClick Callback when the map is tapped (opens external maps)
+ * @param modifier Optional modifier for the card
+ */
+@Composable
+fun StopMapCard(
+    stop: BusStop,
+    onMapClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val geocodingService = remember { GeocodingService(context) }
+    val scope = rememberCoroutineScope()
+
+    var geocodedStop by remember { mutableStateOf(stop) }
+    var isGeocoding by remember { mutableStateOf(false) }
+    var geocodingFailed by remember { mutableStateOf(false) }
+
+    // Geocode the stop if it doesn't have coordinates
+    LaunchedEffect(stop.id) {
+        if (!stop.hasCoordinates) {
+            isGeocoding = true
+            DebugConfig.debugPrint("StopMapCard: Geocoding stop ${stop.name}")
+
+            val location = geocodingService.getCoordinatesForBusStop(stop)
+            if (location != null) {
+                geocodedStop = stop.copy(
+                    latitude = location.latitude,
+                    longitude = location.longitude
+                )
+                DebugConfig.debugPrint("StopMapCard: Successfully geocoded ${stop.name} to ${location.latitude}, ${location.longitude}")
+            } else {
+                DebugConfig.debugWarn("StopMapCard: Failed to geocode ${stop.name}")
+                geocodingFailed = true
+            }
+            isGeocoding = false
+        }
+    }
+
+    val mapHtml = if (geocodedStop.hasCoordinates) {
+        StaticMapService.getMapEmbedHtml(geocodedStop)
+    } else {
+        null
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onMapClick),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // Map title
+            Text(
+                text = "Ubicación",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            // Map view
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    isGeocoding -> {
+                        // Show loading indicator while geocoding
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Cargando mapa...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    mapHtml != null -> {
+                        // Show the embedded map in WebView
+                        AndroidView(
+                            factory = { context ->
+                                WebView(context).apply {
+                                    webViewClient = WebViewClient()
+                                    settings.javaScriptEnabled = true
+                                    settings.loadWithOverviewMode = true
+                                    settings.useWideViewPort = true
+                                }
+                            },
+                            update = { webView ->
+                                webView.loadDataWithBaseURL(
+                                    "https://www.openstreetmap.org/",
+                                    mapHtml,
+                                    "text/html",
+                                    "UTF-8",
+                                    null
+                                )
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    else -> {
+                        // Fallback if geocoding failed or URL generation fails
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Mapa no disponible",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Tap hint
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Toca para abrir en mapas",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
