@@ -55,9 +55,9 @@ import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.ui.viewinterop.AndroidView
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.layout.ContentScale
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.GeocodingService
 import com.github.bfollon.linecapp.services.StaticMapService
@@ -335,6 +335,8 @@ fun NextDepartureScreen(
                     }
 
                     // Map card showing bus stop location
+                    // TODO: Revisit map display (square aspect ratio doesn't fit current UI design)
+                    /*
                     item {
                         Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             StopMapCard(
@@ -347,6 +349,7 @@ fun NextDepartureScreen(
                             )
                         }
                     }
+                    */
 
                     // Future day warning card (if showing future departure)
                     if (daysAhead > 0) {
@@ -1043,8 +1046,8 @@ fun DepartureTimeline(
 /**
  * Card displaying a static map of the bus stop location.
  *
- * Shows an OpenStreetMap static image with a marker at the bus stop coordinates.
- * Tapping the map opens the external maps application for directions.
+ * Shows an OpenStreetMap tile image with a Material Design LocationOn icon marker
+ * at the bus stop coordinates. Tapping the map opens the external maps application.
  *
  * @param stop The bus stop to display on the map
  * @param onMapClick Callback when the map is tapped (opens external maps)
@@ -1058,11 +1061,9 @@ fun StopMapCard(
 ) {
     val context = LocalContext.current
     val geocodingService = remember { GeocodingService(context) }
-    val scope = rememberCoroutineScope()
 
     var geocodedStop by remember { mutableStateOf(stop) }
     var isGeocoding by remember { mutableStateOf(false) }
-    var geocodingFailed by remember { mutableStateOf(false) }
 
     // Geocode the stop if it doesn't have coordinates
     LaunchedEffect(stop.id) {
@@ -1079,14 +1080,13 @@ fun StopMapCard(
                 DebugConfig.debugPrint("StopMapCard: Successfully geocoded ${stop.name} to ${location.latitude}, ${location.longitude}")
             } else {
                 DebugConfig.debugWarn("StopMapCard: Failed to geocode ${stop.name}")
-                geocodingFailed = true
             }
             isGeocoding = false
         }
     }
 
-    val mapHtml = if (geocodedStop.hasCoordinates) {
-        StaticMapService.getMapEmbedHtml(geocodedStop)
+    val mapData = if (geocodedStop.hasCoordinates) {
+        StaticMapService.getStaticMapData(geocodedStop, zoom = 18)
     } else {
         null
     }
@@ -1099,9 +1099,7 @@ fun StopMapCard(
         tonalElevation = 2.dp,
         shape = MaterialTheme.shapes.large
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             // Map title
             Text(
                 text = "Ubicación",
@@ -1111,18 +1109,18 @@ fun StopMapCard(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            // Map view
+            // Map display (square container to match 256x256 tile aspect ratio)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .aspectRatio(1f) // Square container for proper tile display
                     .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 when {
                     isGeocoding -> {
-                        // Show loading indicator while geocoding
+                        // Loading state
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
@@ -1139,31 +1137,62 @@ fun StopMapCard(
                             )
                         }
                     }
-                    mapHtml != null -> {
-                        // Show the embedded map in WebView
-                        AndroidView(
-                            factory = { context ->
-                                WebView(context).apply {
-                                    webViewClient = WebViewClient()
-                                    settings.javaScriptEnabled = true
-                                    settings.loadWithOverviewMode = true
-                                    settings.useWideViewPort = true
-                                }
-                            },
-                            update = { webView ->
-                                webView.loadDataWithBaseURL(
-                                    "https://www.openstreetmap.org/",
-                                    mapHtml,
-                                    "text/html",
-                                    "UTF-8",
-                                    null
+                    mapData != null -> {
+                        // Map tile with marker overlay
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            // Background OSM tile
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .data(mapData.tileUrl)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Fit
+                            )
+
+                            // Material Design location marker icon overlay
+                            // Marker position calculation:
+                            // - Tile is 256x256 pixels, container is square (fillMaxWidth with aspectRatio 1f)
+                            // - mapData.markerX/Y are 0-256 pixel values within the tile
+                            // - When using ContentScale.Fit, the 256x256 tile fills the square container
+                            // - Scale marker from pixel coordinates (0-256) to container DP size
+                            // - Use a reasonable base size (270.dp fits screen width minus padding)
+                            val containerSizeDp = 270f // Approximate size for typical screen width with padding
+                            val markerXDp = ((mapData.markerX / 256f) * containerSizeDp).dp
+                            val markerYDp = ((mapData.markerY / 256f) * containerSizeDp).dp
+
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Ubicación de ${stop.name}",
+                                tint = Color(0xFFD32F2F), // Red marker color
+                                modifier = Modifier
+                                    .offset(
+                                        x = markerXDp - 12.dp, // Center icon horizontally (24dp width / 2)
+                                        y = markerYDp - 24.dp  // Position pin point at bottom (24dp height)
+                                    )
+                                    .size(24.dp)
+                            )
+
+                            // OSM Attribution (required by tile usage policy)
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(4.dp),
+                                color = Color.White.copy(alpha = 0.7f),
+                                shape = MaterialTheme.shapes.extraSmall
+                            ) {
+                                Text(
+                                    text = "© OpenStreetMap",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Black,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                            }
+                        }
                     }
                     else -> {
-                        // Fallback if geocoding failed or URL generation fails
+                        // Fallback when no coordinates available
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center

@@ -55,14 +55,74 @@ import com.github.bfollon.linecapp.ui.screens.RouteStopsScreen
 import com.github.bfollon.linecapp.ui.screens.TimetableScreen
 import com.github.bfollon.linecapp.ui.theme.LineCappTheme
 import kotlinx.coroutines.launch
+import coil.Coil
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.request.CachePolicy
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 
 /**
  * Main activity for LineCapp.
  *
  * Initializes services and sets up the Compose UI with navigation.
+ * Implements ImageLoaderFactory to configure Coil for OSM tile compliance.
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), ImageLoaderFactory {
     private var isInitialized by mutableStateOf(false)
+
+    /**
+     * Configure Coil ImageLoader with OSM-compliant settings.
+     *
+     * OSM Tile Usage Policy requirements:
+     * - Custom User-Agent identifying the app and contact info
+     * - HTTP caching for at least 7 days
+     * - Respect server cache headers
+     */
+    override fun newImageLoader(): ImageLoader {
+        // Custom OkHttpClient with OSM-compliant User-Agent
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", "LineCapp/1.0 (Android; +https://github.com/bfollon/linecapp; contact:bruno.follon@gmail.com)")
+                    .build()
+
+                // Log tile requests for debugging
+                DebugConfig.debugPrint("🗺️ Tile Request: ${request.url}")
+                DebugConfig.debugPrint("🗺️ User-Agent: ${request.header("User-Agent")}")
+
+                val response = chain.proceed(request)
+
+                // Log response details
+                DebugConfig.debugPrint("🗺️ Response Code: ${response.code}")
+                if (!response.isSuccessful) {
+                    DebugConfig.debugWarn("🗺️ Tile request failed: ${response.code} - ${response.message}")
+                    // Log response body if there's an error
+                    val errorBody = response.peekBody(1024).string()
+                    if (errorBody.isNotEmpty()) {
+                        DebugConfig.debugWarn("🗺️ Error Body: $errorBody")
+                    }
+                }
+
+                response
+            }
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+
+        return ImageLoader.Builder(this)
+            .okHttpClient(okHttpClient)
+            .diskCache {
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizeBytes(50 * 1024 * 1024) // 50MB cache
+                    .build()
+            }
+            .respectCacheHeaders(true) // Honor HTTP cache headers from OSM
+            .diskCachePolicy(CachePolicy.ENABLED) // Enable disk caching
+            .build()
+    }
 
     /**
      * Get list of known bus routes for update checking
@@ -157,6 +217,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         DebugConfig.debugPrint("🚀 LineCapp starting...")
+
+        // Initialize Coil with OSM-compliant ImageLoader
+        Coil.setImageLoader(newImageLoader())
 
         // Initialize network monitor
         NetworkMonitor.initialize(this)

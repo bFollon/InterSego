@@ -24,6 +24,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LineCApp"
         android:usesCleartextTraffic="true">
+        <!-- Coil ImageLoaderFactory for OSM tile compliance -->
+        <meta-data
+            android:name="coil.factory"
+            android:value="com.github.bfollon.linecapp.MainActivity" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

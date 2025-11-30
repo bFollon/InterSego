@@ -19,18 +19,19 @@
 package com.github.bfollon.linecapp.services
 
 import com.github.bfollon.linecapp.data.BusStop
+import kotlin.math.*
 
 /**
- * Service for generating static map URLs from bus stop coordinates.
+ * Service for generating static map URLs and rendering data from bus stop coordinates.
  *
- * Uses OpenStreetMap (OSM) static map tiles to display bus stop locations.
- * The generated URLs point to embeddable OSM maps with markers.
+ * Uses OpenStreetMap (OSM) tile system to display bus stop locations as static images
+ * with marker overlays.
  *
  * Usage:
  * ```kotlin
- * val mapUrl = StaticMapService.getMapImageUrl(busStop)
- * if (mapUrl != null) {
- *     // Display map using AsyncImage
+ * val mapData = StaticMapService.getStaticMapData(busStop)
+ * if (mapData != null) {
+ *     // Display tile with AsyncImage and overlay marker at calculated position
  * }
  * ```
  */
@@ -47,94 +48,118 @@ object StaticMapService {
     /**
      * Default zoom level (higher = more zoomed in)
      * OSM zoom levels: 0 (world) to 19 (building level)
-     * 16-17 is good for showing a bus stop in neighborhood context
+     * Zoom 18 shows ~150m radius with ~0.6m per pixel (street-level detail)
      */
-    private const val DEFAULT_ZOOM = 17
+    private const val DEFAULT_ZOOM = 18
 
     /**
-     * Generates an OpenStreetMap embed URL for the given bus stop.
+     * Data class containing all information needed to render a static map with marker
      *
-     * Returns an embeddable OpenStreetMap URL that should be displayed in a WebView.
-     * The URL includes a marker at the bus stop location.
-     *
-     * @param busStop The bus stop to generate a map for
-     * @param width Map image width in pixels (default: 600)
-     * @param height Map image height in pixels (default: 300)
-     * @param zoom OSM zoom level 0-19 (default: 17)
-     * @return URL string for the embedded map, or null if coordinates unavailable
+     * @param tileUrl URL to the OSM tile image (256x256 PNG)
+     * @param markerX X pixel position of marker within the tile (0-255)
+     * @param markerY Y pixel position of marker within the tile (0-255)
      */
-    fun getMapEmbedUrl(
-        busStop: BusStop,
-        width: Int = DEFAULT_WIDTH,
-        height: Int = DEFAULT_HEIGHT,
-        zoom: Int = DEFAULT_ZOOM
-    ): String? {
+    data class StaticMapData(
+        val tileUrl: String,
+        val markerX: Float,
+        val markerY: Float
+    )
+
+    /**
+     * Converts latitude/longitude coordinates to OSM tile coordinates at a given zoom level.
+     *
+     * Uses Web Mercator projection (EPSG:3857) which OSM tiles are based on.
+     *
+     * @param lat Latitude in degrees (-85.0511 to 85.0511)
+     * @param lon Longitude in degrees (-180 to 180)
+     * @param zoom OSM zoom level (0-19)
+     * @return Pair of (xtile, ytile) tile coordinates
+     */
+    fun getTileCoordinates(lat: Double, lon: Double, zoom: Int): Pair<Int, Int> {
+        val n = 1 shl zoom // 2^zoom (bit shift for efficiency)
+
+        val xtile = ((lon + 180.0) / 360.0 * n).toInt()
+        val latRad = Math.toRadians(lat)
+        val ytile = ((1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n).toInt()
+
+        return Pair(xtile, ytile)
+    }
+
+    /**
+     * Calculates the pixel position of a marker within a 256x256 OSM tile.
+     *
+     * OSM tiles are always 256x256 pixels. This function determines where within
+     * that tile the given lat/lon coordinates fall.
+     *
+     * @param lat Latitude in degrees
+     * @param lon Longitude in degrees
+     * @param zoom OSM zoom level
+     * @param tileX X coordinate of the tile containing this point
+     * @param tileY Y coordinate of the tile containing this point
+     * @return Pair of (xPixel, yPixel) position within the tile (0.0-256.0)
+     */
+    fun getMarkerPixelPosition(
+        lat: Double,
+        lon: Double,
+        zoom: Int,
+        tileX: Int,
+        tileY: Int
+    ): Pair<Float, Float> {
+        val n = 1 shl zoom // 2^zoom
+
+        // Convert lat/lon to continuous tile-space coordinates (fractional tiles)
+        val xtile = (lon + 180.0) / 360.0 * n
+        val latRad = Math.toRadians(lat)
+        val ytile = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
+
+        // Calculate pixel position within this specific tile (0-256 range)
+        val xPixel = ((xtile - tileX) * 256.0).toFloat()
+        val yPixel = ((ytile - tileY) * 256.0).toFloat()
+
+        return Pair(xPixel, yPixel)
+    }
+
+    /**
+     * Returns all data needed to render a static map with a marker for a bus stop.
+     *
+     * This is the main function to use from UI code. It combines tile URL generation
+     * and marker position calculation into a single call.
+     *
+     * @param busStop The bus stop to display
+     * @param zoom OSM zoom level (default: 18 for street-level detail)
+     * @return StaticMapData with tile URL and marker position, or null if no coordinates
+     */
+    fun getStaticMapData(busStop: BusStop, zoom: Int = DEFAULT_ZOOM): StaticMapData? {
         if (!busStop.hasCoordinates) {
-            DebugConfig.debugWarn("$TAG: Cannot generate map URL - no coordinates for stop ${busStop.name}")
+            DebugConfig.debugWarn("$TAG: Cannot generate map data - no coordinates for stop ${busStop.name}")
             return null
         }
 
         val lat = busStop.latitude!!
         val lon = busStop.longitude!!
 
-        // Using OSM embed URL with bbox and marker
-        // Calculate bounding box around the point
-        val degreesPerPixel = 360.0 / (256 * Math.pow(2.0, zoom.toDouble()))
-        val latOffset = (height / 2) * degreesPerPixel
-        val lonOffset = (width / 2) * degreesPerPixel
+        // Get tile coordinates
+        val (tileX, tileY) = getTileCoordinates(lat, lon, zoom)
 
-        val bbox = "${lon - lonOffset},${lat - latOffset},${lon + lonOffset},${lat + latOffset}"
+        // Get marker pixel position within that tile
+        val (markerX, markerY) = getMarkerPixelPosition(lat, lon, zoom, tileX, tileY)
 
-        val url = "https://www.openstreetmap.org/export/embed.html?bbox=$bbox&layer=mapnik&marker=$lat,$lon"
+        // Generate tile URL
+        val tileUrl = "https://tile.openstreetmap.org/$zoom/$tileX/$tileY.png"
 
-        DebugConfig.debugPrint("$TAG: Generated embed URL for ${busStop.name}: $url")
+        DebugConfig.debugPrint("$TAG: Generated map data for ${busStop.name}: tile=($tileX,$tileY), marker=($markerX,$markerY)")
 
-        return url
+        return StaticMapData(tileUrl, markerX, markerY)
     }
 
     /**
-     * Generates an HTML iframe snippet for embedding the map.
-     * This can be loaded directly in a WebView.
-     *
-     * @param busStop The bus stop to generate a map for
-     * @param width Map width in pixels (default: 600)
-     * @param height Map height in pixels (default: 300)
-     * @param zoom OSM zoom level 0-19 (default: 17)
-     * @return HTML string to load in WebView, or null if coordinates unavailable
-     */
-    fun getMapEmbedHtml(
-        busStop: BusStop,
-        width: Int = DEFAULT_WIDTH,
-        height: Int = DEFAULT_HEIGHT,
-        zoom: Int = DEFAULT_ZOOM
-    ): String? {
-        val embedUrl = getMapEmbedUrl(busStop, width, height, zoom) ?: return null
-
-        return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    body { margin: 0; padding: 0; }
-                    iframe { border: 0; width: 100%; height: 100%; }
-                </style>
-            </head>
-            <body>
-                <iframe src="$embedUrl"></iframe>
-            </body>
-            </html>
-        """.trimIndent()
-    }
-
-    /**
-     * Alternative: Generate a static map image URL using a tile-based approach.
+     * Generate a static map image URL using a tile-based approach.
      *
      * This creates a direct link to an OSM tile server image centered on the coordinates.
-     * Note: This doesn't show a marker, but is simpler and doesn't require embedding.
+     * Note: This doesn't show a marker - use getStaticMapData() for marker support.
      *
      * @param busStop The bus stop to generate a map for
-     * @param zoom OSM zoom level 0-19 (default: 17)
+     * @param zoom OSM zoom level 0-19 (default: 18)
      * @return URL string for the static tile image, or null if coordinates unavailable
      */
     fun getTileImageUrl(
@@ -145,12 +170,7 @@ object StaticMapService {
             return null
         }
 
-        val lat = busStop.latitude!!
-        val lon = busStop.longitude!!
-
-        // Convert lat/lon to tile coordinates
-        val xtile = ((lon + 180) / 360 * (1 shl zoom)).toInt()
-        val ytile = ((1 - Math.log(Math.tan(Math.toRadians(lat)) + 1 / Math.cos(Math.toRadians(lat))) / Math.PI) / 2 * (1 shl zoom)).toInt()
+        val (xtile, ytile) = getTileCoordinates(busStop.latitude!!, busStop.longitude!!, zoom)
 
         // Using OpenStreetMap tile server
         val url = "https://tile.openstreetmap.org/$zoom/$xtile/$ytile.png"
