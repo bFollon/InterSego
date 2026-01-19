@@ -366,19 +366,19 @@ fun NextDepartureScreen(
                     }
 
                     // Próxima salida section header
-                    item {
-                        Text(
-                            text = "Próxima salida",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(horizontal = 20.dp)
-                        )
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+//                    item {
+//                        Text(
+//                            text = "Próxima salida",
+//                            style = MaterialTheme.typography.titleLarge,
+//                            fontWeight = FontWeight.Bold,
+//                            color = MaterialTheme.colorScheme.onSurface,
+//                            modifier = Modifier.padding(horizontal = 20.dp)
+//                        )
+//                    }
+//
+//                    item {
+//                        Spacer(modifier = Modifier.height(8.dp))
+//                    }
 
                     // Next departure with circular progress
                     item {
@@ -766,6 +766,32 @@ fun TimeOfDayIndicator(
 }
 
 /**
+ * Badge displaying departure time in a styled chip format.
+ * Reuses the visual style of TimeOfDayIndicator for consistency.
+ */
+@Composable
+fun DepartureTimeBadge(
+    time: String,  // e.g., "14:30"
+    modifier: Modifier = Modifier
+) {
+    val color = MaterialTheme.colorScheme.primary
+
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = color.copy(alpha = 0.15f)
+    ) {
+        Text(
+            text = time,
+            style = MaterialTheme.typography.titleLarge,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+    }
+}
+
+/**
  * Circular progress indicator around a time display.
  */
 @Composable
@@ -879,7 +905,7 @@ fun StopHeroHeader(
 }
 
 /**
- * Enhanced next departure display with circular progress and time-of-day indicator.
+ * Compact next departure display with badge-styled time and countdown.
  */
 @Composable
 fun NextDepartureWithProgress(
@@ -900,11 +926,6 @@ fun NextDepartureWithProgress(
         currentTime.until(departureTime, ChronoUnit.MINUTES)
     }
 
-    // Calculate progress (assuming max 60 minutes for full circle)
-    val progress = if (minutesUntil >= 60) 1f else minutesUntil.toFloat() / 60f
-
-    val timeOfDay = getTimeOfDay(departure.hour)
-
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -914,18 +935,24 @@ fun NextDepartureWithProgress(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Time of day indicator
-            TimeOfDayIndicator(timeOfDay = timeOfDay)
+            // Top row: "Próxima salida:" + time badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Próxima salida:",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-            // Circular progress clock
-            CircularProgressClock(
-                time = departure.toDisplayString(),
-                progress = progress
-            )
+                DepartureTimeBadge(time = departure.toDisplayString())
+            }
 
             // Countdown text
             Text(
@@ -940,9 +967,8 @@ fun NextDepartureWithProgress(
                         else "Sale en ${hours}h ${mins}m"
                     }
                 },
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
 
             // Notes if any
@@ -950,8 +976,7 @@ fun NextDepartureWithProgress(
                 Text(
                     text = departure.notes,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
         }
