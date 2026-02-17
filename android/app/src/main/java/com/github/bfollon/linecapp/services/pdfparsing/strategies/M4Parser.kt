@@ -23,8 +23,12 @@ import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.BusTimetableParser
+import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
+import com.github.bfollon.linecapp.services.pdfparsing.ParserCapabilities
+import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.PDFParsingException
 import com.github.bfollon.linecapp.services.pdfparsing.PDFTextDecoder
+import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
@@ -45,10 +49,14 @@ import java.time.format.DateTimeFormatter
  * NOTE: Linecar has updated their PDFs:
  * - Old PDFs (2024/07): Broken font encoding (needs +29 character offset decoding)
  * - New PDFs (2025/10): Standard encoding (works with iText out of the box)
- *
- * TODO: Implement actual parsing logic to extract timetables from PDF text
  */
-class M4Parser : BusTimetableParser {
+class M4Parser : CapableParser, RouteStopsProvider {
+
+    override val capabilities = ParserCapabilities(
+        supportedRoutes = setOf("M4"),
+        mode = ParserMode.PRODUCTION,
+        version = "1.0"
+    )
 
     /**
      * Internal state used during parsing to track day type and accumulate timetables
@@ -213,7 +221,15 @@ class M4Parser : BusTimetableParser {
     }
 
     override fun canParse(routeId: String): Boolean {
-        return routeId.equals("M4", ignoreCase = true)
+        return routeId in capabilities.supportedRoutes
+    }
+
+    override fun getRoutesForId(routeId: String): List<List<BusStop>> {
+        return if (routeId.equals("M4", ignoreCase = true)) {
+            listOf(m4RegularRoute, m4ReverseRoute)
+        } else {
+            emptyList()
+        }
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {

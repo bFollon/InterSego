@@ -73,7 +73,7 @@ class PDFURLRepository private constructor(private val context: Context) {
             "M3" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf",
             "M4" to "https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf",
             "M5" to "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf",
-            "M6" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M6.pdf",
+            "M6" to "https://www.linecar.es/wp-content/uploads/2025/12/M6.pdf",
             "M7" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf",
             "M8" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf"
         )

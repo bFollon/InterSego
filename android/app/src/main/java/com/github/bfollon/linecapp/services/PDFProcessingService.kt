@@ -18,11 +18,16 @@
 package com.github.bfollon.linecapp.services
 
 import android.content.Context
+import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.repositories.PDFURLRepository
 import com.github.bfollon.linecapp.services.pdfparsing.BusTimetableParser
+import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
+import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.PDFParsingException
+import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
 import com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser
+import com.github.bfollon.linecapp.services.pdfparsing.strategies.M6Parser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -48,20 +53,32 @@ class PDFProcessingService(private val context: Context) {
     init {
         // Register all available parsers
         registerParser(M4Parser())
+        registerParser(M6Parser())
 
         DebugConfig.debugPrint("PDFProcessingService: Initialized with ${parsers.size} parsers")
     }
 
     /**
      * Register a parser strategy
+     *
+     * If parser implements CapableParser, it automatically registers for all
+     * routes declared in its capabilities. Otherwise, falls back to legacy
+     * manual registration.
      */
     private fun registerParser(parser: BusTimetableParser) {
-        // Find all routes this parser can handle
-        // For now, we'll register based on known route IDs
-        // In the future, this could be more dynamic
-        if (parser.canParse("M4")) {
-            parsers["M4"] = parser
-            DebugConfig.debugPrint("PDFProcessingService: Registered parser for M4")
+        if (parser is CapableParser) {
+            // Dynamic registration based on capabilities
+            parser.capabilities.supportedRoutes.forEach { routeId ->
+                parsers[routeId] = parser
+                val modeLabel = when (parser.capabilities.mode) {
+                    ParserMode.DEBUG -> "DEBUG"
+                    ParserMode.PRODUCTION -> "PRODUCTION"
+                }
+                DebugConfig.debugPrint("PDFProcessingService: Registered $modeLabel parser for $routeId")
+            }
+        } else {
+            // Legacy parser - manual registration fallback
+            DebugConfig.debugWarn("PDFProcessingService: Parser ${parser::class.simpleName} does not implement CapableParser")
         }
     }
 
@@ -119,9 +136,41 @@ class PDFProcessingService(private val context: Context) {
     }
 
     /**
+     * Check if a route is available (alias for hasParserFor)
+     */
+    fun isRouteAvailable(routeId: String): Boolean {
+        return hasParserFor(routeId)
+    }
+
+    /**
      * Get list of routes that have parsers
      */
     fun getSupportedRoutes(): List<String> {
         return parsers.keys.toList()
+    }
+
+    /**
+     * Get the operating mode of a parser for a route
+     *
+     * @param routeId Route ID to query
+     * @return ParserMode if parser exists and is CapableParser, null otherwise
+     */
+    fun getParserMode(routeId: String): ParserMode? {
+        return (parsers[routeId] as? CapableParser)?.capabilities?.mode
+    }
+
+    /**
+     * Get route stop definitions from parser
+     *
+     * @param routeId Route ID to query
+     * @return List of route variations (regular, reverse), each containing BusStop list
+     */
+    fun getRoutesForNavigation(routeId: String): List<List<BusStop>> {
+        val parser = parsers[routeId]
+        return if (parser is RouteStopsProvider) {
+            parser.getRoutesForId(routeId)
+        } else {
+            emptyList()
+        }
     }
 }

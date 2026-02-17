@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -252,15 +253,19 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             pdfCacheManager.checkForUpdatesIfNeeded(allRoutes)
 
             // Mark initialization as complete
+            DebugConfig.debugPrint("🔧 Setting isInitialized = true...")
             isInitialized = true
-            DebugConfig.debugPrint("✅ Services initialized")
+            DebugConfig.debugPrint("✅ Services initialized - isInitialized = $isInitialized")
         }
 
         setContent {
             LineCappTheme {
+                DebugConfig.debugPrint("🔄 setContent recomposing - isInitialized = $isInitialized")
                 if (isInitialized) {
+                    DebugConfig.debugPrint("✅ Calling AppNavigation()")
                     AppNavigation()
                 } else {
+                    DebugConfig.debugPrint("⏳ Showing LoadingScreen")
                     LoadingScreen()
                 }
             }
@@ -290,6 +295,8 @@ fun LoadingScreen() {
  */
 @Composable
 fun AppNavigation() {
+    com.github.bfollon.linecapp.services.DebugConfig.debugPrint("🎯 AppNavigation composing...")
+
     val navController = rememberNavController()
 
     // Get list of routes once
@@ -298,6 +305,24 @@ fun AppNavigation() {
         (context as MainActivity).getKnownRoutes()
     }
 
+    // Create PDFProcessingService for dynamic parser queries
+    com.github.bfollon.linecapp.services.DebugConfig.debugPrint("🔧 About to create PDFProcessingService...")
+    val pdfProcessingService = remember {
+        com.github.bfollon.linecapp.services.DebugConfig.debugPrint("🔧 Inside remember block - creating PDFProcessingService...")
+        try {
+            val service = com.github.bfollon.linecapp.services.PDFProcessingService(context)
+            com.github.bfollon.linecapp.services.DebugConfig.debugPrint("✅ PDFProcessingService created successfully")
+            service
+        } catch (e: Exception) {
+            com.github.bfollon.linecapp.services.DebugConfig.debugError("❌ Failed to create PDFProcessingService", e)
+            throw e
+        }
+    }
+    com.github.bfollon.linecapp.services.DebugConfig.debugPrint("🔧 PDFProcessingService variable assigned")
+
+    // Force service initialization and log available routes
+    com.github.bfollon.linecapp.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${pdfProcessingService.getSupportedRoutes()}")
+
     NavHost(
         navController = navController,
         startDestination = "route_selection"
@@ -305,6 +330,7 @@ fun AppNavigation() {
         composable("route_selection") {
             RouteSelectionScreen(
                 routes = routes,
+                pdfProcessingService = pdfProcessingService,
                 onRouteSelected = { route ->
                     navController.navigate("route_stops/${route.id}")
                 }
@@ -315,14 +341,28 @@ fun AppNavigation() {
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
+            // Get route definitions from parser dynamically
+            val routeVariations = pdfProcessingService.getRoutesForNavigation(routeId)
+            val regularRoute = routeVariations.getOrNull(0) ?: emptyList()
+            val reverseRoute = routeVariations.getOrNull(1) ?: emptyList()
+
+            // Route-specific direction labels (TODO: make this dynamic from parser)
+            val (regularLabel, reverseLabel) = when (routeId) {
+                "M4" -> "Lastrilla → Sotillo" to "Sotillo → Lastrilla"
+                "M6" -> "M6 Regular" to "M6 Reverse"  // Placeholder
+                else -> "Regular" to "Reverse"
+            }
+
             RouteStopsScreen(
                 route = route,
+                regularRoute = regularRoute,
+                reverseRoute = reverseRoute,
+                regularDirectionLabel = regularLabel,
+                reverseDirectionLabel = reverseLabel,
                 onBack = {
                     navController.popBackStack()
                 },
                 onStopSelected = { stop, direction ->
-                    // Navigate to next departure screen for this stop with direction
-                    // We'll pass the stop ID and reconstruct from M4Parser in the destination
                     navController.navigate("next_departure/${route.id}/${stop.id}/$direction")
                 }
             )
@@ -334,17 +374,11 @@ fun AppNavigation() {
             val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Find the stop from M4Parser by ID
-            val stop = when (routeId) {
-                "M4" -> {
-                    // Check both regular and reverse routes
-                    (com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser.m4RegularRoute +
-                     com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser.m4ReverseRoute)
-                        .find { it.id == stopId }
-                }
-                // Add other routes here as parsers are implemented
-                else -> null
-            } ?: return@composable
+            // Find the stop from parser by ID (dynamic lookup)
+            val stop = pdfProcessingService.getRoutesForNavigation(routeId)
+                .flatten()
+                .find { it.id == stopId }
+                ?: return@composable
 
             NextDepartureScreen(
                 route = route,

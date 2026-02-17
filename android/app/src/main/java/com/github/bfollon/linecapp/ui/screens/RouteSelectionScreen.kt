@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.linecapp.data.BusRoute
+import com.github.bfollon.linecapp.services.PDFProcessingService
 
 /**
  * Screen for selecting a bus route from the list of available routes.
@@ -43,6 +44,7 @@ import com.github.bfollon.linecapp.data.BusRoute
 @Composable
 fun RouteSelectionScreen(
     routes: List<BusRoute>,
+    pdfProcessingService: PDFProcessingService,
     onRouteSelected: (BusRoute) -> Unit
 ) {
     Scaffold(
@@ -78,11 +80,12 @@ fun RouteSelectionScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(routes) { route ->
+                    val isAvailable = pdfProcessingService.isRouteAvailable(route.id)
                     RouteCard(
                         route = route,
-                        isAvailable = route.id == "M4", // Only M4 has a parser
+                        isAvailable = isAvailable,
                         onClick = {
-                            if (route.id == "M4") {
+                            if (isAvailable) {
                                 onRouteSelected(route)
                             }
                         }

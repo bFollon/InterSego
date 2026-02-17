@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import com.github.bfollon.linecapp.R
 import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
-import com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser
 
 /**
  * Screen displaying bus stops along a route with visual route line.
@@ -49,6 +48,10 @@ import com.github.bfollon.linecapp.services.pdfparsing.strategies.M4Parser
 @Composable
 fun RouteStopsScreen(
     route: BusRoute,
+    regularRoute: List<BusStop>,
+    reverseRoute: List<BusStop>,
+    regularDirectionLabel: String,
+    reverseDirectionLabel: String,
     onBack: () -> Unit,
     onStopSelected: (BusStop, String) -> Unit  // Now passes stop AND direction
 ) {
@@ -57,22 +60,22 @@ fun RouteStopsScreen(
 
     // Get the appropriate stop list based on direction
     val stops = if (isRegularDirection) {
-        M4Parser.m4RegularRoute
+        regularRoute
     } else {
-        M4Parser.m4ReverseRoute
+        reverseRoute
     }
 
     // Determine direction labels and direction string for timetables
     val directionLabel = if (isRegularDirection) {
-        "La Lastrilla → El Sotillo"
+        regularDirectionLabel
     } else {
-        "El Sotillo → La Lastrilla"
+        reverseDirectionLabel
     }
 
     val directionString = if (isRegularDirection) {
-        "Lastrilla → Sotillo"
+        regularDirectionLabel
     } else {
-        "Sotillo → Lastrilla"
+        reverseDirectionLabel
     }
 
     Scaffold(

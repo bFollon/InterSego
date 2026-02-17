@@ -24,6 +24,13 @@ import com.github.bfollon.linecapp.data.BusTimetable
  *
  * Each route may have a different PDF layout, so we use the Strategy Pattern
  * to implement route-specific parsers.
+ *
+ * **Enhanced Pattern with CapableParser:**
+ * Parsers can implement [CapableParser] to declare their capabilities (supported routes,
+ * operating mode). This enables automatic discovery and registration without hardcoding.
+ *
+ * @see CapableParser
+ * @see RouteStopsProvider
  */
 interface BusTimetableParser {
 
