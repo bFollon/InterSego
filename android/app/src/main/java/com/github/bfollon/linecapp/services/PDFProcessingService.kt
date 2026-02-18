@@ -160,6 +160,16 @@ class PDFProcessingService(private val context: Context) {
     }
 
     /**
+     * Check if a parser is in DEBUG mode
+     *
+     * @param routeId Route ID to check
+     * @return true if parser is in DEBUG mode, false otherwise
+     */
+    fun isDebugParser(routeId: String): Boolean {
+        return getParserMode(routeId) == ParserMode.DEBUG
+    }
+
+    /**
      * Get route stop definitions from parser
      *
      * @param routeId Route ID to query

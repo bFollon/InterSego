@@ -71,7 +71,6 @@ import java.util.concurrent.TimeUnit
  * Implements ImageLoaderFactory to configure Coil for OSM tile compliance.
  */
 class MainActivity : ComponentActivity(), ImageLoaderFactory {
-    private var isInitialized by mutableStateOf(false)
 
     /**
      * Configure Coil ImageLoader with OSM-compliant settings.
@@ -235,30 +234,33 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         val pdfCacheManager = PDFCacheManager.getInstance(this)
         pdfCacheManager.initialize()
 
-        // Initialize PDF URL repository and scrape URLs
-        val pdfUrlRepository = PDFURLRepository.getInstance(this)
-        lifecycleScope.launch {
-            DebugConfig.debugPrint("🌐 Initializing PDF URLs...")
-            val success = pdfUrlRepository.initializeURLs()
-            if (success) {
-                DebugConfig.debugPrint("✅ PDF URLs initialized successfully")
-                DebugConfig.debugPrint(pdfUrlRepository.getStatus())
-            } else {
-                DebugConfig.debugWarn("⚠️ PDF URL initialization failed, using fallback URLs")
+        setContent {
+            // State for tracking initialization - created in composition context
+            var isInitialized by remember { mutableStateOf(false) }
+
+            // Perform async initialization in LaunchedEffect
+            LaunchedEffect(Unit) {
+                DebugConfig.debugPrint("🌐 Initializing PDF URLs...")
+                val pdfUrlRepository = PDFURLRepository.getInstance(this@MainActivity)
+                val success = pdfUrlRepository.initializeURLs()
+                if (success) {
+                    DebugConfig.debugPrint("✅ PDF URLs initialized successfully")
+                    DebugConfig.debugPrint(pdfUrlRepository.getStatus())
+                } else {
+                    DebugConfig.debugWarn("⚠️ PDF URL initialization failed, using fallback URLs")
+                }
+
+                // Check for PDF updates (respects 24-hour limit)
+                DebugConfig.debugPrint("🔍 Checking for PDF updates...")
+                val allRoutes = getKnownRoutes()
+                pdfCacheManager.checkForUpdatesIfNeeded(allRoutes)
+
+                // Mark initialization as complete
+                DebugConfig.debugPrint("🔧 Setting isInitialized = true...")
+                isInitialized = true
+                DebugConfig.debugPrint("✅ Services initialized - isInitialized = $isInitialized")
             }
 
-            // Check for PDF updates (respects 24-hour limit)
-            DebugConfig.debugPrint("🔍 Checking for PDF updates...")
-            val allRoutes = getKnownRoutes()
-            pdfCacheManager.checkForUpdatesIfNeeded(allRoutes)
-
-            // Mark initialization as complete
-            DebugConfig.debugPrint("🔧 Setting isInitialized = true...")
-            isInitialized = true
-            DebugConfig.debugPrint("✅ Services initialized - isInitialized = $isInitialized")
-        }
-
-        setContent {
             LineCappTheme {
                 DebugConfig.debugPrint("🔄 setContent recomposing - isInitialized = $isInitialized")
                 if (isInitialized) {
