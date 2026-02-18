@@ -221,7 +221,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
     }
 
     override fun canParse(routeId: String): Boolean {
-        return routeId in capabilities.supportedRoutes
+        return capabilities.supportedRoutes.any { it.equals(routeId, ignoreCase = true) }
     }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {

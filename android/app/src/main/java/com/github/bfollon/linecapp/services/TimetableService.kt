@@ -92,11 +92,9 @@ class TimetableService(private val context: Context) {
         } catch (e: Exception) {
             DebugConfig.debugError("TimetableService: Failed to parse PDF for $routeId", e)
 
-            // Return empty list and cache it to avoid repeated failures
-            val emptyList = emptyList<BusTimetable>()
-            cachedTimetables[routeId] = emptyList
-
-            return emptyList
+            // Don't cache failures - allow retries on next attempt
+            // Return empty list to prevent crashes in UI
+            return emptyList()
         }
     }
 

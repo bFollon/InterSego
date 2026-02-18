@@ -64,7 +64,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     override fun canParse(routeId: String): Boolean {
-        return routeId in capabilities.supportedRoutes
+        return capabilities.supportedRoutes.any { it.equals(routeId, ignoreCase = true) }
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {
@@ -76,10 +76,10 @@ class M6Parser : CapableParser, RouteStopsProvider {
             throw PDFParsingException("PDF file not found: $pdfPath")
         }
 
-        try {
-            val pdfReader = PdfReader(file)
-            val pdfDocument = PdfDocument(pdfReader)
+        val pdfReader = PdfReader(file)
+        val pdfDocument = PdfDocument(pdfReader)
 
+        try {
             // Extract and print all text lines
             for (pageNum in 1..pdfDocument.numberOfPages) {
                 DebugConfig.debugPrint("M6Parser: ===== PAGE $pageNum =====")
@@ -116,8 +116,6 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 }
             }
 
-            pdfDocument.close()
-
             DebugConfig.debugPrint("M6Parser: ===== END OF PDF =====")
             DebugConfig.debugPrint("M6Parser: DEBUG MODE - Returning empty list (no timetables)")
 
@@ -127,6 +125,9 @@ class M6Parser : CapableParser, RouteStopsProvider {
         } catch (e: Exception) {
             DebugConfig.debugError("M6Parser: Error parsing PDF", e)
             throw PDFParsingException("Failed to parse M6 PDF: ${e.message}", e)
+        } finally {
+            // Always close PDF resources, even on exception
+            pdfDocument.close()
         }
     }
 
