@@ -27,11 +27,15 @@ import java.util.UUID
 data class BusStop(
     val id: String = UUID.randomUUID().toString(),
     val name: String,                   // "Plaza Mayor"
+    val area: String? = null,                  // San Cristóbal de Segovia
+    val details: String? = null,                  // Junto a C/X
     val address: String,                // Full address
     val latitude: Double? = null,       // GPS latitude (nullable until geocoded)
     val longitude: Double? = null,      // GPS longitude (nullable until geocoded)
     val routesServed: List<String> = emptyList(),  // List of route IDs that serve this stop
-    val stopCode: String? = null        // Optional official stop code
+    val stopCode: String? = null,        // Optional official stop code
+    val coordinates: String? = null,
+    val isApproximate: Boolean = false
 ) {
     /**
      * Check if stop has valid coordinates

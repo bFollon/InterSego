@@ -49,18 +49,209 @@ class M6Parser : CapableParser, RouteStopsProvider {
     )
 
     companion object {
-        // Minimal route definition for future implementation
-        // TODO: Define actual M6 route stops after analyzing PDF
         private object Stops {
             val AZOGUEJO = BusStop(
                 name = "Azoguejo",
                 address = "Pl. Artillería, 40001 Segovia"
             )
+            val DELICIAS = BusStop(
+                name = "Delicias",
+                address = "",
+                coordinates = "40.954500, -4.108889",
+                isApproximate = true,
+            )
+            val MONTECORREDORES = BusStop(
+                name = "Montecorredores",
+                address = "",
+                coordinates = "40.952000, -4.097278",
+                isApproximate = true,
+            )
+            val SANCRIS = BusStop(
+                name = "San Cristóbal de Segovia",
+                address = "",
+                coordinates = "40.952056, -4.081139",
+            )
+            val SANCRIS_IGLESIA = BusStop(
+                name = "Iglesia",
+                area = "San Cristóbal de segovia",
+                address = "",
+                coordinates = "40.951733, -4.077499",
+                isApproximate = true,
+            )
+            val SANCRIS_ROTONDA = BusStop(
+                name = "Rotonda",
+                area = "San Cristóbal de segovia",
+                address = "",
+                coordinates = "40.951224, -4.073449",
+                isApproximate = true,
+            )
+            val SONSOTO = BusStop(
+                name = "Potro",
+                area = "Sonsoto",
+                address = "",
+                coordinates = "40.954774, -4.040524",
+            )
+            val SONSOTO_2 = BusStop(
+                name = "Sonsoto 2",
+                details = "Junto a C/ Peñas lisas",
+                area = "Sonsoto",
+                address = "",
+                coordinates = "40.957470, -4.039154",
+                isApproximate = true,
+            )
+            val TRESCASAS = BusStop(
+                name = "Plaza de la constitución",
+                area = "Trescasas",
+                address = "",
+                coordinates = "40.961834, -4.037367",
+            )
+            val TRESCASAS_2 = BusStop(
+                name = "Trescasas 2",
+                area = "Trescasas",
+                address = "",
+                coordinates = "40.963899, -4.034776",
+                isApproximate = true,
+            )
+            val CABANILLAS = BusStop(
+                name = "Cabanillas",
+                address = "",
+                coordinates = "40.974402, -4.028241"
+            )
+            val TORRECABALLEROS = BusStop(
+                name = "Torrecaballeros",
+                address = "",
+                coordinates = "40.991880, -4.022848"
+            )
+            val TORRECABALLEROS_2 = BusStop(
+                name = "Torrecaballeros 2",
+                details = "Junto a la taberna del Rancho",
+                address = "",
+                coordinates = "40.995364, -4.021688",
+                isApproximate = true,
+            )
+            val TORRECABALLEROS_3 = BusStop(
+                name = "Torrecaballeros 3",
+                details = "En carretera hacia Turégano",
+                address = "",
+                coordinates = "40.999144, -4.020855",
+                isApproximate = true,
+            )
+            val ANDRES_LAGUNA = BusStop(
+                name = "IES Andres Laguna",
+                address = "",
+                coordinates = "40.939106, -4.115582",
+            )
+            val LA_PISTA = BusStop(
+                name = "Glorieta La Pista",
+                details = "Glorieta del Ballenoil",
+                address = "",
+                coordinates = "40.937354, -4.111411",
+            )
+            val HERMANITAS = BusStop(
+                name = "Residencia Hermanitas de los pobres",
+                address = "",
+                coordinates = "40.944234, -4.110012",
+            )
+            val ESTACION_BUS = BusStop(
+                name = "Estación de Autobuses de Segovia",
+                address = "Pl. de la Estación de Autobuses, 3, 40002 Segovia",
+                coordinates = "40.944768, -4.121823"
+            )
+            val PLAZA_TOROS = BusStop(
+                name = "Plaza de Toros",
+                address = "",
+                coordinates = "40.942093, -4.107603",
+            )
+            val PALAZUELOS = BusStop(
+                name = "Palazuelos",
+                address = "",
+                coordinates = "40.931068, -4.064340",
+            )
+            val PALAZUELOS_COLEGIO = BusStop(
+                name = "Colegio",
+                area = "Palazuelos",
+                address = "",
+                coordinates = "40.933921, -4.063495",
+                isApproximate = true,
+            )
+            val TABANERA = BusStop(
+                name = "Tabanera",
+                address = "",
+                coordinates = "40.934336, -4.067014",
+            )
+            val TABANERA_2 = BusStop(
+                name = "Tabanera 2",
+                address = "",
+                coordinates = "40.937491, -4.065818",
+            )
+
+            val JARDINILLOS = BusStop(
+                name = "Jardinillos de San Roque",
+                details = "Frente a Policía Nacional",
+                address = "",
+                coordinates = "40.944361, -4.120831",
+            )
         }
 
-        val m6Route = listOf(
-            Stops.AZOGUEJO
-        )
+        object Routes {
+            object Weekday {
+                val regularRoute = setOf(
+                    Stops.AZOGUEJO,
+                    Stops.DELICIAS,
+                    Stops.MONTECORREDORES,
+                    Stops.SANCRIS,
+                    Stops.SANCRIS_IGLESIA,
+                    Stops.SANCRIS_ROTONDA,
+                    Stops.SONSOTO,
+                    Stops.SONSOTO_2,
+                    Stops.TRESCASAS,
+                    Stops.TRESCASAS_2,
+                    Stops.CABANILLAS,
+                    Stops.TORRECABALLEROS,
+                    Stops.TORRECABALLEROS_2,
+                    Stops.TORRECABALLEROS_3,
+                )
+                val regularReversed = regularRoute.reversed()
+
+                val extendedRoute = setOf(
+                    Stops.ANDRES_LAGUNA,
+                    Stops.LA_PISTA,
+                    Stops.HERMANITAS,
+                ) + regularRoute
+
+                val busStationRoute = setOf(
+                    Stops.ESTACION_BUS,
+                    Stops.ANDRES_LAGUNA,
+                    Stops.LA_PISTA,
+                    Stops.PLAZA_TOROS,
+                    Stops.PALAZUELOS,
+                    Stops.PALAZUELOS_COLEGIO,
+                    Stops.TABANERA,
+                    Stops.TABANERA_2
+                ) + regularRoute -
+                        Stops.AZOGUEJO -
+                        Stops.DELICIAS -
+                        Stops.MONTECORREDORES -
+                        Stops.SANCRIS +
+                        Stops.DELICIAS +
+                        Stops.AZOGUEJO
+
+                val extendedRouteReversed = extendedRoute.reversed()
+            }
+
+            object Saturday {
+                val saturdayRoute = Weekday.busStationRoute
+
+                val saturdayRouteReversed  = saturdayRoute.reversed() + Stops.JARDINILLOS
+            }
+
+            object Sunday {
+                val sundayRoute = Weekday.busStationRoute
+
+                val sundayRouteReversed = sundayRoute.reversed()
+            }
+        }
+
     }
 
     override fun canParse(routeId: String): Boolean {
@@ -129,6 +320,26 @@ class M6Parser : CapableParser, RouteStopsProvider {
             // Always close PDF resources, even on exception
             pdfDocument.close()
         }
+    }
+
+    /**
+     * Parse M4 timetables from decoded PDF text
+     *
+     * @param lines The decoded text lines from the PDF
+     * @param routeId The route ID (M4)
+     * @return List of BusTimetable objects grouped by (stop, dayType)
+     */
+    private fun parseM6Timetables(lines: List<String>): List<BusTimetable> {
+        DebugConfig.debugPrint("M4Parser: Starting timetable parsing for ${lines.size} lines")
+
+        val timetables = parseTimeTable(lines)
+
+        DebugConfig.debugPrint("M4Parser: Parsed ${timetables.size} timetables")
+        return timetables
+    }
+
+    private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
+        
     }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
