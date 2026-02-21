@@ -19,6 +19,7 @@ package com.github.bfollon.linecapp.services.pdfparsing.strategies
 
 import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.BusStop
+import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
 import com.github.bfollon.linecapp.services.pdfparsing.ParserCapabilities
@@ -46,6 +47,22 @@ class M6Parser : CapableParser, RouteStopsProvider {
         supportedRoutes = setOf("M6"),
         mode = ParserMode.DEBUG,
         version = "0.1-debug"
+    )
+
+    private data class ParsingState(
+        val regularRouteWeekdayTimetables: List<BusTimetable>,
+        val reversedRegularRouteWeekdayTimetables: List<BusTimetable>,
+
+        val extendedRouteWeekdayTimetables: List<BusTimetable>,
+        val reversedExtendedRouteWeekdayTimetables: List<BusTimetable>,
+
+        val busStationRouteWeekdayTimetables: List<BusTimetable>,
+
+        val saturdayRouteTimetables: List<BusTimetable>,
+        val reversedSaturdayRouteTimetables: List<BusTimetable>,
+
+        val sundayRouteTimetables: List<BusTimetable>,
+        val reversedSundayRouteTimetables: List<BusTimetable>,
     )
 
     companion object {
@@ -195,7 +212,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
         object Routes {
             object Weekday {
-                val regularRoute = setOf(
+                val regular = setOf(
                     Stops.AZOGUEJO,
                     Stops.DELICIAS,
                     Stops.MONTECORREDORES,
@@ -211,15 +228,15 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     Stops.TORRECABALLEROS_2,
                     Stops.TORRECABALLEROS_3,
                 )
-                val regularReversed = regularRoute.reversed()
+                val reversed = regular.reversed()
 
-                val extendedRoute = setOf(
+                val extended = setOf(
                     Stops.ANDRES_LAGUNA,
                     Stops.LA_PISTA,
                     Stops.HERMANITAS,
-                ) + regularRoute
+                ) + regular
 
-                val busStationRoute = setOf(
+                val busStation = setOf(
                     Stops.ESTACION_BUS,
                     Stops.ANDRES_LAGUNA,
                     Stops.LA_PISTA,
@@ -228,7 +245,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     Stops.PALAZUELOS_COLEGIO,
                     Stops.TABANERA,
                     Stops.TABANERA_2
-                ) + regularRoute -
+                ) + regular -
                         Stops.AZOGUEJO -
                         Stops.DELICIAS -
                         Stops.MONTECORREDORES -
@@ -236,19 +253,19 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         Stops.DELICIAS +
                         Stops.AZOGUEJO
 
-                val extendedRouteReversed = extendedRoute.reversed()
+                val extendedReversed = extended.reversed()
             }
 
             object Saturday {
-                val saturdayRoute = Weekday.busStationRoute
+                val regular = Weekday.busStation
 
-                val saturdayRouteReversed  = saturdayRoute.reversed() + Stops.JARDINILLOS
+                val reversed  = regular.reversed() + Stops.JARDINILLOS
             }
 
             object Sunday {
-                val sundayRoute = Weekday.busStationRoute
+                val regular = Weekday.busStation
 
-                val sundayRouteReversed = sundayRoute.reversed()
+                val reversed = regular.reversed()
             }
         }
 
@@ -338,13 +355,47 @@ class M6Parser : CapableParser, RouteStopsProvider {
         return timetables
     }
 
+    /**
+     * Create initial empty timetables for a route
+     */
+    private fun createInitialTimetables(stops: List<BusStop>, dayType: DayType, direction: String): List<BusTimetable> {
+        return stops.map { stop ->
+            BusTimetable(
+                routeId = "M6",
+                stopId = stop.name,
+                dayType = dayType,
+                direction = direction,
+                departures = emptyList()
+            )
+        }
+    }
+
     private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
-        
+        val initialState = ParsingState(
+            regularRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.regular.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
+            reversedRegularRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.reversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
+
+            extendedRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.extended.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
+            reversedExtendedRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.extendedReversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
+
+            busStationRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.busStation.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
+
+            saturdayRouteTimetables = createInitialTimetables(Routes.Saturday.regular.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
+            reversedSaturdayRouteTimetables = createInitialTimetables(Routes.Saturday.reversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
+            sundayRouteTimetables = createInitialTimetables(Routes.Sunday.regular.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
+            reversedSundayRouteTimetables = createInitialTimetables(Routes.Sunday.reversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
+        )
+
+//        lines.fold(initialState) { state, line ->
+//            when(line) ->
+//        }
+
+        return emptyList()
     }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
         return if (routeId.equals("M6", ignoreCase = true)) {
-            listOf(m6Route)
+            listOf(Routes.Weekday.regular.toList())
         } else {
             emptyList()
         }
