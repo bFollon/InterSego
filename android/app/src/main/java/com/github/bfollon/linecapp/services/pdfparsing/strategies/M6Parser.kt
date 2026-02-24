@@ -64,7 +64,9 @@ class M6Parser : CapableParser, RouteStopsProvider {
     )
 
     data class StopCluster(val stops: List<BusStop>) {
-        init { require(stops.isNotEmpty()) }
+        init {
+            require(stops.isNotEmpty())
+        }
     }
 
     data class Route(
@@ -219,25 +221,53 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 val regular = Route(
                     clusters = listOf(
                         StopCluster(listOf(Stops.AZOGUEJO, Stops.DELICIAS, Stops.MONTECORREDORES)),
-                        StopCluster(listOf(Stops.SANCRIS, Stops.SANCRIS_IGLESIA, Stops.SANCRIS_ROTONDA)),
+                        StopCluster(
+                            listOf(
+                                Stops.SANCRIS,
+                                Stops.SANCRIS_IGLESIA,
+                                Stops.SANCRIS_ROTONDA
+                            )
+                        ),
                         StopCluster(listOf(Stops.SONSOTO, Stops.SONSOTO_2)),
                         StopCluster(listOf(Stops.TRESCASAS, Stops.TRESCASAS_2)),
                         StopCluster(listOf(Stops.CABANILLAS)),
-                        StopCluster(listOf(Stops.TORRECABALLEROS, Stops.TORRECABALLEROS_2, Stops.TORRECABALLEROS_3)),
+                        StopCluster(
+                            listOf(
+                                Stops.TORRECABALLEROS,
+                                Stops.TORRECABALLEROS_2,
+                                Stops.TORRECABALLEROS_3
+                            )
+                        ),
                     )
                 )
                 val reversed = regular.reversed()
 
                 val extended = Route(
                     clusters = listOf(
-                        StopCluster(listOf(Stops.ANDRES_LAGUNA, Stops.LA_PISTA, Stops.HERMANITAS, Stops.AZOGUEJO, Stops.DELICIAS, Stops.MONTECORREDORES)),
+                        StopCluster(
+                            listOf(
+                                Stops.ANDRES_LAGUNA,
+                                Stops.LA_PISTA,
+                                Stops.HERMANITAS,
+                                Stops.AZOGUEJO,
+                                Stops.DELICIAS,
+                                Stops.MONTECORREDORES
+                            )
+                        ),
                     ) + regular.clusters.drop(1)
                 )
                 val extendedReversed = extended.reversed()
 
                 val busStation = Route(
                     clusters = listOf(
-                        StopCluster(listOf(Stops.ESTACION_BUS, Stops.ANDRES_LAGUNA, Stops.LA_PISTA, Stops.PLAZA_TOROS)),
+                        StopCluster(
+                            listOf(
+                                Stops.ESTACION_BUS,
+                                Stops.ANDRES_LAGUNA,
+                                Stops.LA_PISTA,
+                                Stops.PLAZA_TOROS
+                            )
+                        ),
                         StopCluster(listOf(Stops.PALAZUELOS, Stops.PALAZUELOS_COLEGIO)),
                         StopCluster(listOf(Stops.TABANERA, Stops.TABANERA_2)),
                         // SANCRIS anchor removed on this variant; IGLESIA serves as anchor
@@ -245,7 +275,13 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         StopCluster(listOf(Stops.SONSOTO, Stops.SONSOTO_2)),
                         StopCluster(listOf(Stops.TRESCASAS, Stops.TRESCASAS_2)),
                         StopCluster(listOf(Stops.CABANILLAS)),
-                        StopCluster(listOf(Stops.TORRECABALLEROS, Stops.TORRECABALLEROS_2, Stops.TORRECABALLEROS_3)),
+                        StopCluster(
+                            listOf(
+                                Stops.TORRECABALLEROS,
+                                Stops.TORRECABALLEROS_2,
+                                Stops.TORRECABALLEROS_3
+                            )
+                        ),
                     )
                 )
             }
@@ -424,6 +460,21 @@ class M6Parser : CapableParser, RouteStopsProvider {
     )
 
     /**
+     * Detect day type from section header lines
+     * Returns DayType if detected, null otherwise
+     */
+    fun detectDayType(line: String): DayType? {
+        return when {
+            line.contains("LUNES A VIERNES", ignoreCase = true) -> DayType.WEEKDAY
+            line.contains("SÁBADOS", ignoreCase = true) ||
+                    line.contains("SABADOS", ignoreCase = true) -> DayType.SATURDAY
+
+            line.contains("DOMINGOS", ignoreCase = true) -> DayType.SUNDAY
+            else -> null
+        }
+    }
+
+    /**
      * Update timetables with new departure times using the cluster structure.
      * The first stop in each cluster (anchor) receives the PDF time directly.
      * Subsequent stops in the cluster receive anchor time + 5 min per position.
@@ -546,6 +597,10 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         } else Pair(stateWithAnnotation, newBuilder)
                     }.first
                 }
+
+                detectDayType(line) == DayType.SATURDAY || detectDayType(line) == DayType.SUNDAY -> state.copy(
+                    section = detectDayType(line)!!
+                )
 
                 else -> state
             }

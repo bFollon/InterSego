@@ -304,7 +304,6 @@ class M4Parser : CapableParser, RouteStopsProvider {
             line.contains("LUNES A VIERNES", ignoreCase = true) -> DayType.WEEKDAY
             line.contains("SÁBADOS", ignoreCase = true) ||
                     line.contains("SABADOS", ignoreCase = true) -> DayType.WEEKEND
-
             else -> null
         }
     }
