@@ -53,8 +53,10 @@ object TimetableParserUtils {
 
     // Matches an optional modifier prefix, a time token, and an optional modifier suffix.
     // Group 1 = prefix modifier, group 2 = time, group 3 = suffix modifier.
+    // Prefix allows trailing whitespace (→ 07:45); suffix must be immediately adjacent
+    // (7:40**) so no \s* — otherwise a spaced prefix on the next token is mis-consumed.
     private val ANNOTATED_TIME_PATTERN = Regex(
-        """(?:($modifierAlternatives)\s*)?(\d{1,2}:\d{2})(?:\s*($modifierAlternatives))?"""
+        """(?:($modifierAlternatives)\s*)?(\d{1,2}:\d{2})(?:($modifierAlternatives))?"""
     )
 
     private val TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm")
