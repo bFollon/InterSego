@@ -29,13 +29,13 @@ import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.PDFParsingException
 import com.github.bfollon.linecapp.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
+import com.github.bfollon.linecapp.services.pdfparsing.TimetableParserUtils
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import java.io.File
 import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 /**
  * Parser for M4 route (La Lastrilla - El Sotillo)
@@ -72,9 +72,6 @@ class M4Parser : CapableParser, RouteStopsProvider {
     )
 
     companion object {
-        // Regex pattern to match time format HH:MM or H:MM (e.g., "7:40", "14:30")
-        private val TIME_PATTERN = Regex("""\d{1,2}:\d{2}""")
-
         // Pattern to match time with asterisk (e.g., "7:40*", "14:30 *")
         private val TIME_WITH_ASTERISK_PATTERN = Regex("""\d{1,2}:\d{2}\s*\*""")
 
@@ -370,8 +367,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
                     state.copy(isSummerSection = true)
                 }
 
-                hasTimes(line) && isReverseRoute(line) -> {
-                    val times = sortTimes(state.incompleteJourney + extractTimes(line))
+                TimetableParserUtils.hasTimes(line) && isReverseRoute(line) -> {
+                    val times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
 
                     // Select the correct timetables list based on current day type
                     val currentTimetables = if (state.currentDayType == DayType.WEEKDAY) {
@@ -431,8 +428,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
                     }
                 }
 
-                hasTimes(line) -> {
-                    val times = sortTimes(state.incompleteJourney + extractTimes(line))
+                TimetableParserUtils.hasTimes(line) -> {
+                    val times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
 
                     // Select the correct timetables list based on current day type
                     val currentTimetables = if (state.currentDayType == DayType.WEEKDAY) {
@@ -509,33 +506,11 @@ class M4Parser : CapableParser, RouteStopsProvider {
         return sortedTimetables
     }
 
-    fun hasTimes(line: String): Boolean = TIME_PATTERN.containsMatchIn(line)
-
     /**
      * Check if line contains times marked with asterisk (July/August only services)
      * Example: "7:40* 7:43 14:30" -> true (because of "7:40*")
      */
     fun isReverseRoute(line: String): Boolean = TIME_WITH_ASTERISK_PATTERN.containsMatchIn(line)
-
-    /**
-     * Extract all times from a line, ignoring everything else
-     * Returns a list of LocalTime objects
-     * Example: "JULIO Y AGOSTO 7:40* 7:43 14:30" -> [LocalTime(7,40), LocalTime(7,43), LocalTime(14,30)]
-     */
-    fun extractTimes(line: String): List<LocalTime> {
-        val formatter = DateTimeFormatter.ofPattern("H:mm")
-        return TIME_PATTERN.findAll(line)
-            .map { LocalTime.parse(it.value, formatter) }
-            .toList()
-    }
-
-    /**
-     * Sort a list of LocalTime objects chronologically
-     * Example: [LocalTime(14,30), LocalTime(7,40), LocalTime(9,15)] -> [LocalTime(7,40), LocalTime(9,15), LocalTime(14,30)]
-     */
-    fun sortTimes(times: List<LocalTime>): List<LocalTime> {
-        return times.sorted() // LocalTime implements Comparable, so we can just call sorted()
-    }
 }
 
 

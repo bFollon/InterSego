@@ -30,7 +30,7 @@ data class BusTimetable(
     val stopId: String,                 // Stop this timetable is for
     val dayType: DayType,               // WEEKDAY, WEEKEND, or HOLIDAY
     val departures: List<DepartureTime>, // List of departure times
-    val direction: String? = null       // Optional direction: "Ida" or "Vuelta"
+    val direction: String? = null,       // Optional direction: "Ida" or "Vuelta"
 ) {
     /**
      * Number of departures in this timetable
@@ -75,6 +75,8 @@ data class BusTimetable(
             DayType.WEEKDAY -> "Laborables"
             DayType.WEEKEND -> "Fines de semana"
             DayType.HOLIDAY -> "Festivos"
+            DayType.SATURDAY -> "Sábado"
+            DayType.SUNDAY -> "Domingo"
         }
 
         val directionStr = direction?.let { " - $it" } ?: ""

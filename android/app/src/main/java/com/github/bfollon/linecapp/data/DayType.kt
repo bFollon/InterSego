@@ -29,6 +29,9 @@ enum class DayType {
      */
     WEEKDAY,
 
+    SATURDAY,
+    SUNDAY,
+
     /**
      * Saturday and Sunday (fines de semana)
      */

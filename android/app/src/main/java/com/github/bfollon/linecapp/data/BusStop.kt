@@ -35,7 +35,6 @@ data class BusStop(
     val routesServed: List<String> = emptyList(),  // List of route IDs that serve this stop
     val stopCode: String? = null,        // Optional official stop code
     val coordinates: String? = null,
-    val isApproximate: Boolean = false
 ) {
     /**
      * Check if stop has valid coordinates

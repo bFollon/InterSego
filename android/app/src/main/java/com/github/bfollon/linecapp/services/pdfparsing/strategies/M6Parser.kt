@@ -17,21 +17,26 @@
 
 package com.github.bfollon.linecapp.services.pdfparsing.strategies
 
-import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.BusStop
+import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.DayType
+import com.github.bfollon.linecapp.data.DepartureTime
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
-import com.github.bfollon.linecapp.services.pdfparsing.ParserCapabilities
-import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.PDFParsingException
 import com.github.bfollon.linecapp.services.pdfparsing.PDFTextDecoder
+import com.github.bfollon.linecapp.services.pdfparsing.ParserCapabilities
+import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
+import com.github.bfollon.linecapp.services.pdfparsing.TimeModifier
+import com.github.bfollon.linecapp.services.pdfparsing.TimetableParserUtils
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import java.io.File
+import java.time.LocalTime
+import java.util.UUID
 
 /**
  * Parser for M6 route (DEBUG MODE)
@@ -50,20 +55,28 @@ class M6Parser : CapableParser, RouteStopsProvider {
     )
 
     private data class ParsingState(
-        val regularRouteWeekdayTimetables: List<BusTimetable>,
-        val reversedRegularRouteWeekdayTimetables: List<BusTimetable>,
+        val journeyBuilder: List<LocalTime>,
+        val isReversed: Boolean = true,
+        val section: DayType = DayType.WEEKDAY,
+        val currentAnnotation: TimeModifier? = null,
 
-        val extendedRouteWeekdayTimetables: List<BusTimetable>,
-        val reversedExtendedRouteWeekdayTimetables: List<BusTimetable>,
-
-        val busStationRouteWeekdayTimetables: List<BusTimetable>,
-
-        val saturdayRouteTimetables: List<BusTimetable>,
-        val reversedSaturdayRouteTimetables: List<BusTimetable>,
-
-        val sundayRouteTimetables: List<BusTimetable>,
-        val reversedSundayRouteTimetables: List<BusTimetable>,
+        val routes: Map<UUID, List<BusTimetable>> = emptyMap(),
     )
+
+    data class StopCluster(val stops: List<BusStop>) {
+        init { require(stops.isNotEmpty()) }
+    }
+
+    data class Route(
+        val id: UUID = UUID.randomUUID(),
+        val clusters: List<StopCluster>
+    ) {
+        val stops: List<BusStop> get() = clusters.flatMap { it.stops }
+
+        fun reversed(): Route = Route(
+            clusters = clusters.reversed().map { StopCluster(it.stops.reversed()) }
+        )
+    }
 
     companion object {
         private object Stops {
@@ -75,13 +88,11 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 name = "Delicias",
                 address = "",
                 coordinates = "40.954500, -4.108889",
-                isApproximate = true,
             )
             val MONTECORREDORES = BusStop(
                 name = "Montecorredores",
                 address = "",
                 coordinates = "40.952000, -4.097278",
-                isApproximate = true,
             )
             val SANCRIS = BusStop(
                 name = "San Cristóbal de Segovia",
@@ -93,14 +104,12 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 area = "San Cristóbal de segovia",
                 address = "",
                 coordinates = "40.951733, -4.077499",
-                isApproximate = true,
             )
             val SANCRIS_ROTONDA = BusStop(
                 name = "Rotonda",
                 area = "San Cristóbal de segovia",
                 address = "",
                 coordinates = "40.951224, -4.073449",
-                isApproximate = true,
             )
             val SONSOTO = BusStop(
                 name = "Potro",
@@ -114,7 +123,6 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 area = "Sonsoto",
                 address = "",
                 coordinates = "40.957470, -4.039154",
-                isApproximate = true,
             )
             val TRESCASAS = BusStop(
                 name = "Plaza de la constitución",
@@ -127,7 +135,6 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 area = "Trescasas",
                 address = "",
                 coordinates = "40.963899, -4.034776",
-                isApproximate = true,
             )
             val CABANILLAS = BusStop(
                 name = "Cabanillas",
@@ -144,14 +151,12 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 details = "Junto a la taberna del Rancho",
                 address = "",
                 coordinates = "40.995364, -4.021688",
-                isApproximate = true,
             )
             val TORRECABALLEROS_3 = BusStop(
                 name = "Torrecaballeros 3",
                 details = "En carretera hacia Turégano",
                 address = "",
                 coordinates = "40.999144, -4.020855",
-                isApproximate = true,
             )
             val ANDRES_LAGUNA = BusStop(
                 name = "IES Andres Laguna",
@@ -189,7 +194,6 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 area = "Palazuelos",
                 address = "",
                 coordinates = "40.933921, -4.063495",
-                isApproximate = true,
             )
             val TABANERA = BusStop(
                 name = "Tabanera",
@@ -212,54 +216,49 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
         object Routes {
             object Weekday {
-                val regular = setOf(
-                    Stops.AZOGUEJO,
-                    Stops.DELICIAS,
-                    Stops.MONTECORREDORES,
-                    Stops.SANCRIS,
-                    Stops.SANCRIS_IGLESIA,
-                    Stops.SANCRIS_ROTONDA,
-                    Stops.SONSOTO,
-                    Stops.SONSOTO_2,
-                    Stops.TRESCASAS,
-                    Stops.TRESCASAS_2,
-                    Stops.CABANILLAS,
-                    Stops.TORRECABALLEROS,
-                    Stops.TORRECABALLEROS_2,
-                    Stops.TORRECABALLEROS_3,
+                val regular = Route(
+                    clusters = listOf(
+                        StopCluster(listOf(Stops.AZOGUEJO, Stops.DELICIAS, Stops.MONTECORREDORES)),
+                        StopCluster(listOf(Stops.SANCRIS, Stops.SANCRIS_IGLESIA, Stops.SANCRIS_ROTONDA)),
+                        StopCluster(listOf(Stops.SONSOTO, Stops.SONSOTO_2)),
+                        StopCluster(listOf(Stops.TRESCASAS, Stops.TRESCASAS_2)),
+                        StopCluster(listOf(Stops.CABANILLAS)),
+                        StopCluster(listOf(Stops.TORRECABALLEROS, Stops.TORRECABALLEROS_2, Stops.TORRECABALLEROS_3)),
+                    )
                 )
                 val reversed = regular.reversed()
 
-                val extended = setOf(
-                    Stops.ANDRES_LAGUNA,
-                    Stops.LA_PISTA,
-                    Stops.HERMANITAS,
-                ) + regular
-
-                val busStation = setOf(
-                    Stops.ESTACION_BUS,
-                    Stops.ANDRES_LAGUNA,
-                    Stops.LA_PISTA,
-                    Stops.PLAZA_TOROS,
-                    Stops.PALAZUELOS,
-                    Stops.PALAZUELOS_COLEGIO,
-                    Stops.TABANERA,
-                    Stops.TABANERA_2
-                ) + regular -
-                        Stops.AZOGUEJO -
-                        Stops.DELICIAS -
-                        Stops.MONTECORREDORES -
-                        Stops.SANCRIS +
-                        Stops.DELICIAS +
-                        Stops.AZOGUEJO
-
+                val extended = Route(
+                    clusters = listOf(
+                        StopCluster(listOf(Stops.ANDRES_LAGUNA, Stops.LA_PISTA, Stops.HERMANITAS, Stops.AZOGUEJO, Stops.DELICIAS, Stops.MONTECORREDORES)),
+                    ) + regular.clusters.drop(1)
+                )
                 val extendedReversed = extended.reversed()
+
+                val busStation = Route(
+                    clusters = listOf(
+                        StopCluster(listOf(Stops.ESTACION_BUS, Stops.ANDRES_LAGUNA, Stops.LA_PISTA, Stops.PLAZA_TOROS)),
+                        StopCluster(listOf(Stops.PALAZUELOS, Stops.PALAZUELOS_COLEGIO)),
+                        StopCluster(listOf(Stops.TABANERA, Stops.TABANERA_2)),
+                        // SANCRIS anchor removed on this variant; IGLESIA serves as anchor
+                        StopCluster(listOf(Stops.SANCRIS_IGLESIA, Stops.SANCRIS_ROTONDA)),
+                        StopCluster(listOf(Stops.SONSOTO, Stops.SONSOTO_2)),
+                        StopCluster(listOf(Stops.TRESCASAS, Stops.TRESCASAS_2)),
+                        StopCluster(listOf(Stops.CABANILLAS)),
+                        StopCluster(listOf(Stops.TORRECABALLEROS, Stops.TORRECABALLEROS_2, Stops.TORRECABALLEROS_3)),
+                    )
+                )
             }
 
             object Saturday {
                 val regular = Weekday.busStation
 
-                val reversed  = regular.reversed() + Stops.JARDINILLOS
+                // Same as busStation but the return leg adds Jardinillos after Azoguejo
+                val reversed = Route(
+                    clusters = regular.clusters.dropLast(1) + listOf(
+                        StopCluster(listOf(Stops.AZOGUEJO, Stops.JARDINILLOS))
+                    )
+                )
             }
 
             object Sunday {
@@ -322,6 +321,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         DebugConfig.debugPrint("  Line $index: $line")
                     }
                 }
+
+                parseM6Timetables(lines)
             }
 
             DebugConfig.debugPrint("M6Parser: ===== END OF PDF =====")
@@ -356,46 +357,206 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     /**
-     * Create initial empty timetables for a route
+     * Create initial empty timetables for a route.
+     * Anchor vs approximate is encoded in the cluster structure, not in BusTimetable.
      */
-    private fun createInitialTimetables(stops: List<BusStop>, dayType: DayType, direction: String): List<BusTimetable> {
-        return stops.map { stop ->
+    private fun createInitialTimetables(
+        route: Route,
+        dayType: DayType,
+        direction: String
+    ): List<BusTimetable> {
+        return route.stops.map { stop ->
             BusTimetable(
                 routeId = "M6",
                 stopId = stop.name,
                 dayType = dayType,
                 direction = direction,
-                departures = emptyList()
+                departures = emptyList(),
             )
         }
     }
 
+    private fun determineParsingTarget(state: ParsingState): UUID {
+        return when (state.section) {
+            DayType.WEEKDAY -> {
+                if (state.isReversed) {
+                    when (state.currentAnnotation) {
+                        TimeModifier.ARROW -> Routes.Weekday.extendedReversed.id
+                        else -> Routes.Weekday.reversed.id
+                    }
+                } else {
+                    when (state.currentAnnotation) {
+                        TimeModifier.ARROW -> Routes.Weekday.extended.id
+                        TimeModifier.DOUBLE_ASTERISK, TimeModifier.POUND ->
+                            Routes.Weekday.busStation.id
+
+                        else -> Routes.Weekday.regular.id
+                    }
+
+                }
+            }
+
+            DayType.SATURDAY -> {
+                if (state.isReversed) Routes.Saturday.reversed.id
+                else Routes.Saturday.regular.id
+            }
+
+            DayType.SUNDAY -> {
+                if (state.isReversed) Routes.Sunday.reversed.id
+                else Routes.Sunday.regular.id
+            }
+
+            else -> {
+                println("TODO ERROR")
+                Routes.Weekday.regular.id
+            }
+        }
+    }
+
+    private fun updateState(
+        updatedTimetables: List<BusTimetable>,
+        target: UUID,
+        state: ParsingState
+    ): ParsingState = state.copy(
+        routes = state.routes + (target to updatedTimetables),
+        isReversed = !state.isReversed,
+        currentAnnotation = null // Clear annotation since we are going to process a new time group
+    )
+
+    /**
+     * Update timetables with new departure times using the cluster structure.
+     * The first stop in each cluster (anchor) receives the PDF time directly.
+     * Subsequent stops in the cluster receive anchor time + 5 min per position.
+     */
+    private fun updateTimetables(
+        route: Route,
+        timetables: List<BusTimetable>,
+        times: List<LocalTime>
+    ): List<BusTimetable> {
+        return route.clusters.zip(times).fold(
+            Pair(emptyList<BusTimetable>(), timetables)
+        ) { (result, remaining), (cluster, anchorTime) ->
+            val updatedCluster = remaining.take(cluster.stops.size)
+                .mapIndexed { posInCluster, timetable ->
+                    val totalMinutes = anchorTime.hour * 60 + anchorTime.minute + posInCluster * 5
+                    timetable.copy(
+                        departures = timetable.departures + DepartureTime(
+                            totalMinutes / 60 % 24,
+                            totalMinutes % 60
+                        )
+                    )
+                }
+            Pair(result + updatedCluster, remaining.drop(cluster.stops.size))
+        }.first
+    }
+
+    private fun ParsingState.processAnnotation(modifier: TimeModifier?): ParsingState =
+        modifier?.let { this.copy(currentAnnotation = it) } ?: this
+
     private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
+        val routeById: Map<UUID, Route> = listOf(
+            Routes.Weekday.regular,
+            Routes.Weekday.reversed,
+            Routes.Weekday.extended,
+            Routes.Weekday.extendedReversed,
+            Routes.Weekday.busStation,
+            Routes.Saturday.reversed,
+            Routes.Sunday.reversed,
+        ).associateBy { it.id }
+
         val initialState = ParsingState(
-            regularRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.regular.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
-            reversedRegularRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.reversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
+            journeyBuilder = emptyList(),
 
-            extendedRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.extended.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
-            reversedExtendedRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.extendedReversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
-
-            busStationRouteWeekdayTimetables = createInitialTimetables(Routes.Weekday.busStation.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
-
-            saturdayRouteTimetables = createInitialTimetables(Routes.Saturday.regular.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
-            reversedSaturdayRouteTimetables = createInitialTimetables(Routes.Saturday.reversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
-            sundayRouteTimetables = createInitialTimetables(Routes.Sunday.regular.toList(), DayType.WEEKDAY, direction = "Segovia -> Torrecaballeros"),
-            reversedSundayRouteTimetables = createInitialTimetables(Routes.Sunday.reversed.toList(), DayType.WEEKDAY, direction = "Torrecaballeros -> Segovia"),
+            routes = mapOf(
+                Routes.Weekday.regular.id to createInitialTimetables(
+                    Routes.Weekday.regular,
+                    DayType.WEEKDAY,
+                    direction = "Segovia -> Torrecaballeros"
+                ),
+                Routes.Weekday.reversed.id to createInitialTimetables(
+                    Routes.Weekday.reversed,
+                    DayType.WEEKDAY,
+                    direction = "Torrecaballeros -> Segovia"
+                ),
+                Routes.Weekday.extended.id to createInitialTimetables(
+                    Routes.Weekday.extended,
+                    DayType.WEEKDAY,
+                    direction = "Segovia -> Torrecaballeros"
+                ),
+                Routes.Weekday.extendedReversed.id to createInitialTimetables(
+                    Routes.Weekday.extendedReversed,
+                    DayType.WEEKDAY,
+                    direction = "Torrecaballeros -> Segovia"
+                ),
+                Routes.Weekday.busStation.id to createInitialTimetables(
+                    Routes.Weekday.busStation,
+                    DayType.WEEKDAY,
+                    direction = "Segovia -> Torrecaballeros"
+                ),
+                Routes.Saturday.regular.id to createInitialTimetables(
+                    Routes.Saturday.regular,
+                    DayType.SATURDAY,
+                    direction = "Segovia -> Torrecaballeros"
+                ),
+                Routes.Saturday.reversed.id to createInitialTimetables(
+                    Routes.Saturday.reversed,
+                    DayType.SATURDAY,
+                    direction = "Torrecaballeros -> Segovia"
+                ),
+                Routes.Sunday.regular.id to createInitialTimetables(
+                    Routes.Sunday.regular,
+                    DayType.SUNDAY,
+                    direction = "Segovia -> Torrecaballeros"
+                ),
+                Routes.Sunday.reversed.id to createInitialTimetables(
+                    Routes.Sunday.reversed,
+                    DayType.SUNDAY,
+                    direction = "Torrecaballeros -> Segovia"
+                ),
+            ),
         )
 
-//        lines.fold(initialState) { state, line ->
-//            when(line) ->
-//        }
+        val newState = lines.fold(initialState) { state, line ->
+            when {
+                TimetableParserUtils.hasTimes(line) -> {
+                    val annotatedTimes = TimetableParserUtils.extractAnnotatedTimes(line)
+
+                    annotatedTimes.fold(
+                        Pair(
+                            state,
+                            emptyList<LocalTime>()
+                        )
+                    ) { (state, inlineBuilder), annotatedTime ->
+                        val stateWithAnnotation = state.processAnnotation(annotatedTime.modifier)
+                        val parsingTarget = determineParsingTarget(stateWithAnnotation)
+                        val newBuilder = inlineBuilder + annotatedTime.time
+                        if (newBuilder.size == routeById[parsingTarget]!!.clusters.size) {
+                            Pair(
+                                updateState(
+                                    updatedTimetables = updateTimetables(
+                                        route = routeById[parsingTarget]!!,
+                                        timetables = stateWithAnnotation.routes[parsingTarget]!!,
+                                        times = newBuilder
+                                    ),
+                                    target = parsingTarget,
+                                    state = stateWithAnnotation
+                                ),
+                                emptyList() // Clear accumulated times since we are going to parse a new time group
+                            )
+                        } else Pair(stateWithAnnotation, newBuilder)
+                    }.first
+                }
+
+                else -> state
+            }
+        }
 
         return emptyList()
     }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
         return if (routeId.equals("M6", ignoreCase = true)) {
-            listOf(Routes.Weekday.regular.toList())
+            listOf(Routes.Weekday.regular.stops)
         } else {
             emptyList()
         }

@@ -187,6 +187,8 @@ fun TimetableCard(timetable: BusTimetable) {
                     DayType.WEEKDAY -> "Lunes a Viernes (Laborables)"
                     DayType.WEEKEND -> "Sábados"
                     DayType.HOLIDAY -> "Festivos"
+                    DayType.SATURDAY -> "Sábado"
+                    DayType.SUNDAY -> "Domingo"
                 },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
