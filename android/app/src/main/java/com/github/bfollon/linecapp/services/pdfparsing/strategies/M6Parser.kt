@@ -392,8 +392,11 @@ class M6Parser : CapableParser, RouteStopsProvider {
     private fun reorderSwappedLines(lines: List<String>): List<String> =
         lines.fold(Pair(emptyList<String>(), null as String?)) { (result, pending), line ->
             when {
+                pending == null && TimetableParserUtils.hasTimes(line) ->
+                    Pair(result, line)
+
                 pending == null ->
-                    Pair(result, line.takeIf { TimetableParserUtils.hasTimes(it) })
+                    Pair(result + line, null)
 
                 TimetableParserUtils.hasTimes(line) &&
                         TimetableParserUtils.extractTimes(pending).firstOrNull()
@@ -670,8 +673,13 @@ class M6Parser : CapableParser, RouteStopsProvider {
                                 !annotatedTime.time.isAfter(inlineBuilder.last())
 
                         val (toFlush, flushState, nextBuilder) = when {
-                            isDirectionChange ->
-                                Triple(inlineBuilder, state, listOf(annotatedTime.time))
+                            isDirectionChange -> {
+                                // PDF outbound columns (left) are always extracted first.
+                                // When a backwards jump splits the line, the accumulated
+                                // times are always outbound → force isReversed=false.
+                                val outboundState = state.copy(isReversed = false)
+                                Triple(inlineBuilder, outboundState, listOf(annotatedTime.time))
+                            }
                             (inlineBuilder + annotatedTime.time).size == routeById[parsingTarget]!!.clusters.size ->
                                 Triple(inlineBuilder + annotatedTime.time, stateWithAnnotation, emptyList())
                             else ->
