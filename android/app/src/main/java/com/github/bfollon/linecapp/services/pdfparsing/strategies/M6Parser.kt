@@ -39,19 +39,18 @@ import java.time.LocalTime
 import java.util.UUID
 
 /**
- * Parser for M6 route (DEBUG MODE)
+ * Parser for M6 route (Segovia ↔ Torrecaballeros).
  *
- * This is a skeleton parser that logs all PDF text for debugging purposes.
- * It returns an empty list of timetables.
- *
- * TODO: Implement full parsing logic once PDF structure is analyzed
+ * Handles weekday, Saturday, and Sunday schedules including partial journeys
+ * (rows with fewer anchor times than the route has clusters) and mixed-direction
+ * lines (adjacent outbound/return times on the same PDF text line).
  */
 class M6Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M6"),
         mode = ParserMode.DEBUG,
-        version = "0.1-debug"
+        version = "0.2"
     )
 
     private data class ParsingState(
@@ -69,14 +68,21 @@ class M6Parser : CapableParser, RouteStopsProvider {
         }
     }
 
+    enum class ClusterAlignment { FROM_START, FROM_END }
+
     data class Route(
         val id: UUID = UUID.randomUUID(),
-        val clusters: List<StopCluster>
+        val clusters: List<StopCluster>,
+        val alignment: ClusterAlignment = ClusterAlignment.FROM_START
     ) {
         val stops: List<BusStop> get() = clusters.flatMap { it.stops }
 
         fun reversed(): Route = Route(
-            clusters = clusters.reversed().map { StopCluster(it.stops.reversed()) }
+            clusters = clusters.reversed().map { StopCluster(it.stops.reversed()) },
+            alignment = when (alignment) {
+                ClusterAlignment.FROM_START -> ClusterAlignment.FROM_END
+                ClusterAlignment.FROM_END -> ClusterAlignment.FROM_START
+            }
         )
     }
 
@@ -293,7 +299,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 val reversed = Route(
                     clusters = regular.clusters.dropLast(1) + listOf(
                         StopCluster(listOf(Stops.AZOGUEJO, Stops.JARDINILLOS))
-                    )
+                    ),
+                    alignment = ClusterAlignment.FROM_END
                 )
             }
 
@@ -311,8 +318,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {
-        DebugConfig.debugPrint("M6Parser: Starting DEBUG parsing for $pdfPath")
-        DebugConfig.debugPrint("M6Parser: ⚠️ DEBUG MODE - Logging PDF text only, returning empty list")
+        DebugConfig.debugPrint("M6Parser: Starting parsing for $pdfPath")
 
         val file = File(pdfPath)
         if (!file.exists()) {
@@ -323,49 +329,41 @@ class M6Parser : CapableParser, RouteStopsProvider {
         val pdfDocument = PdfDocument(pdfReader)
 
         try {
-            // Extract and print all text lines
+            val allLines = mutableListOf<String>()
+
             for (pageNum in 1..pdfDocument.numberOfPages) {
                 DebugConfig.debugPrint("M6Parser: ===== PAGE $pageNum =====")
                 val page = pdfDocument.getPage(pageNum)
 
-                // Try standard iText extraction first
                 var extractedText = PdfTextExtractor.getTextFromPage(page)
 
-                // Check if text needs decoding (broken PDF encoding)
                 if (PDFTextDecoder.needsDecoding(extractedText)) {
                     DebugConfig.debugPrint("M6Parser: Detected broken encoding, using custom decoder...")
 
-                    // Use raw glyph extraction for broken PDFs
                     val strategy = PDFTextDecoder.RawGlyphExtractionStrategy()
                     val processor = PdfCanvasProcessor(strategy)
                     processor.processPageContent(page)
                     val rawText = strategy.resultantText
 
-                    // Decode with +29 character offset (old Linecar PDFs)
                     extractedText = PDFTextDecoder.decodeWithCharacterOffset(rawText, offset = 29)
                     DebugConfig.debugPrint("M6Parser: Successfully decoded broken PDF")
                 }
 
                 val lines = extractedText.lines()
-
                 DebugConfig.debugPrint("M6Parser: Page $pageNum has ${lines.size} lines")
-                DebugConfig.debugPrint("M6Parser: Total text length: ${extractedText.length} characters")
 
-                // Log all non-empty lines with line numbers
                 lines.forEachIndexed { index, line ->
                     if (line.isNotEmpty()) {
                         DebugConfig.debugPrint("  Line $index: $line")
                     }
                 }
 
-                parseM6Timetables(lines)
+                allLines.addAll(lines)
             }
 
             DebugConfig.debugPrint("M6Parser: ===== END OF PDF =====")
-            DebugConfig.debugPrint("M6Parser: DEBUG MODE - Returning empty list (no timetables)")
 
-            // Return empty list - this is a debug parser
-            return emptyList()
+            return parseM6Timetables(allLines)
 
         } catch (e: Exception) {
             DebugConfig.debugError("M6Parser: Error parsing PDF", e)
@@ -478,14 +476,31 @@ class M6Parser : CapableParser, RouteStopsProvider {
      * Update timetables with new departure times using the cluster structure.
      * The first stop in each cluster (anchor) receives the PDF time directly.
      * Subsequent stops in the cluster receive anchor time + 5 min per position.
+     *
+     * Supports partial journeys: when times.size < route.clusters.size, the active
+     * clusters are selected from the near end (alignment = FROM_START skips trailing
+     * clusters; FROM_END skips leading clusters). Inactive stops are left unchanged.
      */
     private fun updateTimetables(
         route: Route,
         timetables: List<BusTimetable>,
         times: List<LocalTime>
     ): List<BusTimetable> {
-        return route.clusters.zip(times).fold(
-            Pair(emptyList<BusTimetable>(), timetables)
+        val activeClusters = when (route.alignment) {
+            ClusterAlignment.FROM_START -> route.clusters.take(times.size)
+            ClusterAlignment.FROM_END -> route.clusters.takeLast(times.size)
+        }
+        val activeStopCount = activeClusters.sumOf { it.stops.size }
+
+        val (inactive, active) = when (route.alignment) {
+            ClusterAlignment.FROM_START ->
+                emptyList<BusTimetable>() to timetables.take(activeStopCount)
+            ClusterAlignment.FROM_END ->
+                timetables.dropLast(activeStopCount) to timetables.takeLast(activeStopCount)
+        }
+
+        val updated = activeClusters.zip(times).fold(
+            Pair(emptyList<BusTimetable>(), active)
         ) { (result, remaining), (cluster, anchorTime) ->
             val updatedCluster = remaining.take(cluster.stops.size)
                 .mapIndexed { posInCluster, timetable ->
@@ -499,6 +514,11 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 }
             Pair(result + updatedCluster, remaining.drop(cluster.stops.size))
         }.first
+
+        return when (route.alignment) {
+            ClusterAlignment.FROM_START -> updated + timetables.drop(activeStopCount)
+            ClusterAlignment.FROM_END -> inactive + updated
+        }
     }
 
     private fun ParsingState.processAnnotation(modifier: TimeModifier?): ParsingState =
@@ -567,46 +587,84 @@ class M6Parser : CapableParser, RouteStopsProvider {
             ),
         )
 
+        fun flush(state: ParsingState, times: List<LocalTime>): ParsingState {
+            val target = determineParsingTarget(state)
+            return updateState(
+                updatedTimetables = updateTimetables(
+                    route = routeById[target]!!,
+                    timetables = state.routes[target]!!,
+                    times = times
+                ),
+                target = target,
+                state = state
+            )
+        }
+
         val newState = lines.fold(initialState) { state, line ->
             when {
                 TimetableParserUtils.hasTimes(line) -> {
                     val annotatedTimes = TimetableParserUtils.extractAnnotatedTimes(line)
 
                     annotatedTimes.fold(
-                        Pair(
-                            state,
-                            emptyList<LocalTime>()
-                        )
-                    ) { (state, inlineBuilder), annotatedTime ->
+                        Triple(state, emptyList<LocalTime>(), false) // (state, builder, hasFlipped)
+                    ) { (state, inlineBuilder, hasFlipped), annotatedTime ->
                         val stateWithAnnotation = state.processAnnotation(annotatedTime.modifier)
                         val parsingTarget = determineParsingTarget(stateWithAnnotation)
-                        val newBuilder = inlineBuilder + annotatedTime.time
-                        if (newBuilder.size == routeById[parsingTarget]!!.clusters.size) {
-                            Pair(
-                                updateState(
-                                    updatedTimetables = updateTimetables(
-                                        route = routeById[parsingTarget]!!,
-                                        timetables = stateWithAnnotation.routes[parsingTarget]!!,
-                                        times = newBuilder
-                                    ),
-                                    target = parsingTarget,
-                                    state = stateWithAnnotation
-                                ),
-                                emptyList() // Clear accumulated times since we are going to parse a new time group
-                            )
-                        } else Pair(stateWithAnnotation, newBuilder)
-                    }.first
+
+                        // A backwards-or-equal step signals a direction change, but only once per
+                        // line. hasFlipped guards against a second trigger caused by non-monotonic
+                        // return-journey data (e.g. a PDF quirk like 14:35 14:30 14:35 14:50 in
+                        // the return leg of line 11).
+                        //
+                        // Backwards jump → flush previous direction as a partial/full journey;
+                        //   the current time carries forward into the new direction's builder.
+                        //   flushState = state (pre-annotation) so the new annotation belongs
+                        //   to the incoming direction, not the one being flushed.
+                        //
+                        // Buffer full → flush the complete journey including the current time.
+                        //   flushState = stateWithAnnotation so the annotation is consumed here.
+                        //
+                        // TODO: #/** circular services (e.g. line 20 ~21:50) not yet handled —
+                        //       they deliberately decrease in time and trigger a spurious flush.
+                        val isDirectionChange = !hasFlipped &&
+                                inlineBuilder.isNotEmpty() &&
+                                !annotatedTime.time.isAfter(inlineBuilder.last())
+
+                        val (toFlush, flushState, nextBuilder) = when {
+                            isDirectionChange ->
+                                Triple(inlineBuilder, state, listOf(annotatedTime.time))
+                            (inlineBuilder + annotatedTime.time).size == routeById[parsingTarget]!!.clusters.size ->
+                                Triple(inlineBuilder + annotatedTime.time, stateWithAnnotation, emptyList())
+                            else ->
+                                Triple(emptyList(), stateWithAnnotation, inlineBuilder + annotatedTime.time)
+                        }
+
+                        val newState = if (toFlush.isNotEmpty()) {
+                            val flushed = flush(flushState, toFlush)
+                            // Direction-change flush: annotation on the current time belongs to
+                            // the incoming direction, not the one just flushed — carry it forward.
+                            if (nextBuilder.isNotEmpty()) flushed.processAnnotation(annotatedTime.modifier) else flushed
+                        } else stateWithAnnotation
+
+                        Triple(newState, nextBuilder, hasFlipped || isDirectionChange)
+                    }.let { (lineState, remainingBuilder, _) ->
+                        // Flush any partial journey left at the end of the line.
+                        // Handles routes where the partial journey has no following time on the
+                        // same line to trigger the backwards-jump detection.
+                        if (remainingBuilder.isNotEmpty()) flush(lineState, remainingBuilder) else lineState
+                    }
                 }
 
                 detectDayType(line) == DayType.SATURDAY || detectDayType(line) == DayType.SUNDAY -> state.copy(
-                    section = detectDayType(line)!!
+                    section = detectDayType(line)!!,
+                    isReversed = false
                 )
 
                 else -> state
             }
         }
 
-        return emptyList()
+        return newState.routes.values.flatten()
     }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
