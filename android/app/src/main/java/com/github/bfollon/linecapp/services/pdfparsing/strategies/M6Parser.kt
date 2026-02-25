@@ -288,12 +288,14 @@ class M6Parser : CapableParser, RouteStopsProvider {
                                 Stops.TORRECABALLEROS_3
                             )
                         ),
+                        StopCluster(listOf(Stops.DELICIAS, Stops.AZOGUEJO)),
                     )
                 )
             }
 
             object Saturday {
                 val regular = Weekday.busStation
+                    .copy(clusters = Weekday.busStation.clusters.dropLast(1))
 
                 // Same as busStation but the return leg adds Jardinillos after Azoguejo
                 val reversed = Route(
@@ -306,6 +308,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
             object Sunday {
                 val regular = Weekday.busStation
+                    .copy(clusters = Weekday.busStation.clusters.dropLast(1))
 
                 val reversed = regular.reversed()
             }
