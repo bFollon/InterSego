@@ -381,12 +381,51 @@ class M6Parser : CapableParser, RouteStopsProvider {
      * @param routeId The route ID (M4)
      * @return List of BusTimetable objects grouped by (stop, dayType)
      */
+    /**
+     * Pre-sort consecutive time-containing lines that the PDF returned in reversed order.
+     *
+     * The parser expects regular-direction lines before their corresponding return-direction
+     * lines. A regular journey always departs earlier, so its first extracted time is smaller.
+     * When two adjacent time-containing lines arrive with the first line's earliest time
+     * *after* the second line's earliest time, they are swapped.
+     */
+    private fun reorderSwappedLines(lines: List<String>): List<String> =
+        lines.fold(Pair(emptyList<String>(), null as String?)) { (result, pending), line ->
+            when {
+                pending == null ->
+                    Pair(result, line.takeIf { TimetableParserUtils.hasTimes(it) })
+
+                TimetableParserUtils.hasTimes(line) &&
+                        TimetableParserUtils.extractTimes(pending).firstOrNull()
+                            ?.isAfter(
+                                TimetableParserUtils.extractTimes(line).firstOrNull()
+                                    ?: LocalTime.MAX
+                            ) == true -> {
+                    DebugConfig.debugPrint(
+                        "M6Parser: Reordering swapped lines:" +
+                                "\n  was: $pending" +
+                                "\n  now: $line"
+                    )
+                    Pair(result + line + pending, null)
+                }
+
+                TimetableParserUtils.hasTimes(line) ->
+                    Pair(result + pending, line)
+
+                else ->
+                    Pair(result + pending + line, null)
+            }
+        }.let { (result, pending) ->
+            if (pending != null) result + pending else result
+        }
+
     private fun parseM6Timetables(lines: List<String>): List<BusTimetable> {
-        DebugConfig.debugPrint("M4Parser: Starting timetable parsing for ${lines.size} lines")
+        DebugConfig.debugPrint("M6Parser: Starting timetable parsing for ${lines.size} lines")
 
-        val timetables = parseTimeTable(lines)
+        val reorderedLines = reorderSwappedLines(lines)
+        val timetables = parseTimeTable(reorderedLines)
 
-        DebugConfig.debugPrint("M4Parser: Parsed ${timetables.size} timetables")
+        DebugConfig.debugPrint("M6Parser: Parsed ${timetables.size} timetables")
         return timetables
     }
 
@@ -651,7 +690,9 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         // Flush any partial journey left at the end of the line.
                         // Handles routes where the partial journey has no following time on the
                         // same line to trigger the backwards-jump detection.
-                        if (remainingBuilder.isNotEmpty()) flush(lineState, remainingBuilder) else lineState
+                        if (remainingBuilder.isNotEmpty()) {
+                            flush(lineState, remainingBuilder)
+                        } else lineState
                     }
                 }
 
