@@ -751,7 +751,10 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
         return if (routeId.equals("M6", ignoreCase = true)) {
-            listOf(Routes.Weekday.regular.stops)
+            listOf(
+                Routes.Weekday.extended.stops,
+                Routes.Weekday.extendedReversed.stops
+            )
         } else {
             emptyList()
         }

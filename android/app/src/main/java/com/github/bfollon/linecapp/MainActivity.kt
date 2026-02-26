@@ -351,7 +351,7 @@ fun AppNavigation() {
             // Route-specific direction labels (TODO: make this dynamic from parser)
             val (regularLabel, reverseLabel) = when (routeId) {
                 "M4" -> "Lastrilla → Sotillo" to "Sotillo → Lastrilla"
-                "M6" -> "M6 Regular" to "M6 Reverse"  // Placeholder
+                "M6" -> "Segovia -> Torrecaballeros" to "Torrecaballeros -> Segovia"
                 else -> "Regular" to "Reverse"
             }
 
