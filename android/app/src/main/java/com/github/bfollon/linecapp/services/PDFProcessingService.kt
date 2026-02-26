@@ -20,6 +20,11 @@ package com.github.bfollon.linecapp.services
 import android.content.Context
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.BusTimetable
+import com.github.bfollon.linecapp.data.DayType
+import com.github.bfollon.linecapp.data.RouteVariant
+import com.github.bfollon.linecapp.data.RouteView
+import com.github.bfollon.linecapp.data.RouteViewStop
+import com.github.bfollon.linecapp.data.SwapAction
 import com.github.bfollon.linecapp.repositories.PDFURLRepository
 import com.github.bfollon.linecapp.services.pdfparsing.BusTimetableParser
 import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
@@ -181,6 +186,55 @@ class PDFProcessingService(private val context: Context) {
             parser.getRoutesForId(routeId)
         } else {
             emptyList()
+        }
+    }
+
+    /**
+     * Get route variants for a given route ID and day type.
+     *
+     * @param routeId Route ID to query
+     * @param dayType Day type to filter variants for
+     * @return List of RouteVariant for display in route selector
+     */
+    fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
+        val parser = parsers[routeId]
+        return if (parser is RouteStopsProvider) {
+            parser.getRouteVariants(routeId, dayType)
+        } else {
+            emptyList()
+        }
+    }
+
+    /**
+     * Get rich route views for display.
+     *
+     * If the parser provides RouteView objects directly, uses those.
+     * Otherwise, converts RouteVariant objects into plain RouteView objects
+     * with a swap action between the first two variants.
+     */
+    fun getRouteViews(routeId: String, dayType: DayType): List<RouteView> {
+        val parser = parsers[routeId]
+        if (parser is RouteStopsProvider) {
+            val views = parser.getRouteViews(routeId, dayType)
+            if (views != null) return views
+        }
+
+        // Fallback: convert RouteVariant to RouteView
+        val variants = getRouteVariants(routeId, dayType)
+        return variants.mapIndexed { index, variant ->
+            val swapTargetId = when {
+                variants.size == 2 && index == 0 -> variants[1].id
+                variants.size == 2 && index == 1 -> variants[0].id
+                else -> null
+            }
+            RouteView(
+                id = variant.id,
+                label = variant.label,
+                stops = variant.stops.map { RouteViewStop(it) },
+                direction = variant.direction,
+                departureLabel = variant.departureLabel,
+                swapAction = swapTargetId?.let { SwapAction(it) }
+            )
         }
     }
 }

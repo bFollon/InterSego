@@ -44,6 +44,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.github.bfollon.linecapp.data.BusRoute
+import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.RouteType
 import com.github.bfollon.linecapp.repositories.PDFURLRepository
 import com.github.bfollon.linecapp.services.CoordinateCache
@@ -343,49 +344,58 @@ fun AppNavigation() {
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Get route definitions from parser dynamically
-            val routeVariations = pdfProcessingService.getRoutesForNavigation(routeId)
-            val regularRoute = routeVariations.getOrNull(0) ?: emptyList()
-            val reverseRoute = routeVariations.getOrNull(1) ?: emptyList()
-
-            // Route-specific direction labels (TODO: make this dynamic from parser)
-            val (regularLabel, reverseLabel) = when (routeId) {
-                "M4" -> "Lastrilla → Sotillo" to "Sotillo → Lastrilla"
-                "M6" -> "Segovia -> Torrecaballeros" to "Torrecaballeros -> Segovia"
-                else -> "Regular" to "Reverse"
+            // Determine current day type for variant filtering
+            val currentDayType = remember {
+                when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
+                    java.util.Calendar.SATURDAY -> DayType.SATURDAY
+                    java.util.Calendar.SUNDAY -> DayType.SUNDAY
+                    else -> DayType.WEEKDAY
+                }
             }
+
+            // Get route views from parser dynamically
+            val views = pdfProcessingService.getRouteViews(routeId, currentDayType)
 
             RouteStopsScreen(
                 route = route,
-                regularRoute = regularRoute,
-                reverseRoute = reverseRoute,
-                regularDirectionLabel = regularLabel,
-                reverseDirectionLabel = reverseLabel,
+                views = views,
                 onBack = {
                     navController.popBackStack()
                 },
-                onStopSelected = { stop, direction ->
-                    navController.navigate("next_departure/${route.id}/${stop.id}/$direction")
+                onStopSelected = { stop, direction, departureLabel ->
+                    val label = departureLabel ?: "all"
+                    navController.navigate("next_departure/${route.id}/${stop.id}/$direction/$label")
                 }
             )
         }
 
-        composable("next_departure/{routeId}/{stopId}/{direction}") { backStackEntry ->
+        composable("next_departure/{routeId}/{stopId}/{direction}/{variantLabel}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
             val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
+            val variantLabel = backStackEntry.arguments?.getString("variantLabel")
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Find the stop from parser by ID (dynamic lookup)
-            val stop = pdfProcessingService.getRoutesForNavigation(routeId)
-                .flatten()
+            // Find the stop from all views by ID (dynamic lookup)
+            val stop = pdfProcessingService.getRouteViews(routeId, DayType.WEEKDAY)
+                .flatMap { it.stops }.map { it.stop }
+                .distinctBy { it.id }
                 .find { it.id == stopId }
+                // Fallback: try all day types
+                ?: pdfProcessingService.getRouteViews(routeId, DayType.SATURDAY)
+                    .flatMap { it.stops }.map { it.stop }.find { it.id == stopId }
+                ?: pdfProcessingService.getRouteViews(routeId, DayType.SUNDAY)
+                    .flatMap { it.stops }.map { it.stop }.find { it.id == stopId }
                 ?: return@composable
+
+            // "all" means show all departures without variant badges
+            val effectiveVariantLabel = if (variantLabel == "all") null else variantLabel
 
             NextDepartureScreen(
                 route = route,
                 stop = stop,
                 direction = direction,
+                selectedVariantLabel = effectiveVariantLabel,
                 onBack = {
                     navController.popBackStack()
                 }

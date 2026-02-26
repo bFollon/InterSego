@@ -81,6 +81,7 @@ fun NextDepartureScreen(
     route: BusRoute,
     stop: BusStop,
     direction: String,  // e.g., "Lastrilla → Sotillo" or "Sotillo → Lastrilla"
+    selectedVariantLabel: String? = null, // Label of the variant the user selected (labels from other variants are shown)
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -116,66 +117,70 @@ fun NextDepartureScreen(
         }
     }
 
-    // Auto-detect current day type
-    val currentDayType = remember {
-        when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-            Calendar.SATURDAY -> DayType.WEEKEND
-            Calendar.SUNDAY -> DayType.HOLIDAY
-            else -> DayType.WEEKDAY
-        }
+    // Map a Calendar day-of-week to the set of DayType values that might match.
+    // M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
+    fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
+        Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
+        Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+        else -> setOf(DayType.WEEKDAY)
     }
 
-    // Filter timetable for current stop (by name), day type, AND direction
-    val todayTimetable = remember(timetables, currentDayType, stop, direction) {
-        DebugConfig.debugPrint("🔍 Filtering timetables: dayType=$currentDayType, stop=${stop.name}, direction=$direction")
-        DebugConfig.debugPrint("📊 Total timetables: ${timetables.size}")
-        DebugConfig.debugPrint("📋 Available timetables: ${timetables.joinToString("\n") { "  - ${it.stopId} / ${it.direction} / ${it.dayType} (${it.departures.size} departures)" }}")
+    // Auto-detect current day types (supports both M4's WEEKEND and M6's SATURDAY/SUNDAY)
+    val currentDayTypes = remember {
+        dayTypesForCalendarDay(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))
+    }
 
-        val result = timetables.find {
-            it.dayType == currentDayType &&
+    // Filter and merge all timetables for current stop, day type, AND direction
+    // Multiple timetables may exist for the same stop (e.g., Regular + Extended variants)
+    val todayDepartures = remember(timetables, currentDayTypes, stop, direction) {
+        DebugConfig.debugPrint("Filtering timetables: dayTypes=$currentDayTypes, stop=${stop.name}, direction=$direction")
+        DebugConfig.debugPrint("Total timetables: ${timetables.size}")
+
+        val matching = timetables.filter {
+            it.dayType in currentDayTypes &&
             it.stopId == stop.name &&
             it.direction == direction
         }
 
-        DebugConfig.debugPrint("✅ Found timetable: ${result != null} (${result?.departures?.size ?: 0} departures)")
-        result
+        val merged = matching.flatMap { it.departures }.sortedBy { it.toMinutesSinceMidnight() }
+        DebugConfig.debugPrint("Found ${matching.size} matching timetables with ${merged.size} total departures")
+        merged
     }
 
-    // Find next available timetable (checking up to 7 days ahead)
-    data class NextTimetableInfo(
-        val timetable: com.github.bfollon.linecapp.data.BusTimetable?,
+    val hasTodayDepartures = todayDepartures.isNotEmpty()
+
+    // Find next available departures (checking up to 7 days ahead)
+    data class NextDayDepartures(
+        val departures: List<DepartureTime>,
         val daysAhead: Int
     )
 
-    val nextTimetableInfo = remember(timetables, currentDayType, stop, direction) {
-        var result: NextTimetableInfo? = null
+    val nextDayDepartures = remember(timetables, currentDayTypes, stop, direction) {
+        var result: NextDayDepartures? = null
 
-        // Check up to 7 days ahead for the next available timetable
         for (daysAhead in 1..7) {
             val calendar = Calendar.getInstance()
             calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
-            val futureDayType = when (calendar.get(Calendar.DAY_OF_WEEK)) {
-                Calendar.SATURDAY -> DayType.WEEKEND
-                Calendar.SUNDAY -> DayType.HOLIDAY
-                else -> DayType.WEEKDAY
-            }
+            val futureDayTypes = dayTypesForCalendarDay(calendar.get(Calendar.DAY_OF_WEEK))
 
-            val timetable = timetables.find {
-                it.dayType == futureDayType &&
-                it.stopId == stop.name &&
-                it.direction == direction &&
-                it.departures.isNotEmpty()
-            }
+            val departures = timetables
+                .filter {
+                    it.dayType in futureDayTypes &&
+                    it.stopId == stop.name &&
+                    it.direction == direction
+                }
+                .flatMap { it.departures }
+                .sortedBy { it.toMinutesSinceMidnight() }
 
-            if (timetable != null) {
-                DebugConfig.debugPrint("✅ Found next timetable in $daysAhead day(s): $futureDayType with ${timetable.departures.size} departures")
-                result = NextTimetableInfo(timetable, daysAhead)
+            if (departures.isNotEmpty()) {
+                DebugConfig.debugPrint("Found next departures in $daysAhead day(s): ${departures.size} departures")
+                result = NextDayDepartures(departures, daysAhead)
                 break
             }
         }
 
         if (result == null) {
-            DebugConfig.debugPrint("❌ No timetable found in next 7 days")
+            DebugConfig.debugPrint("No departures found in next 7 days")
         }
 
         result
@@ -188,55 +193,33 @@ fun NextDepartureScreen(
         val daysAhead: Int  // 0 = today, 1 = tomorrow, 2+ = future
     )
 
-    val departureInfo = remember(todayTimetable, nextTimetableInfo, currentTime) {
-        DebugConfig.debugPrint("⏰ Current time: $currentTime")
+    val departureInfo = remember(todayDepartures, nextDayDepartures, currentTime) {
+        DebugConfig.debugPrint("Current time: $currentTime")
 
-        if (todayTimetable != null) {
-            // We have a timetable for today, check for upcoming departures
-            DebugConfig.debugPrint("📅 Today's departures: ${todayTimetable.departures.map { it.toDisplayString() }}")
-
-            val upcoming = todayTimetable.departures.filter { departure ->
+        if (hasTodayDepartures) {
+            val upcoming = todayDepartures.filter { departure ->
                 val departureTime = LocalTime.of(departure.hour, departure.minute)
                 departureTime.isAfter(currentTime) || departureTime == currentTime
-            }.sortedBy { LocalTime.of(it.hour, it.minute) }
+            }
 
-            DebugConfig.debugPrint("🚌 Upcoming departures today: ${upcoming.size} (${upcoming.map { it.toDisplayString() }})")
+            DebugConfig.debugPrint("Upcoming departures today: ${upcoming.size}")
 
             if (upcoming.isNotEmpty()) {
-                // Found departures today
-                val next = upcoming.firstOrNull()
+                val next = upcoming.first()
                 val following = upcoming.drop(1).take(5)
-                DebugConfig.debugPrint("✅ Next departure today: ${next?.toDisplayString()}")
                 DepartureInfo(next, following, 0)
-            } else if (nextTimetableInfo != null) {
-                // No more today, get next available day's first departure
-                DebugConfig.debugPrint("🌙 No more departures today, checking next available day...")
-                DebugConfig.debugPrint("📅 Next day's departures (+${nextTimetableInfo.daysAhead} days): ${nextTimetableInfo.timetable?.departures?.map { it.toDisplayString() }}")
-                val allDepartures = nextTimetableInfo.timetable?.departures
-                    ?.sortedBy { LocalTime.of(it.hour, it.minute) } ?: emptyList()
-                val nextFirst = allDepartures.firstOrNull()
-                val following = allDepartures.drop(1).take(5)
-                DebugConfig.debugPrint("✅ Next available departure: ${nextFirst?.toDisplayString()}")
-                DebugConfig.debugPrint("📋 Following departures that day: ${following.map { it.toDisplayString() }}")
-                DepartureInfo(nextFirst, following, nextTimetableInfo.daysAhead)
+            } else if (nextDayDepartures != null) {
+                val nextFirst = nextDayDepartures.departures.firstOrNull()
+                val following = nextDayDepartures.departures.drop(1).take(5)
+                DepartureInfo(nextFirst, following, nextDayDepartures.daysAhead)
             } else {
-                DebugConfig.debugPrint("❌ No timetable found in next 7 days")
                 DepartureInfo(null, emptyList(), 0)
             }
-        } else if (nextTimetableInfo != null) {
-            // No timetable for today (e.g., Sunday/Holiday with no service), but we have future timetable
-            DebugConfig.debugPrint("❌ No timetable for today, using next available day")
-            DebugConfig.debugPrint("📅 Next day's departures (+${nextTimetableInfo.daysAhead} days): ${nextTimetableInfo.timetable?.departures?.map { it.toDisplayString() }}")
-            val allDepartures = nextTimetableInfo.timetable?.departures
-                ?.sortedBy { LocalTime.of(it.hour, it.minute) } ?: emptyList()
-            val nextFirst = allDepartures.firstOrNull()
-            val following = allDepartures.drop(1).take(5)
-            DebugConfig.debugPrint("✅ Next available departure: ${nextFirst?.toDisplayString()}")
-            DebugConfig.debugPrint("📋 Following departures that day: ${following.map { it.toDisplayString() }}")
-            DepartureInfo(nextFirst, following, nextTimetableInfo.daysAhead)
+        } else if (nextDayDepartures != null) {
+            val nextFirst = nextDayDepartures.departures.firstOrNull()
+            val following = nextDayDepartures.departures.drop(1).take(5)
+            DepartureInfo(nextFirst, following, nextDayDepartures.daysAhead)
         } else {
-            // No timetable for today AND no future timetable found
-            DebugConfig.debugPrint("❌ No timetable for today and no timetable found in next 7 days")
             DepartureInfo(null, emptyList(), 0)
         }
     }
@@ -385,6 +368,7 @@ fun NextDepartureScreen(
                         NextDepartureWithProgress(
                             departure = nextDeparture,
                             currentTime = currentTime,
+                            selectedVariantLabel = selectedVariantLabel,
                             daysAhead = daysAhead,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
@@ -414,6 +398,7 @@ fun NextDepartureScreen(
                         item {
                             DepartureTimeline(
                                 departures = followingDepartures,
+                                selectedVariantLabel = selectedVariantLabel,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
@@ -911,6 +896,7 @@ fun StopHeroHeader(
 fun NextDepartureWithProgress(
     departure: DepartureTime,
     currentTime: LocalTime,
+    selectedVariantLabel: String? = null,
     daysAhead: Int = 0,
     modifier: Modifier = Modifier
 ) {
@@ -952,6 +938,24 @@ fun NextDepartureWithProgress(
                 )
 
                 DepartureTimeBadge(time = departure.toDisplayString())
+
+                // Variant label badge
+                val showLabel = !departure.variantLabel.isNullOrBlank() &&
+                    selectedVariantLabel != null &&
+                    departure.variantLabel != selectedVariantLabel
+                if (showLabel) {
+                    Surface(
+                        shape = MaterialTheme.shapes.small,
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            text = departure.variantLabel!!,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
 
             // Countdown text
@@ -989,6 +993,7 @@ fun NextDepartureWithProgress(
 @Composable
 fun DepartureTimeline(
     departures: List<DepartureTime>,
+    selectedVariantLabel: String? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1045,12 +1050,34 @@ fun DepartureTimeline(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = departure.toDisplayString(),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = departure.toDisplayString(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            val showLabel = !departure.variantLabel.isNullOrBlank() &&
+                                selectedVariantLabel != null &&
+                                departure.variantLabel != selectedVariantLabel
+                            if (showLabel) {
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.secondaryContainer
+                                ) {
+                                    Text(
+                                        text = departure.variantLabel!!,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
 
                         if (!departure.notes.isNullOrBlank()) {
                             Text(

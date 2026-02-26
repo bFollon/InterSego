@@ -28,6 +28,11 @@ import com.github.bfollon.linecapp.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.linecapp.services.pdfparsing.ParserCapabilities
 import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
+import com.github.bfollon.linecapp.data.RouteTab
+import com.github.bfollon.linecapp.data.RouteVariant
+import com.github.bfollon.linecapp.data.RouteView
+import com.github.bfollon.linecapp.data.RouteViewStop
+import com.github.bfollon.linecapp.data.SwapAction
 import com.github.bfollon.linecapp.services.pdfparsing.AnnotatedTime
 import com.github.bfollon.linecapp.services.pdfparsing.TimeModifier
 import com.github.bfollon.linecapp.services.pdfparsing.TimetableParserUtils
@@ -532,7 +537,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
     private fun updateTimetables(
         route: Route,
         timetables: List<BusTimetable>,
-        times: List<LocalTime>
+        times: List<LocalTime>,
+        variantLabel: String? = null
     ): List<BusTimetable> {
         val activeClusters = when (route.alignment) {
             ClusterAlignment.FROM_START -> route.clusters.take(times.size)
@@ -556,7 +562,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     timetable.copy(
                         departures = timetable.departures + DepartureTime(
                             totalMinutes / 60 % 24,
-                            totalMinutes % 60
+                            totalMinutes % 60,
+                            variantLabel = variantLabel
                         )
                     )
                 }
@@ -596,6 +603,17 @@ class M6Parser : CapableParser, RouteStopsProvider {
             modifier = outbound.last().modifier
         )
         return outbound + estimatedArrival
+    }
+
+    private fun routeLabel(id: UUID): String? = when (id) {
+        Routes.Weekday.regular.id, Routes.Weekday.reversed.id -> "Regular"
+        Routes.Weekday.extended.id, Routes.Weekday.extendedReversed.id -> "Extendido"
+        Routes.Weekday.circular.id -> "Circular"
+        Routes.Saturday.regular.id -> "Sábado"
+        Routes.Saturday.reversed.id -> "Sábado"
+        Routes.Sunday.regular.id -> "Domingo"
+        Routes.Sunday.reversed.id -> "Domingo"
+        else -> null
     }
 
     private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
@@ -638,7 +656,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 Routes.Weekday.circular.id to createInitialTimetables(
                     Routes.Weekday.circular,
                     DayType.WEEKDAY,
-                    direction = "Segovia circular"
+                    direction = "Segovia -> Torrecaballeros"
                 ),
                 Routes.Saturday.regular.id to createInitialTimetables(
                     Routes.Saturday.regular,
@@ -669,7 +687,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 updatedTimetables = updateTimetables(
                     route = routeById[target]!!,
                     timetables = state.routes[target]!!,
-                    times = times
+                    times = times,
+                    variantLabel = routeLabel(target)
                 ),
                 target = target,
                 state = state
@@ -750,13 +769,113 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
-        return if (routeId.equals("M6", ignoreCase = true)) {
-            listOf(
-                Routes.Weekday.extended.stops,
-                Routes.Weekday.extendedReversed.stops
+        if (!routeId.equals("M6", ignoreCase = true)) return emptyList()
+        return getRouteVariants(routeId, DayType.WEEKDAY).map { it.stops }
+    }
+
+    override fun getRouteViews(routeId: String, dayType: DayType): List<RouteView>? {
+        if (!routeId.equals("M6", ignoreCase = true)) return null
+
+        val extendedOnlyNames = setOf(
+            Stops.ANDRES_LAGUNA.name, Stops.LA_PISTA.name, Stops.HERMANITAS.name
+        )
+
+        fun extendedStops(route: Route): List<RouteViewStop> = route.stops.map { stop ->
+            RouteViewStop(stop, isExtendedOnly = stop.name in extendedOnlyNames)
+        }
+
+        fun plainStops(route: Route): List<RouteViewStop> = route.stops.map { RouteViewStop(it) }
+
+        return when (dayType) {
+            DayType.WEEKDAY -> {
+                val tabs = listOf(
+                    RouteTab("Regular", "weekday-unified"),
+                    RouteTab("Circular", "weekday-circular")
+                )
+                listOf(
+                    RouteView(
+                        id = "weekday-unified",
+                        label = "Segovia → Torrecaballeros",
+                        stops = extendedStops(Routes.Weekday.extended),
+                        direction = "Segovia -> Torrecaballeros",
+                        departureLabel = null,
+                        swapAction = SwapAction("weekday-unified-reversed"),
+                        tabs = tabs,
+                        extendedSectionLabel = "Ruta extendida"
+                    ),
+                    RouteView(
+                        id = "weekday-unified-reversed",
+                        label = "Torrecaballeros → Segovia",
+                        stops = extendedStops(Routes.Weekday.extendedReversed),
+                        direction = "Torrecaballeros -> Segovia",
+                        departureLabel = null,
+                        swapAction = SwapAction("weekday-unified"),
+                        tabs = tabs,
+                        extendedSectionLabel = "Ruta extendida"
+                    ),
+                    RouteView(
+                        id = "weekday-circular",
+                        label = "Circular",
+                        stops = plainStops(Routes.Weekday.circular),
+                        direction = "Segovia -> Torrecaballeros",
+                        departureLabel = "Circular",
+                        tabs = tabs
+                    )
+                )
+            }
+
+            DayType.SATURDAY -> listOf(
+                RouteView(
+                    id = "saturday-regular",
+                    label = "Segovia → Torrecaballeros",
+                    stops = plainStops(Routes.Saturday.regular),
+                    direction = "Segovia -> Torrecaballeros",
+                    departureLabel = "Sábado",
+                    swapAction = SwapAction("saturday-reversed")
+                ),
+                RouteView(
+                    id = "saturday-reversed",
+                    label = "Torrecaballeros → Segovia",
+                    stops = plainStops(Routes.Saturday.reversed),
+                    direction = "Torrecaballeros -> Segovia",
+                    departureLabel = "Sábado",
+                    swapAction = SwapAction("saturday-regular")
+                )
             )
-        } else {
-            emptyList()
+
+            DayType.SUNDAY -> listOf(
+                RouteView(
+                    id = "sunday-regular",
+                    label = "Segovia → Torrecaballeros",
+                    stops = plainStops(Routes.Sunday.regular),
+                    direction = "Segovia -> Torrecaballeros",
+                    departureLabel = "Domingo",
+                    swapAction = SwapAction("sunday-reversed")
+                ),
+                RouteView(
+                    id = "sunday-reversed",
+                    label = "Torrecaballeros → Segovia",
+                    stops = plainStops(Routes.Sunday.reversed),
+                    direction = "Torrecaballeros -> Segovia",
+                    departureLabel = "Domingo",
+                    swapAction = SwapAction("sunday-regular")
+                )
+            )
+
+            else -> getRouteViews(routeId, DayType.WEEKDAY)
+        }
+    }
+
+    override fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
+        val views = getRouteViews(routeId, dayType) ?: return emptyList()
+        return views.map { view ->
+            RouteVariant(
+                id = view.id,
+                label = view.label,
+                stops = view.stops.map { it.stop },
+                direction = view.direction,
+                departureLabel = view.departureLabel
+            )
         }
     }
 }

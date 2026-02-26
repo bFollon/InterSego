@@ -21,6 +21,7 @@ import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
+import com.github.bfollon.linecapp.data.RouteVariant
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.BusTimetableParser
 import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
@@ -227,6 +228,24 @@ class M4Parser : CapableParser, RouteStopsProvider {
         } else {
             emptyList()
         }
+    }
+
+    override fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
+        if (!routeId.equals("M4", ignoreCase = true)) return emptyList()
+        return listOf(
+            RouteVariant(
+                id = "regular",
+                label = "Lastrilla → Sotillo",
+                stops = m4RegularRoute,
+                direction = "Lastrilla → Sotillo"
+            ),
+            RouteVariant(
+                id = "reverse",
+                label = "Sotillo → Lastrilla",
+                stops = m4ReverseRoute,
+                direction = "Sotillo → Lastrilla"
+            ),
+        )
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {

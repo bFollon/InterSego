@@ -1,6 +1,6 @@
 /*
  * LineCapp - Bus Timetable App for Segovia
- * Copyright (C) 2025 Bruno Follón
+ * Copyright (C) 2025 Bruno Follon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,13 @@
 package com.github.bfollon.linecapp.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.SwapVert
@@ -31,52 +33,38 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.linecapp.R
 import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
+import com.github.bfollon.linecapp.data.RouteView
+import com.github.bfollon.linecapp.data.RouteViewStop
 
 /**
  * Screen displaying bus stops along a route with visual route line.
  *
- * Shows a linear representation of all stops on the route with a vertical line
- * connecting them. Users can toggle between regular and reverse directions.
+ * Renders route views with support for:
+ * - Tab/chip selector for route types (e.g., Regular vs Circular)
+ * - Direction swap button in the top bar
+ * - Extended route section with outline and label
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteStopsScreen(
     route: BusRoute,
-    regularRoute: List<BusStop>,
-    reverseRoute: List<BusStop>,
-    regularDirectionLabel: String,
-    reverseDirectionLabel: String,
+    views: List<RouteView>,
     onBack: () -> Unit,
-    onStopSelected: (BusStop, String) -> Unit  // Now passes stop AND direction
+    onStopSelected: (BusStop, String, String?) -> Unit  // stop, direction, departureLabel
 ) {
-    // State for direction toggle (true = regular, false = reverse)
-    var isRegularDirection by remember { mutableStateOf(true) }
-
-    // Get the appropriate stop list based on direction
-    val stops = if (isRegularDirection) {
-        regularRoute
-    } else {
-        reverseRoute
-    }
-
-    // Determine direction labels and direction string for timetables
-    val directionLabel = if (isRegularDirection) {
-        regularDirectionLabel
-    } else {
-        reverseDirectionLabel
-    }
-
-    val directionString = if (isRegularDirection) {
-        regularDirectionLabel
-    } else {
-        reverseDirectionLabel
-    }
+    var currentViewId by remember { mutableStateOf(views.first().id) }
+    val viewById = remember(views) { views.associateBy { it.id } }
+    val currentView = viewById[currentViewId] ?: views.first()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -84,9 +72,9 @@ fun RouteStopsScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Línea ${route.number}")
+                        Text("Linea ${route.number}")
                         Text(
-                            text = directionLabel,
+                            text = currentView.label,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -100,14 +88,15 @@ fun RouteStopsScreen(
                     }
                 },
                 actions = {
-                    // Direction toggle button
-                    IconButton(
-                        onClick = { isRegularDirection = !isRegularDirection }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SwapVert,
-                            contentDescription = "Cambiar dirección"
-                        )
+                    if (currentView.swapAction != null) {
+                        IconButton(onClick = {
+                            currentViewId = currentView.swapAction.targetViewId
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.SwapVert,
+                                contentDescription = "Cambiar dirección"
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -117,135 +106,304 @@ fun RouteStopsScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // Add top spacing
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            itemsIndexed(stops) { index, stop ->
+            // Tab/chip row
+            if (currentView.tabs != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { onStopSelected(stop, directionString) },
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Left side: Route line indicator
-                    Box(
-                        modifier = Modifier
-                            .width(40.dp)
-                            .height(80.dp) // Fixed height for proper spacing
-                    ) {
-                        when {
-                            index == 0 -> {
-                                // First stop: Start chevron (downward V) with line below
-                                // Chevron centered horizontally, aligned with stop name
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_route_start_chevron),
-                                    contentDescription = "Inicio",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .offset(x = 8.dp, y = 12.dp) // Center at x=20dp (8+12), align with text
-                                )
-
-                                // Line extending down from chevron tip
-                                Box(
-                                    modifier = Modifier
-                                        .width(4.dp)
-                                        .height(80.dp)
-                                        .offset(x = 18.dp, y = 28.dp) // Start below chevron tip
-                                        .background(MaterialTheme.colorScheme.primary)
-                                )
-                            }
-                            index == stops.lastIndex -> {
-                                // Last stop: Line coming from above + end chevron (upward ^)
-                                // Line coming from above, stopping before chevron
-                                Box(
-                                    modifier = Modifier
-                                        .width(4.dp)
-                                        .height(16.dp) // Shorter line, stops before chevron
-                                        .offset(x = 18.dp, y = 0.dp)
-                                        .background(MaterialTheme.colorScheme.primary)
-                                )
-
-                                // Chevron centered horizontally, aligned with stop name
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_route_end_chevron),
-                                    contentDescription = "Final",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .offset(x = 8.dp, y = 16.dp) // Align with text (same as circle y=20dp center)
-                                )
-                            }
-                            else -> {
-                                // Middle stops: Circle with lines above and below
-                                // Vertical line coming from above
-                                Box(
-                                    modifier = Modifier
-                                        .width(4.dp)
-                                        .height(24.dp)
-                                        .offset(x = 18.dp, y = 0.dp)
-                                        .background(MaterialTheme.colorScheme.primary)
-                                )
-
-                                // Circle aligned with stop name
-                                Box(
-                                    modifier = Modifier
-                                        .size(16.dp)
-                                        .offset(x = 12.dp, y = 20.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primary,
-                                            shape = CircleShape
-                                        )
-                                )
-
-                                // Vertical line going down
-                                Box(
-                                    modifier = Modifier
-                                        .width(4.dp)
-                                        .height(80.dp)
-                                        .offset(x = 18.dp, y = 28.dp)
-                                        .background(MaterialTheme.colorScheme.primary)
-                                )
-                            }
-                        }
-                    }
-
-                    // Right side: Stop information
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 16.dp)
-                    ) {
-                        Text(
-                            text = stop.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stop.address,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    currentView.tabs.forEach { tab ->
+                        // A tab is selected if the current view matches it,
+                        // or if the current view's swap target matches it
+                        // (e.g., reversed direction still highlights the "Regular" tab)
+                        val isSelected = currentViewId == tab.viewId ||
+                                currentView.swapAction?.targetViewId == tab.viewId
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                if (!isSelected) {
+                                    currentViewId = tab.viewId
+                                }
+                            },
+                            label = { Text(tab.label) }
                         )
                     }
                 }
             }
 
-            // Add bottom spacing
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
+            // Stop list
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Build items with extended section separator
+                val stops = currentView.stops
+                val extendedLabel = currentView.extendedSectionLabel
+                val hasExtendedStops = extendedLabel != null && stops.any { it.isExtendedOnly }
+
+                itemsIndexed(stops) { index, viewStop ->
+                    // Check if we need the extended section separator at the boundary
+                    if (hasExtendedStops && index > 0) {
+                        val prevIsExtended = stops[index - 1].isExtendedOnly
+                        val currIsExtended = viewStop.isExtendedOnly
+                        if (prevIsExtended != currIsExtended) {
+                            ExtendedSectionSeparator(label = extendedLabel!!)
+                        }
+                    }
+
+                    StopRow(
+                        stop = viewStop.stop,
+                        isExtended = viewStop.isExtendedOnly,
+                        isFirst = index == 0,
+                        isLast = index == stops.lastIndex,
+                        onClick = {
+                            onStopSelected(
+                                viewStop.stop,
+                                currentView.direction,
+                                currentView.departureLabel
+                            )
+                        }
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }
 }
 
+@Composable
+private fun StopRow(
+    stop: BusStop,
+    isExtended: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onClick: () -> Unit
+) {
+    val lineColor = if (isExtended) {
+        MaterialTheme.colorScheme.tertiary
+    } else {
+        MaterialTheme.colorScheme.primary
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Left side: Route line indicator
+        Box(
+            modifier = Modifier
+                .width(40.dp)
+                .height(80.dp)
+        ) {
+            when {
+                isFirst -> {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_route_start_chevron),
+                        contentDescription = "Inicio",
+                        tint = lineColor,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .offset(x = 8.dp, y = 12.dp)
+                    )
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(80.dp)
+                                .offset(x = 18.dp, y = 28.dp)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(80.dp)
+                                .offset(x = 18.dp, y = 28.dp)
+                                .background(lineColor)
+                        )
+                    }
+                }
+                isLast -> {
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(16.dp)
+                                .offset(x = 18.dp, y = 0.dp)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(16.dp)
+                                .offset(x = 18.dp, y = 0.dp)
+                                .background(lineColor)
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_route_end_chevron),
+                        contentDescription = "Final",
+                        tint = lineColor,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .offset(x = 8.dp, y = 16.dp)
+                    )
+                }
+                else -> {
+                    // Line above
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(24.dp)
+                                .offset(x = 18.dp, y = 0.dp)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(24.dp)
+                                .offset(x = 18.dp, y = 0.dp)
+                                .background(lineColor)
+                        )
+                    }
+                    // Stop dot
+                    if (isExtended) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .offset(x = 12.dp, y = 20.dp)
+                                .border(3.dp, lineColor, CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .offset(x = 12.dp, y = 20.dp)
+                                .background(
+                                    color = lineColor,
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+                    // Line below
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(80.dp)
+                                .offset(x = 18.dp, y = 28.dp)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(4.dp)
+                                .height(80.dp)
+                                .offset(x = 18.dp, y = 28.dp)
+                                .background(lineColor)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Right side: Stop information
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = 16.dp)
+        ) {
+            Text(
+                text = stop.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (stop.area != null) {
+                Text(
+                    text = stop.area,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (stop.address.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stop.address,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashedVerticalLine(
+    color: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.drawBehind {
+            val dashLength = 6.dp.toPx()
+            val gapLength = 4.dp.toPx()
+            drawLine(
+                color = color,
+                start = Offset(size.width / 2, 0f),
+                end = Offset(size.width / 2, size.height),
+                strokeWidth = size.width,
+                pathEffect = PathEffect.dashPathEffect(
+                    floatArrayOf(dashLength, gapLength),
+                    0f
+                )
+            )
+        }
+    )
+}
+
+@Composable
+private fun ExtendedSectionSeparator(label: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 56.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(4.dp),
+            color = MaterialTheme.colorScheme.tertiaryContainer
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+    }
+}
