@@ -28,6 +28,7 @@ import com.github.bfollon.linecapp.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.linecapp.services.pdfparsing.ParserCapabilities
 import com.github.bfollon.linecapp.services.pdfparsing.ParserMode
 import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
+import com.github.bfollon.linecapp.services.pdfparsing.AnnotatedTime
 import com.github.bfollon.linecapp.services.pdfparsing.TimeModifier
 import com.github.bfollon.linecapp.services.pdfparsing.TimetableParserUtils
 import com.itextpdf.kernel.pdf.PdfDocument
@@ -87,6 +88,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     companion object {
+        private const val ESTIMATED_TORRECAB_TO_DELICIAS_MINUTES = 15L
+
         private object Stops {
             val AZOGUEJO = BusStop(
                 name = "Azoguejo",
@@ -264,7 +267,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 )
                 val extendedReversed = extended.reversed()
 
-                val busStation = Route(
+                val circular = Route(
                     clusters = listOf(
                         StopCluster(
                             listOf(
@@ -294,8 +297,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
             }
 
             object Saturday {
-                val regular = Weekday.busStation
-                    .copy(clusters = Weekday.busStation.clusters.dropLast(1))
+                val regular = Weekday.circular
+                    .copy(id = UUID.randomUUID(), clusters = Weekday.circular.clusters.dropLast(1))
 
                 // Same as busStation but the return leg adds Jardinillos after Azoguejo
                 val reversed = Route(
@@ -307,8 +310,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
             }
 
             object Sunday {
-                val regular = Weekday.busStation
-                    .copy(clusters = Weekday.busStation.clusters.dropLast(1))
+                val regular = Weekday.circular
+                    .copy(id = UUID.randomUUID(), clusters = Weekday.circular.clusters.dropLast(1))
 
                 val reversed = regular.reversed()
             }
@@ -467,7 +470,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     when (state.currentAnnotation) {
                         TimeModifier.ARROW -> Routes.Weekday.extended.id
                         TimeModifier.DOUBLE_ASTERISK, TimeModifier.POUND ->
-                            Routes.Weekday.busStation.id
+                            Routes.Weekday.circular.id
 
                         else -> Routes.Weekday.regular.id
                     }
@@ -569,14 +572,42 @@ class M6Parser : CapableParser, RouteStopsProvider {
     private fun ParsingState.processAnnotation(modifier: TimeModifier?): ParsingState =
         modifier?.let { this.copy(currentAnnotation = it) } ?: this
 
+    /**
+     * Circular route lines (marked with # or **) contain 16 times: 8 outbound
+     * followed by 8 mirrored return-column times. The bus actually makes a single
+     * journey (Segovia → Torrecaballeros → Delicias/Azoguejo), so we keep only
+     * the outbound half and append an estimated arrival at the final cluster.
+     */
+    private fun preprocessCircularLine(
+        annotatedTimes: List<AnnotatedTime>
+    ): List<AnnotatedTime> {
+        val isCircularLine = annotatedTimes.any {
+            it.modifier == TimeModifier.POUND ||
+            it.modifier == TimeModifier.DOUBLE_ASTERISK
+        }
+        if (!isCircularLine) return annotatedTimes
+
+        val outboundEnd = annotatedTimes.indices.drop(1).firstOrNull { i ->
+            !annotatedTimes[i].time.isAfter(annotatedTimes[i - 1].time)
+        } ?: annotatedTimes.size
+        val outbound = annotatedTimes.take(outboundEnd)
+        val estimatedArrival = AnnotatedTime(
+            time = outbound.last().time.plusMinutes(ESTIMATED_TORRECAB_TO_DELICIAS_MINUTES),
+            modifier = outbound.last().modifier
+        )
+        return outbound + estimatedArrival
+    }
+
     private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
         val routeById: Map<UUID, Route> = listOf(
             Routes.Weekday.regular,
             Routes.Weekday.reversed,
             Routes.Weekday.extended,
             Routes.Weekday.extendedReversed,
-            Routes.Weekday.busStation,
+            Routes.Weekday.circular,
+            Routes.Saturday.regular,
             Routes.Saturday.reversed,
+            Routes.Sunday.regular,
             Routes.Sunday.reversed,
         ).associateBy { it.id }
 
@@ -604,10 +635,10 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     DayType.WEEKDAY,
                     direction = "Torrecaballeros -> Segovia"
                 ),
-                Routes.Weekday.busStation.id to createInitialTimetables(
-                    Routes.Weekday.busStation,
+                Routes.Weekday.circular.id to createInitialTimetables(
+                    Routes.Weekday.circular,
                     DayType.WEEKDAY,
-                    direction = "Segovia -> Torrecaballeros"
+                    direction = "Segovia circular"
                 ),
                 Routes.Saturday.regular.id to createInitialTimetables(
                     Routes.Saturday.regular,
@@ -649,8 +680,9 @@ class M6Parser : CapableParser, RouteStopsProvider {
             when {
                 TimetableParserUtils.hasTimes(line) -> {
                     val annotatedTimes = TimetableParserUtils.extractAnnotatedTimes(line)
+                    val processedTimes = preprocessCircularLine(annotatedTimes)
 
-                    annotatedTimes.fold(
+                    processedTimes.fold(
                         Triple(state, emptyList<LocalTime>(), false) // (state, builder, hasFlipped)
                     ) { (state, inlineBuilder, hasFlipped), annotatedTime ->
                         val stateWithAnnotation = state.processAnnotation(annotatedTime.modifier)
@@ -669,8 +701,6 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         // Buffer full → flush the complete journey including the current time.
                         //   flushState = stateWithAnnotation so the annotation is consumed here.
                         //
-                        // TODO: #/** circular services (e.g. line 20 ~21:50) not yet handled —
-                        //       they deliberately decrease in time and trigger a spurious flush.
                         val isDirectionChange = !hasFlipped &&
                                 inlineBuilder.isNotEmpty() &&
                                 !annotatedTime.time.isAfter(inlineBuilder.last())
