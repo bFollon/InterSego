@@ -287,26 +287,7 @@ private fun StopRow(
                                 .background(lineColor)
                         )
                     }
-                    // Stop dot
-                    if (isExtended) {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .offset(x = 12.dp, y = 20.dp)
-                                .border(3.dp, lineColor, CircleShape)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .offset(x = 12.dp, y = 20.dp)
-                                .background(
-                                    color = lineColor,
-                                    shape = CircleShape
-                                )
-                        )
-                    }
-                    // Line below
+                    // Line below (drawn before dot so dot renders on top)
                     if (isExtended) {
                         DashedVerticalLine(
                             color = lineColor,
@@ -322,6 +303,29 @@ private fun StopRow(
                                 .height(80.dp)
                                 .offset(x = 18.dp, y = 28.dp)
                                 .background(lineColor)
+                        )
+                    }
+                    // Stop dot (drawn last to cover dashed lines)
+                    if (isExtended) {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .offset(x = 12.dp, y = 20.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = CircleShape
+                                )
+                                .border(3.dp, lineColor, CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .offset(x = 12.dp, y = 20.dp)
+                                .background(
+                                    color = lineColor,
+                                    shape = CircleShape
+                                )
                         )
                     }
                 }
