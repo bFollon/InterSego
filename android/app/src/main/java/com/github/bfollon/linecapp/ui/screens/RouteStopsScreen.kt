@@ -259,13 +259,11 @@ private fun StopRow(
                                 .background(lineColor)
                         )
                     }
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_route_end_chevron),
-                        contentDescription = "Final",
-                        tint = lineColor,
+                    Box(
                         modifier = Modifier
-                            .size(24.dp)
-                            .offset(x = 8.dp, y = 16.dp)
+                            .size(16.dp)
+                            .offset(x = 12.dp, y = 20.dp)
+                            .background(lineColor)
                     )
                 }
                 else -> {
