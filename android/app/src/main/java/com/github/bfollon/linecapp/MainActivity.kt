@@ -376,17 +376,14 @@ fun AppNavigation() {
             val variantLabel = backStackEntry.arguments?.getString("variantLabel")
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Find the stop from all views by ID (dynamic lookup)
-            val stop = pdfProcessingService.getRouteViews(routeId, DayType.WEEKDAY)
-                .flatMap { it.stops }.map { it.stop }
-                .distinctBy { it.id }
-                .find { it.id == stopId }
-                // Fallback: try all day types
-                ?: pdfProcessingService.getRouteViews(routeId, DayType.SATURDAY)
-                    .flatMap { it.stops }.map { it.stop }.find { it.id == stopId }
-                ?: pdfProcessingService.getRouteViews(routeId, DayType.SUNDAY)
-                    .flatMap { it.stops }.map { it.stop }.find { it.id == stopId }
-                ?: return@composable
+            // Find the stop from all views by ID (dynamic lookup across day types)
+            val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
+                .firstNotNullOfOrNull { dayType ->
+                    pdfProcessingService.getRouteViews(routeId, dayType)
+                        .flatMap { it.stops }
+                        .find { it.stop.id == stopId }
+                        ?.stop
+                } ?: return@composable
 
             // "all" means show all departures without variant badges
             val effectiveVariantLabel = if (variantLabel == "all") null else variantLabel

@@ -88,9 +88,9 @@ fun RouteStopsScreen(
                     }
                 },
                 actions = {
-                    if (currentView.swapAction != null) {
+                    currentView.swapAction?.let { swap ->
                         IconButton(onClick = {
-                            currentViewId = currentView.swapAction.targetViewId
+                            currentViewId = swap.targetViewId
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
@@ -112,14 +112,14 @@ fun RouteStopsScreen(
                 .padding(paddingValues)
         ) {
             // Tab/chip row
-            if (currentView.tabs != null) {
+            currentView.tabs?.let { tabs ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    currentView.tabs.forEach { tab ->
+                    tabs.forEach { tab ->
                         // A tab is selected if the current view matches it,
                         // or if the current view's swap target matches it
                         // (e.g., reversed direction still highlights the "Regular" tab)

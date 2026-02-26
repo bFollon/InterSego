@@ -222,11 +222,7 @@ class PDFProcessingService(private val context: Context) {
         // Fallback: convert RouteVariant to RouteView
         val variants = getRouteVariants(routeId, dayType)
         return variants.mapIndexed { index, variant ->
-            val swapTargetId = when {
-                variants.size == 2 && index == 0 -> variants[1].id
-                variants.size == 2 && index == 1 -> variants[0].id
-                else -> null
-            }
+            val swapTargetId = if (variants.size == 2) variants[1 - index].id else null
             RouteView(
                 id = variant.id,
                 label = variant.label,

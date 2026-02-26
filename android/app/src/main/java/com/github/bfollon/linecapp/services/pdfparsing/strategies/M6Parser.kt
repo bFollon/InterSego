@@ -386,13 +386,6 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     /**
-     * Parse M4 timetables from decoded PDF text
-     *
-     * @param lines The decoded text lines from the PDF
-     * @param routeId The route ID (M4)
-     * @return List of BusTimetable objects grouped by (stop, dayType)
-     */
-    /**
      * Pre-sort consecutive time-containing lines that the PDF returned in reversed order.
      *
      * The parser expects regular-direction lines before their corresponding return-direction
@@ -494,7 +487,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
             }
 
             else -> {
-                println("TODO ERROR")
+                DebugConfig.debugError("M6Parser: Unexpected DayType in determineParsingTarget: ${state.section}", null)
                 Routes.Weekday.regular.id
             }
         }
@@ -756,12 +749,10 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     }
                 }
 
-                detectDayType(line) == DayType.SATURDAY || detectDayType(line) == DayType.SUNDAY -> state.copy(
-                    section = detectDayType(line)!!,
-                    isReversed = false
-                )
-
-                else -> state
+                else -> detectDayType(line)
+                    ?.takeIf { it == DayType.SATURDAY || it == DayType.SUNDAY }
+                    ?.let { state.copy(section = it, isReversed = false) }
+                    ?: state
             }
         }
 
