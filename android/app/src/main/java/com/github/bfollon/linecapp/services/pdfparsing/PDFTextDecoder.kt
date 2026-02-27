@@ -18,6 +18,9 @@
 package com.github.bfollon.linecapp.services.pdfparsing
 
 import com.github.bfollon.linecapp.services.DebugConfig
+import com.itextpdf.kernel.pdf.PdfPage
+import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
+import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import com.itextpdf.kernel.pdf.canvas.parser.listener.ITextExtractionStrategy
 import com.itextpdf.kernel.pdf.canvas.parser.data.IEventData
 import com.itextpdf.kernel.pdf.canvas.parser.data.TextRenderInfo
@@ -109,6 +112,29 @@ object PDFTextDecoder {
         }
 
         return decoded.toString()
+    }
+
+    /**
+     * Extract text from a PDF page, automatically handling broken font encodings.
+     *
+     * Tries standard iText extraction first. If the text appears garbled
+     * (high ratio of control/replacement characters), falls back to raw glyph
+     * extraction with a +29 character offset (old Linecar PDF encoding).
+     *
+     * @param page The PDF page to extract text from
+     * @param tag Log tag for debug output (e.g., "M4Parser")
+     * @return Decoded text content of the page
+     */
+    fun extractText(page: PdfPage, tag: String = "PDFTextDecoder"): String {
+        var text = PdfTextExtractor.getTextFromPage(page)
+        if (!needsDecoding(text)) return text
+
+        DebugConfig.debugPrint("$tag: Detected broken encoding, using custom decoder...")
+        val strategy = RawGlyphExtractionStrategy()
+        PdfCanvasProcessor(strategy).processPageContent(page)
+        text = decodeWithCharacterOffset(strategy.resultantText, offset = 29)
+        DebugConfig.debugPrint("$tag: Successfully decoded broken PDF")
+        return text
     }
 
     /**

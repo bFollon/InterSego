@@ -38,8 +38,6 @@ import com.github.bfollon.linecapp.services.pdfparsing.TimeModifier
 import com.github.bfollon.linecapp.services.pdfparsing.TimetableParserUtils
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
-import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
-import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import java.io.File
 import java.time.LocalTime
 import java.util.UUID
@@ -93,6 +91,9 @@ class M6Parser : CapableParser, RouteStopsProvider {
     }
 
     companion object {
+        private const val DIRECTION_OUTBOUND = "Segovia → Torrecaballeros"
+        private const val DIRECTION_INBOUND = "Torrecaballeros → Segovia"
+        private const val ESTIMATED_MINUTES_PER_CLUSTER_STOP = 5
         private const val ESTIMATED_TORRECAB_TO_DELICIAS_MINUTES = 15L
 
         private object Stops {
@@ -346,19 +347,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 DebugConfig.debugPrint("M6Parser: ===== PAGE $pageNum =====")
                 val page = pdfDocument.getPage(pageNum)
 
-                var extractedText = PdfTextExtractor.getTextFromPage(page)
-
-                if (PDFTextDecoder.needsDecoding(extractedText)) {
-                    DebugConfig.debugPrint("M6Parser: Detected broken encoding, using custom decoder...")
-
-                    val strategy = PDFTextDecoder.RawGlyphExtractionStrategy()
-                    val processor = PdfCanvasProcessor(strategy)
-                    processor.processPageContent(page)
-                    val rawText = strategy.resultantText
-
-                    extractedText = PDFTextDecoder.decodeWithCharacterOffset(rawText, offset = 29)
-                    DebugConfig.debugPrint("M6Parser: Successfully decoded broken PDF")
-                }
+                val extractedText = PDFTextDecoder.extractText(page, tag = "M6Parser")
 
                 val lines = extractedText.lines()
                 DebugConfig.debugPrint("M6Parser: Page $pageNum has ${lines.size} lines")
@@ -503,20 +492,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
         currentAnnotation = null // Clear annotation since we are going to process a new time group
     )
 
-    /**
-     * Detect day type from section header lines
-     * Returns DayType if detected, null otherwise
-     */
-    fun detectDayType(line: String): DayType? {
-        return when {
-            line.contains("LUNES A VIERNES", ignoreCase = true) -> DayType.WEEKDAY
-            line.contains("SÁBADOS", ignoreCase = true) ||
-                    line.contains("SABADOS", ignoreCase = true) -> DayType.SATURDAY
-
-            line.contains("DOMINGOS", ignoreCase = true) -> DayType.SUNDAY
-            else -> null
-        }
-    }
+    private fun detectDayType(line: String): DayType? = TimetableParserUtils.detectDayType(line)
 
     /**
      * Update timetables with new departure times using the cluster structure.
@@ -551,7 +527,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
         ) { (result, remaining), (cluster, anchorTime) ->
             val updatedCluster = remaining.take(cluster.stops.size)
                 .mapIndexed { posInCluster, timetable ->
-                    val totalMinutes = anchorTime.hour * 60 + anchorTime.minute + posInCluster * 5
+                    val totalMinutes = anchorTime.hour * 60 + anchorTime.minute + posInCluster * ESTIMATED_MINUTES_PER_CLUSTER_STOP
                     timetable.copy(
                         departures = timetable.departures + DepartureTime(
                             totalMinutes / 60 % 24,
@@ -629,47 +605,47 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 Routes.Weekday.regular.id to createInitialTimetables(
                     Routes.Weekday.regular,
                     DayType.WEEKDAY,
-                    direction = "Segovia -> Torrecaballeros"
+                    direction = DIRECTION_OUTBOUND
                 ),
                 Routes.Weekday.reversed.id to createInitialTimetables(
                     Routes.Weekday.reversed,
                     DayType.WEEKDAY,
-                    direction = "Torrecaballeros -> Segovia"
+                    direction = DIRECTION_INBOUND
                 ),
                 Routes.Weekday.extended.id to createInitialTimetables(
                     Routes.Weekday.extended,
                     DayType.WEEKDAY,
-                    direction = "Segovia -> Torrecaballeros"
+                    direction = DIRECTION_OUTBOUND
                 ),
                 Routes.Weekday.extendedReversed.id to createInitialTimetables(
                     Routes.Weekday.extendedReversed,
                     DayType.WEEKDAY,
-                    direction = "Torrecaballeros -> Segovia"
+                    direction = DIRECTION_INBOUND
                 ),
                 Routes.Weekday.circular.id to createInitialTimetables(
                     Routes.Weekday.circular,
                     DayType.WEEKDAY,
-                    direction = "Segovia -> Torrecaballeros"
+                    direction = DIRECTION_OUTBOUND
                 ),
                 Routes.Saturday.regular.id to createInitialTimetables(
                     Routes.Saturday.regular,
                     DayType.SATURDAY,
-                    direction = "Segovia -> Torrecaballeros"
+                    direction = DIRECTION_OUTBOUND
                 ),
                 Routes.Saturday.reversed.id to createInitialTimetables(
                     Routes.Saturday.reversed,
                     DayType.SATURDAY,
-                    direction = "Torrecaballeros -> Segovia"
+                    direction = DIRECTION_INBOUND
                 ),
                 Routes.Sunday.regular.id to createInitialTimetables(
                     Routes.Sunday.regular,
                     DayType.SUNDAY,
-                    direction = "Segovia -> Torrecaballeros"
+                    direction = DIRECTION_OUTBOUND
                 ),
                 Routes.Sunday.reversed.id to createInitialTimetables(
                     Routes.Sunday.reversed,
                     DayType.SUNDAY,
-                    direction = "Torrecaballeros -> Segovia"
+                    direction = DIRECTION_INBOUND
                 ),
             ),
         )
@@ -788,7 +764,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         id = "weekday-unified",
                         label = "Segovia → Torrecaballeros",
                         stops = extendedStops(Routes.Weekday.extended),
-                        direction = "Segovia -> Torrecaballeros",
+                        direction = DIRECTION_OUTBOUND,
                         departureLabel = null,
                         swapAction = SwapAction("weekday-unified-reversed"),
                         tabs = tabs,
@@ -798,7 +774,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         id = "weekday-unified-reversed",
                         label = "Torrecaballeros → Segovia",
                         stops = extendedStops(Routes.Weekday.extendedReversed),
-                        direction = "Torrecaballeros -> Segovia",
+                        direction = DIRECTION_INBOUND,
                         departureLabel = null,
                         swapAction = SwapAction("weekday-unified"),
                         tabs = tabs,
@@ -808,7 +784,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         id = "weekday-circular",
                         label = "Circular",
                         stops = plainStops(Routes.Weekday.circular),
-                        direction = "Segovia -> Torrecaballeros",
+                        direction = DIRECTION_OUTBOUND,
                         departureLabel = "Circular",
                         tabs = tabs
                     )
@@ -820,7 +796,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     id = "saturday-regular",
                     label = "Segovia → Torrecaballeros",
                     stops = plainStops(Routes.Saturday.regular),
-                    direction = "Segovia -> Torrecaballeros",
+                    direction = DIRECTION_OUTBOUND,
                     departureLabel = "Sábado",
                     swapAction = SwapAction("saturday-reversed")
                 ),
@@ -828,7 +804,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     id = "saturday-reversed",
                     label = "Torrecaballeros → Segovia",
                     stops = plainStops(Routes.Saturday.reversed),
-                    direction = "Torrecaballeros -> Segovia",
+                    direction = DIRECTION_INBOUND,
                     departureLabel = "Sábado",
                     swapAction = SwapAction("saturday-regular")
                 )
@@ -839,7 +815,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     id = "sunday-regular",
                     label = "Segovia → Torrecaballeros",
                     stops = plainStops(Routes.Sunday.regular),
-                    direction = "Segovia -> Torrecaballeros",
+                    direction = DIRECTION_OUTBOUND,
                     departureLabel = "Domingo",
                     swapAction = SwapAction("sunday-reversed")
                 ),
@@ -847,7 +823,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     id = "sunday-reversed",
                     label = "Torrecaballeros → Segovia",
                     stops = plainStops(Routes.Sunday.reversed),
-                    direction = "Torrecaballeros -> Segovia",
+                    direction = DIRECTION_INBOUND,
                     departureLabel = "Domingo",
                     swapAction = SwapAction("sunday-regular")
                 )

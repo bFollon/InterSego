@@ -33,8 +33,6 @@ import com.github.bfollon.linecapp.services.pdfparsing.RouteStopsProvider
 import com.github.bfollon.linecapp.services.pdfparsing.TimetableParserUtils
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
-import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
-import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import java.io.File
 import java.time.LocalTime
 
@@ -73,6 +71,9 @@ class M4Parser : CapableParser, RouteStopsProvider {
     )
 
     companion object {
+        private const val DIRECTION_REGULAR = "Lastrilla → Sotillo"
+        private const val DIRECTION_REVERSE = "Sotillo → Lastrilla"
+
         // Pattern to match time with asterisk (e.g., "7:40*", "14:30 *")
         private val TIME_WITH_ASTERISK_PATTERN = Regex("""\d{1,2}:\d{2}\s*\*""")
 
@@ -202,15 +203,15 @@ class M4Parser : CapableParser, RouteStopsProvider {
         return listOf(
             RouteVariant(
                 id = "regular",
-                label = "Lastrilla → Sotillo",
+                label = DIRECTION_REGULAR,
                 stops = m4RegularRoute,
-                direction = "Lastrilla → Sotillo"
+                direction = DIRECTION_REGULAR
             ),
             RouteVariant(
                 id = "reverse",
-                label = "Sotillo → Lastrilla",
+                label = DIRECTION_REVERSE,
                 stops = m4ReverseRoute,
-                direction = "Sotillo → Lastrilla"
+                direction = DIRECTION_REVERSE
             ),
         )
     }
@@ -234,24 +235,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                 DebugConfig.debugPrint("M4Parser: Processing page $pageNum")
                 val page = pdfDocument.getPage(pageNum)
 
-                // Try standard iText extraction first
-                var extractedText = PdfTextExtractor.getTextFromPage(page)
-
-                // Check if text needs decoding (broken PDF encoding)
-                if (PDFTextDecoder.needsDecoding(extractedText)) {
-                    DebugConfig.debugPrint("M4Parser: Detected broken encoding, using custom decoder...")
-
-                    // Use raw glyph extraction for broken PDFs
-                    val strategy = PDFTextDecoder.RawGlyphExtractionStrategy()
-                    val processor = PdfCanvasProcessor(strategy)
-                    processor.processPageContent(page)
-                    val rawText = strategy.resultantText
-
-                    // Decode with +29 character offset (old Linecar PDFs)
-                    extractedText = PDFTextDecoder.decodeWithCharacterOffset(rawText, offset = 29)
-                    DebugConfig.debugPrint("M4Parser: Successfully decoded broken PDF")
-                }
-
+                val extractedText = PDFTextDecoder.extractText(page, tag = "M4Parser")
                 val lines = extractedText.lines()
 
                 DebugConfig.debugPrint("M4Parser: Page $pageNum has ${lines.size} lines")
@@ -281,17 +265,16 @@ class M4Parser : CapableParser, RouteStopsProvider {
     }
 
     /**
-     * Detect day type from section header lines
-     * Returns DayType if detected, null otherwise
+     * Detect day type from section header lines.
+     * Maps SATURDAY/SUNDAY → WEEKEND since M4 only distinguishes weekday vs weekend.
      */
-    fun detectDayType(line: String): DayType? {
-        return when {
-            line.contains("LUNES A VIERNES", ignoreCase = true) -> DayType.WEEKDAY
-            line.contains("SÁBADOS", ignoreCase = true) ||
-                    line.contains("SABADOS", ignoreCase = true) -> DayType.WEEKEND
-            else -> null
+    private fun detectDayType(line: String): DayType? =
+        TimetableParserUtils.detectDayType(line)?.let { dayType ->
+            when (dayType) {
+                DayType.SATURDAY, DayType.SUNDAY -> DayType.WEEKEND
+                else -> dayType
+            }
         }
-    }
 
     /**
      * Create initial empty timetables for a route
@@ -326,10 +309,10 @@ class M4Parser : CapableParser, RouteStopsProvider {
             currentDayType = DayType.WEEKDAY,
             incompleteJourney = emptyList(),
             isSummerSection = false,
-            regularRouteWeekdayTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKDAY, "Lastrilla → Sotillo"),
-            regularRouteWeekendTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKEND, "Lastrilla → Sotillo"),
-            reverseRouteWeekdayTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKDAY, "Sotillo → Lastrilla"),
-            reverseRouteWeekendTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKEND, "Sotillo → Lastrilla")
+            regularRouteWeekdayTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKDAY, DIRECTION_REGULAR),
+            regularRouteWeekendTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKEND, DIRECTION_REGULAR),
+            reverseRouteWeekdayTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKDAY, DIRECTION_REVERSE),
+            reverseRouteWeekendTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKEND, DIRECTION_REVERSE)
         )
 
         // Fold through lines, building timetables on-the-fly
@@ -483,7 +466,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
         // Show first 5 and some with reverse direction
         sortedTimetables.take(5).forEach { DebugConfig.debugPrint("$it") }
-        sortedTimetables.filter { it.direction == "Sotillo → Lastrilla" }.take(5).forEach {
+        sortedTimetables.filter { it.direction == DIRECTION_REVERSE }.take(5).forEach {
             DebugConfig.debugPrint("$it")
         }
 

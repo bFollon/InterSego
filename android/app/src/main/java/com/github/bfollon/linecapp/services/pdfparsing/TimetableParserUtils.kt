@@ -17,6 +17,7 @@
 
 package com.github.bfollon.linecapp.services.pdfparsing
 
+import com.github.bfollon.linecapp.data.DayType
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -101,4 +102,20 @@ object TimetableParserUtils {
      * Example: [LocalTime(14,30), LocalTime(7,40)] -> [LocalTime(7,40), LocalTime(14,30)]
      */
     fun sortTimes(times: List<LocalTime>): List<LocalTime> = times.sorted()
+
+    /**
+     * Detect day type from Spanish section header lines in PDF timetables.
+     *
+     * Returns the most specific DayType: SATURDAY and SUNDAY are returned
+     * individually. Parsers that group them as WEEKEND can map at their call site.
+     *
+     * @return DayType if detected, null otherwise
+     */
+    fun detectDayType(line: String): DayType? = when {
+        line.contains("LUNES A VIERNES", ignoreCase = true) -> DayType.WEEKDAY
+        line.contains("SÁBADOS", ignoreCase = true) ||
+                line.contains("SABADOS", ignoreCase = true) -> DayType.SATURDAY
+        line.contains("DOMINGOS", ignoreCase = true) -> DayType.SUNDAY
+        else -> null
+    }
 }
