@@ -600,7 +600,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
     private fun routeLabel(id: UUID): String? = when (id) {
         Routes.Weekday.regular.id, Routes.Weekday.reversed.id -> "Regular"
-        Routes.Weekday.extended.id, Routes.Weekday.extendedReversed.id -> "Extendido"
+        Routes.Weekday.extended.id, Routes.Weekday.extendedReversed.id -> "Extendida"
         Routes.Weekday.circular.id -> "Circular"
         Routes.Saturday.regular.id -> "Sábado"
         Routes.Saturday.reversed.id -> "Sábado"

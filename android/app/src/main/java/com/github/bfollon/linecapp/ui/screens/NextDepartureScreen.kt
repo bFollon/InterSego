@@ -939,10 +939,11 @@ fun NextDepartureWithProgress(
 
                 DepartureTimeBadge(time = departure.toDisplayString())
 
-                // Variant label badge
-                val showLabel = !departure.variantLabel.isNullOrBlank() &&
-                    selectedVariantLabel != null &&
-                    departure.variantLabel != selectedVariantLabel
+                // Variant label badge: show for non-default variants
+                val showLabel = !departure.variantLabel.isNullOrBlank() && when {
+                    selectedVariantLabel == null -> departure.variantLabel != "Regular"
+                    else -> departure.variantLabel != selectedVariantLabel
+                }
                 if (showLabel) {
                     Surface(
                         shape = MaterialTheme.shapes.small,
@@ -1061,9 +1062,10 @@ fun DepartureTimeline(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
 
-                            val showLabel = !departure.variantLabel.isNullOrBlank() &&
-                                selectedVariantLabel != null &&
-                                departure.variantLabel != selectedVariantLabel
+                            val showLabel = !departure.variantLabel.isNullOrBlank() && when {
+                                selectedVariantLabel == null -> departure.variantLabel != "Regular"
+                                else -> departure.variantLabel != selectedVariantLabel
+                            }
                             if (showLabel) {
                                 Surface(
                                     shape = MaterialTheme.shapes.small,
