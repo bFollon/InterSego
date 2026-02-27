@@ -20,7 +20,6 @@ package com.github.bfollon.linecapp.services
 import android.content.Context
 import android.location.Geocoder
 import android.location.Location
-import android.os.Build
 import com.github.bfollon.linecapp.data.BusStop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -64,13 +63,7 @@ class GeocodingService(private val context: Context) {
                 DebugConfig.debugPrint("🔍 Geocoding address: $fullAddress")
 
                 @Suppress("DEPRECATION")
-                val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // Use new API for Android 13+
-                    geocoder.getFromLocationName(fullAddress, 1)
-                } else {
-                    // Use deprecated API for older versions
-                    geocoder.getFromLocationName(fullAddress, 1)
-                }
+                val addresses = geocoder.getFromLocationName(fullAddress, 1)
 
                 val address = addresses?.firstOrNull()
                 if (address != null) {
@@ -122,11 +115,7 @@ class GeocodingService(private val context: Context) {
                 DebugConfig.debugPrint("🔍 Geocoding bus stop: $enhancedQuery")
 
                 @Suppress("DEPRECATION")
-                val addresses = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    geocoder.getFromLocationName(enhancedQuery, 1)
-                } else {
-                    geocoder.getFromLocationName(enhancedQuery, 1)
-                }
+                val addresses = geocoder.getFromLocationName(enhancedQuery, 1)
 
                 val address = addresses?.firstOrNull()
                 if (address != null) {

@@ -142,8 +142,7 @@ fun RouteStopsScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 item {
                     Spacer(modifier = Modifier.height(8.dp))

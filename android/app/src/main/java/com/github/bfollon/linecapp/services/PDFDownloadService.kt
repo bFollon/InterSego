@@ -19,6 +19,7 @@ package com.github.bfollon.linecapp.services
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -179,13 +180,13 @@ class PDFDownloadService(private val context: Context) {
                 lastException = e
                 if (attempt < 2) {
                     // Wait a bit before retrying
-                    Thread.sleep(1000)
+                    delay(1000)
                 }
             } catch (e: IOException) {
                 println("PDFDownloadService: IO error on attempt ${attempt + 1}: ${e.message}")
                 lastException = e
                 if (attempt < 2) {
-                    Thread.sleep(500)
+                    delay(500)
                 }
             } catch (e: Exception) {
                 println("PDFDownloadService: Unexpected error on attempt ${attempt + 1}: ${e.message}")

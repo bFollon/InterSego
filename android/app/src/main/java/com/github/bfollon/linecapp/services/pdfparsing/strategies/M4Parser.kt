@@ -224,13 +224,12 @@ class M4Parser : CapableParser, RouteStopsProvider {
             throw PDFParsingException("PDF file not found: $pdfPath")
         }
 
-        try {
-            val pdfReader = PdfReader(file)
-            val pdfDocument = PdfDocument(pdfReader)
+        val pdfReader = PdfReader(file)
+        val pdfDocument = PdfDocument(pdfReader)
 
+        try {
             val timetables = mutableListOf<BusTimetable>()
 
-            // Extract text from all pages
             for (pageNum in 1..pdfDocument.numberOfPages) {
                 DebugConfig.debugPrint("M4Parser: Processing page $pageNum")
                 val page = pdfDocument.getPage(pageNum)
@@ -239,7 +238,6 @@ class M4Parser : CapableParser, RouteStopsProvider {
                 val lines = extractedText.lines()
 
                 DebugConfig.debugPrint("M4Parser: Page $pageNum has ${lines.size} lines")
-                DebugConfig.debugPrint("M4Parser: Total text length: ${extractedText.length} characters")
 
                 DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
                 lines.forEachIndexed { index, line ->
@@ -249,11 +247,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
                 }
                 DebugConfig.debugPrint("M4Parser: ==========================")
 
-                // Parse the text and create BusTimetable objects
                 timetables.addAll(parseTimeTable(lines))
             }
-
-            pdfDocument.close()
 
             DebugConfig.debugPrint("M4Parser: Finished parsing, created ${timetables.size} timetables")
             return timetables
@@ -261,6 +256,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
         } catch (e: Exception) {
             DebugConfig.debugError("M4Parser: Error parsing PDF", e)
             throw PDFParsingException("Failed to parse M4 PDF: ${e.message}", e)
+        } finally {
+            pdfDocument.close()
         }
     }
 
@@ -303,7 +300,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
         }
     }
 
-    fun parseTimeTable(lines: List<String>): List<BusTimetable> {
+    private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
         // Create initial empty timetables for all routes and day types
         val initialState = ParsingState(
             currentDayType = DayType.WEEKDAY,
@@ -334,7 +331,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                     state.copy(isSummerSection = true)
                 }
 
-                TimetableParserUtils.hasTimes(line) && isReverseRoute(line) -> {
+                TimetableParserUtils.hasTimes(line) && hasAsteriskTimes(line) -> {
                     val times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
 
                     // Select the correct timetables list based on current day type
@@ -474,10 +471,10 @@ class M4Parser : CapableParser, RouteStopsProvider {
     }
 
     /**
-     * Check if line contains times marked with asterisk (July/August only services)
+     * Check if line contains times marked with asterisk (indicates reverse route journeys).
      * Example: "7:40* 7:43 14:30" -> true (because of "7:40*")
      */
-    fun isReverseRoute(line: String): Boolean = TIME_WITH_ASTERISK_PATTERN.containsMatchIn(line)
+    private fun hasAsteriskTimes(line: String): Boolean = TIME_WITH_ASTERISK_PATTERN.containsMatchIn(line)
 }
 
 

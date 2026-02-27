@@ -735,8 +735,7 @@ fun DepartureTimeline(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
+        modifier = modifier.fillMaxWidth()
     ) {
         departures.forEachIndexed { index, departure ->
             val timeOfDay = getTimeOfDay(departure.hour)

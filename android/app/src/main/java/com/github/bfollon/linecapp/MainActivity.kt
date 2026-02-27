@@ -303,9 +303,10 @@ fun AppNavigation() {
     val navController = rememberNavController()
 
     // Get list of routes once
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val activity = androidx.compose.ui.platform.LocalContext.current as? MainActivity
+        ?: error("AppNavigation must be hosted in MainActivity")
     val routes = remember {
-        (context as MainActivity).getKnownRoutes()
+        activity.getKnownRoutes()
     }
 
     // Create PDFProcessingService for dynamic parser queries
@@ -313,7 +314,7 @@ fun AppNavigation() {
     val pdfProcessingService = remember {
         com.github.bfollon.linecapp.services.DebugConfig.debugPrint("🔧 Inside remember block - creating PDFProcessingService...")
         try {
-            val service = com.github.bfollon.linecapp.services.PDFProcessingService(context)
+            val service = com.github.bfollon.linecapp.services.PDFProcessingService(activity)
             com.github.bfollon.linecapp.services.DebugConfig.debugPrint("✅ PDFProcessingService created successfully")
             service
         } catch (e: Exception) {

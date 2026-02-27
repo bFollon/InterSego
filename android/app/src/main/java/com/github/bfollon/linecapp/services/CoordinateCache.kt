@@ -32,7 +32,7 @@ object CoordinateCache {
     private const val CACHE_KEY = "bus_stop_coordinates_cache"
     private const val CACHE_VERSION_KEY = "coordinate_cache_version"
     private const val CURRENT_CACHE_VERSION = 1
-    private const val CACHE_EXPIRY_DAYS = 30L // 30 days expiry (same as iOS)
+    internal const val CACHE_EXPIRY_DAYS = 30L
 
     private lateinit var sharedPreferences: SharedPreferences
     private val json = Json { ignoreUnknownKeys = true }
@@ -198,11 +198,7 @@ data class CachedCoordinate(
      */
     val isExpired: Boolean
         get() {
-            val expiryTime = timestamp + (CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
+            val expiryTime = timestamp + (CoordinateCache.CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000)
             return System.currentTimeMillis() > expiryTime
         }
-
-    companion object {
-        private const val CACHE_EXPIRY_DAYS = 30L // 30 days expiry
-    }
 }
