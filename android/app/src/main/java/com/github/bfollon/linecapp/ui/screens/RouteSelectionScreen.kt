@@ -28,7 +28,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import com.github.bfollon.linecapp.ui.theme.SuccessGreen
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.linecapp.data.BusRoute
@@ -191,7 +191,7 @@ fun StatusIndicator(isAvailable: Boolean) {
             },
             contentDescription = if (isAvailable) "Disponible" else "No disponible",
             tint = if (isAvailable) {
-                Color(0xFF4CAF50) // Green
+                SuccessGreen
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             }

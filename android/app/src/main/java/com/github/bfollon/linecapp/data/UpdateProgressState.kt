@@ -22,9 +22,9 @@ package com.github.bfollon.linecapp.data
  * Used for UI feedback during cache updates
  */
 sealed class UpdateProgressState {
-    object Checking : UpdateProgressState()
-    object Downloading : UpdateProgressState()
-    object Downloaded : UpdateProgressState()
-    object UpToDate : UpdateProgressState()
+    data object Checking : UpdateProgressState()
+    data object Downloading : UpdateProgressState()
+    data object Downloaded : UpdateProgressState()
+    data object UpToDate : UpdateProgressState()
     data class Error(val message: String) : UpdateProgressState()
 }

@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.github.bfollon.linecapp.ui.theme.WarningOrange
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -59,6 +60,16 @@ import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
+
+/**
+ * Map a Calendar day-of-week to the set of DayType values that might match.
+ * M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
+ */
+private fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
+    Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
+    Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+    else -> setOf(DayType.WEEKDAY)
+}
 
 /**
  * Screen displaying next departure times for a specific bus stop.
@@ -106,14 +117,6 @@ fun NextDepartureScreen(
         } finally {
             isLoading = false
         }
-    }
-
-    // Map a Calendar day-of-week to the set of DayType values that might match.
-    // M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
-    fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
-        Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
-        Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-        else -> setOf(DayType.WEEKDAY)
     }
 
     // Auto-detect current day types (supports both M4's WEEKEND and M6's SATURDAY/SUNDAY)
@@ -421,7 +424,7 @@ fun FutureDayWarningCard(daysAhead: Int) {
         else -> "No hay más autobuses en los próximos días. Mostrando próximo horario disponible."
     }
 
-    val warningColor = Color(0xFFFFA726) // Orange warning color
+    val warningColor = WarningOrange
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -760,7 +763,7 @@ fun DepartureTimeline(
                             .offset(y = 20.dp)
                         ) {
                             drawLine(
-                                color = androidx.compose.ui.graphics.Color.LightGray,
+                                color = Color.LightGray,
                                 start = Offset(size.width / 2, 0f),
                                 end = Offset(size.width / 2, size.height),
                                 strokeWidth = 2.dp.toPx()
