@@ -80,7 +80,7 @@ fun RouteSelectionScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(routes) { route ->
-                    val isAvailable = pdfProcessingService.isRouteAvailable(route.id)
+                    val isAvailable = pdfProcessingService.hasParserFor(route.id)
                     RouteCard(
                         route = route,
                         isAvailable = isAvailable,

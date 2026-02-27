@@ -108,7 +108,7 @@ class TimetableService(private val context: Context) {
         return timetables.firstOrNull { it.dayType == dayType }
             .also { timetable ->
                 if (timetable != null) {
-                    DebugConfig.debugPrint("TimetableService: Found timetable for $dayType with ${timetable.departureCount} departures")
+                    DebugConfig.debugPrint("TimetableService: Found timetable for $dayType with ${timetable.departures.size} departures")
                 } else {
                     DebugConfig.debugPrint("TimetableService: No timetable found for $dayType")
                 }

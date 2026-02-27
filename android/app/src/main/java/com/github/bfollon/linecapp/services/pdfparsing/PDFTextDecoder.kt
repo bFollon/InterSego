@@ -112,37 +112,6 @@ object PDFTextDecoder {
     }
 
     /**
-     * Decode text with custom character mapping
-     *
-     * For PDFs with non-standard character mappings that don't follow
-     * a simple offset pattern.
-     *
-     * @param text The raw text extracted from PDF
-     * @param charMap Map of raw character codes to actual characters
-     * @return Decoded text
-     */
-    fun decodeWithCharacterMap(text: String, charMap: Map<Int, Char>): String {
-        val decoded = StringBuilder()
-
-        for (char in text) {
-            val code = char.code
-
-            when (code) {
-                // Skip null bytes
-                0x00 -> continue
-
-                // Use character map if available, otherwise use original char
-                else -> {
-                    val mappedChar = charMap[code] ?: char
-                    decoded.append(mappedChar)
-                }
-            }
-        }
-
-        return decoded.toString()
-    }
-
-    /**
      * Detect if text needs decoding by checking for high ratio of replacement characters
      *
      * @param text Text to check
@@ -160,34 +129,4 @@ object PDFTextDecoder {
         return problematicRatio > 0.5f
     }
 
-    /**
-     * Auto-detect and decode text
-     *
-     * Tries to automatically detect if text needs decoding and applies
-     * the appropriate decoder.
-     *
-     * @param text Raw text from PDF
-     * @return Decoded text (or original if no decoding needed)
-     */
-    fun autoDecodeText(text: String): String {
-        if (!needsDecoding(text)) {
-            return text
-        }
-
-        DebugConfig.debugPrint("PDFTextDecoder: Text needs decoding, trying offset decoders...")
-
-        // Try common offsets
-        val offsets = listOf(29, 32, 1, -1)
-
-        for (offset in offsets) {
-            val decoded = decodeWithCharacterOffset(text, offset)
-            if (!needsDecoding(decoded)) {
-                DebugConfig.debugPrint("PDFTextDecoder: Successfully decoded with offset $offset")
-                return decoded
-            }
-        }
-
-        DebugConfig.debugWarn("PDFTextDecoder: Could not auto-decode text")
-        return text
-    }
 }

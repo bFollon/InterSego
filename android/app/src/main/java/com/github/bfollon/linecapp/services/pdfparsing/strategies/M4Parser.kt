@@ -183,39 +183,6 @@ class M4Parser : CapableParser, RouteStopsProvider {
             Stops.AZOGUEJO
         )
 
-        private val stopsMap: Map<String, BusStop> = mapOf(
-            "AZOGUEJO" to Stops.AZOGUEJO,
-            "DELICIAS" to Stops.DELICIAS,
-            "GASOLIN" to Stops.GASOLINERA,
-            "PENSION" to Stops.PENSION,
-            "POLIGONO" to Stops.POLIGONO,
-            "Ctra Valladolid 33" to Stops.CTRA_VALLADOLID_33,
-            "LEOPOLDO MORENO" to Stops.LEOPOLDO_MORENO,
-            "COLEGIO" to Stops.COLEGIO,
-            "PARROQ. SOTILLO" to Stops.PARROQ_SOTILLO,
-            "HOTEL AV.SOTILLO" to Stops.HOTEL_AV_SOTILLO,
-            "Maspalomas" to Stops.MASPALOMAS,
-            "CENTRO BOAL" to Stops.CENTRO_BOAL,
-            "PASEO CABANILLAS" to Stops.PASEO_CABANILLAS,
-            "RAFAEL DE LAS HERAS" to Stops.RAFAEL_DE_LAS_HERAS,
-            "VENTA MAGULLO" to Stops.VENTA_MAGULLO,
-        )
-    }
-
-    /**
-     * Parse M4 timetables from decoded PDF text
-     *
-     * @param lines The decoded text lines from the PDF
-     * @param routeId The route ID (M4)
-     * @return List of BusTimetable objects grouped by (stop, dayType)
-     */
-    private fun parseM4Timetables(lines: List<String>, routeId: String): List<BusTimetable> {
-        DebugConfig.debugPrint("M4Parser: Starting timetable parsing for ${lines.size} lines")
-
-        val timetables = parseTimeTable(lines)
-
-        DebugConfig.debugPrint("M4Parser: Parsed ${timetables.size} timetables")
-        return timetables
     }
 
     override fun canParse(routeId: String): Boolean {
@@ -299,8 +266,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                 DebugConfig.debugPrint("M4Parser: ==========================")
 
                 // Parse the text and create BusTimetable objects
-                val parsedTimetables = parseM4Timetables(lines, routeId)
-                timetables.addAll(parsedTimetables)
+                timetables.addAll(parseTimeTable(lines))
             }
 
             pdfDocument.close()

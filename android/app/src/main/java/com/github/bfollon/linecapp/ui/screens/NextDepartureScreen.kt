@@ -25,7 +25,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -42,9 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -55,16 +51,11 @@ import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import androidx.compose.ui.layout.ContentScale
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.GeocodingService
-import com.github.bfollon.linecapp.services.StaticMapService
 import com.github.bfollon.linecapp.services.TimetableService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
@@ -317,23 +308,6 @@ fun NextDepartureScreen(
                         )
                     }
 
-                    // Map card showing bus stop location
-                    // TODO: Revisit map display (square aspect ratio doesn't fit current UI design)
-                    /*
-                    item {
-                        Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-                            StopMapCard(
-                                stop = stop,
-                                onMapClick = {
-                                    scope.launch {
-                                        openMapsForStop(context, geocodingService, stop)
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    */
-
                     // Future day warning card (if showing future departure)
                     if (daysAhead > 0) {
                         item {
@@ -347,21 +321,6 @@ fun NextDepartureScreen(
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-
-                    // Próxima salida section header
-//                    item {
-//                        Text(
-//                            text = "Próxima salida",
-//                            style = MaterialTheme.typography.titleLarge,
-//                            fontWeight = FontWeight.Bold,
-//                            color = MaterialTheme.colorScheme.onSurface,
-//                            modifier = Modifier.padding(horizontal = 20.dp)
-//                        )
-//                    }
-//
-//                    item {
-//                        Spacer(modifier = Modifier.height(8.dp))
-//                    }
 
                     // Next departure with circular progress
                     item {
@@ -414,151 +373,6 @@ fun NextDepartureScreen(
     }
 }
 
-/**
- * Prominent pill container showing the next bus departure with both time and countdown.
- */
-@Composable
-fun NextDeparturePill(
-    departure: DepartureTime,
-    currentTime: LocalTime,
-    daysAhead: Int = 0
-) {
-    val departureTime = LocalTime.of(departure.hour, departure.minute)
-
-    // Calculate minutes until departure (accounting for days ahead)
-    val minutesUntil = if (daysAhead > 0) {
-        // Calculate time until midnight + full days + time from midnight to departure
-        val minutesUntilMidnight = currentTime.until(LocalTime.MAX, ChronoUnit.MINUTES)
-        val minutesFromMidnight = LocalTime.MIN.until(departureTime, ChronoUnit.MINUTES)
-        val fullDaysMinutes = (daysAhead - 1) * 24 * 60
-        minutesUntilMidnight + fullDaysMinutes + minutesFromMidnight + 1 // +1 for the midnight minute
-    } else {
-        currentTime.until(departureTime, ChronoUnit.MINUTES)
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left side: Actual departure time
-            Column {
-                Text(
-                    text = departure.toDisplayString(),
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-
-                // Notes if any
-                if (!departure.notes.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = departure.notes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-            }
-
-            // Right side: Countdown
-            Text(
-                text = when {
-                    minutesUntil < 1 -> "Saliendo\nahora"
-                    minutesUntil == 1L -> "en 1\nminuto"
-                    minutesUntil < 60 -> "en $minutesUntil\nminutos"
-                    else -> {
-                        val hours = minutesUntil / 60
-                        val mins = minutesUntil % 60
-                        if (mins == 0L) "en $hours\nhora${if (hours > 1) "s" else ""}"
-                        else "en ${hours}h\n${mins}m"
-                    }
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                textAlign = TextAlign.End
-            )
-        }
-    }
-}
-
-/**
- * Stop information card with route badge and tappable address.
- */
-@Composable
-fun StopInfoCard(
-    route: BusRoute,
-    stop: BusStop,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val geocodingService = remember { GeocodingService(context) }
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Stop name with route badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stop.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Route badge
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = route.number,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Tappable address
-            Text(
-                text = stop.address,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable {
-                    scope.launch {
-                        openMapsForStop(context, geocodingService, stop)
-                    }
-                }
-            )
-        }
-    }
-}
 
 /**
  * Opens the system default maps app for navigation to a bus stop.
@@ -640,45 +454,8 @@ fun FutureDayWarningCard(daysAhead: Int) {
     }
 }
 
-/**
- * Smaller pill container for following departures.
- */
-@Composable
-fun FollowingDeparturePill(
-    departure: DepartureTime
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.medium
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = departure.toDisplayString(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (!departure.notes.isNullOrBlank()) {
-                Text(
-                    text = departure.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-        }
-    }
-}
-
 // ============================================================================
-// NEW REDESIGNED COMPONENTS
+// COMPONENTS
 // ============================================================================
 
 /**
@@ -772,46 +549,6 @@ fun DepartureTimeBadge(
             color = color,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-    }
-}
-
-/**
- * Circular progress indicator around a time display.
- */
-@Composable
-fun CircularProgressClock(
-    time: String,
-    progress: Float, // 0.0 to 1.0
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier,
-        contentAlignment = Alignment.Center
-    ) {
-        // Background circle
-        Canvas(modifier = Modifier.size(120.dp)) {
-            val strokeWidth = 8.dp.toPx()
-            drawCircle(
-                color = androidx.compose.ui.graphics.Color.LightGray.copy(alpha = 0.3f),
-                style = Stroke(width = strokeWidth)
-            )
-
-            // Progress arc
-            drawArc(
-                color = androidx.compose.ui.graphics.Color(0xFF1C74D3), // Brand blue
-                startAngle = -90f,
-                sweepAngle = 360f * progress,
-                useCenter = false,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-            )
-        }
-
-        // Time text in center
-        Text(
-            text = time,
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
         )
     }
 }
@@ -1097,186 +834,3 @@ fun DepartureTimeline(
     }
 }
 
-/**
- * Card displaying a static map of the bus stop location.
- *
- * Shows an OpenStreetMap tile image with a Material Design LocationOn icon marker
- * at the bus stop coordinates. Tapping the map opens the external maps application.
- *
- * @param stop The bus stop to display on the map
- * @param onMapClick Callback when the map is tapped (opens external maps)
- * @param modifier Optional modifier for the card
- */
-@Composable
-fun StopMapCard(
-    stop: BusStop,
-    onMapClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    val geocodingService = remember { GeocodingService(context) }
-
-    var geocodedStop by remember { mutableStateOf(stop) }
-    var isGeocoding by remember { mutableStateOf(false) }
-
-    // Geocode the stop if it doesn't have coordinates
-    LaunchedEffect(stop.id) {
-        if (!stop.hasCoordinates) {
-            isGeocoding = true
-            DebugConfig.debugPrint("StopMapCard: Geocoding stop ${stop.name}")
-
-            val location = geocodingService.getCoordinatesForBusStop(stop)
-            if (location != null) {
-                geocodedStop = stop.copy(
-                    latitude = location.latitude,
-                    longitude = location.longitude
-                )
-                DebugConfig.debugPrint("StopMapCard: Successfully geocoded ${stop.name} to ${location.latitude}, ${location.longitude}")
-            } else {
-                DebugConfig.debugWarn("StopMapCard: Failed to geocode ${stop.name}")
-            }
-            isGeocoding = false
-        }
-    }
-
-    val mapData = if (geocodedStop.hasCoordinates) {
-        StaticMapService.getStaticMapData(geocodedStop, zoom = 18)
-    } else {
-        null
-    }
-
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onMapClick),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        shape = MaterialTheme.shapes.large
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Map title
-            Text(
-                text = "Ubicación",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            // Map display (square container to match 256x256 tile aspect ratio)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f) // Square container for proper tile display
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    isGeocoding -> {
-                        // Loading state
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(48.dp),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Cargando mapa...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    mapData != null -> {
-                        // Map tile with marker overlay
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            // Background OSM tile
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .data(mapData.tileUrl)
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Fit
-                            )
-
-                            // Material Design location marker icon overlay
-                            // Marker position calculation:
-                            // - Tile is 256x256 pixels, container is square (fillMaxWidth with aspectRatio 1f)
-                            // - mapData.markerX/Y are 0-256 pixel values within the tile
-                            // - When using ContentScale.Fit, the 256x256 tile fills the square container
-                            // - Scale marker from pixel coordinates (0-256) to container DP size
-                            // - Use a reasonable base size (270.dp fits screen width minus padding)
-                            val containerSizeDp = 270f // Approximate size for typical screen width with padding
-                            val markerXDp = ((mapData.markerX / 256f) * containerSizeDp).dp
-                            val markerYDp = ((mapData.markerY / 256f) * containerSizeDp).dp
-
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Ubicación de ${stop.name}",
-                                tint = Color(0xFFD32F2F), // Red marker color
-                                modifier = Modifier
-                                    .offset(
-                                        x = markerXDp - 12.dp, // Center icon horizontally (24dp width / 2)
-                                        y = markerYDp - 24.dp  // Position pin point at bottom (24dp height)
-                                    )
-                                    .size(24.dp)
-                            )
-
-                            // OSM Attribution (required by tile usage policy)
-                            Surface(
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(4.dp),
-                                color = Color.White.copy(alpha = 0.7f),
-                                shape = MaterialTheme.shapes.extraSmall
-                            ) {
-                                Text(
-                                    text = "© OpenStreetMap",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.Black,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-                    else -> {
-                        // Fallback when no coordinates available
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Mapa no disponible",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Tap hint
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Toca para abrir en mapas",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}

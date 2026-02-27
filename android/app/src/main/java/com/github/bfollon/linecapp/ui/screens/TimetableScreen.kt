@@ -35,7 +35,6 @@ import com.github.bfollon.linecapp.data.BusRoute
 import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.services.TimetableService
-import kotlinx.coroutines.launch
 
 /**
  * Screen displaying bus timetables for a selected route.
@@ -51,7 +50,6 @@ fun TimetableScreen(
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
-    val scope = rememberCoroutineScope()
 
     var timetables by remember { mutableStateOf<List<BusTimetable>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -198,7 +196,7 @@ fun TimetableCard(timetable: BusTimetable) {
 
             // Departure count
             Text(
-                text = "${timetable.departureCount} salidas",
+                text = "${timetable.departures.size} salidas",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)

@@ -87,40 +87,4 @@ object DebugConfig {
         }
     }
 
-    /**
-     * Enable debug mode programmatically
-     */
-    fun enableDebug() {
-        isDebugEnabled = true
-        debugPrint("Debug mode enabled")
-    }
-
-    /**
-     * Disable debug mode programmatically
-     */
-    fun disableDebug() {
-        isDebugEnabled = false
-        Log.i(TAG, "Debug mode disabled") // Use Log since debug is disabled
-    }
-
-    /**
-     * Enable detailed logging mode (verbose output that may impact performance)
-     */
-    fun enableDetailedLogging() {
-        isDetailedLoggingEnabled = true
-        debugPrint("Detailed logging enabled")
-    }
-
-    /**
-     * Disable detailed logging mode
-     */
-    fun disableDetailedLogging() {
-        isDetailedLoggingEnabled = false
-        debugPrint("Detailed logging disabled")
-    }
-
-    /**
-     * Get current debug status
-     */
-    fun getDebugStatus(): Boolean = isDebugEnabled
 }

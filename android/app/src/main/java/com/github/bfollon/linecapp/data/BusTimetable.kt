@@ -33,12 +33,6 @@ data class BusTimetable(
     val direction: String? = null,       // Optional direction: "Ida" or "Vuelta"
 ) {
     /**
-     * Number of departures in this timetable
-     */
-    val departureCount: Int
-        get() = departures.size
-
-    /**
      * First departure time
      */
     val firstDeparture: DepartureTime?

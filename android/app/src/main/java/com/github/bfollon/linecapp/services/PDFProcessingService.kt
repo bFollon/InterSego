@@ -136,16 +136,7 @@ class PDFProcessingService(private val context: Context) {
     /**
      * Check if a parser is available for a route
      */
-    fun hasParserFor(routeId: String): Boolean {
-        return parsers.containsKey(routeId)
-    }
-
-    /**
-     * Check if a route is available (alias for hasParserFor)
-     */
-    fun isRouteAvailable(routeId: String): Boolean {
-        return hasParserFor(routeId)
-    }
+    fun hasParserFor(routeId: String): Boolean = parsers.containsKey(routeId)
 
     /**
      * Get list of routes that have parsers
