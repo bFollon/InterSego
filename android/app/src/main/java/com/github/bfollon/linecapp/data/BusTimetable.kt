@@ -18,6 +18,7 @@
 package com.github.bfollon.linecapp.data
 
 import kotlinx.serialization.Serializable
+import java.time.LocalDate
 import java.util.UUID
 
 /**
@@ -33,32 +34,27 @@ data class BusTimetable(
     val direction: String? = null,       // Optional direction: "Ida" or "Vuelta"
 ) {
     /**
-     * First departure time
+     * Departures filtered for the current season (month).
      */
+    fun seasonalDepartures(
+        month: java.time.Month = LocalDate.now().month
+    ): List<DepartureTime> = departures.filter { it.seasonalAvailability.runsIn(month) }
+
     val firstDeparture: DepartureTime?
-        get() = departures.minOrNull()
+        get() = seasonalDepartures().minOrNull()
 
-    /**
-     * Last departure time
-     */
     val lastDeparture: DepartureTime?
-        get() = departures.maxOrNull()
+        get() = seasonalDepartures().maxOrNull()
 
-    /**
-     * Get next N departures from a given time
-     */
     fun getNextDepartures(currentHour: Int, currentMinute: Int, limit: Int = 5): List<DepartureTime> {
-        return departures
+        return seasonalDepartures()
             .filter { it.isFuture(currentHour, currentMinute) }
             .sorted()
             .take(limit)
     }
 
-    /**
-     * Check if there are any departures remaining today
-     */
     fun hasRemainingDepartures(currentHour: Int, currentMinute: Int): Boolean {
-        return departures.any { it.isFuture(currentHour, currentMinute) }
+        return seasonalDepartures().any { it.isFuture(currentHour, currentMinute) }
     }
 
     /**

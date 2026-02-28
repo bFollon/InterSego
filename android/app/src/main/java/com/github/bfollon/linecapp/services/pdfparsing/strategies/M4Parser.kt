@@ -21,6 +21,7 @@ import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
+import com.github.bfollon.linecapp.data.SeasonalAvailability
 import com.github.bfollon.linecapp.data.RouteVariant
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.BusTimetableParser
@@ -68,7 +69,10 @@ class M4Parser : CapableParser, RouteStopsProvider {
         val regularRouteWeekendTimetables: List<BusTimetable>,
         val reverseRouteWeekdayTimetables: List<BusTimetable>,
         val reverseRouteWeekendTimetables: List<BusTimetable>
-    )
+    ) {
+        val seasonal: SeasonalAvailability
+            get() = if (isSummerSection) SeasonalAvailability.SUMMER_ONLY else SeasonalAvailability.SCHOOL_ONLY
+    }
 
     companion object {
         private const val DIRECTION_REGULAR = "Lastrilla → Sotillo"
@@ -292,10 +296,10 @@ class M4Parser : CapableParser, RouteStopsProvider {
      * Update timetables with new departure times
      * Zips times with timetables and adds each time to the corresponding timetable
      */
-    private fun updateTimetables(timetables: List<BusTimetable>, times: List<LocalTime>, runsInSummer: Boolean): List<BusTimetable> {
+    private fun updateTimetables(timetables: List<BusTimetable>, times: List<LocalTime>, seasonal: SeasonalAvailability): List<BusTimetable> {
         return timetables.zip(times).map { (timetable, time) ->
             timetable.copy(
-                departures = timetable.departures + DepartureTime(time.hour, time.minute, runsInSummer = runsInSummer)
+                departures = timetable.departures + DepartureTime(time.hour, time.minute, seasonalAvailability = seasonal)
             )
         }
     }
@@ -343,7 +347,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
                     when (times.size) {
                         m4ReverseRoute.size -> { // Full route
-                            val updatedTimetables = updateTimetables(currentTimetables, times, state.isSummerSection)
+                            val updatedTimetables = updateTimetables(currentTimetables, times, state.seasonal)
                             if (state.currentDayType == DayType.WEEKDAY) {
                                 state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekdayTimetables = updatedTimetables)
                             } else {
@@ -355,7 +359,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                             val filteredTimetables = currentTimetables.filterIndexed { index, _ ->
                                 index != m4ReverseRoute.size - 1
                             }
-                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.isSummerSection)
+                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
                             // Merge back into full list
                             val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
                                 if (index == m4ReverseRoute.size - 1) tt else updatedTimetables[if (index < m4ReverseRoute.size - 1) index else index - 1]
@@ -372,7 +376,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                                 index != m4ReverseRoute.size - 1 &&
                                         index != m4ReverseRoute.indexOf(Stops.PASEO_CABANILLAS)
                             }
-                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.isSummerSection)
+                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
                             // Merge back into full list
                             val schoolIndex = m4ReverseRoute.indexOf(Stops.PASEO_CABANILLAS)
                             val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
@@ -404,7 +408,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
                     when (times.size) {
                         m4RegularRoute.size -> { // Full route
-                            val updatedTimetables = updateTimetables(currentTimetables, times, state.isSummerSection)
+                            val updatedTimetables = updateTimetables(currentTimetables, times, state.seasonal)
                             if (state.currentDayType == DayType.WEEKDAY) {
                                 state.copy(incompleteJourney = emptyList(), isSummerSection = false, regularRouteWeekdayTimetables = updatedTimetables)
                             } else {
@@ -416,7 +420,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                             val filteredTimetables = currentTimetables.filter { tt ->
                                 tt.stopId != Stops.PASEO_CABANILLAS.name
                             }
-                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.isSummerSection)
+                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
                             // Merge back into full list
                             val schoolIndex = m4RegularRoute.indexOf(Stops.PASEO_CABANILLAS)
                             val mergedTimetables = currentTimetables.mapIndexed { index, tt ->

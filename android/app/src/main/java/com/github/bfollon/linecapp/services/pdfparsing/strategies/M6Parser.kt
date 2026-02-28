@@ -21,6 +21,7 @@ import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.BusTimetable
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
+import com.github.bfollon.linecapp.data.SeasonalAvailability
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.pdfparsing.CapableParser
 import com.github.bfollon.linecapp.services.pdfparsing.PDFParsingException
@@ -40,6 +41,7 @@ import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
 import java.io.File
 import java.time.LocalTime
+import java.time.Month
 import java.util.UUID
 
 /**
@@ -62,6 +64,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
         val isReversed: Boolean = true,
         val section: DayType = DayType.WEEKDAY,
         val currentAnnotation: TimeModifier? = null,
+        /** Directions (isReversed values) that have already seen their first *** journey on Sunday. */
+        val sundaySeasonalFirstSeen: Set<Boolean> = emptySet(),
 
         val routes: Map<UUID, List<BusTimetable>> = emptyMap(),
     )
@@ -95,6 +99,12 @@ class M6Parser : CapableParser, RouteStopsProvider {
         private const val DIRECTION_INBOUND = "Torrecaballeros → Segovia"
         private const val ESTIMATED_MINUTES_PER_CLUSTER_STOP = 5
         private const val ESTIMATED_TORRECAB_TO_DELICIAS_MINUTES = 15L
+
+        val SUMMER_MONTHS: Set<Month> = setOf(Month.JULY, Month.AUGUST)
+
+        private val FOOTNOTE_PATTERN = Regex(
+            """PERIODO LECTIVO|VACACIONES ESCOLARES""", RegexOption.IGNORE_CASE
+        )
 
         private object Stops {
             val AZOGUEJO = BusStop(
@@ -507,7 +517,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
         route: Route,
         timetables: List<BusTimetable>,
         times: List<LocalTime>,
-        variantLabel: String? = null
+        variantLabel: String? = null,
+        seasonalAvailability: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND
     ): List<BusTimetable> {
         val activeClusters = when (route.alignment) {
             ClusterAlignment.FROM_START -> route.clusters.take(times.size)
@@ -532,7 +543,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
                         departures = timetable.departures + DepartureTime(
                             totalMinutes / 60 % 24,
                             totalMinutes % 60,
-                            variantLabel = variantLabel
+                            variantLabel = variantLabel,
+                            seasonalAvailability = seasonalAvailability
                         )
                     )
                 }
@@ -544,6 +556,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
             ClusterAlignment.FROM_END -> inactive + updated
         }
     }
+
+    private fun isFootnote(line: String): Boolean = FOOTNOTE_PATTERN.containsMatchIn(line)
 
     private fun ParsingState.processAnnotation(modifier: TimeModifier?): ParsingState =
         modifier?.let { this.copy(currentAnnotation = it) } ?: this
@@ -652,20 +666,47 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
         fun flush(state: ParsingState, times: List<LocalTime>): ParsingState {
             val target = determineParsingTarget(state)
+            val route = routeById[target]!!
+            val label = routeLabel(target)
+
+            val isSundaySeasonal = state.section == DayType.SUNDAY
+                    && state.currentAnnotation == TimeModifier.TRIPLE_ASTERISK
+
+            val seasonal = if (isSundaySeasonal) {
+                // *** journeys come in pairs per direction (outbound/return).
+                // The first (earlier departure) is summer-only, the second is school-only.
+                if (state.isReversed !in state.sundaySeasonalFirstSeen)
+                    SeasonalAvailability.SUMMER_ONLY
+                else
+                    SeasonalAvailability.SCHOOL_ONLY
+            } else {
+                SeasonalAvailability.YEAR_ROUND
+            }
+
+            val updatedTimetables = updateTimetables(
+                route = route,
+                timetables = state.routes[target]!!,
+                times = times,
+                variantLabel = label,
+                seasonalAvailability = seasonal
+            )
+
+            val newSeasonalSeen = if (isSundaySeasonal)
+                state.sundaySeasonalFirstSeen + state.isReversed
+            else
+                state.sundaySeasonalFirstSeen
+
             return updateState(
-                updatedTimetables = updateTimetables(
-                    route = routeById[target]!!,
-                    timetables = state.routes[target]!!,
-                    times = times,
-                    variantLabel = routeLabel(target)
-                ),
+                updatedTimetables = updatedTimetables,
                 target = target,
                 state = state
-            )
+            ).copy(sundaySeasonalFirstSeen = newSeasonalSeen)
         }
 
         val newState = lines.fold(initialState) { state, line ->
             when {
+                isFootnote(line) -> state
+
                 TimetableParserUtils.hasTimes(line) -> {
                     val annotatedTimes = TimetableParserUtils.extractAnnotatedTimes(line)
                     val processedTimes = preprocessCircularLine(annotatedTimes)

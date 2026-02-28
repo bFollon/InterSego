@@ -136,7 +136,7 @@ fun NextDepartureScreen(
             it.direction == direction
         }
 
-        val merged = matching.flatMap { it.departures }.sortedBy { it.toMinutesSinceMidnight() }
+        val merged = matching.flatMap { it.seasonalDepartures() }.sortedBy { it.toMinutesSinceMidnight() }
         DebugConfig.debugPrint("Found ${matching.size} matching timetables with ${merged.size} total departures")
         merged
     }
@@ -163,7 +163,7 @@ fun NextDepartureScreen(
                     it.stopId == stop.name &&
                     it.direction == direction
                 }
-                .flatMap { it.departures }
+                .flatMap { it.seasonalDepartures() }
                 .sortedBy { it.toMinutesSinceMidnight() }
 
             if (departures.isNotEmpty()) {

@@ -27,7 +27,7 @@ data class DepartureTime(
     val hour: Int,                      // 0-23
     val minute: Int,                    // 0-59
     val notes: String? = null,          // Optional notes: "Solo laborables", etc.
-    val runsInSummer: Boolean = true,   // true = runs year-round (including July/August), false = only runs Sept-June
+    val seasonalAvailability: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND,
     val variantLabel: String? = null     // Route variant label for display (e.g., "Regular", "Extendido", "Circular")
 ) : Comparable<DepartureTime> {
 

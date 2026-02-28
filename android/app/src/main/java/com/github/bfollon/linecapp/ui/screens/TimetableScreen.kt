@@ -196,14 +196,14 @@ fun TimetableCard(timetable: BusTimetable) {
 
             // Departure count
             Text(
-                text = "${timetable.departures.size} salidas",
+                text = "${timetable.seasonalDepartures().size} salidas",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
             // Display departure times in a grid
-            val departures = timetable.departures
+            val departures = timetable.seasonalDepartures()
             val columns = 6 // Times per row
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

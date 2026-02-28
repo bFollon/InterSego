@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter
  * auto-generated regex alternation matches greedily (e.g. "**" before "*").
  */
 enum class TimeModifier(val symbol: String) {
+    TRIPLE_ASTERISK("***"),
     DOUBLE_ASTERISK("**"),
     ARROW("→"),
     POUND("#"),
