@@ -694,16 +694,31 @@ private fun StopMapTile(
             Canvas(modifier = Modifier) {
                 val cx = size.width / 2f
                 val cy = size.height / 2f
-                val pinRadius = 10.dp.toPx()
-                val strokeWidth = 3.dp.toPx()
+                val pinHeight = 32.dp.toPx()
+                val pinRadius = 11.dp.toPx()
+                val dotRadius = 4.dp.toPx()
+                val strokeWidth = 2.5f.dp.toPx()
 
-                drawCircle(color = pinColor, radius = pinRadius, center = Offset(cx, cy))
-                drawCircle(
-                    color = Color.White,
-                    radius = pinRadius,
-                    center = Offset(cx, cy),
-                    style = Stroke(width = strokeWidth)
-                )
+                // Tip of the pin sits at the center (the actual location)
+                val tipY = cy
+                val bulbY = tipY - pinHeight + pinRadius
+
+                // Tapered tail from bulb to tip
+                val path = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(cx - pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
+                    lineTo(cx, tipY)
+                    lineTo(cx + pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
+                    close()
+                }
+                drawPath(path, color = pinColor)
+                drawPath(path, color = Color.White, style = Stroke(width = strokeWidth))
+
+                // Filled circle (bulb)
+                drawCircle(color = pinColor, radius = pinRadius, center = Offset(cx, bulbY))
+                drawCircle(color = Color.White, radius = pinRadius, center = Offset(cx, bulbY), style = Stroke(width = strokeWidth))
+
+                // Inner dot
+                drawCircle(color = Color.White, radius = dotRadius, center = Offset(cx, bulbY))
             }
         },
         modifier = modifier
