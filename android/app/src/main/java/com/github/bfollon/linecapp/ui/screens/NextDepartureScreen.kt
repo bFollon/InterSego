@@ -55,7 +55,6 @@ import com.github.bfollon.linecapp.data.BusStop
 import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
 import com.github.bfollon.linecapp.services.DebugConfig
-import com.github.bfollon.linecapp.services.GeocodingService
 import com.github.bfollon.linecapp.services.StaticMapService
 import com.github.bfollon.linecapp.services.TimetableService
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -64,7 +63,6 @@ import androidx.compose.ui.layout.Layout
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
@@ -96,8 +94,6 @@ fun NextDepartureScreen(
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
-    val geocodingService = remember { GeocodingService(context) }
-    val scope = rememberCoroutineScope()
 
     var timetables by remember { mutableStateOf<List<com.github.bfollon.linecapp.data.BusTimetable>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -310,11 +306,8 @@ fun NextDepartureScreen(
                         StopHeroHeader(
                             route = route,
                             stop = stop,
-                            geocodingService = geocodingService,
-                            onAddressClick = {
-                                scope.launch {
-                                    openMapsForStop(context, geocodingService, stop)
-                                }
+                            onNavigateClick = {
+                                openMapsForStop(context, stop)
                             }
                         )
                     }
@@ -388,31 +381,15 @@ fun NextDepartureScreen(
 /**
  * Opens the system default maps app for navigation to a bus stop.
  */
-suspend fun openMapsForStop(
+fun openMapsForStop(
     context: android.content.Context,
-    geocodingService: GeocodingService,
     stop: BusStop
 ) {
-    // Try to get coordinates from stop first, then geocode if needed
-    val location = if (stop.hasCoordinates) {
-        android.location.Location("").apply {
-            latitude = stop.resolvedLatitude!!
-            longitude = stop.resolvedLongitude!!
-        }
-    } else {
-        geocodingService.getCoordinatesForBusStop(stop)
-    }
+    val lat = stop.resolvedLatitude ?: return
+    val lon = stop.resolvedLongitude ?: return
 
-    val intent = if (location != null) {
-        // Use geo: URI with coordinates
-        Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("geo:${location.latitude},${location.longitude}?q=${location.latitude},${location.longitude}(${Uri.encode(stop.name)})")
-        }
-    } else {
-        // Fallback to address-based search
-        Intent(Intent.ACTION_VIEW).apply {
-            data = Uri.parse("geo:0,0?q=${Uri.encode("${stop.address}, Segovia, España")}")
-        }
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        data = Uri.parse("geo:$lat,$lon?q=$lat,$lon(${Uri.encode(stop.name)})")
     }
 
     if (intent.resolveActivity(context.packageManager) != null) {
@@ -571,25 +548,10 @@ fun DepartureTimeBadge(
 fun StopHeroHeader(
     route: BusRoute,
     stop: BusStop,
-    geocodingService: GeocodingService,
     modifier: Modifier = Modifier,
-    onAddressClick: () -> Unit
+    onNavigateClick: () -> Unit
 ) {
-    var mapData by remember(stop) { mutableStateOf<StaticMapService.StaticMapData?>(null) }
-
-    LaunchedEffect(stop) {
-        mapData = null
-
-        val resolvedStop = if (stop.hasCoordinates) {
-            stop
-        } else {
-            geocodingService.getCoordinatesForBusStop(stop)?.let { location ->
-                stop.copy(latitude = location.latitude, longitude = location.longitude)
-            }
-        }
-
-        mapData = resolvedStop?.let { StaticMapService.getStaticMapData(it) }
-    }
+    val mapData = remember(stop) { StaticMapService.getStaticMapData(stop) }
 
     Box(
         modifier = modifier
@@ -677,9 +639,9 @@ fun StopHeroHeader(
                 }
             }
 
-            // Address with location icon
+            // "Cómo llegar" navigation link
             Row(
-                modifier = Modifier.clickable(onClick = onAddressClick),
+                modifier = Modifier.clickable(onClick = onNavigateClick),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -690,7 +652,7 @@ fun StopHeroHeader(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = stop.address,
+                    text = "Cómo llegar",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     textDecoration = TextDecoration.Underline

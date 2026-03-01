@@ -94,7 +94,7 @@ class GeocodingService(private val context: Context) {
      * Equivalent to iOS getCoordinatesForBusStop
      */
     suspend fun getCoordinatesForBusStop(busStop: BusStop): Location? {
-        val enhancedQuery = "${busStop.name}, ${busStop.address}, Segovia, España"
+        val enhancedQuery = "${busStop.name}, Segovia, España"
         val cacheKey = enhancedQuery
 
         // Check session cache first (fastest)
@@ -132,23 +132,11 @@ class GeocodingService(private val context: Context) {
                     location
                 } else {
                     DebugConfig.debugPrint("❌ No coordinates found for bus stop: $enhancedQuery")
-
-                    // Fallback to address-only geocoding
-                    DebugConfig.debugPrint("🔄 Trying fallback geocoding with address only for: ${busStop.name}")
-                    val fallbackResult = getCoordinates(busStop.address)
-                    if (fallbackResult != null) {
-                        DebugConfig.debugPrint("✅ Fallback geocoding succeeded for: ${busStop.name}")
-                    } else {
-                        DebugConfig.debugPrint("❌ Fallback geocoding also failed for: ${busStop.name}")
-                    }
-                    fallbackResult
+                    null
                 }
             } catch (exception: Exception) {
                 DebugConfig.debugPrint("❌ Bus stop geocoding failed for $enhancedQuery: ${exception.message}")
-
-                // Fallback to address-only geocoding
-                DebugConfig.debugPrint("🔄 Trying fallback geocoding with address only for: ${busStop.name}")
-                getCoordinates(busStop.address)
+                null
             }
         }
     }

@@ -27,30 +27,18 @@ import java.util.UUID
 data class BusStop(
     val id: String = UUID.randomUUID().toString(),
     val name: String,                   // "Plaza Mayor"
-    val area: String? = null,                  // San Cristóbal de Segovia
-    val details: String? = null,                  // Junto a C/X
-    val address: String,                // Full address
-    val latitude: Double? = null,       // GPS latitude (nullable until geocoded)
-    val longitude: Double? = null,      // GPS longitude (nullable until geocoded)
+    val area: String? = null,           // San Cristóbal de Segovia
+    val details: String? = null,        // Junto a C/X
+    val coordinates: String,            // "40.948406, -4.116411"
     val routesServed: List<String> = emptyList(),  // List of route IDs that serve this stop
-    val stopCode: String? = null,        // Optional official stop code
-    val coordinates: String? = null,
+    val stopCode: String? = null,       // Optional official stop code
 ) {
-    /**
-     * Resolved latitude from typed field or parsed from coordinates string.
-     */
     val resolvedLatitude: Double?
-        get() = latitude ?: coordinates?.split(",")?.getOrNull(0)?.trim()?.toDoubleOrNull()
+        get() = coordinates.split(",").getOrNull(0)?.trim()?.toDoubleOrNull()
 
-    /**
-     * Resolved longitude from typed field or parsed from coordinates string.
-     */
     val resolvedLongitude: Double?
-        get() = longitude ?: coordinates?.split(",")?.getOrNull(1)?.trim()?.toDoubleOrNull()
+        get() = coordinates.split(",").getOrNull(1)?.trim()?.toDoubleOrNull()
 
-    /**
-     * Check if stop has valid coordinates (typed or from coordinates string)
-     */
     val hasCoordinates: Boolean
         get() = resolvedLatitude != null && resolvedLongitude != null
 
@@ -77,9 +65,7 @@ data class BusStop(
         val example = BusStop(
             id = "stop-plaza-mayor",
             name = "Plaza Mayor",
-            address = "Plaza Mayor, Segovia",
-            latitude = 40.9487,
-            longitude = -4.1171,
+            coordinates = "40.9487, -4.1171",
             routesServed = listOf("L1", "L2", "L3"),
             stopCode = "001"
         )

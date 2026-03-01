@@ -3,7 +3,6 @@ package com.github.bfollon.linecapp.services
 import com.github.bfollon.linecapp.data.BusStop
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.floats.shouldBeBetween
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 
@@ -58,9 +57,7 @@ class StaticMapServiceTest : FunSpec({
         test("returns data for stop with coordinates") {
             val stop = BusStop(
                 name = "Plaza Mayor",
-                address = "Plaza Mayor, Segovia",
-                latitude = 40.9487,
-                longitude = -4.1171
+                coordinates = "40.9487, -4.1171"
             )
             val data = StaticMapService.getStaticMapData(stop)
             data.shouldNotBeNull()
@@ -69,20 +66,20 @@ class StaticMapServiceTest : FunSpec({
             data.markerY.shouldBeBetween(0f, 256f, 0.01f)
         }
 
-        test("returns null for stop without coordinates") {
-            val stop = BusStop(name = "No Coords", address = "Unknown")
-            StaticMapService.getStaticMapData(stop).shouldBeNull()
+        test("returns null for stop with malformed coordinates") {
+            val stop = BusStop(name = "No Coords", coordinates = "invalid")
+            StaticMapService.getStaticMapData(stop) shouldBe null
         }
     }
 
     context("canShowMap") {
-        test("true for stop with coordinates") {
-            val stop = BusStop(name = "Test", address = "Addr", latitude = 40.9, longitude = -4.1)
+        test("true for stop with valid coordinates") {
+            val stop = BusStop(name = "Test", coordinates = "40.9, -4.1")
             StaticMapService.canShowMap(stop) shouldBe true
         }
 
-        test("false for stop without coordinates") {
-            val stop = BusStop(name = "Test", address = "Addr")
+        test("false for stop with malformed coordinates") {
+            val stop = BusStop(name = "Test", coordinates = "invalid")
             StaticMapService.canShowMap(stop) shouldBe false
         }
     }
