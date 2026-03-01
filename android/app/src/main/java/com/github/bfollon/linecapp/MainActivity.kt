@@ -62,6 +62,8 @@ import coil.ImageLoader
 import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.request.CachePolicy
+import com.github.bfollon.linecapp.services.OsmTileFetcher
+import com.github.bfollon.linecapp.services.TileCacheService
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -113,6 +115,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             .build()
 
         return ImageLoader.Builder(this)
+            .components {
+                add(OsmTileFetcher.Factory())
+            }
             .okHttpClient(okHttpClient)
             .diskCache {
                 DiskCache.Builder()
@@ -120,8 +125,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     .maxSizeBytes(50 * 1024 * 1024) // 50MB cache
                     .build()
             }
-            .respectCacheHeaders(true) // Honor HTTP cache headers from OSM
-            .diskCachePolicy(CachePolicy.ENABLED) // Enable disk caching
+            .respectCacheHeaders(true) // Honor HTTP cache headers from non-tile images
+            .diskCachePolicy(CachePolicy.ENABLED)
             .build()
     }
 
@@ -219,9 +224,6 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
         DebugConfig.debugPrint("🚀 LineCapp starting...")
 
-        // Initialize Coil with OSM-compliant ImageLoader
-        Coil.setImageLoader(newImageLoader())
-
         // Initialize network monitor
         NetworkMonitor.initialize(this)
 
@@ -230,6 +232,13 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()
+
+        // Initialize persistent tile cache for OSM map tiles
+        TileCacheService.initialize(this)
+
+        // Set Coil ImageLoader with OsmTileFetcher for persistent tile caching
+        // (ImageLoaderFactory only works on Application, not Activity, so we set explicitly)
+        Coil.setImageLoader(newImageLoader())
 
         // Initialize PDF Cache Manager
         val pdfCacheManager = PDFCacheManager.getInstance(this)
