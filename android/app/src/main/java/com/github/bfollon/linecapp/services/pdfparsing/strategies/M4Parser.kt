@@ -84,63 +84,78 @@ class M4Parser : CapableParser, RouteStopsProvider {
         private object Stops {
             val AZOGUEJO = BusStop(
                 name = "Azoguejo",
-                address = "Pl. Artillería, 40001 Segovia"
+                address = "Pl. Artillería, 40001 Segovia",
+                coordinates = "40.948406, -4.116411",
             )
             val DELICIAS = BusStop(
                 name = "Delicias",
-                address = "Via roma 48, 40003 Segovia"
+                address = "Via roma 48, 40003 Segovia",
+                coordinates = "40.954500, -4.108889",
             )
             val GASOLINERA = BusStop(
                 name = "Gasolinera",
-                address = "Cam. Viejo, 28, 40196 La Lastrilla, Segovia"
+                address = "Cam. Viejo, 28, 40196 La Lastrilla, Segovia",
+                coordinates = "40.965944, -4.106072",
             )
             val PENSION = BusStop(
                 name = "Pensión",
-                address = "C. Cerro de la Fuente, 50, 40196 La Lastrilla, Segovia"
+                address = "C. Cerro de la Fuente, 50, 40196 La Lastrilla, Segovia",
+                coordinates = "40.969289, -4.107552",
             )
             val POLIGONO = BusStop(
                 name = "Polígono",
-                address = "Cam. Valseca, 25-5, 40196 La Lastrilla, Segovia"
+                address = "Cam. Valseca, 25-5, 40196 La Lastrilla, Segovia",
+                coordinates = "40.972010, -4.108356",
             )
             val CTRA_VALLADOLID_33 = BusStop(
                 name = "Carretera de Valladolid",
-                address = "Ctra. de Valladolid, 33, 40196 La Lastrilla, Segovia"
+                address = "Ctra. de Valladolid, 33, 40196 La Lastrilla, Segovia",
+                coordinates = "40.970464, -4.104010",
             )
             val LEOPOLDO_MORENO = BusStop(
                 name = "Leopoldo Moreno",
-                address = "Ctra. de Valladolid, 21, 40196 La Lastrilla, Segovia"
+                address = "Ctra. de Valladolid, 21, 40196 La Lastrilla, Segovia",
+                coordinates = "40.967679, -4.102850",
             )
             val COLEGIO = BusStop(
                 name = "Colegio",
-                address = "Cam. San Cristóbal, 1, 40196 La Lastrilla, Segovia"
+                address = "Cam. San Cristóbal, 1, 40196 La Lastrilla, Segovia",
+                coordinates = "40.966693, -4.102033",
             )
             val PARROQ_SOTILLO = BusStop(
                 name = "Parroquia el Sotillo",
-                address = "Av. el Sotillo, 25, 40196 La Lastrilla, Segovia"
+                address = "Av. el Sotillo, 25, 40196 La Lastrilla, Segovia",
+                coordinates = "40.963449, -4.095073\n",
             )
             val HOTEL_AV_SOTILLO = BusStop(
                 name = "Hotel Avenida del Sotillo",
-                address = "Av. el Sotillo, 1, 40196 La Lastrilla, Segovia"
+                address = "Av. el Sotillo, 1, 40196 La Lastrilla, Segovia",
+                coordinates = "40.965769, -4.097825",
             )
             val MASPALOMAS = BusStop(
                 name = "Calle Maspalomas",
-                address = "C. Maspalomas, 21, 40196 La Lastrilla, Segovia"
+                address = "C. Maspalomas, 21, 40196 La Lastrilla, Segovia",
+                coordinates = "40.965714, -4.094892",
             )
             val CENTRO_BOAL = BusStop(
                 name = "Centro Cultural Julio Boal",
-                address = "Cam. Torrecaballeros, 46, 40196 La Lastrilla, Segovia"
+                address = "Cam. Torrecaballeros, 46, 40196 La Lastrilla, Segovia",
+                coordinates = "40.967592, -4.091377",
             )
             val PASEO_CABANILLAS = BusStop(
                 name = "Colegio Madres Concepcionistas",
-                address = "P.º Cabanillas, 40196 La Lastrilla, Segovia"
+                address = "P.º Cabanillas, 40196 La Lastrilla, Segovia",
+                coordinates = "40.962806, -4.092689\n",
             )
             val RAFAEL_DE_LAS_HERAS = BusStop(
                 name = "Rafael de las Heras",
-                address = "C. Rafael de las Heras, 11, 40196 La Lastrilla, Segovia"
+                address = "C. Rafael de las Heras, 11, 40196 La Lastrilla, Segovia",
+                coordinates = "40.961939, -4.096711",
             )
             val VENTA_MAGULLO = BusStop(
                 name = "Venta Magullo",
-                address = "C. Rafael de las Heras, 1, 40196 La Lastrilla, Segovia"
+                address = "C. Rafael de las Heras, 1, 40196 La Lastrilla, Segovia",
+                coordinates = "40.960876, -4.100906",
             )
         }
 
