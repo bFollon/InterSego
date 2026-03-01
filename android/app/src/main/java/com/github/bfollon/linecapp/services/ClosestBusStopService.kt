@@ -154,8 +154,8 @@ class ClosestBusStopService(private val context: Context) {
                     // Use existing coordinates if available
                     if (busStop.hasCoordinates) {
                         val location = Location("existing").apply {
-                            latitude = busStop.latitude!!
-                            longitude = busStop.longitude!!
+                            latitude = busStop.resolvedLatitude!!
+                            longitude = busStop.resolvedLongitude!!
                         }
                         BusStopWithCoordinates(busStop, location)
                     } else {

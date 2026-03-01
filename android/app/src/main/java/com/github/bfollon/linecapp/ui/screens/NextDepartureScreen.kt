@@ -392,10 +392,10 @@ suspend fun openMapsForStop(
     stop: BusStop
 ) {
     // Try to get coordinates from stop first, then geocode if needed
-    val location = if (stop.latitude != null && stop.longitude != null) {
+    val location = if (stop.hasCoordinates) {
         android.location.Location("").apply {
-            latitude = stop.latitude
-            longitude = stop.longitude
+            latitude = stop.resolvedLatitude!!
+            longitude = stop.resolvedLongitude!!
         }
     } else {
         geocodingService.getCoordinatesForBusStop(stop)

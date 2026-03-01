@@ -37,10 +37,22 @@ data class BusStop(
     val coordinates: String? = null,
 ) {
     /**
-     * Check if stop has valid coordinates
+     * Resolved latitude from typed field or parsed from coordinates string.
+     */
+    val resolvedLatitude: Double?
+        get() = latitude ?: coordinates?.split(",")?.getOrNull(0)?.trim()?.toDoubleOrNull()
+
+    /**
+     * Resolved longitude from typed field or parsed from coordinates string.
+     */
+    val resolvedLongitude: Double?
+        get() = longitude ?: coordinates?.split(",")?.getOrNull(1)?.trim()?.toDoubleOrNull()
+
+    /**
+     * Check if stop has valid coordinates (typed or from coordinates string)
      */
     val hasCoordinates: Boolean
-        get() = latitude != null && longitude != null
+        get() = resolvedLatitude != null && resolvedLongitude != null
 
     /**
      * Display name with stop code if available

@@ -141,8 +141,8 @@ object StaticMapService {
             return null
         }
 
-        val lat = busStop.latitude!!
-        val lon = busStop.longitude!!
+        val lat = busStop.resolvedLatitude!!
+        val lon = busStop.resolvedLongitude!!
 
         // Get tile coordinates
         val (tileX, tileY) = getTileCoordinates(lat, lon, zoom)
@@ -176,7 +176,7 @@ object StaticMapService {
             return null
         }
 
-        val (xtile, ytile) = getTileCoordinates(busStop.latitude!!, busStop.longitude!!, zoom)
+        val (xtile, ytile) = getTileCoordinates(busStop.resolvedLatitude!!, busStop.resolvedLongitude!!, zoom)
 
         // Using OpenStreetMap tile server
         val url = "https://tile.openstreetmap.org/$zoom/$xtile/$ytile.png"
