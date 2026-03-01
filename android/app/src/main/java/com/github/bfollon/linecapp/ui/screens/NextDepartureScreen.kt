@@ -54,7 +54,13 @@ import com.github.bfollon.linecapp.data.DayType
 import com.github.bfollon.linecapp.data.DepartureTime
 import com.github.bfollon.linecapp.services.DebugConfig
 import com.github.bfollon.linecapp.services.GeocodingService
+import com.github.bfollon.linecapp.services.StaticMapService
 import com.github.bfollon.linecapp.services.TimetableService
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalTime
@@ -88,6 +94,7 @@ fun NextDepartureScreen(
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
+    val geocodingService = remember { GeocodingService(context) }
     val scope = rememberCoroutineScope()
 
     var timetables by remember { mutableStateOf<List<com.github.bfollon.linecapp.data.BusTimetable>>(emptyList()) }
@@ -291,18 +298,17 @@ fun NextDepartureScreen(
                 }
             }
             else -> {
-                val geocodingService = remember { GeocodingService(context) }
-
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    // Hero header (replaces StopInfoCard)
+                    // Hero header with map tile
                     item {
                         StopHeroHeader(
                             route = route,
                             stop = stop,
+                            geocodingService = geocodingService,
                             onAddressClick = {
                                 scope.launch {
                                     openMapsForStop(context, geocodingService, stop)
@@ -557,15 +563,32 @@ fun DepartureTimeBadge(
 }
 
 /**
- * Hero header section with gradient background and stop information.
+ * Hero header section with gradient background, stop information, and optional static map tile.
  */
 @Composable
 fun StopHeroHeader(
     route: BusRoute,
     stop: BusStop,
+    geocodingService: GeocodingService,
     modifier: Modifier = Modifier,
     onAddressClick: () -> Unit
 ) {
+    var mapData by remember(stop) { mutableStateOf<StaticMapService.StaticMapData?>(null) }
+
+    LaunchedEffect(stop) {
+        mapData = null
+
+        val resolvedStop = if (stop.hasCoordinates) {
+            stop
+        } else {
+            geocodingService.getCoordinatesForBusStop(stop)?.let { location ->
+                stop.copy(latitude = location.latitude, longitude = location.longitude)
+            }
+        }
+
+        mapData = resolvedStop?.let { StaticMapService.getStaticMapData(it) }
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -625,6 +648,97 @@ fun StopHeroHeader(
                     textDecoration = TextDecoration.Underline
                 )
             }
+
+            // Static map tile (hidden when coordinates unavailable)
+            mapData?.let { data ->
+                StopMapTile(mapData = data)
+            }
+        }
+    }
+}
+
+/**
+ * Displays a 3x3 grid of OSM tiles centered on the marker, with a 2:1 aspect ratio.
+ * The grid is offset so the pin marker always appears at the center of the viewport.
+ */
+@Composable
+private fun StopMapTile(
+    mapData: StaticMapService.StaticMapData,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val pinColor = MaterialTheme.colorScheme.primary
+
+    val tileUrls = remember(mapData.tileX, mapData.tileY, mapData.zoom) {
+        (-1..1).flatMap { dy ->
+            (-1..1).map { dx ->
+                "https://tile.openstreetmap.org/${mapData.zoom}/${mapData.tileX + dx}/${mapData.tileY + dy}.png"
+            }
+        }
+    }
+
+    Layout(
+        content = {
+            tileUrls.forEach { url ->
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(url)
+                        .crossfade(true)
+                        .addHeader("User-Agent", "LineCapp/1.0 (Android; bus timetable app for Segovia)")
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds
+                )
+            }
+
+            Canvas(modifier = Modifier) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val pinRadius = 10.dp.toPx()
+                val strokeWidth = 3.dp.toPx()
+
+                drawCircle(color = pinColor, radius = pinRadius, center = Offset(cx, cy))
+                drawCircle(
+                    color = Color.White,
+                    radius = pinRadius,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = strokeWidth)
+                )
+            }
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .aspectRatio(2f)
+            .clip(MaterialTheme.shapes.medium)
+    ) { measurables, constraints ->
+        val viewportW = constraints.maxWidth
+        val viewportH = constraints.maxHeight
+        val tileSize = viewportW
+
+        // Marker position within the 3x3 grid (center tile is at row=1, col=1)
+        val markerGridX = tileSize + (mapData.markerX / 256f * tileSize).toInt()
+        val markerGridY = tileSize + (mapData.markerY / 256f * tileSize).toInt()
+
+        // Offset the grid so the marker lands at the viewport center
+        val offsetX = viewportW / 2 - markerGridX
+        val offsetY = viewportH / 2 - markerGridY
+
+        val tileConstraints = androidx.compose.ui.unit.Constraints.fixed(tileSize, tileSize)
+        val tilePlaceables = measurables.take(9).map { it.measure(tileConstraints) }
+        val pinPlaceable = measurables.last().measure(
+            androidx.compose.ui.unit.Constraints.fixed(viewportW, viewportH)
+        )
+
+        layout(viewportW, viewportH) {
+            tilePlaceables.forEachIndexed { i, placeable ->
+                val col = i % 3
+                val row = i / 3
+                placeable.place(
+                    x = col * tileSize + offsetX,
+                    y = row * tileSize + offsetY
+                )
+            }
+            pinPlaceable.place(0, 0)
         }
     }
 }

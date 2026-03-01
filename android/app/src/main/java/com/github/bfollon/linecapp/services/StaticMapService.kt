@@ -53,16 +53,22 @@ object StaticMapService {
     private const val DEFAULT_ZOOM = 18
 
     /**
-     * Data class containing all information needed to render a static map with marker
+     * Data class containing all information needed to render a static map with marker.
      *
-     * @param tileUrl URL to the OSM tile image (256x256 PNG)
-     * @param markerX X pixel position of marker within the tile (0-255)
-     * @param markerY Y pixel position of marker within the tile (0-255)
+     * @param tileUrl URL to the center OSM tile image (256x256 PNG)
+     * @param markerX X pixel position of marker within the center tile (0-255)
+     * @param markerY Y pixel position of marker within the center tile (0-255)
+     * @param tileX X coordinate of the center tile in the OSM tile grid
+     * @param tileY Y coordinate of the center tile in the OSM tile grid
+     * @param zoom OSM zoom level used
      */
     data class StaticMapData(
         val tileUrl: String,
         val markerX: Float,
-        val markerY: Float
+        val markerY: Float,
+        val tileX: Int,
+        val tileY: Int,
+        val zoom: Int
     )
 
     /**
@@ -149,7 +155,7 @@ object StaticMapService {
 
         DebugConfig.debugPrint("$TAG: Generated map data for ${busStop.name}: tile=($tileX,$tileY), marker=($markerX,$markerY)")
 
-        return StaticMapData(tileUrl, markerX, markerY)
+        return StaticMapData(tileUrl, markerX, markerY, tileX, tileY, zoom)
     }
 
     /**
