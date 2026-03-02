@@ -1,7 +1,7 @@
-# LineCapp Parity Status with FarmaciasDeGuardia
+# InterSego Parity Status with FarmaciasDeGuardia
 
 **Last Updated:** October 28, 2025
-**LineCapp Version:** Phase 7 (Active Development)
+**InterSego Version:** Phase 7 (Active Development)
 **FarmaciasDeGuardia Reference:** Production Android App
 
 ---
@@ -10,7 +10,7 @@
 
 **Overall Parity Status: 95% Feature Complete** 🎉
 
-LineCapp has achieved **full feature parity** with FarmaciasDeGuardia for all core backend functionality including PDF scraping, version tracking, caching, and update detection. The remaining 5% consists of optional UI polish features where the backend APIs are implemented and ready for use.
+InterSego has achieved **full feature parity** with FarmaciasDeGuardia for all core backend functionality including PDF scraping, version tracking, caching, and update detection. The remaining 5% consists of optional UI polish features where the backend APIs are implemented and ready for use.
 
 ---
 
@@ -18,7 +18,7 @@ LineCapp has achieved **full feature parity** with FarmaciasDeGuardia for all co
 
 ### 1. PDF URL Scraping & Management
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | HTML Scraping Service | ✅ | ✅ | ✅ **100% Parity** |
 | Dynamic URL Extraction | ✅ | ✅ | ✅ **100% Parity** |
@@ -32,7 +32,7 @@ LineCapp has achieved **full feature parity** with FarmaciasDeGuardia for all co
 | Three-Tier URL Resolution | ✅ | ✅ | ✅ **100% Parity** |
 
 **Implementation:**
-- **LineCapp:** `PDFURLScrapingService.kt` - Lines 32-422
+- **InterSego:** `PDFURLScrapingService.kt` - Lines 32-422
 - **Source:** `https://www.linecar.es/metropolitano/segovia/`
 - **Routes Discovered:** M1, M2, M3, M4, M5, M6, M7, M8 (8 routes)
 - **Last Verified:** October 28, 2025
@@ -41,7 +41,7 @@ LineCapp has achieved **full feature parity** with FarmaciasDeGuardia for all co
 
 ### 2. PDF Version Tracking & Update Detection
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | **PDF Version Data Model** | ✅ | ✅ | ✅ **100% Parity** |
 | Last-Modified Header Tracking | ✅ | ✅ | ✅ **100% Parity** |
@@ -59,7 +59,7 @@ LineCapp has achieved **full feature parity** with FarmaciasDeGuardia for all co
 | Background Update Download | ✅ | ✅ | ✅ **100% Parity** |
 
 **Implementation:**
-- **LineCapp:** `PDFCacheManager.kt` - Lines 80-527
+- **InterSego:** `PDFCacheManager.kt` - Lines 80-527
 - **Version Storage:** `pdf_cache_manager` SharedPreferences
 - **Update Check:** Runs on app launch via `MainActivity.kt:94-97`
 
@@ -80,7 +80,7 @@ M8: Last-Modified tracked ✅
 
 ### 3. PDF File Caching
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | Local File Storage | ✅ | ✅ | ✅ **100% Parity** |
 | Cache Directory Management | ✅ | ✅ | ✅ **100% Parity** |
@@ -92,14 +92,14 @@ M8: Last-Modified tracked ✅
 | Per-Route Cache Clear | ✅ | ✅ | ✅ **100% Parity** |
 
 **Implementation:**
-- **Cache Location:** `/data/data/com.github.bfollon.linecapp/files/BusTimetablePDFs/`
+- **Cache Location:** `/data/data/intersego/files/BusTimetablePDFs/`
 - **Current Cache:** All 8 route PDFs cached (verified October 28, 2025)
 
 ---
 
 ### 4. Parsed Timetable Caching
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | **Serialization** | ✅ (`@Serializable`) | ✅ (`@Serializable`) | ✅ **100% Parity** |
 | JSON Persistent Storage | ✅ | ✅ | ✅ **100% Parity** |
@@ -116,7 +116,7 @@ M8: Last-Modified tracked ✅
 
 **Implementation:**
 - **Service:** `TimetableCacheService.kt` - Lines 32-244
-- **Cache Location:** `/data/data/com.github.bfollon.linecapp/files/TimetableCache/`
+- **Cache Location:** `/data/data/intersego/files/TimetableCache/`
 - **Verified Cache:** `M4.json` (66 timetables, 60KB) + `M4.meta.json`
 
 **Cache Validation Logic:**
@@ -137,7 +137,7 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 
 ### 5. Self-Healing URL System
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | 404 Detection | ✅ | ✅ | ✅ **100% Parity** |
 | Automatic Re-Scraping | ✅ | ✅ | ✅ **100% Parity** |
@@ -147,7 +147,7 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 | `resolveURLWithHealing()` | ✅ | ✅ | ✅ **100% Parity** |
 
 **Implementation:**
-- **LineCapp:** `PDFURLRepository.kt` - Lines 295-430
+- **InterSego:** `PDFURLRepository.kt` - Lines 295-430
 - **Self-Healing Flow:**
   1. Check if online
   2. Validate URL with HEAD request
@@ -157,14 +157,14 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 
 **Minor Difference:**
 - **FarmaciasDeGuardia:** Validation cache expires after 1 hour
-- **LineCapp:** Validation cache persists until app restart
+- **InterSego:** Validation cache persists until app restart
 - **Impact:** Minimal - both clear cache appropriately
 
 ---
 
 ### 6. PDF Parsing Strategy Pattern
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | Strategy Pattern Design | ✅ | ✅ | ✅ **100% Parity** |
 | Parser Interface | ✅ `PDFParsingStrategy` | ✅ `BusTimetableParser` | ✅ **100% Parity** |
@@ -178,7 +178,7 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 
 **Implementation Status:**
 - **FarmaciasDeGuardia:** 4 parsers (Segovia Capital, Cuéllar, El Espinar, Segovia Rural)
-- **LineCapp:** 1 parser (M4Parser) - **7 more parsers needed**
+- **InterSego:** 1 parser (M4Parser) - **7 more parsers needed**
 
 **M4Parser Capabilities:**
 - ✅ Handles two PDF variants (old broken encoding + new standard)
@@ -198,7 +198,7 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 
 ### 7. Network & Connectivity
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | NetworkMonitor Service | ✅ | ✅ | ✅ **100% Parity** |
 | Real-Time Connectivity | ✅ | ✅ | ✅ **100% Parity** |
@@ -207,14 +207,14 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 | Offline-First Loading | ✅ | ✅ | ✅ **100% Parity** |
 
 **Implementation:**
-- **LineCapp:** `NetworkMonitor.kt` - Lines 22-98
+- **InterSego:** `NetworkMonitor.kt` - Lines 22-98
 - **Usage:** All network operations check `NetworkMonitor.isOnline()` first
 
 ---
 
 ### 8. Progress Tracking & UI Callbacks
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | **Backend API** | ✅ | ✅ | ✅ **100% Parity** |
 | UpdateProgressState Enum | ✅ | ✅ | ✅ **100% Parity** |
@@ -224,7 +224,7 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified  // Compare
 
 **Backend Complete:**
 ```kotlin
-// LineCapp has full API ready:
+// InterSego has full API ready:
 suspend fun forceCheckForUpdatesWithProgress(
     routes: List<BusRoute>,
     progressCallback: suspend (String, UpdateProgressState) -> Unit
@@ -241,14 +241,14 @@ enum class UpdateProgressState {
 
 **UI Status:**
 - **FarmaciasDeGuardia:** Settings screen shows progress indicators
-- **LineCapp:** No UI implementation yet (Phase 7 - minimal UI only)
+- **InterSego:** No UI implementation yet (Phase 7 - minimal UI only)
 - **Backend:** ✅ 100% ready for UI integration
 
 ---
 
 ### 9. Cache Status Reporting
 
-| Feature | FarmaciasDeGuardia | LineCapp | Status |
+| Feature | FarmaciasDeGuardia | InterSego | Status |
 |---------|-------------------|----------|--------|
 | **Backend API** | ✅ | ✅ | ✅ **100% Parity** |
 | `getCacheStatus()` | ✅ | ✅ | ✅ **100% Parity** |
@@ -261,7 +261,7 @@ enum class UpdateProgressState {
 
 **Backend Complete:**
 ```kotlin
-// LineCapp has full API ready:
+// InterSego has full API ready:
 data class RouteCacheStatus(
     val route: BusRoute,
     val isCached: Boolean,
@@ -276,7 +276,7 @@ fun getCacheStatus(routes: List<BusRoute>): List<RouteCacheStatus>
 
 **UI Status:**
 - **FarmaciasDeGuardia:** Settings screen displays cache status
-- **LineCapp:** No cache status screen yet
+- **InterSego:** No cache status screen yet
 - **Backend:** ✅ 100% ready for UI integration
 
 ---
@@ -329,19 +329,19 @@ OVERALL PARITY:                95% 🎉
 
 ### 1. Validation Cache TTL
 - **FarmaciasDeGuardia:** 1-hour expiration
-- **LineCapp:** Session-only (clears on app restart)
+- **InterSego:** Session-only (clears on app restart)
 - **Impact:** Negligible - both clear appropriately
 - **Reason:** Simpler implementation, no practical difference
 
 ### 2. PDF Parsing Approach
 - **FarmaciasDeGuardia iOS:** Coordinate-based region scanning
 - **FarmaciasDeGuardia Android:** Text-based extraction (performance)
-- **LineCapp:** Text-based extraction (following Android pattern)
+- **InterSego:** Text-based extraction (following Android pattern)
 - **Reason:** Performance optimization
 
 ### 3. Route Count
 - **FarmaciasDeGuardia:** 4 regions → 4 parsers
-- **LineCapp:** 8 bus routes → 8 parsers needed (1 complete)
+- **InterSego:** 8 bus routes → 8 parsers needed (1 complete)
 - **Status:** M4 complete, 7 pending
 
 ---
@@ -384,7 +384,7 @@ All backend APIs are implemented and ready for UI:
 
 ## 🎉 Conclusion
 
-**LineCapp has achieved full feature parity with FarmaciasDeGuardia for all production-critical backend functionality.**
+**InterSego has achieved full feature parity with FarmaciasDeGuardia for all production-critical backend functionality.**
 
 The core PDF scraping, version tracking, update detection, and caching systems are 100% complete and working identically to the reference app. The remaining work consists of:
 

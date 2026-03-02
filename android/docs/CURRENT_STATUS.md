@@ -1,10 +1,10 @@
-# LineCapp Android - Current Status
+# InterSego Android - Current Status
 
 **Last Updated:** October 31, 2025
 
 ## 🎯 Overall Status
 
-**LineCapp backend is complete, UI work in progress.**
+**InterSego backend is complete, UI work in progress.**
 
 - ✅ **Core Backend:** 100% Complete (PDF scraping, caching, version tracking)
 - 🟡 **UI Layer:** Actively developing (route visualization and next departure screens functional)
@@ -135,7 +135,7 @@
 ```
 PDF Files Cached: 8/8 routes (M1-M8)
 Parsed Timetables: 1/8 routes (M4 - 66 timetables, 60KB)
-Cache Location: /data/data/com.github.bfollon.linecapp/files/
+Cache Location: /data/data/intersego/files/
   ├── BusTimetablePDFs/     (PDF cache)
   └── TimetableCache/        (Parsed timetable cache)
 ```
@@ -316,17 +316,17 @@ val cacheIsValid = pdfLastModified <= metadata.pdfLastModified
 
 ```bash
 # 1. Clear app data
-adb shell pm clear com.github.bfollon.linecapp
+adb shell pm clear intersegoo
 
 # 2. Launch app (will download and parse M4)
-adb shell am start -n com.github.bfollon.linecapp/.MainActivity
+adb shell am start -n intersegoo/.MainActivity
 
 # 3. Watch logs for "Parsing PDF" (slow ~700ms)
 adb logcat | grep "TimetableService"
 
 # 4. Restart app immediately
-adb shell am force-stop com.github.bfollon.linecapp
-adb shell am start -n com.github.bfollon.linecapp/.MainActivity
+adb shell am force-stop intersegoo
+adb shell am start -n intersegoo/.MainActivity
 
 # 5. Watch logs for "Using persistent cache" (fast ~15ms)
 adb logcat | grep "TimetableService"
@@ -338,23 +338,23 @@ adb logcat | grep "TimetableService"
 
 ```bash
 # Check cached PDF files
-adb shell run-as com.github.bfollon.linecapp ls -la /data/data/com.github.bfollon.linecapp/files/BusTimetablePDFs/
+adb shell run-as intersegoo ls -la /data/data/intersegoo/files/BusTimetablePDFs/
 
 # Check cached timetables
-adb shell run-as com.github.bfollon.linecapp ls -la /data/data/com.github.bfollon.linecapp/files/TimetableCache/
+adb shell run-as intersegoo ls -la /data/data/intersegoo/files/TimetableCache/
 
 # View M4 metadata
-adb shell run-as com.github.bfollon.linecapp cat /data/data/com.github.bfollon.linecapp/files/TimetableCache/M4.meta.json
+adb shell run-as intersegoo cat /data/data/intersegoo/files/TimetableCache/M4.meta.json
 ```
 
 ### Verify URL Scraping
 
 ```bash
 # Check stored PDF URLs
-adb shell run-as com.github.bfollon.linecapp cat /data/data/com.github.bfollon.linecapp/shared_prefs/pdf_url_repository.xml
+adb shell run-as intersegoo cat /data/data/intersegoo/shared_prefs/pdf_url_repository.xml
 
 # Check version metadata
-adb shell run-as com.github.bfollon.linecapp cat /data/data/com.github.bfollon.linecapp/shared_prefs/pdf_cache_manager.xml
+adb shell run-as intersegoo cat /data/data/intersegoo/shared_prefs/pdf_cache_manager.xml
 ```
 
 ---
@@ -403,7 +403,7 @@ If session crashes or context is lost:
 - `NextDepartureScreen.kt` - Live departure times with countdown ✅ (NEW)
 - `TimetableScreen.kt` - Complete timetable view ✅
 - `MainScreen.kt` - Legacy M4 demo screen (not used in navigation)
-- `LineCappTheme` - Bus-themed Material3 design
+- `InterSegoTheme` - Bus-themed Material3 design
 - SVG resources: `ic_route_start_chevron.xml`, `ic_route_end_chevron.xml` ✅ (NEW)
 
 ---

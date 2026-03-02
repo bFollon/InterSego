@@ -100,7 +100,7 @@ when (result) {
 ### Expected Logcat Output on App Launch
 
 ```
-🚀 LineCapp starting...
+🚀 InterSego starting...
 📡 NetworkMonitor: Initialized
 📍 CoordinateCache: Initialized
 🗑️ CoordinateCache: Cleaned up 0 expired entries
@@ -155,7 +155,7 @@ M10: SEGOVIA-M10.pdf
 **New imports:**
 ```kotlin
 import androidx.lifecycle.lifecycleScope
-import com.github.bfollon.linecapp.repositories.PDFURLRepository
+import intersego.repositories.PDFURLRepository
 import kotlinx.coroutines.launch
 ```
 
@@ -170,7 +170,7 @@ import kotlinx.coroutines.launch
 
 2. **Monitor Logcat:**
    ```bash
-   adb logcat | grep -E "LineCapp|PDFURLScrapingService|PDFURLRepository"
+   adb logcat | grep -E "InterSego|PDFURLScrapingService|PDFURLRepository"
    ```
 
 3. **Launch app** - Scraping will run automatically on startup

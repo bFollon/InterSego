@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LineCApp" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.InterSego" parent="android:Theme.Material.Light.NoActionBar">
         <!-- This is just a basic container theme since we're using Compose -->
     </style>
 </resources>

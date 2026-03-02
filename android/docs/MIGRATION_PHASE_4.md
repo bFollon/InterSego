@@ -5,7 +5,7 @@
 
 ## Overview
 
-Phase 4 creates the foundational bus domain models that form the core data layer for LineCapp. These models define the structure for bus routes, stops, timetables, departure times, and schedule dates. All models are serializable for JSON caching and include example instances for testing and development.
+Phase 4 creates the foundational bus domain models that form the core data layer for InterSego. These models define the structure for bus routes, stops, timetables, departure times, and schedule dates. All models are serializable for JSON caching and include example instances for testing and development.
 
 This phase resolves the compilation issue from Phase 2 where `GeocodingService.kt` referenced the `BusStop` model that didn't exist yet.
 
@@ -554,7 +554,7 @@ BusStop ─────┘        ↓
 ## Directory Structure
 
 ```
-LineCapp/android/app/src/main/java/com/github/bfollon/linecapp/
+InterSego/android/app/src/main/java/com/github/bfollon/intersego/
 └── data/
     ├── RouteType.kt          (New - 0.9 KB)
     ├── DayType.kt            (New - 1.0 KB)
@@ -788,10 +788,10 @@ Now that data models exist, Phase 3 can be completed:
 ## Files Created
 
 ```
-LineCapp/android/
+InterSego/android/
 ├── docs/
 │   └── MIGRATION_PHASE_4.md           (New)
-└── app/src/main/java/com/github/bfollon/linecapp/
+└── app/src/main/java/com/github/bfollon/intersego/
     └── data/
         ├── RouteType.kt               (New - 0.9 KB)
         ├── DayType.kt                 (New - 1.0 KB)
@@ -806,7 +806,7 @@ LineCapp/android/
 
 ## Summary
 
-Phase 4 successfully establishes the complete data model layer for LineCapp by creating 7 domain-specific models that represent:
+Phase 4 successfully establishes the complete data model layer for InterSego by creating 7 domain-specific models that represent:
 
 - **Route types** (urban vs interurban)
 - **Day types** (weekday, weekend, holiday)

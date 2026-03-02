@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "LineCApp"
+rootProject.name = "InterSego"
 include(":app")

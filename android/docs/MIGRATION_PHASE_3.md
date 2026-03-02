@@ -5,7 +5,7 @@
 
 ## Overview
 
-Phase 3 establishes the PDF infrastructure layer by copying and adapting services for downloading, caching, and URL management from FarmaciasDeGuardia to LineCapp. These services handle the retrieval and storage of bus timetable PDFs, which will later be parsed in Phase 5.
+Phase 3 establishes the PDF infrastructure layer by copying and adapting services for downloading, caching, and URL management from FarmaciasDeGuardia to InterSego. These services handle the retrieval and storage of bus timetable PDFs, which will later be parsed in Phase 5.
 
 **Important Note:** PDF parsing strategies are intentionally **not** included in this phase. The actual parsing logic (Phase 5) will be implemented later once bus timetable PDF formats are analyzed and understood.
 
@@ -33,11 +33,11 @@ Phase 3 establishes the PDF infrastructure layer by copying and adapting service
 - Automatic retry logic for transient failures
 - Progress callbacks for UI updates
 - NetworkMonitor integration for offline detection
-- User-Agent header: `LineCapp-Android/1.0`
+- User-Agent header: `InterSego-Android/1.0`
 
 **Adaptations:**
-- Package: `farmaciasdeguardiaensegovia` → `linecapp`
-- User-Agent: `FarmaciasDeGuardia-Android` → `LineCapp-Android`
+- Package: `farmaciasdeguardiaensegovia` → `intersego`
+- User-Agent: `FarmaciasDeGuardia-Android` → `InterSego-Android`
 - SSL hostname verifier: `cofsegovia.com` → `avilabus.es` (example, marked with TODO)
 - Comments: Updated from "pharmacy" to "bus timetable"
 
@@ -74,7 +74,7 @@ fun isOnline(): Boolean  // Via NetworkMonitor
 - NetworkMonitor integration
 
 **Adaptations:**
-- Package: `farmaciasdeguardiaensegovia` → `linecapp`
+- Package: `farmaciasdeguardiaensegovia` → `intersego`
 - Cache directory: `PharmacyPDFs` → `BusTimetablePDFs`
 - Data model: `Region` → `BusRoute`, accepts `routeId: String`
 - Import: `RegionCacheStatus` → `RouteCacheStatus`
@@ -125,7 +125,7 @@ app_data/BusTimetablePDFs/
 - NetworkMonitor integration
 
 **Adaptations:**
-- Package: `farmaciasdeguardiaensegovia` → `linecapp`
+- Package: `farmaciasdeguardiaensegovia` → `intersego`
 - Base URL: `cofsegovia.com/farmacias-de-guardia/` → `avilabus.es/horarios/` (example with TODO)
 - Data model: `ScrapedPDFData.regionName` → `ScrapedPDFData.routeId`
 - Route detection: Adapted from region names (Segovia Capital, Cuéllar) to route IDs (L1, L2, L3, L4)
@@ -177,7 +177,7 @@ fun clearCache()
 - Support for both scraped and hardcoded URLs
 
 **Adaptations:**
-- Package: `farmaciasdeguardiaensegovia` → `linecapp`
+- Package: `farmaciasdeguardiaensegovia` → `intersego`
 - Method signatures: Accept `routeId: String` instead of region names
 - Route IDs: Changed from region names (Segovia Capital) to route IDs (L1, L2, L3, L4)
 - Normalization: `normalizeRegionName()` → `normalizeRouteId()`
@@ -586,7 +586,7 @@ data class RouteCacheStatus(
 
 - ✅ All 4 services copied and adapted
 - ✅ All 3 data models created
-- ✅ Package names updated to `linecapp`
+- ✅ Package names updated to `intersego`
 - ✅ Domain terminology adapted (pharmacy → bus)
 - ✅ GPL-v3 license headers preserved
 - ✅ Three-tier caching architecture preserved
@@ -600,7 +600,7 @@ data class RouteCacheStatus(
 ## Files Created
 
 ```
-LineCapp/android/app/src/main/java/com/github/bfollon/linecapp/
+InterSego/android/app/src/main/java/com/github/bfollon/intersego/
 ├── services/
 │   ├── PDFDownloadService.kt          (243 lines)
 │   ├── PDFCacheManager.kt             (597 lines)
@@ -648,7 +648,7 @@ Total: 1,737 lines of code
 
 ## Summary
 
-Phase 3 successfully establishes the PDF infrastructure layer for LineCapp by copying and adapting 4 core services and 3 data models from FarmaciasDeGuardia. The infrastructure provides:
+Phase 3 successfully establishes the PDF infrastructure layer for InterSego by copying and adapting 4 core services and 3 data models from FarmaciasDeGuardia. The infrastructure provides:
 
 - **Robust PDF downloading** with SSL support and retry logic
 - **Three-tier caching** for optimal performance and offline support

@@ -5,7 +5,7 @@
 
 ## Overview
 
-Phase 7 (Minimal) creates a basic UI shell to get the LineCapp app compiling and launching. This is intentionally minimal to unblock development - full UI implementation will be done in future work.
+Phase 7 (Minimal) creates a basic UI shell to get the InterSego app compiling and launching. This is intentionally minimal to unblock development - full UI implementation will be done in future work.
 
 **Goal:** Get app to compile, launch, and display a basic screen.
 
@@ -13,7 +13,7 @@ Phase 7 (Minimal) creates a basic UI shell to get the LineCapp app compiling and
 
 ### 1. Compose Theme System
 
-**Location:** `app/src/main/java/com/github/bfollon/linecapp/ui/theme/`
+**Location:** `app/src/main/java/com/github/bfollon/intersego/ui/theme/`
 
 #### Color.kt
 **Source:** Adapted from FarmaciasDeGuardia
@@ -39,7 +39,7 @@ Phase 7 (Minimal) creates a basic UI shell to get the LineCapp app compiling and
 - Material3 `lightColorScheme` and `darkColorScheme`
 - Dynamic color support (Android 12+)
 - Automatic dark mode detection
-- `LineCappTheme` composable wrapper
+- `InterSegoTheme` composable wrapper
 
 **Color Scheme Mapping:**
 - Light mode: BusBlue (primary), RouteOrange (secondary)
@@ -60,7 +60,7 @@ Phase 7 (Minimal) creates a basic UI shell to get the LineCapp app compiling and
 
 ### 2. MainActivity.kt
 
-**Location:** `app/src/main/java/com/github/bfollon/linecapp/MainActivity.kt`
+**Location:** `app/src/main/java/com/github/bfollon/intersego/MainActivity.kt`
 **Source:** Simplified from FarmaciasDeGuardia
 **Size:** ~2.5 KB
 
@@ -84,7 +84,7 @@ CoordinateCache.cleanupExpiredEntries()
 **Compose Setup:**
 ```kotlin
 setContent {
-    LineCappTheme {
+    InterSegoTheme {
         AppNavigation()
     }
 }
@@ -104,7 +104,7 @@ NavHost(
 
 #### Differences from FarmaciasDeGuardia
 **Removed (not needed yet):**
-- RouteCache initialization (not needed for LineCapp)
+- RouteCache initialization (not needed for InterSego)
 - Splash screen navigation (Phase 8)
 - Modal bottom sheet state management (Phase 8)
 - ZBS selection modal (pharmacy-specific)
@@ -119,7 +119,7 @@ NavHost(
 
 ### 3. MainScreen.kt
 
-**Location:** `app/src/main/java/com/github/bfollon/linecapp/ui/screens/MainScreen.kt`
+**Location:** `app/src/main/java/com/github/bfollon/intersego/ui/screens/MainScreen.kt`
 **Source:** New implementation (placeholder)
 **Size:** ~3 KB
 
@@ -132,7 +132,7 @@ Minimal placeholder screen to verify app launches and theme works.
 │                             │
 │           🚌                │
 │                             │
-│        LineCapp             │ (Primary color, bold)
+│        InterSego             │ (Primary color, bold)
 │                             │
 │ Horarios de autobuses de    │
 │         Segovia             │
@@ -255,9 +255,9 @@ The complete Phase 7 implementation (per MIGRATION_PLAN.md) includes:
 
 ---
 
-## Comparison: FarmaciasDeGuardia vs LineCapp
+## Comparison: FarmaciasDeGuardia vs InterSego
 
-| Aspect | FarmaciasDeGuardia | LineCapp (Phase 7 Minimal) |
+| Aspect | FarmaciasDeGuardia | InterSego (Phase 7 Minimal) |
 |--------|-------------------|---------------------------|
 | **MainActivity** | 274 lines, complex navigation | 80 lines, single route |
 | **Navigation** | 8 routes, 7 modals | 1 route, no modals |
@@ -319,7 +319,7 @@ The complete Phase 7 implementation (per MIGRATION_PLAN.md) includes:
 
 Expected Logcat output on app launch:
 ```
-🚀 LineCapp starting...
+🚀 InterSego starting...
 📡 NetworkMonitor: Initialized
 📍 CoordinateCache: Initialized
 🗑️ CoordinateCache: Cleaned up 0 expired entries
@@ -448,4 +448,4 @@ Related to MIGRATION_PLAN.md Phase 7.
 
 ---
 
-**Phase 7 (Minimal) successfully creates a working app shell for LineCapp development!**
+**Phase 7 (Minimal) successfully creates a working app shell for InterSego development!**

@@ -19,3 +19,10 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# iText7 - BouncyCastle providers are optional runtime dependencies not bundled on Android
+-dontwarn com.itextpdf.bouncycastle.BouncyCastleFactory
+-dontwarn com.itextpdf.bouncycastlefips.BouncyCastleFipsFactory
+
+# SLF4J - static binder is not used on Android (uses no-op binding)
+-dontwarn org.slf4j.impl.StaticLoggerBinder

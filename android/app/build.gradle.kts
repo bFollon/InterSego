@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.github.bfollon.linecapp"
+    namespace = "com.github.bfollon.intersego"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.bfollon.linecapp"
+        applicationId = "com.github.bfollon.intersego"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

@@ -1,12 +1,12 @@
-# LineCapp Migration Plan
+# InterSego Migration Plan
 
 **Source:** FarmaciasDeGuardia Android App
-**Target:** LineCapp Bus Timetable App
+**Target:** InterSego Bus Timetable App
 **Date Created:** October 12, 2025
 
 ## Overview
 
-This document outlines the complete migration strategy for adapting the FarmaciasDeGuardia Android app architecture to create LineCapp, a bus timetable application for Segovia, Spain.
+This document outlines the complete migration strategy for adapting the FarmaciasDeGuardia Android app architecture to create InterSego, a bus timetable application for Segovia, Spain.
 
 ### App Comparison
 
@@ -15,7 +15,7 @@ This document outlines the complete migration strategy for adapting the Farmacia
 - Features: PDF caching, geolocation (nearest on-duty pharmacy), offline mode, URL scraping/validation
 - Architecture: Jetpack Compose, Strategy Pattern for PDF parsing, 3-tier caching
 
-#### LineCapp
+#### InterSego
 - Downloads and parses bus timetable PDFs from Segovia transportation authority
 - Will need: PDF caching, geolocation (nearest bus stop), offline mode, URL scraping/validation
 - Target architecture: Same foundation as FarmaciasDeGuardia
@@ -54,7 +54,7 @@ Copy domain-agnostic services that work regardless of domain (pharmacy vs bus):
 | `services/GeocodingService.kt` | Address-to-coordinate conversion | Package name only |
 | `services/LocationManager.kt` | User location services | Package name only |
 
-**Note:** `RouteCache.kt` and `RoutingService.kt` are not needed for LineCapp as we don't require route caching to bus stops.
+**Note:** `RouteCache.kt` and `RoutingService.kt` are not needed for InterSego as we don't require route caching to bus stops.
 
 #### Utilities to Copy
 | **File** | **Purpose** | **Changes Needed** |
@@ -63,7 +63,7 @@ Copy domain-agnostic services that work regardless of domain (pharmacy vs bus):
 
 **Package Name Changes:**
 - From: `com.github.bfollon.farmaciasdeguardiaensegovia`
-- To: `com.github.bfollon.linecapp`
+- To: `intersego`
 
 **Deliverables:**
 - All infrastructure services copied and compiling
@@ -102,7 +102,7 @@ Adapt PDF downloading, caching, and URL management for bus timetables:
 Transform pharmacy-specific models to bus transportation domain:
 
 #### Model Transformations
-| **FarmaciasDeGuardia Model** | **LineCapp Model** | **Key Changes** |
+| **FarmaciasDeGuardia Model** | **InterSego Model** | **Key Changes** |
 |------------------------------|-------------------|-----------------|
 | `data/Pharmacy.kt` | `data/BusStop.kt` | Replace: name, address, phone → name, address, routes serving stop |
 | `data/Region.kt` | `data/BusRoute.kt` | Replace: region metadata → route number, name, PDF URL, origin, destination |
@@ -317,12 +317,12 @@ Transform UI from pharmacy schedules to bus timetables:
 #### Theme (Copy Directly)
 | **File** | **Changes** |
 |----------|-------------|
-| `ui/theme/Color.kt` | Update brand colors for LineCapp |
-| `ui/theme/Theme.kt` | Rename theme: `FarmaciasDeGuardiaEnSegoviaTheme` → `LineCappTheme` |
+| `ui/theme/Color.kt` | Update brand colors for InterSego |
+| `ui/theme/Theme.kt` | Rename theme: `FarmaciasDeGuardiaEnSegoviaTheme` → `InterSegoTheme` |
 | `ui/theme/Type.kt` | Copy as-is |
 
 #### Reusable Components (Copy/Adapt)
-| **Original Component** | **LineCapp Component** | **Changes** |
+| **Original Component** | **InterSego Component** | **Changes** |
 |------------------------|------------------------|-------------|
 | `ui/components/OfflineWarningCard.kt` | *(Copy)* | No changes needed |
 | `ui/components/PharmacyCard.kt` | `ui/components/BusStopCard.kt` | Display stop name, routes, next departures |
@@ -330,7 +330,7 @@ Transform UI from pharmacy schedules to bus timetables:
 | `ui/components/ClosestPharmacyButton.kt` | `ui/components/ClosestStopButton.kt` | Update text/icon |
 
 #### Screens to Adapt
-| **Original Screen** | **LineCapp Screen** | **Purpose** |
+| **Original Screen** | **InterSego Screen** | **Purpose** |
 |---------------------|---------------------|-------------|
 | `MainActivity.kt` | *(Adapt)* | App initialization, navigation setup |
 | `SplashScreen.kt` | *(Copy)* | Splash screen with cache loading |
@@ -382,7 +382,7 @@ TimetableScreen
 ```
 
 **Deliverables:**
-- Theme customized for LineCapp
+- Theme customized for InterSego
 - Core UI components adapted
 - All screens implemented
 - Navigation flow functional
@@ -394,7 +394,7 @@ TimetableScreen
 Adapt ViewModels to work with bus domain:
 
 #### ViewModel Adaptations
-| **Original ViewModel** | **LineCapp ViewModel** | **Key Changes** |
+| **Original ViewModel** | **InterSego ViewModel** | **Key Changes** |
 |------------------------|------------------------|-----------------|
 | `viewmodels/ScheduleViewModel.kt` | `viewmodels/TimetableViewModel.kt` | Load/display timetables, manage route/stop selection |
 | `viewmodels/ClosestPharmacyViewModel.kt` | `viewmodels/ClosestStopViewModel.kt` | Find nearest stop, handle location permissions |
@@ -455,7 +455,7 @@ class ClosestStopViewModel : ViewModel() {
 Adapt data access layer for bus domain:
 
 #### Repository Adaptations
-| **Original Repository** | **LineCapp Repository** | **Purpose** |
+| **Original Repository** | **InterSego Repository** | **Purpose** |
 |-------------------------|-------------------------|-------------|
 | `repositories/PDFURLRepository.kt` | *(Adapt)* | Hardcoded fallback URLs for bus route PDFs |
 | `repositories/PharmacyScheduleRepository.kt` | `repositories/BusScheduleRepository.kt` | Data access layer for timetables |
@@ -526,7 +526,7 @@ Copy test templates and create bus-specific tests:
 **AppConfig.kt:**
 ```kotlin
 object AppConfig {
-    const val APP_NAME = "LineCapp"
+    const val APP_NAME = "InterSego"
     const val APP_VERSION = "1.0.0"
     const val CACHE_DIR = "TimetableCache"
     const val PDF_CACHE_DIR = "BusPDFs"
@@ -556,7 +556,7 @@ Update `proguard-rules.pro` for release builds:
 -dontnote kotlinx.serialization.AnnotationsKt
 
 # Keep data models
--keep class com.github.bfollon.linecapp.data.** { *; }
+-keep class intersego.data.** { *; }
 ```
 
 **Deliverables:**
@@ -581,7 +581,7 @@ Update `proguard-rules.pro` for release builds:
 - [ ] `ui/theme/Type.kt`
 - [ ] `ui/components/OfflineWarningCard.kt`
 
-**Skipped (Not needed for LineCapp):**
+**Skipped (Not needed for InterSego):**
 - ~~`services/RouteCache.kt`~~ - Route caching not required
 - ~~`services/RoutingService.kt`~~ - Route calculation not required
 
@@ -757,4 +757,4 @@ Data Layer (Models, Cache, Network)
 |----------|-------------|-------------|
 | 2025-10-12 | 1.0 | Initial migration plan created |
 | 2025-10-12 | 1.1 | Phase 1 completed, documented |
-| 2025-10-12 | 1.2 | Removed RouteCache and RoutingService from Phase 2 (not needed for LineCapp) |
+| 2025-10-12 | 1.2 | Removed RouteCache and RoutingService from Phase 2 (not needed for InterSego) |

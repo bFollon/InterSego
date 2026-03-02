@@ -1,12 +1,12 @@
 # Android CLAUDE.md
 
-This file provides Android-specific guidance for LineCapp development.
+This file provides Android-specific guidance for InterSego development.
 
 **For project overview and repository structure, see `../CLAUDE.md` at repository root.**
 
 ## Android Implementation
 
-**LineCapp** is an Android bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
+**InterSego** is an Android bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
 
 **Architecture Source:** Adapted from FarmaciasDeGuardia (pharmacy duty schedule app). The migration strategy and detailed phase documentation are in `docs/MIGRATION_PLAN.md`.
 
@@ -39,7 +39,7 @@ This file provides Android-specific guidance for LineCapp development.
 
 # Install and run
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.github.bfollon.linecapp/.MainActivity
+adb shell am start -n intersegoo/.MainActivity
 ```
 
 ### Debugging
@@ -50,23 +50,23 @@ adb shell am start -n com.github.bfollon.linecapp/.MainActivity
 ~/Library/Android/sdk/platform-tools/adb devices
 
 # Launch the app
-~/Library/Android/sdk/platform-tools/adb shell am start -n com.github.bfollon.linecapp/.MainActivity
+~/Library/Android/sdk/platform-tools/adb shell am start -n intersegoo/.MainActivity
 
 # Stop the app
-~/Library/Android/sdk/platform-tools/adb shell am force-stop com.github.bfollon.linecapp
+~/Library/Android/sdk/platform-tools/adb shell am force-stop intersegoo
 
-# View filtered logs (LineCapp only)
-~/Library/Android/sdk/platform-tools/adb logcat LineCapp:D *:S
+# View filtered logs (InterSego only)
+~/Library/Android/sdk/platform-tools/adb logcat InterSego:D *:S
 
 # View all logcat output
 ~/Library/Android/sdk/platform-tools/adb logcat
 
 # Clear app data (for testing cache)
-adb shell pm clear com.github.bfollon.linecapp
+adb shell pm clear intersegoo
 ```
 
 **Common Debug Tags:**
-- `LineCapp` - General app logs
+- `InterSego` - General app logs
 - `PDFURLScrapingService` - PDF URL scraping
 - `PDFDownloadService` - PDF downloads
 - `PDFURLRepository` - URL repository operations
@@ -76,9 +76,9 @@ adb shell pm clear com.github.bfollon.linecapp
 
 **Quick Restart & Debug:**
 ```bash
-~/Library/Android/sdk/platform-tools/adb shell am force-stop com.github.bfollon.linecapp && \
-~/Library/Android/sdk/platform-tools/adb shell am start -n com.github.bfollon.linecapp/.MainActivity && \
-~/Library/Android/sdk/platform-tools/adb logcat LineCapp:D *:S
+~/Library/Android/sdk/platform-tools/adb shell am force-stop intersegoo && \
+~/Library/Android/sdk/platform-tools/adb shell am start -n intersegoo/.MainActivity && \
+~/Library/Android/sdk/platform-tools/adb logcat InterSego:D *:S
 ```
 
 ### Testing
@@ -240,7 +240,7 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
   - Status: ✅ Working correctly
 
 **Theme & Resources:**
-- `LineCappTheme` - Bus-themed blue/orange Material3 design
+- `InterSegoTheme` - Bus-themed blue/orange Material3 design
 - `ic_route_start_chevron.xml` - Downward chevron SVG (NEW)
 - `ic_route_end_chevron.xml` - Upward chevron SVG (NEW)
 - `LoadingScreen` - Shown during app initialization
@@ -342,7 +342,7 @@ The scraper (`PDFURLScrapingService`) finds ALL .pdf files and tries multiple re
 ## Code Organization
 
 ```
-app/src/main/java/com/github/bfollon/linecapp/
+app/src/main/java/com/github/bfollon/intersego/
 ├── MainActivity.kt                  # App entry point
 ├── data/                           # Data models (BusRoute, BusStop, etc.)
 ├── repositories/                   # Data access layer
