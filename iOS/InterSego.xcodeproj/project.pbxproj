@@ -24,6 +24,8 @@
 		A1000001000000000000000F /* PDFURLScrapingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000F /* PDFURLScrapingService.swift */; };
 		A10000010000000000000010 /* PDFURLRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000010 /* PDFURLRepository.swift */; };
 		A10000010000000000000011 /* PDFDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000011 /* PDFDownloadService.swift */; };
+		A10000010000000000000012 /* PDFCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000012 /* PDFCacheManager.swift */; };
+		A10000010000000000000013 /* TimetableCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* TimetableCacheService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +46,8 @@
 		A2000001000000000000000F /* PDFURLScrapingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFURLScrapingService.swift; sourceTree = "<group>"; };
 		A20000010000000000000010 /* PDFURLRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFURLRepository.swift; sourceTree = "<group>"; };
 		A20000010000000000000011 /* PDFDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFDownloadService.swift; sourceTree = "<group>"; };
+		A20000010000000000000012 /* PDFCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCacheManager.swift; sourceTree = "<group>"; };
+		A20000010000000000000013 /* TimetableCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableCacheService.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -103,6 +107,8 @@
 				A2000001000000000000000F /* PDFURLScrapingService.swift */,
 				A20000010000000000000010 /* PDFURLRepository.swift */,
 				A20000010000000000000011 /* PDFDownloadService.swift */,
+				A20000010000000000000012 /* PDFCacheManager.swift */,
+				A20000010000000000000013 /* TimetableCacheService.swift */,
 				A50000010000000000000007 /* PDFParsing */,
 			);
 			path = Services;
@@ -224,6 +230,8 @@
 				A1000001000000000000000F /* PDFURLScrapingService.swift in Sources */,
 				A10000010000000000000010 /* PDFURLRepository.swift in Sources */,
 				A10000010000000000000011 /* PDFDownloadService.swift in Sources */,
+				A10000010000000000000012 /* PDFCacheManager.swift in Sources */,
+				A10000010000000000000013 /* TimetableCacheService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
