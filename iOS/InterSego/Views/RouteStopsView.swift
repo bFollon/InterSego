@@ -169,16 +169,16 @@ private struct StopRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
-            // Route line indicator
+            // Route line indicator — fills full row height so lines connect between rows
             RouteLineIndicator(
                 isFirst: isFirst,
                 isLast: isLast,
                 isExtended: isExtended,
                 lineColor: lineColor
             )
-            .frame(width: 40, height: 60)
+            .frame(width: 40)
 
-            // Stop info
+            // Stop info — vertical padding here (not on HStack) keeps indicator edge-to-edge
             VStack(alignment: .leading, spacing: 2) {
                 Text(stop.name)
                     .font(.body)
@@ -190,6 +190,7 @@ private struct StopRowView: View {
                         .foregroundColor(.secondary)
                 }
             }
+            .padding(.vertical, 12)
 
             Spacer()
 
@@ -197,7 +198,6 @@ private struct StopRowView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
-        .padding(.vertical, 4)
     }
 }
 
