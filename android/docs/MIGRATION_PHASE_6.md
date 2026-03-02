@@ -5,13 +5,13 @@
 
 ## Overview
 
-Phase 6 adapts the business logic layer from FarmaciasDeGuardia to LineCapp, creating services that coordinate between infrastructure (networking, geocoding, caching) and the UI layer. These services implement the core application logic for timetable management and location-based features.
+Phase 6 adapts the business logic layer from FarmaciasDeGuardia to InterSego, creating services that coordinate between infrastructure (networking, geocoding, caching) and the UI layer. These services implement the core application logic for timetable management and location-based features.
 
 ## Services Implemented
 
 ### 1. TimetableService
 
-**Location:** `app/src/main/java/com/github/bfollon/linecapp/services/TimetableService.kt`
+**Location:** `app/src/main/java/com/github/bfollon/intersego/services/TimetableService.kt`
 **Source:** FarmaciasDeGuardia `ScheduleService.kt`
 **Size:** 7.0 KB
 
@@ -102,7 +102,7 @@ fun getCurrentDayType(): DayType
 
 ### 2. TimetableCacheService
 
-**Location:** `app/src/main/java/com/github/bfollon/linecapp/services/TimetableCacheService.kt`
+**Location:** `app/src/main/java/com/github/bfollon/intersego/services/TimetableCacheService.kt`
 **Source:** FarmaciasDeGuardia `ScheduleCacheService.kt`
 **Size:** 8.5 KB
 
@@ -233,7 +233,7 @@ suspend fun isCacheValid(routeId: String, pdfLastModified: Long?): Boolean {
 
 ### 3. ClosestBusStopService
 
-**Location:** `app/src/main/java/com/github/bfollon/linecapp/services/ClosestBusStopService.kt`
+**Location:** `app/src/main/java/com/github/bfollon/intersego/services/ClosestBusStopService.kt`
 **Source:** FarmaciasDeGuardia `ClosestPharmacyService.kt`
 **Size:** 11 KB
 
@@ -821,4 +821,4 @@ Routes:
 - All services are testable with clear interfaces
 - Debug logging integrated throughout
 
-**Phase 6 successfully adapts the core business logic layer from FarmaciasDeGuardia to LineCapp's bus timetable domain!**
+**Phase 6 successfully adapts the core business logic layer from FarmaciasDeGuardia to InterSego's bus timetable domain!**

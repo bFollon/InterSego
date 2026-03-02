@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.github.bfollon.linecapp"
+    namespace = "com.github.bfollon.intersego"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.github.bfollon.linecapp"
+        applicationId = "com.github.bfollon.intersego"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -46,6 +46,13 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+}
+
+tasks.withType<Test> {
+    useJUnitPlatform()
 }
 
 dependencies {
@@ -79,6 +86,13 @@ dependencies {
     // Location services
     implementation("com.google.android.gms:play-services-location:21.0.1")
 
+    // Image loading
+    implementation(libs.coil.compose)
+
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

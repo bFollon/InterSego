@@ -1,175 +1,370 @@
-# LineCapp Android - Current Status
+# InterSego Android - Current Status
 
-**Last Updated:** October 12, 2025
+**Last Updated:** October 31, 2025
+
+## 🎯 Overall Status
+
+**InterSego backend is complete, UI work in progress.**
+
+- ✅ **Core Backend:** 100% Complete (PDF scraping, caching, version tracking)
+- 🟡 **UI Layer:** Actively developing (route visualization and next departure screens functional)
+- ✅ **M4 Route:** Fully functional (PDF parsing + complete UI workflow)
+- ⚠️ **Remaining Routes:** 7 parsers needed (M1-M3, M5-M8)
+
+**App Status:** M4 route fully operational with complete user flow. Other routes need parsers.
+
+**See [PARITY_WITH_FARMACIAS.md](./PARITY_WITH_FARMACIAS.md) for detailed comparison.**
+
+---
 
 ## Phase Completion Status
 
 ### ✅ Completed Phases
 
-| Phase | Description | Commit | Documentation |
+| Phase | Description | Status | Documentation |
 |-------|-------------|--------|---------------|
-| **Phase 1** | Project setup and build configuration | cc5c803 | [MIGRATION_PHASE_1.md](./MIGRATION_PHASE_1.md) |
-| **Phase 2** | Infrastructure layer services | 4f53f9e | [MIGRATION_PHASE_2.md](./MIGRATION_PHASE_2.md) |
-| **Phase 3** | PDF infrastructure layer | f0dd690 | [MIGRATION_PHASE_3.md](./MIGRATION_PHASE_3.md) |
-| **Phase 4** | Bus domain data models | defe492 | [MIGRATION_PHASE_4.md](./MIGRATION_PHASE_4.md) |
-| **Phase 6** | Business logic services | fb68a3f | [MIGRATION_PHASE_6.md](./MIGRATION_PHASE_6.md) |
+| **Phase 1** | Project setup and build configuration | ✅ Complete | [MIGRATION_PHASE_1.md](./MIGRATION_PHASE_1.md) |
+| **Phase 2** | Infrastructure layer services | ✅ Complete | [MIGRATION_PHASE_2.md](./MIGRATION_PHASE_2.md) |
+| **Phase 3** | PDF infrastructure layer | ✅ Complete | [MIGRATION_PHASE_3.md](./MIGRATION_PHASE_3.md) |
+| **Phase 4** | Bus domain data models | ✅ Complete | [MIGRATION_PHASE_4.md](./MIGRATION_PHASE_4.md) |
+| **Phase 5** | PDF Parsing Strategy | ⚠️ Partial (1/8 parsers) | M4Parser complete |
+| **Phase 6** | Business logic services | ✅ Complete | [MIGRATION_PHASE_6.md](./MIGRATION_PHASE_6.md) |
+| **Phase 7** | UI Layer (Minimal) | ✅ Complete | [MIGRATION_PHASE_7_MINIMAL.md](./MIGRATION_PHASE_7_MINIMAL.md) |
+| **Phase 7** | UI Layer (Full) | 🟡 In Progress | Basic screens exist, need enhancement |
 
-### ❌ Missing Phases
+### ❌ Pending Phases
 
 | Phase | Description | Status | Priority |
 |-------|-------------|--------|----------|
-| **Phase 5** | PDF Parsing Strategy | Not started | LOW (requires working app to test) |
-| **Phase 7** | UI Layer | Not started | **HIGH** (needed for working app) |
-| **Phase 8** | ViewModels | Not started | **HIGH** (needed for working app) |
-| **Phase 9** | Repositories | Not started | LOW (optional, can integrate into services) |
+| **Phase 5** | Remaining PDF Parsers (M1-M3, M5-M8) | 7 parsers needed | MEDIUM |
+| **Phase 7** | UI Layer (Full) | Basic implementation started | HIGH (active development) |
+| **Phase 8** | ViewModels | Not started | LOW (direct service calls work) |
+| **Phase 9** | Repositories | Not started | LOW (optional refactoring) |
 | **Phase 10** | Testing & Configuration | Not started | LOW (polish phase) |
+
+---
+
+## 🚀 Recent Achievements (October 31, 2025)
+
+### UI Implementation (Phase 7 - In Progress)
+
+**✅ Fully Functional Screens:**
+
+1. **RouteSelectionScreen** - Route selection
+   - List of 8 metropolitan routes (M1-M8)
+   - Status indicators showing cache state
+   - Material3 Card-based design
+   - **Status:** Basic implementation complete
+
+2. **RouteStopsScreen** - Visual route display (NEW)
+   - Continuous vertical line connecting all stops
+   - Chevron indicators for start/end stops
+   - Circles for intermediate stops
+   - Direction toggle (Regular ↔ Reverse)
+   - Stop selection with tap
+   - **Status:** ✅ Complete and polished
+
+3. **NextDepartureScreen** - Live departure times (NEW)
+   - Prominent next departure with large time display
+   - Real-time countdown timer (updates every minute)
+   - Following 5 departures in compact pills
+   - Auto day-type detection (Weekday/Weekend/Holiday)
+   - Direction-aware filtering
+   - Edge cases handled (no more buses today)
+   - Spanish localization
+   - **Status:** ✅ Complete and functional
+
+4. **TimetableScreen** - Complete timetable view
+   - Full departure time display
+   - Groups by day type (Weekday/Weekend/Holiday)
+   - Grid layout
+   - **Status:** Basic implementation complete
+
+5. **Navigation Flow**
+   - RouteSelection → RouteStops → NextDeparture
+   - Alternative: RouteSelection → Timetable
+   - Direction parameter passed through navigation chain
+   - **Status:** ✅ Working correctly
+
+**🎉 M4 Route - Complete User Flow:**
+1. Select M4 route from list
+2. View visual route map with all stops
+3. Toggle between directions (Lastrilla → Sotillo / Sotillo → Lastrilla)
+4. Tap any stop to see next departure
+5. View countdown timer and upcoming buses
+6. All data correctly filtered by direction and day type
+
+**📋 Remaining TODO:**
+- Implement PDF parsers for M1-M3, M5-M8 routes
+- Settings/About/Cache status screens (optional enhancements)
+
+### PDF Scraping & Caching System (100% Complete)
+
+1. **✅ PDF Version Tracking Fully Implemented**
+   - HTTP header extraction (Last-Modified, ETag, Content-Length)
+   - Version metadata persistence (SharedPreferences)
+   - Update detection with 3-tier priority system
+   - Automatic invalidation when PDFs change
+
+2. **✅ Automatic Update Detection Working**
+   - 24-hour check limit implemented
+   - Runs on app startup via MainActivity
+   - All 8 routes monitored for updates
+   - Downloads new PDFs automatically when detected
+
+3. **✅ Three-Tier Caching System Operational**
+   - Tier 1: Memory cache (instant)
+   - Tier 2: JSON persistent cache (~15-20ms)
+   - Tier 3: PDF parsing (~700ms fallback)
+   - Cache validation via PDF timestamp comparison
+
+4. **✅ Self-Healing URL System Active**
+   - URL scraping from https://www.linecar.es/metropolitano/segovia/
+   - 404 detection and automatic re-scraping
+   - Routes discovered: M1, M2, M3, M4, M5, M6, M7, M8
+   - Fallback URLs updated to match scraped URLs
+
+5. **✅ Bug Fixes Completed**
+   - Fixed: TimetableCacheService PDF directory path (now uses correct BusTimetablePDFs/)
+   - Fixed: PDFCacheManager integrated into PDFProcessingService
+   - Fixed: Incorrect route list (removed non-existent M10, M11, M12)
+   - Fixed: Fallback URLs updated to current valid URLs
+
+### Current Cache Status (Verified)
+
+```
+PDF Files Cached: 8/8 routes (M1-M8)
+Parsed Timetables: 1/8 routes (M4 - 66 timetables, 60KB)
+Cache Location: /data/data/intersego/files/
+  ├── BusTimetablePDFs/     (PDF cache)
+  └── TimetableCache/        (Parsed timetable cache)
+```
 
 ---
 
 ## Current Build Status
 
-### ✅ Fixed Issues
-- **Theme conflicts** - Resolved by using minimal Android theme container (matching FarmaciasDeGuardia approach)
-  - `values/themes.xml` - Uses `android:Theme.Material.Light.NoActionBar`
-  - `values-night/themes.xml` - Same minimal theme
-  - All theming will be done in Jetpack Compose (Kotlin code), not XML
+### ✅ Build Successful
+- **Status:** App compiles and runs
+- **Latest Build:** October 28, 2025
+- **Command:** `./gradlew assembleDebug` - Success
+- **APK:** Working M4 route demonstration
 
-### ❌ Current Blocker
-- **Missing MainActivity.kt** - Referenced in AndroidManifest.xml:28 but doesn't exist
-  - Build error: `Class referenced in the manifest, com.github.bfollon.linecapp.MainActivity, was not found`
-  - Need to implement Phase 7 (UI Layer) to resolve this
+### ✅ All Critical Systems Operational
+- PDF URL scraping: ✅ Working (8 routes discovered)
+- PDF downloading: ✅ Working (all 8 PDFs cached)
+- Version tracking: ✅ Working (all routes monitored)
+- Update detection: ✅ Working (24-hour checks active)
+- M4 PDF parsing: ✅ Working (66 timetables parsed)
+- Three-tier caching: ✅ Working (memory → JSON → PDF)
+- Self-healing URLs: ✅ Working (404 detection active)
+- Offline mode: ✅ Working (cache fallbacks functional)
+- **UI Navigation: ✅ Complete flow for M4 route**
+- **Direction filtering: ✅ Working (separate timetables per direction)**
+- **Live countdown: ✅ Updates every minute**
 
----
+### ⚠️ Known Development Notes
 
-## Implementation Plan to Get Working App
+**MainScreen forceRefresh Flag:**
+- Current: `loadTimetables("M4", forceRefresh = true)`
+- Purpose: Development testing (forces PDF re-parsing every launch)
+- Production: Change to `forceRefresh = false` to use cache (35x faster)
 
-### Step 1: Phase 7 (UI Layer) - Minimal Implementation
-
-**Goal:** Get the app to compile and launch with a basic UI shell
-
-**What to Create:**
-
-1. **MainActivity.kt** ✅ PRIORITY
-   - Location: `app/src/main/java/com/github/bfollon/linecapp/MainActivity.kt`
-   - Minimal Compose setup
-   - Will resolve current build blocker
-
-2. **Compose Theme Files**
-   - `ui/theme/Color.kt` - Brand colors for LineCapp
-   - `ui/theme/Theme.kt` - LineCappTheme composable
-   - `ui/theme/Type.kt` - Typography definitions
-
-3. **Basic Main Screen**
-   - `ui/screens/MainScreen.kt` - Simple placeholder screen
-   - Just needs to display something (even "Hello LineCapp")
-   - Can be expanded later with actual functionality
-
-**Why This Order:**
-- Once MainActivity exists, the app will compile and launch
-- With a working app shell, we can iteratively add features
-- Can test PDF parsing (Phase 5) with a running app
-
-### Step 2: Phase 8 (ViewModels) - Add as Needed
-
-Implement ViewModels as we build out actual screens:
-- `TimetableViewModel` - When building timetable screens
-- `ClosestStopViewModel` - When building nearest stop feature
-- `SplashViewModel` - For cache initialization on startup
-
-### Step 3: Phase 5 (PDF Parsing) - Test with Working App
-
-With a working app shell:
-- Can view/download sample bus timetable PDFs
-- Build parsing strategies iteratively
-- Test parsing results in the app
-
-### Step 4: Phase 9 & 10 - Polish
-
-- Phase 9 (Repositories) - Optional, can integrate into existing services
-- Phase 10 (Testing & Configuration) - Final polish
-
----
-
-## Next Immediate Actions
-
-1. ✅ **Create minimal Phase 7 implementation**
-   - MainActivity.kt
-   - Basic Compose theme (Color.kt, Theme.kt, Type.kt)
-   - Simple MainScreen.kt placeholder
-
-2. **Verify build succeeds**
-   - Run `./gradlew build`
-   - App should compile without errors
-
-3. **Test app launch**
-   - Run on emulator/device
-   - Should display basic UI
-
-4. **Document Phase 7**
-   - Create `MIGRATION_PHASE_7.md` with implementation details
-
-5. **Proceed with remaining phases**
-   - Continue with ViewModels, PDF parsing, etc.
-
----
-
-## Architecture Notes
-
-### Why Phase 6 Before Phase 5?
-
-Phase 6 (Business Logic Services) was implemented before Phase 5 (PDF Parsing) because:
-- Services define the interfaces that PDF parsing will integrate with
-- Phase 6 has placeholder TODOs for Phase 5 integration:
-  ```kotlin
-  // TODO: Phase 7 - PDF Parsing Integration
-  // (Note: Comment says "Phase 7" but actually refers to Phase 5)
-  ```
-- This out-of-order implementation is intentional and documented
-
-### Dependency Flow
-
-```
-Phase 1 (Setup)
-    ↓
-Phase 2 (Infrastructure) ← Generic services
-    ↓
-Phase 4 (Data Models) ← Domain definitions
-    ↓
-Phase 3 (PDF Infrastructure) ← PDF download/cache
-    ↓
-Phase 6 (Business Logic) ← Uses models + infrastructure
-    ↓
-Phase 7 (UI Layer) ← Displays data
-    ↓
-Phase 8 (ViewModels) ← Connects UI to services
-    ↓
-Phase 5 (PDF Parsing) ← Requires working app to test
-    ↓
-Phase 9-10 (Repositories + Polish)
-```
-
----
-
-## Known Issues
-
-### Lint Warnings
-- **39 warnings** reported in build output
-- Non-blocking (build succeeds despite warnings)
+**Lint Warnings:**
+- 39 warnings present (non-blocking)
 - Can be addressed in Phase 10 (Testing & Configuration)
-- To create baseline: `./gradlew updateLintBaseline` (add baseline config to build.gradle first)
 
-### Missing Implementations
-- Phase 5 (PDF Parsing) - Placeholder comments in TimetableService
-- Phase 7 (UI Layer) - No screens or components yet
-- Phase 8 (ViewModels) - No state management yet
+---
+
+## Architecture Highlights
+
+### PDF Scraping System
+
+**URL Resolution Flow:**
+```
+1. Check scraped URLs (from website)          ← Highest priority
+2. Check persisted URLs (cached in SharedPreferences)
+3. Check fallback URLs (hardcoded)            ← Last resort
+```
+
+**Discovered Routes (October 28, 2025):**
+```
+M1: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M1.pdf
+M2: https://www.linecar.es/wp-content/uploads/2024/09/M2-septiembre-2024.pdf
+M3: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf
+M4: https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf ← Latest!
+M5: https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf
+M6: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M6.pdf
+M7: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf
+M8: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf
+```
+
+### Version Tracking System
+
+**Update Detection Logic:**
+```kotlin
+1. Send HEAD request to server (get headers without downloading)
+2. Compare cached vs server headers:
+   Priority 1: Last-Modified date (most reliable)
+   Priority 2: Content-Length size (backup)
+   Priority 3: ETag identifier (least reliable)
+3. If mismatch detected:
+   → Download new PDF
+   → Invalidate parsed timetable cache
+   → Store new version metadata
+```
+
+### Three-Tier Caching
+
+**Performance:**
+- **Without cache** (forceRefresh=true): ~700ms (PDF parsing)
+- **With cache** (forceRefresh=false): ~15-20ms (JSON load)
+- **Speedup:** ~35x faster! ⚡
+
+**Cache Validation:**
+```kotlin
+// TimetableCacheService automatically detects stale caches:
+val pdfLastModified = pdfFile.lastModified()  // Current PDF timestamp
+val cacheIsValid = pdfLastModified <= metadata.pdfLastModified
+
+// When PDF updates:
+// New PDF timestamp > cached timestamp → Cache invalid → Re-parse
+```
+
+---
+
+## Implementation Status by Feature
+
+### ✅ Production-Ready Features
+
+| Feature | Status | Details |
+|---------|--------|---------|
+| PDF URL Scraping | ✅ 100% | 8 routes discovered, URLs cached |
+| Version Tracking | ✅ 100% | HTTP headers tracked for all PDFs |
+| Update Detection | ✅ 100% | 24-hour automatic checks working |
+| PDF File Caching | ✅ 100% | All 8 PDFs cached locally |
+| Timetable Caching | ✅ 100% | Three-tier system operational |
+| Self-Healing URLs | ✅ 100% | 404 detection and re-scraping active |
+| Offline Support | ✅ 100% | Full offline mode with cache fallbacks |
+| Network Monitoring | ✅ 100% | Real-time connectivity detection |
+| M4 Route Parsing | ✅ 100% | 66 timetables parsed and cached |
+| **UI Navigation** | 🟡 Started | Basic navigation setup exists |
+| **Route Selection UI** | 🟡 Started | Placeholder implementation, needs work |
+| **Timetable Display UI** | 🟡 Started | Basic screen exists, needs redesign |
+| **Material3 Design** | 🟡 Started | Theme exists, needs application |
+
+### 🟡 Backend Ready / UI Pending
+
+| Feature | Backend | UI | Priority |
+|---------|---------|----|---------|
+| Cache Status Display | ✅ Ready | ❌ No screen | LOW |
+| Progress Indicators | ✅ Ready | ❌ No UI | LOW |
+| Manual Update Button | ✅ Ready | ❌ No button | LOW |
+
+### ⚠️ Partial Implementation
+
+| Feature | Status | Completion |
+|---------|--------|------------|
+| PDF Parsing | ⚠️ Partial | 1/8 routes (13%) |
+| M1 Parser | ❌ Not started | 0% |
+| M2 Parser | ❌ Not started | 0% |
+| M3 Parser | ❌ Not started | 0% |
+| M4 Parser | ✅ Complete + UI | 100% |
+| M5 Parser | ❌ Not started | 0% |
+| M6 Parser | ❌ Not started | 0% |
+| M7 Parser | ❌ Not started | 0% |
+| M8 Parser | ❌ Not started | 0% |
+
+**Note:** M4 is the only route with full UI implementation. Once other parsers are implemented, they can use the same UI screens.
+
+---
+
+## Next Steps
+
+### High Priority: Additional PDF Parsers
+
+**Goal:** Implement parsers for remaining 7 routes
+
+**Approach:**
+1. Use M4Parser as reference template (working example)
+2. Download and analyze each route's PDF structure
+3. Adapt M4Parser logic for each route's specific format
+4. Test with real PDF files
+5. Verify parsed timetables match PDF content
+
+**Estimated Effort:** 2-3 hours per parser (14-21 hours total)
+
+**Benefits:**
+- Full route coverage for Segovia metropolitan area
+- Production-ready app for all bus routes
+- Complete feature parity with FarmaciasDeGuardia
+
+### Optional: UI Enhancements
+
+**Backend APIs are ready for:**
+1. Cache status screen (`getCacheStatus()` implemented)
+2. Progress indicators (`forceCheckForUpdatesWithProgress()` implemented)
+3. Manual update button (`forceCheckForUpdates()` implemented)
+
+**Estimated Effort:** 2-4 hours total
+
+---
+
+## Testing Instructions
+
+### Quick Test: Verify Cache Performance
+
+```bash
+# 1. Clear app data
+adb shell pm clear intersegoo
+
+# 2. Launch app (will download and parse M4)
+adb shell am start -n intersegoo/.MainActivity
+
+# 3. Watch logs for "Parsing PDF" (slow ~700ms)
+adb logcat | grep "TimetableService"
+
+# 4. Restart app immediately
+adb shell am force-stop intersegoo
+adb shell am start -n intersegoo/.MainActivity
+
+# 5. Watch logs for "Using persistent cache" (fast ~15ms)
+adb logcat | grep "TimetableService"
+```
+
+**Note:** Currently MainScreen uses `forceRefresh = true`, so cache is bypassed. Change to `false` to see cache performance.
+
+### Verify PDF Caching
+
+```bash
+# Check cached PDF files
+adb shell run-as intersegoo ls -la /data/data/intersegoo/files/BusTimetablePDFs/
+
+# Check cached timetables
+adb shell run-as intersegoo ls -la /data/data/intersegoo/files/TimetableCache/
+
+# View M4 metadata
+adb shell run-as intersegoo cat /data/data/intersegoo/files/TimetableCache/M4.meta.json
+```
+
+### Verify URL Scraping
+
+```bash
+# Check stored PDF URLs
+adb shell run-as intersegoo cat /data/data/intersegoo/shared_prefs/pdf_url_repository.xml
+
+# Check version metadata
+adb shell run-as intersegoo cat /data/data/intersegoo/shared_prefs/pdf_cache_manager.xml
+```
 
 ---
 
 ## References
 
-- **Migration Plan:** [MIGRATION_PLAN.md](./MIGRATION_PLAN.md)
+- **Parity Status:** [PARITY_WITH_FARMACIAS.md](./PARITY_WITH_FARMACIAS.md) - Detailed feature comparison
+- **Migration Plan:** [MIGRATION_PLAN.md](./MIGRATION_PLAN.md) - Overall strategy
+- **PDF Scraping Setup:** [PDF_URL_SCRAPING_SETUP.md](./PDF_URL_SCRAPING_SETUP.md) - Scraping documentation
 - **FarmaciasDeGuardia Source:** `/Users/bruno.follon/Personal/dev/apps/FarmaciasDeGuardia/android/`
-- **FarmaciasDeGuardia Architecture:** `FarmaciasDeGuardia/CLAUDE.md`
 
 ---
 
@@ -178,24 +373,45 @@ Phase 9-10 (Repositories + Polish)
 If session crashes or context is lost:
 
 1. **Check this file first** - `docs/CURRENT_STATUS.md`
-2. **Review completed phases** - Check commit history: `git log --oneline`
-3. **Check phase documentation** - Read `MIGRATION_PHASE_*.md` files in `docs/`
-4. **Current task** - Implement Phase 7 (UI Layer) minimal version to get app compiling
-5. **Build status** - Theme issues resolved, MainActivity.kt missing (blocker)
+2. **Review parity status** - `docs/PARITY_WITH_FARMACIAS.md`
+3. **Check completed phases** - Review `MIGRATION_PHASE_*.md` files
+4. **Current task** - Implement remaining PDF parsers (M1-M3, M5-M8)
+5. **Build status** - ✅ App compiles and runs successfully
 
 ---
 
-## Commit History Summary
+## Key Files to Know
 
-```
-fb68a3f Phase 6: Business logic services
-f0dd690 Phase 3: PDF infrastructure layer
-defe492 Phase 4: Bus domain data models
-4f53f9e Phase 2: Infrastructure layer services
-09666fa Add comprehensive migration plan documentation
-15f7d06 Merge branch 'feature/android/phase1'
-cc5c803 Phase 1: Project setup and build configuration
-0177798 Initial commit
-```
+### Services (All Complete)
+- `PDFURLScrapingService.kt` - URL scraping (8 routes discovered)
+- `PDFCacheManager.kt` - Version tracking & update detection
+- `PDFURLRepository.kt` - Self-healing URL management
+- `TimetableService.kt` - Three-tier caching coordinator
+- `TimetableCacheService.kt` - Persistent JSON cache
+- `PDFProcessingService.kt` - Parser coordinator
 
-**Next commit will be:** Phase 7 (UI Layer) - Minimal implementation for app shell
+### Parsers
+- `M4Parser.kt` - ✅ Complete (66 timetables)
+- `M1Parser.kt` - ❌ Not implemented
+- `M2Parser.kt` - ❌ Not implemented
+- (etc. for M3, M5-M8)
+
+### UI (Active Development)
+- `MainActivity.kt` - App entry point with service initialization and complete navigation
+- `RouteSelectionScreen.kt` - Route selection screen ✅
+- `RouteStopsScreen.kt` - Visual route display with continuous line ✅ (NEW)
+- `NextDepartureScreen.kt` - Live departure times with countdown ✅ (NEW)
+- `TimetableScreen.kt` - Complete timetable view ✅
+- `MainScreen.kt` - Legacy M4 demo screen (not used in navigation)
+- `InterSegoTheme` - Bus-themed Material3 design
+- SVG resources: `ic_route_start_chevron.xml`, `ic_route_end_chevron.xml` ✅ (NEW)
+
+---
+
+**Document Status:** Fully updated as of October 31, 2025
+**Last Changes:**
+- Added RouteStopsScreen documentation (visual route display)
+- Added NextDepartureScreen documentation (live countdown timer)
+- Updated M4 route status to "Complete + UI"
+- Documented complete user flow for M4 route
+**Next Update:** After implementing additional PDF parsers

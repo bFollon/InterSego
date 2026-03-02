@@ -1,10 +1,12 @@
-# CLAUDE.md
+# Android CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides Android-specific guidance for InterSego development.
 
-## Project Overview
+**For project overview and repository structure, see `../CLAUDE.md` at repository root.**
 
-**LineCapp** is an Android bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
+## Android Implementation
+
+**InterSego** is an Android bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
 
 **Architecture Source:** Adapted from FarmaciasDeGuardia (pharmacy duty schedule app). The migration strategy and detailed phase documentation are in `docs/MIGRATION_PLAN.md`.
 
@@ -37,19 +39,46 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Install and run
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n com.github.bfollon.linecapp/.MainActivity
+adb shell am start -n intersegoo/.MainActivity
 ```
 
 ### Debugging
-```bash
-# View app logs (filtered)
-adb logcat | grep -E "LineCapp|PDFURLScrapingService|PDFURLRepository|TimetableService"
 
-# View all app logs
-adb logcat -s "LineCappDebug"
+**Quick Commands (Pre-approved in `.claude/settings.local.json`):**
+```bash
+# Check connected devices
+~/Library/Android/sdk/platform-tools/adb devices
+
+# Launch the app
+~/Library/Android/sdk/platform-tools/adb shell am start -n intersegoo/.MainActivity
+
+# Stop the app
+~/Library/Android/sdk/platform-tools/adb shell am force-stop intersegoo
+
+# View filtered logs (InterSego only)
+~/Library/Android/sdk/platform-tools/adb logcat InterSego:D *:S
+
+# View all logcat output
+~/Library/Android/sdk/platform-tools/adb logcat
 
 # Clear app data (for testing cache)
-adb shell pm clear com.github.bfollon.linecapp
+adb shell pm clear intersegoo
+```
+
+**Common Debug Tags:**
+- `InterSego` - General app logs
+- `PDFURLScrapingService` - PDF URL scraping
+- `PDFDownloadService` - PDF downloads
+- `PDFURLRepository` - URL repository operations
+- `M4Parser` - M4 route PDF parsing
+- `NetworkMonitor` - Network connectivity
+- `TimetableService` - Timetable loading
+
+**Quick Restart & Debug:**
+```bash
+~/Library/Android/sdk/platform-tools/adb shell am force-stop intersegoo && \
+~/Library/Android/sdk/platform-tools/adb shell am start -n intersegoo/.MainActivity && \
+~/Library/Android/sdk/platform-tools/adb logcat InterSego:D *:S
 ```
 
 ### Testing
@@ -154,40 +183,104 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
 
 ### Navigation & UI
 
-**Current State (Phase 7 - Minimal):**
-- Single screen: `MainScreen` (placeholder)
-- Theme: `LineCappTheme` (bus-themed blue/orange colors)
-- Navigation: Single route via `NavHost`
+**Current State (Phase 7 - Active Development):**
 
-**Future Screens (Full Phase 7):**
-- `RouteSelectionScreen` - Choose bus route
-- `StopSelectionScreen` - Choose stop for route
-- `TimetableScreen` - Display departure times
-- `SettingsScreen`, `AboutScreen`, `CacheStatusScreen`
+**✅ Fully Functional Screens:**
+- **RouteSelectionScreen** - Route selection interface
+  - List of M1-M8 routes with cache status indicators
+  - Material3 Card-based design
+  - Navigates to RouteStopsScreen
+
+- **RouteStopsScreen** - Visual route display (NEW - Oct 31)
+  - Continuous vertical line connecting all stops
+  - Chevron indicators for start/end stops
+  - Circles for intermediate stops
+  - Direction toggle button (Regular ↔ Reverse)
+  - Tap to select stop and see departures
+  - Status: ✅ Complete and polished
+
+- **NextDepartureScreen** - Live departure information (REDESIGNED - Nov 2)
+  - **Integrated Layout Design:**
+    - Hero header with gradient background (primary → surface)
+    - Circular progress clock showing visual countdown (60-min arc)
+    - Timeline-style following departures with connecting lines
+    - Time-of-day indicators (morning/afternoon/evening badges with icons)
+    - Reduced whitespace, tighter visual hierarchy
+    - Maps integration using geocoding service with geo: URI intents
+  - **New Components:**
+    - `StopHeroHeader` - Gradient hero section replacing plain card
+    - `CircularProgressClock` - Progress indicator around departure time
+    - `TimeOfDayIndicator` - Morning/afternoon/evening badges
+    - `NextDepartureWithProgress` - Enhanced next departure with circular progress
+    - `DepartureTimeline` - Timeline-style departures with dots and lines
+  - **Smart Multi-Day Departure Lookup:**
+    - Searches up to 7 days ahead for next available departure
+    - Handles weekend/holiday gaps automatically (e.g., Sunday → Monday)
+    - Shows following departures from future day (up to 5)
+    - Dynamic warning messages based on days ahead
+    - Accurate countdown calculation across multiple days
+    - Fixed logic to show future departures when today has no service
+  - **Technical Features:**
+    - Real-time countdown timer (updates every 60 seconds)
+    - Auto day-type detection (Weekday/Weekend/Holiday)
+    - Direction-aware timetable filtering
+    - TimeOfDay enum: morning (6-12), afternoon (13-19), evening (20-5)
+    - Comprehensive debug logging for troubleshooting
+    - Spanish localization
+  - Status: ✅ Complete and functional
+
+- **TimetableScreen** - Complete timetable view
+  - Full departure times grouped by day type
+  - Alternative to NextDepartureScreen for viewing all times
+
+- **Navigation Flow:**
+  - RouteSelection → RouteStops → NextDeparture (primary flow)
+  - RouteSelection → Timetable (alternative view)
+  - Direction passed through navigation chain
+  - Status: ✅ Working correctly
+
+**Theme & Resources:**
+- `InterSegoTheme` - Bus-themed blue/orange Material3 design
+- `ic_route_start_chevron.xml` - Downward chevron SVG (NEW)
+- `ic_route_end_chevron.xml` - Upward chevron SVG (NEW)
+- `LoadingScreen` - Shown during app initialization
+
+**🎉 M4 Route Status:** Complete end-to-end user flow operational
+
+**📋 Future Enhancements (Optional):**
+- `SettingsScreen` - App configuration
+- `AboutScreen` - App information
+- `CacheStatusScreen` - Cache management UI
 
 ## Development Phases & Current Status
 
-**Project Status:** Phase 7 (Minimal) complete - app compiles and launches
+**Project Status:** Backend complete. Active UI development (Phase 7).
 
 **✅ Completed Phases:**
 - Phase 1: Project setup, dependencies, build config
 - Phase 2: Infrastructure services (NetworkMonitor, location, geocoding, caching)
 - Phase 3: PDF infrastructure (download, cache, URL scraping)
 - Phase 4: Bus domain data models
+- Phase 5: PDF parsing for M4 (complete with full UI workflow)
 - Phase 6: Business logic services (TimetableService, ClosestBusStopService)
 - Phase 7 (Minimal): Basic UI shell (theme + placeholder screen)
+- Phase 7 (M4 Route): Complete UI workflow for M4 ✅ (Oct 31, 2025)
+  - RouteStopsScreen with visual route display
+  - NextDepartureScreen with live countdown
+  - Direction-aware filtering
+  - Complete end-to-end user experience
+
+**⚠️ Partially Implemented:**
+- Phase 5: PDF parsing strategies (M4 ✅ complete, M1-M3, M5-M8 pending)
 
 **❌ Not Yet Implemented:**
-- Phase 5: PDF parsing strategies (requires working app to test)
-- Phase 7 (Full): Route selection, timetable display, settings screens
-- Phase 8: ViewModels and state management
+- Phase 7 (Other Routes): UI for M1-M3, M5-M8 (parsers needed first)
+- Phase 8: ViewModels and state management (optional - direct service calls work)
 - Phase 9: Repository layer (optional, may integrate into services)
 - Phase 10: Testing, configuration, polish
 
-**Key Blockers Resolved:**
-- MainActivity.kt created (resolves manifest error)
-- Theme conflicts resolved (minimal XML theme)
-- App now compiles and launches
+**Current Priority:**
+- Implement PDF parsers for M1-M3, M5-M8 (same UI screens can be reused)
 
 See `docs/CURRENT_STATUS.md` for detailed status and `docs/MIGRATION_PLAN.md` for complete roadmap.
 
@@ -239,12 +332,17 @@ val pdfUrlRepository = PDFURLRepository.getInstance(this)
 val success = pdfUrlRepository.initializeURLs()
 ```
 
-Extract route ID from Linecar PDFs: `SEGOVIA-{ROUTE_ID}.pdf` → Route ID extracted with regex `SEGOVIA-([A-Z0-9]+)`
+**Supported PDF Filename Formats:**
+- Old format: `SEGOVIA-M4.pdf` → Route ID: "M4"
+- New format: `M4.pdf` → Route ID: "M4"
+- New with date: `M5-septiembre-2024.pdf` → Route ID: "M5"
+
+The scraper (`PDFURLScrapingService`) finds ALL .pdf files and tries multiple regex patterns to extract route IDs.
 
 ## Code Organization
 
 ```
-app/src/main/java/com/github/bfollon/linecapp/
+app/src/main/java/com/github/bfollon/intersego/
 ├── MainActivity.kt                  # App entry point
 ├── data/                           # Data models (BusRoute, BusStop, etc.)
 ├── repositories/                   # Data access layer
@@ -264,11 +362,28 @@ app/src/main/java/com/github/bfollon/linecapp/
 ├── ui/
 │   ├── theme/                    # Compose theme (Color, Theme, Type)
 │   ├── screens/                  # Screen composables
-│   │   └── MainScreen.kt        # Placeholder main screen
+│   │   ├── RouteSelectionScreen.kt  # Route selection list
+│   │   ├── RouteStopsScreen.kt      # Visual route display ✅ NEW
+│   │   ├── NextDepartureScreen.kt   # Live countdown timer ✅ NEW
+│   │   ├── TimetableScreen.kt       # Complete timetable view
+│   │   └── MainScreen.kt            # Legacy demo screen (unused)
 │   └── components/               # (Future: reusable UI components)
-└── utils/
-    └── MapUtils.kt               # Distance calculations, map intents
+├── utils/
+│   └── MapUtils.kt               # Distance calculations, map intents
+└── res/
+    ├── drawable/                 # Vector drawables
+    │   ├── ic_route_start_chevron.xml   # Start indicator ✅ NEW
+    │   └── ic_route_end_chevron.xml     # End indicator ✅ NEW
+    └── mipmap-*/                # App launcher icons
+        ├── ic_launcher.png           # Main app icon
+        ├── ic_launcher_round.png     # Rounded app icon
+        └── ic_launcher_foreground.png # Adaptive icon foreground
 ```
+
+**App Icon:**
+- Minimalistic bus timetable design with blue (#1c74d3) and orange theme colors
+- Adaptive icon support for Android 8.0+ (API 26+)
+- Source files: `../resources/icons/ic_launcher-6905343ae8c3c/`
 
 ## Key Configuration Files
 
@@ -315,21 +430,40 @@ when (val result = repository.resolveURLWithHealing("M1")) {
 4. Use column-based extraction (similar to FarmaciasDeGuardia)
 5. Cache parsed results
 
+### Development Best Practices
+
+**IMPORTANT: Always Update Documentation After Significant Changes**
+
+When completing major features or making significant changes:
+1. **Update this file (`android/CLAUDE.md`)** with:
+   - New components/screens in the "Navigation & UI" section
+   - Updated technical details in relevant sections
+   - Date changes with descriptive tags (e.g., "REDESIGNED - Nov 2")
+2. **Update `docs/CURRENT_STATUS.md`** if phase status changes
+3. **Commit documentation changes** along with code changes
+
+This ensures future work has accurate context about what's been implemented.
+
 ## Known Issues & TODOs
 
-**Phase 5 TODOs:**
-- Implement PDF parsing strategies
-- Integrate parsing with TimetableService (see `TimetableService.kt:66-71`)
+**Phase 5 TODOs (HIGH PRIORITY):**
+- Implement PDF parsing strategies for M1-M3, M5-M8
+- Use M4Parser as template/reference
+- Test each parser with real PDF files
 
-**Phase 7 TODOs:**
-- Implement actual UI screens (route selection, timetable display)
-- Add reusable UI components (cards, buttons)
+**Phase 7 TODOs (HIGH PRIORITY - ACTIVE DEVELOPMENT):**
+- Design and implement proper M4 route screen
+- Enhance route selection UI
+- Redesign timetable display
+- Add proper loading/error states
+- Add Settings screen (backend APIs ready)
+- Add About screen
+- Add Cache Status screen
 - Add offline warning banner
-- Implement navigation between screens
 
-**Phase 8 TODOs:**
-- Create ViewModels for state management
-- Connect UI to business logic services
+**Phase 8 TODOs (OPTIONAL):**
+- Create ViewModels for state management (currently using direct service calls)
+- Add proper state hoisting patterns
 
 **Build Warnings:**
 - 39 lint warnings (non-blocking, can be addressed in Phase 10)

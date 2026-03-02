@@ -5,12 +5,12 @@
 
 ## Overview
 
-Phase 2 copies domain-agnostic infrastructure services from FarmaciasDeGuardia to LineCapp. These services provide core functionality for network monitoring, debugging, caching, location services, and geocoding that work regardless of the application domain (pharmacy vs bus).
+Phase 2 copies domain-agnostic infrastructure services from FarmaciasDeGuardia to InterSego. These services provide core functionality for network monitoring, debugging, caching, location services, and geocoding that work regardless of the application domain (pharmacy vs bus).
 
 ## Goals
 
 1. Copy infrastructure services that require no business logic changes
-2. Update package names from `farmaciasdeguardiaensegovia` to `linecapp`
+2. Update package names from `farmaciasdeguardiaensegovia` to `intersego`
 3. Adapt domain-specific method names and comments for bus context
 4. Establish foundation for location-based features
 
@@ -20,8 +20,8 @@ Phase 2 copies domain-agnostic infrastructure services from FarmaciasDeGuardia t
 **Path:** `services/NetworkMonitor.kt`
 **Size:** ~4.0 KB
 **Changes:**
-- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `com.github.bfollon.linecapp.services`
-- Updated TAG constant: `"FarmaciasDeGuardia"` → `"LineCapp"`
+- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `intersego.services`
+- Updated TAG constant: `"FarmaciasDeGuardia"` → `"InterSego"`
 
 **Functionality:**
 - Monitors device network connectivity state
@@ -40,8 +40,8 @@ Phase 2 copies domain-agnostic infrastructure services from FarmaciasDeGuardia t
 **Path:** `services/DebugConfig.kt`
 **Size:** ~3.8 KB
 **Changes:**
-- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `com.github.bfollon.linecapp.services`
-- Updated TAG constant: `"FarmaciasDeGuardia"` → `"LineCapp"`
+- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `intersego.services`
+- Updated TAG constant: `"FarmaciasDeGuardia"` → `"InterSego"`
 
 **Functionality:**
 - Centralized debug logging configuration
@@ -65,7 +65,7 @@ Phase 2 copies domain-agnostic infrastructure services from FarmaciasDeGuardia t
 **Path:** `services/CoordinateCache.kt`
 **Size:** ~6.5 KB
 **Changes:**
-- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `com.github.bfollon.linecapp.services`
+- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `intersego.services`
 - Updated cache key: `"pharmacy_coordinates_cache"` → `"bus_stop_coordinates_cache"`
 
 **Functionality:**
@@ -98,7 +98,7 @@ data class CachedCoordinate(
 **Path:** `services/GeocodingService.kt`
 **Size:** ~7.5 KB
 **Changes:**
-- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `com.github.bfollon.linecapp.services`
+- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `intersego.services`
 - Updated import: `data.Pharmacy` → `data.BusStop`
 - Method renamed: `getCoordinatesForPharmacy(pharmacy: Pharmacy)` → `getCoordinatesForBusStop(busStop: BusStop)`
 - Updated comments: "pharmacy" → "bus stop"
@@ -129,7 +129,7 @@ data class CachedCoordinate(
 **Path:** `services/LocationManager.kt`
 **Size:** ~6.8 KB
 **Changes:**
-- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `com.github.bfollon.linecapp.services`
+- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.services` → `intersego.services`
 
 **Functionality:**
 - Manages Android location permissions and access
@@ -154,7 +154,7 @@ data class CachedCoordinate(
 **Path:** `utils/MapUtils.kt`
 **Size:** ~1.5 KB
 **Changes:**
-- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.utils` → `com.github.bfollon.linecapp.utils`
+- Updated package: `com.github.bfollon.farmaciasdeguardiaensegovia.utils` → `intersego.utils`
 - Added GPL license header (was missing in original)
 
 **Functionality:**
@@ -175,10 +175,10 @@ data class CachedCoordinate(
 ## Files Not Copied (Intentionally Excluded)
 
 ### RouteCache.kt
-**Reason:** LineCapp doesn't need to cache routes to bus stops. Users will simply view timetables for stops, not calculate routes.
+**Reason:** InterSego doesn't need to cache routes to bus stops. Users will simply view timetables for stops, not calculate routes.
 
 ### RoutingService.kt
-**Reason:** LineCapp doesn't need route calculation functionality. The app focuses on displaying bus timetables, not providing navigation to stops.
+**Reason:** InterSego doesn't need route calculation functionality. The app focuses on displaying bus timetables, not providing navigation to stops.
 
 ---
 
@@ -191,7 +191,7 @@ com.github.bfollon.farmaciasdeguardiaensegovia
 
 To:
 ```
-com.github.bfollon.linecapp
+intersego
 ```
 
 **Affected imports in copied files:**
@@ -213,7 +213,7 @@ com.github.bfollon.linecapp
 // Original (FarmaciasDeGuardia)
 suspend fun getCoordinatesForPharmacy(pharmacy: Pharmacy): Location?
 
-// Adapted (LineCapp)
+// Adapted (InterSego)
 suspend fun getCoordinatesForBusStop(busStop: BusStop): Location?
 ```
 
@@ -251,7 +251,7 @@ val enhancedQuery = "${busStop.name}, ${busStop.address}, Segovia, España"
 ## Directory Structure Created
 
 ```
-LineCapp/android/app/src/main/java/com/github/bfollon/linecapp/
+InterSego/android/app/src/main/java/com/github/bfollon/intersego/
 ├── services/
 │   ├── NetworkMonitor.kt
 │   ├── DebugConfig.kt
@@ -290,7 +290,7 @@ LineCapp/android/app/src/main/java/com/github/bfollon/linecapp/
    - Verify state descriptions
 
 2. **DebugConfig:**
-   - Check log output in Logcat with TAG "LineCapp"
+   - Check log output in Logcat with TAG "InterSego"
    - Toggle debug mode programmatically
    - Verify error/warn/debug levels
 
@@ -339,11 +339,11 @@ This will resolve the compilation issue with GeocodingService's BusStop referenc
 ## Files Modified
 
 ```
-LineCapp/android/
+InterSego/android/
 ├── docs/
 │   ├── MIGRATION_PLAN.md              (Updated - v1.2)
 │   └── MIGRATION_PHASE_2.md           (New)
-└── app/src/main/java/com/github/bfollon/linecapp/
+└── app/src/main/java/com/github/bfollon/intersego/
     ├── services/
     │   ├── NetworkMonitor.kt          (New)
     │   ├── DebugConfig.kt             (New)
@@ -359,7 +359,7 @@ LineCapp/android/
 ## Success Criteria
 
 - ✅ All 6 infrastructure files copied
-- ✅ Package names updated to `linecapp`
+- ✅ Package names updated to `intersego`
 - ✅ Domain-specific adaptations made (pharmacy → bus stop)
 - ✅ GPL license headers preserved
 - ✅ Files compile independently (pending BusStop model in Phase 4)
@@ -369,7 +369,7 @@ LineCapp/android/
 
 ## Summary
 
-Phase 2 successfully establishes the infrastructure layer for LineCapp by copying and adapting 6 core service files from FarmaciasDeGuardia. These services provide:
+Phase 2 successfully establishes the infrastructure layer for InterSego by copying and adapting 6 core service files from FarmaciasDeGuardia. These services provide:
 
 - **Network monitoring** for offline mode support
 - **Debug logging** for development and troubleshooting

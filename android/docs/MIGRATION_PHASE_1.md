@@ -5,7 +5,7 @@
 
 ## Overview
 
-Phase 1 establishes the foundation for LineCapp by migrating build configuration and dependencies from FarmaciasDeGuardia. This phase ensures the project has all necessary libraries for PDF processing, Jetpack Compose UI, location services, and networking.
+Phase 1 establishes the foundation for InterSego by migrating build configuration and dependencies from FarmaciasDeGuardia. This phase ensures the project has all necessary libraries for PDF processing, Jetpack Compose UI, location services, and networking.
 
 ## Goals
 
@@ -115,7 +115,7 @@ buildTypes {
     android:exported="true"
     android:label="@string/app_name"
     android:screenOrientation="portrait"
-    android:theme="@style/Theme.LineCApp">
+    android:theme="@style/Theme.InterSego">
     <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
@@ -134,7 +134,7 @@ Allows HTTP URLs for PDF downloads (can be restricted later with network securit
 Build configuration validated successfully:
 
 ```bash
-cd LineCapp/android && ./gradlew build --dry-run
+cd InterSego/android && ./gradlew build --dry-run
 ```
 
 **Result:** `BUILD SUCCESSFUL in 26s`
@@ -178,12 +178,12 @@ This is a Kotlin Gradle plugin style preference and does not affect functionalit
 - Copy domain-agnostic services (NetworkMonitor, DebugConfig, caching)
 - Copy location services (GeocodingService, LocationManager, RoutingService)
 - Copy utility classes (MapUtils)
-- Update package names from `farmaciasdeguardiaensegovia` → `linecapp`
+- Update package names from `farmaciasdeguardiaensegovia` → `intersego`
 
 ## Files Modified
 
 ```
-LineCapp/android/
+InterSego/android/
 ├── gradle/libs.versions.toml          (Updated)
 ├── app/build.gradle.kts               (Updated)
 └── app/src/main/AndroidManifest.xml   (Updated)

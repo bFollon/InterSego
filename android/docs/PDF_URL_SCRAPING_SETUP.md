@@ -1,11 +1,11 @@
 # PDF URL Scraping Setup
 
-**Date:** October 12, 2025
-**Status:** ✅ Configured and Integrated
+**Date:** October 28, 2025
+**Status:** ✅ Fully Operational
 
 ## Overview
 
-The PDF URL scraping system is now configured for the Linecar bus website and integrated into the app startup sequence. The scraper will automatically fetch and cache PDF URLs when the app launches.
+The PDF URL scraping system is configured for the Linecar bus website and fully integrated into the app. The scraper automatically fetches and caches PDF URLs on app launch, with self-healing 404 detection and automatic re-scraping.
 
 ## Configuration
 
@@ -15,14 +15,26 @@ The PDF URL scraping system is now configured for the Linecar bus website and in
 
 ### Route ID Extraction
 
-PDFs follow the naming pattern: `SEGOVIA-{ROUTE_ID}[optional-suffix].pdf`
+PDFs follow multiple naming patterns (scraper handles all):
 
-**Examples:**
+**Pattern 1 (Old format):** `SEGOVIA-{ROUTE_ID}[optional-suffix].pdf`
 - `SEGOVIA-M1.pdf` → Route ID: `M1`
 - `SEGOVIA-M2-LABORABLES.pdf` → Route ID: `M2`
-- `SEGOVIA-M10.pdf` → Route ID: `M10`
 
-**Regex Pattern:** `SEGOVIA-([A-Z0-9]+)`
+**Pattern 2 (New format):** `{ROUTE_ID}.pdf`
+- `M4.pdf` → Route ID: `M4`
+
+**Pattern 3 (New with date):** `{ROUTE_ID}-{month}-{year}.pdf`
+- `M2-septiembre-2024.pdf` → Route ID: `M2`
+- `M5-septiembre-2024.pdf` → Route ID: `M5`
+
+**Regex Patterns Used:**
+1. `SEGOVIA-([A-Z0-9]+)` - Old format
+2. `^(M[0-9]+)\.pdf$` - New simple format
+3. `^(M[0-9]+)-.*\.pdf$` - New format with suffix
+
+**Verified Routes Discovered (October 28, 2025):**
+- M1, M2, M3, M4, M5, M6, M7, M8 (8 routes total)
 
 ## Integration Flow
 
@@ -88,7 +100,7 @@ when (result) {
 ### Expected Logcat Output on App Launch
 
 ```
-🚀 LineCapp starting...
+🚀 InterSego starting...
 📡 NetworkMonitor: Initialized
 📍 CoordinateCache: Initialized
 🗑️ CoordinateCache: Cleaned up 0 expired entries
@@ -143,7 +155,7 @@ M10: SEGOVIA-M10.pdf
 **New imports:**
 ```kotlin
 import androidx.lifecycle.lifecycleScope
-import com.github.bfollon.linecapp.repositories.PDFURLRepository
+import intersego.repositories.PDFURLRepository
 import kotlinx.coroutines.launch
 ```
 
@@ -158,7 +170,7 @@ import kotlinx.coroutines.launch
 
 2. **Monitor Logcat:**
    ```bash
-   adb logcat | grep -E "LineCapp|PDFURLScrapingService|PDFURLRepository"
+   adb logcat | grep -E "InterSego|PDFURLScrapingService|PDFURLRepository"
    ```
 
 3. **Launch app** - Scraping will run automatically on startup
@@ -197,20 +209,43 @@ if (!NetworkMonitor.isOnline()) {
 }
 ```
 
+## Discovered URLs (October 28, 2025)
+
+**Successfully Scraped Routes:**
+
+```
+M1: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M1.pdf
+M2: https://www.linecar.es/wp-content/uploads/2024/09/M2-septiembre-2024.pdf
+M3: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf
+M4: https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf (Latest!)
+M5: https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf
+M6: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M6.pdf
+M7: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf
+M8: https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf
+```
+
+**Note:** URLs are dynamically scraped and automatically updated. M4 detected as October 2025 version (most recent).
+
 ## Fallback URLs
 
 **Location:** `PDFURLRepository.kt` (companion object)
 
+Fallback URLs have been updated to match scraped URLs (as of October 28, 2025):
+
 ```kotlin
 private val FALLBACK_URLS = mapOf(
-    "L1" to "https://avilabus.es/horarios/linea-1.pdf",  // TODO: Update
-    "L2" to "https://avilabus.es/horarios/linea-2.pdf",  // TODO: Update
-    "L3" to "https://avilabus.es/horarios/linea-3.pdf",  // TODO: Update
-    "L4" to "https://avilabus.es/horarios/linea-4.pdf"   // TODO: Update
+    "M1" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M1.pdf",
+    "M2" to "https://www.linecar.es/wp-content/uploads/2024/09/M2-septiembre-2024.pdf",
+    "M3" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf",
+    "M4" to "https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf",
+    "M5" to "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf",
+    "M6" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M6.pdf",
+    "M7" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf",
+    "M8" to "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf"
 )
 ```
 
-**Note:** These fallback URLs are placeholders and need to be updated with actual Linecar URLs once route structure is known.
+**Note:** Fallback URLs serve as last resort when scraping fails. Scraping service keeps URLs current automatically.
 
 ## Self-Healing URL Resolution
 

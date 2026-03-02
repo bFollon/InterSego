@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+  <!-- END CHEVRON - Upward pointing -->
+  <!-- Upward chevron ^ shape -->
+  <path d="M 4,16 L 12,8 L 20,16" 
+        stroke="#1976D2" 
+        stroke-width="4" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none"/>
+  
+  <!-- Vertical line extending upward from the top tip -->
+  <rect x="10" y="2" width="4" height="6" fill="#1976D2"/>
+</svg>
