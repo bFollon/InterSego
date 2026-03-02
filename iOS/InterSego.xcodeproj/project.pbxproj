@@ -26,6 +26,10 @@
 		A10000010000000000000011 /* PDFDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000011 /* PDFDownloadService.swift */; };
 		A10000010000000000000012 /* PDFCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000012 /* PDFCacheManager.swift */; };
 		A10000010000000000000013 /* TimetableCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* TimetableCacheService.swift */; };
+		A10000010000000000000014 /* BusTimetableParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000014 /* BusTimetableParser.swift */; };
+		A10000010000000000000015 /* PDFTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000015 /* PDFTextExtractor.swift */; };
+		A10000010000000000000016 /* TimetableParserUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000016 /* TimetableParserUtils.swift */; };
+		A10000010000000000000017 /* M4Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000017 /* M4Parser.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +52,10 @@
 		A20000010000000000000011 /* PDFDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFDownloadService.swift; sourceTree = "<group>"; };
 		A20000010000000000000012 /* PDFCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCacheManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000013 /* TimetableCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableCacheService.swift; sourceTree = "<group>"; };
+		A20000010000000000000014 /* BusTimetableParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusTimetableParser.swift; sourceTree = "<group>"; };
+		A20000010000000000000015 /* PDFTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFTextExtractor.swift; sourceTree = "<group>"; };
+		A20000010000000000000016 /* TimetableParserUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableParserUtils.swift; sourceTree = "<group>"; };
+		A20000010000000000000017 /* M4Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M4Parser.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -132,6 +140,9 @@
 		A50000010000000000000007 /* PDFParsing */ = {
 			isa = PBXGroup;
 			children = (
+				A20000010000000000000014 /* BusTimetableParser.swift */,
+				A20000010000000000000015 /* PDFTextExtractor.swift */,
+				A20000010000000000000016 /* TimetableParserUtils.swift */,
 				A50000010000000000000008 /* Strategies */,
 			);
 			path = PDFParsing;
@@ -140,6 +151,7 @@
 		A50000010000000000000008 /* Strategies */ = {
 			isa = PBXGroup;
 			children = (
+				A20000010000000000000017 /* M4Parser.swift */,
 			);
 			path = Strategies;
 			sourceTree = "<group>";
@@ -232,6 +244,10 @@
 				A10000010000000000000011 /* PDFDownloadService.swift in Sources */,
 				A10000010000000000000012 /* PDFCacheManager.swift in Sources */,
 				A10000010000000000000013 /* TimetableCacheService.swift in Sources */,
+				A10000010000000000000014 /* BusTimetableParser.swift in Sources */,
+				A10000010000000000000015 /* PDFTextExtractor.swift in Sources */,
+				A10000010000000000000016 /* TimetableParserUtils.swift in Sources */,
+				A10000010000000000000017 /* M4Parser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

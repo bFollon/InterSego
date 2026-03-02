@@ -22,7 +22,7 @@ struct BusTimetable: Codable, Identifiable {
     let routeId: String
     let stopId: String
     let dayType: DayType
-    let departures: [DepartureTime]
+    var departures: [DepartureTime]
     let direction: String?
 
     init(id: String = UUID().uuidString, routeId: String, stopId: String,
