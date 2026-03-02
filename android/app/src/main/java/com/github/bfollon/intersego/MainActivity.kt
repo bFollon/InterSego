@@ -24,6 +24,9 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -46,12 +49,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -309,6 +319,45 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 @Composable
 fun SplashScreen() {
     val iconGreen = Color(0xFF60A37F)
+    val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
+
+    var logoVisible by remember { mutableStateOf(false) }
+    var textVisible by remember { mutableStateOf(false) }
+    var spinnerVisible by remember { mutableStateOf(false) }
+
+    val logoScale by animateFloatAsState(
+        targetValue = if (logoVisible) 1f else 0.8f,
+        animationSpec = tween(800, easing = EaseOut),
+        label = "logoScale"
+    )
+    val logoAlpha by animateFloatAsState(
+        targetValue = if (logoVisible) 1f else 0f,
+        animationSpec = tween(800, easing = EaseOut),
+        label = "logoAlpha"
+    )
+    val textAlpha by animateFloatAsState(
+        targetValue = if (textVisible) 1f else 0f,
+        animationSpec = tween(800, easing = EaseOut),
+        label = "textAlpha"
+    )
+    val textScale by animateFloatAsState(
+        targetValue = if (textVisible) 1f else 0.9f,
+        animationSpec = tween(800, easing = EaseOut),
+        label = "textScale"
+    )
+    val spinnerAlpha by animateFloatAsState(
+        targetValue = if (spinnerVisible) 1f else 0f,
+        animationSpec = tween(800, easing = EaseOut),
+        label = "spinnerAlpha"
+    )
+
+    LaunchedEffect(Unit) {
+        logoVisible = true
+        delay(500)
+        textVisible = true
+        delay(100)
+        spinnerVisible = true
+    }
 
     Box(
         modifier = Modifier
@@ -322,6 +371,9 @@ fun SplashScreen() {
             Box(
                 modifier = Modifier
                     .size(120.dp)
+                    .scale(logoScale)
+                    .alpha(logoAlpha)
+                    .shadow(10.dp, RoundedCornerShape(24.dp))
                     .clip(RoundedCornerShape(24.dp))
                     .background(iconGreen)
             ) {
@@ -334,25 +386,38 @@ fun SplashScreen() {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "InterSego",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = iconGreen
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .alpha(textAlpha)
+                    .scale(textScale)
+            ) {
+                Text(
+                    text = "InterSego",
+                    style = TextStyle(
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        brush = Brush.linearGradient(gradientColors)
+                    ),
+                    textAlign = TextAlign.Center
+                )
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Interurbanos de Segovia",
-                fontSize = 18.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Text(
+                    text = "Interurbanos de Segovia",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier
+                    .size(24.dp)
+                    .alpha(spinnerAlpha),
                 strokeWidth = 2.dp
             )
 

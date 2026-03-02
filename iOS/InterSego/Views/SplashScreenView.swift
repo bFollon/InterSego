@@ -18,36 +18,58 @@
 import SwiftUI
 
 struct SplashScreenView: View {
-    private let iconGreen = Color(red: 0.376, green: 0.639, blue: 0.498)
+    @State private var isAnimating = false
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            Image("SplashIcon")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 27))
+            VStack(spacing: 20) {
+                Image("SplashIcon")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 120, height: 120)
+                    .clipShape(RoundedRectangle(cornerRadius: 26))
+                    .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+                    .scaleEffect(isAnimating ? 1.0 : 0.8)
+                    .opacity(isAnimating ? 1.0 : 0.0)
+                    .animation(.easeOut(duration: 0.8), value: isAnimating)
 
-            Spacer().frame(height: 24)
+                VStack(spacing: 8) {
+                    Text("InterSego")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.green, .blue],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
 
-            Text("InterSego")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundStyle(iconGreen)
-
-            Text("Interurbanos de Segovia")
-                .font(.system(size: 18, weight: .regular))
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
+                    Text("Interurbanos de Segovia")
+                        .font(.title2)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                }
+                .opacity(isAnimating ? 1.0 : 0.0)
+                .scaleEffect(isAnimating ? 1.0 : 0.9)
+                .animation(.easeOut(duration: 0.8).delay(0.5), value: isAnimating)
+            }
 
             Spacer()
 
             ProgressView()
-                .controlSize(.regular)
+                .scaleEffect(1.2)
+                .tint(.blue)
+                .opacity(isAnimating ? 1.0 : 0.0)
+                .animation(.easeOut(duration: 0.8).delay(0.6), value: isAnimating)
                 .padding(.bottom, 60)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemBackground))
+        .onAppear {
+            isAnimating = true
+        }
     }
 }
