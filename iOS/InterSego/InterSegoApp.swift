@@ -30,17 +30,17 @@ struct ContentView: View {
     @State private var isInitialized = false
     @State private var routes: [BusRoute] = []
     @State private var supportedRoutes: Set<String> = []
-    @State private var selectedRoute: BusRoute?
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if isInitialized {
                     RouteSelectionView(
                         routes: routes,
                         supportedRoutes: supportedRoutes,
                         onRouteSelected: { route in
-                            selectedRoute = route
+                            navigationPath.append(route)
                         }
                     )
                 } else {
@@ -53,9 +53,40 @@ struct ContentView: View {
                     .navigationTitle("InterSego")
                 }
             }
+            .navigationDestination(for: BusRoute.self) { route in
+                RouteStopsContainer(route: route)
+            }
         }
         .task {
             await initialize()
+        }
+    }
+
+    private struct RouteStopsContainer: View {
+        let route: BusRoute
+        @State private var routeViews: [RouteView]?
+
+        var body: some View {
+            Group {
+                if let views = routeViews, !views.isEmpty {
+                    RouteStopsView(
+                        route: route,
+                        views: views,
+                        onStopSelected: { stop, direction, departureLabel in
+                            DebugConfig.debugPrint("Selected stop: \(stop.name), direction: \(direction)")
+                        }
+                    )
+                } else {
+                    ProgressView("Cargando paradas...")
+                }
+            }
+            .task {
+                let dayType = TimetableService.shared.getCurrentDayType()
+                let views = await PDFProcessingService.shared.getRouteViews(
+                    routeId: route.id, dayType: dayType
+                )
+                routeViews = views
+            }
         }
     }
 
