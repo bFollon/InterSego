@@ -4,3 +4,10 @@
 
 # Claude local preferences
 .claude/settings.local.json
+
+# Xcode user-specific files
+iOS/InterSego.xcodeproj/project.xcworkspace/
+iOS/InterSego.xcodeproj/xcuserdata/
+
+# Temporary files
+tmp/
