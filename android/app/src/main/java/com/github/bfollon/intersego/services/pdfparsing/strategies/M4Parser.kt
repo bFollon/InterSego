@@ -53,7 +53,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
-        mode = ParserMode.PRODUCTION,
+        mode = ParserMode.DEBUG,
         version = "1.0"
     )
 
@@ -70,7 +70,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
         val reverseRouteWeekendTimetables: List<BusTimetable>
     ) {
         val seasonal: SeasonalAvailability
-            get() = if (isSummerSection) SeasonalAvailability.SUMMER_ONLY else SeasonalAvailability.SCHOOL_ONLY
+            get() = if (isSummerSection) SeasonalAvailability.YEAR_ROUND else SeasonalAvailability.SCHOOL_ONLY
     }
 
     companion object {
@@ -195,7 +195,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
         return if (routeId.equals("M4", ignoreCase = true)) {
-            listOf(m4RegularRoute, m4ReverseRoute)
+            // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
+            listOf(m4RegularRoute.dropLast(1), m4ReverseRoute.dropLast(1))
         } else {
             emptyList()
         }
@@ -207,13 +208,13 @@ class M4Parser : CapableParser, RouteStopsProvider {
             RouteVariant(
                 id = "regular",
                 label = DIRECTION_REGULAR,
-                stops = m4RegularRoute,
+                stops = m4RegularRoute.dropLast(1),
                 direction = DIRECTION_REGULAR
             ),
             RouteVariant(
                 id = "reverse",
                 label = DIRECTION_REVERSE,
-                stops = m4ReverseRoute,
+                stops = m4ReverseRoute.dropLast(1),
                 direction = DIRECTION_REVERSE
             ),
         )
@@ -449,11 +450,11 @@ class M4Parser : CapableParser, RouteStopsProvider {
             }
         }
 
-        // Flatten all 4 timetable lists into a single list
-        val allTimetables = finalState.regularRouteWeekdayTimetables +
-                finalState.regularRouteWeekendTimetables +
-                finalState.reverseRouteWeekdayTimetables +
-                finalState.reverseRouteWeekendTimetables
+        // Flatten all 4 timetable lists, dropping last stop (Azoguejo arrival) from each
+        val allTimetables = finalState.regularRouteWeekdayTimetables.dropLast(1) +
+                finalState.regularRouteWeekendTimetables.dropLast(1) +
+                finalState.reverseRouteWeekdayTimetables.dropLast(1) +
+                finalState.reverseRouteWeekendTimetables.dropLast(1)
 
         // Sort departures within each timetable
         val sortedTimetables = allTimetables.map { timetable ->

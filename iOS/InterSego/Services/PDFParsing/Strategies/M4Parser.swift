@@ -28,7 +28,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
-        mode: .production,
+        mode: .debug,
         version: "1.0"
     )
 
@@ -160,7 +160,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
         var reverseRouteWeekendTimetables: [BusTimetable]
 
         var seasonal: SeasonalAvailability {
-            isSummerSection ? .summerOnly : .schoolOnly
+            isSummerSection ? .yearRound : .schoolOnly
         }
     }
 
@@ -172,7 +172,8 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
     func getRoutesForId(_ routeId: String) -> [[BusStop]] {
         guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return [] }
-        return [Self.m4RegularRoute, Self.m4ReverseRoute]
+        // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
+        return [Array(Self.m4RegularRoute.dropLast()), Array(Self.m4ReverseRoute.dropLast())]
     }
 
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
@@ -181,13 +182,13 @@ class M4Parser: CapableParser, RouteStopsProvider {
             RouteVariant(
                 id: "regular",
                 label: Self.directionRegular,
-                stops: Self.m4RegularRoute,
+                stops: Array(Self.m4RegularRoute.dropLast()),
                 direction: Self.directionRegular
             ),
             RouteVariant(
                 id: "reverse",
                 label: Self.directionReverse,
-                stops: Self.m4ReverseRoute,
+                stops: Array(Self.m4ReverseRoute.dropLast()),
                 direction: Self.directionReverse
             ),
         ]
@@ -275,119 +276,129 @@ class M4Parser: CapableParser, RouteStopsProvider {
         for line in lines {
             let newDayType = detectDayType(line)
             let isSummerMarker = line.uppercased().contains("JULIO Y AGOSTO")
+            let hasTimes = TimetableParserUtils.hasTimes(line)
 
             if let newDayType = newDayType {
                 state.currentDayType = newDayType
                 state.isSummerSection = false
-            } else if isSummerMarker {
+            } else if isSummerMarker && !hasTimes {
+                // iOS PDFKit sometimes puts "JULIO Y AGOSTO" on a separate line (like Android's iText7).
+                // When it does, just set the flag; times will be on the next line.
                 state.isSummerSection = true
-            } else if TimetableParserUtils.hasTimes(line) && hasAsteriskTimes(line) {
-                let times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
+            } else if hasTimes {
+                // Determine seasonal: if this line has the JULIO marker, it's summer-only.
+                // If not, it's school-only (the marker doesn't bleed from previous lines).
+                state.isSummerSection = isSummerMarker
 
-                let isWeekday = state.currentDayType == .weekday
-                let currentTimetables = isWeekday ? state.reverseRouteWeekdayTimetables : state.reverseRouteWeekendTimetables
-                let reverseCount = Self.m4ReverseRoute.count
+                if hasAsteriskTimes(line) {
+                    let times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
 
-                switch times.count {
-                case reverseCount:
-                    let updated = updateTimetables(currentTimetables, times: times, seasonal: state.seasonal)
-                    if isWeekday {
-                        state.reverseRouteWeekdayTimetables = updated
-                    } else {
-                        state.reverseRouteWeekendTimetables = updated
-                    }
-                    state.incompleteJourney = []
+                    let isWeekday = state.currentDayType == .weekday
+                    let currentTimetables = isWeekday ? state.reverseRouteWeekdayTimetables : state.reverseRouteWeekendTimetables
+                    let reverseCount = Self.m4ReverseRoute.count
 
-                case reverseCount - 1:
-                    let lastIndex = reverseCount - 1
-                    let filtered = currentTimetables.enumerated().filter { $0.offset != lastIndex }.map { $0.element }
-                    let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
-                    var merged = currentTimetables
-                    for i in 0..<reverseCount {
-                        if i != lastIndex {
-                            let sourceIndex = i < lastIndex ? i : i - 1
-                            merged[i] = updated[sourceIndex]
-                        }
-                    }
-                    if isWeekday {
-                        state.reverseRouteWeekdayTimetables = merged
-                    } else {
-                        state.reverseRouteWeekendTimetables = merged
-                    }
-                    state.incompleteJourney = []
-
-                default:
-                    let lastIndex = reverseCount - 1
-                    let schoolIndex = Self.m4ReverseRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
-                    let filtered = currentTimetables.enumerated()
-                        .filter { $0.offset != lastIndex && $0.offset != schoolIndex }
-                        .map { $0.element }
-                    let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
-                    var merged = currentTimetables
-                    var srcIdx = 0
-                    for i in 0..<reverseCount {
-                        if i != lastIndex && i != schoolIndex {
-                            merged[i] = updated[srcIdx]
-                            srcIdx += 1
-                        }
-                    }
-                    if isWeekday {
-                        state.reverseRouteWeekdayTimetables = merged
-                    } else {
-                        state.reverseRouteWeekendTimetables = merged
-                    }
-                    state.incompleteJourney = []
-                }
-
-            } else if TimetableParserUtils.hasTimes(line) {
-                let times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
-
-                let isWeekday = state.currentDayType == .weekday
-                let currentTimetables = isWeekday ? state.regularRouteWeekdayTimetables : state.regularRouteWeekendTimetables
-                let regularCount = Self.m4RegularRoute.count
-
-                switch times.count {
-                case regularCount:
-                    let updated = updateTimetables(currentTimetables, times: times, seasonal: state.seasonal)
-                    if isWeekday {
-                        state.regularRouteWeekdayTimetables = updated
-                    } else {
-                        state.regularRouteWeekendTimetables = updated
-                    }
-                    state.incompleteJourney = []
-
-                case regularCount - 1:
-                    let schoolIndex = Self.m4RegularRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
-                    let filtered = currentTimetables.filter { $0.stopId != Stops.paseoCabanillas.name }
-                    let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
-                    var merged = currentTimetables
-                    for i in 0..<regularCount {
-                        if i == schoolIndex {
-                            continue
-                        } else if i < schoolIndex {
-                            merged[i] = updated[i]
+                    switch times.count {
+                    case reverseCount:
+                        let updated = updateTimetables(currentTimetables, times: times, seasonal: state.seasonal)
+                        if isWeekday {
+                            state.reverseRouteWeekdayTimetables = updated
                         } else {
-                            merged[i] = updated[i - 1]
+                            state.reverseRouteWeekendTimetables = updated
                         }
-                    }
-                    if isWeekday {
-                        state.regularRouteWeekdayTimetables = merged
-                    } else {
-                        state.regularRouteWeekendTimetables = merged
-                    }
-                    state.incompleteJourney = []
+                        state.incompleteJourney = []
 
-                default:
-                    DebugConfig.debugPrint("Incomplete route, accumulating...")
-                    state.incompleteJourney = times
+                    case reverseCount - 1:
+                        let lastIndex = reverseCount - 1
+                        let filtered = currentTimetables.enumerated().filter { $0.offset != lastIndex }.map { $0.element }
+                        let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
+                        var merged = currentTimetables
+                        for i in 0..<reverseCount {
+                            if i != lastIndex {
+                                let sourceIndex = i < lastIndex ? i : i - 1
+                                merged[i] = updated[sourceIndex]
+                            }
+                        }
+                        if isWeekday {
+                            state.reverseRouteWeekdayTimetables = merged
+                        } else {
+                            state.reverseRouteWeekendTimetables = merged
+                        }
+                        state.incompleteJourney = []
+
+                    default:
+                        let lastIndex = reverseCount - 1
+                        let schoolIndex = Self.m4ReverseRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
+                        let filtered = currentTimetables.enumerated()
+                            .filter { $0.offset != lastIndex && $0.offset != schoolIndex }
+                            .map { $0.element }
+                        let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
+                        var merged = currentTimetables
+                        var srcIdx = 0
+                        for i in 0..<reverseCount {
+                            if i != lastIndex && i != schoolIndex {
+                                merged[i] = updated[srcIdx]
+                                srcIdx += 1
+                            }
+                        }
+                        if isWeekday {
+                            state.reverseRouteWeekdayTimetables = merged
+                        } else {
+                            state.reverseRouteWeekendTimetables = merged
+                        }
+                        state.incompleteJourney = []
+                    }
+
+                } else {
+                    let times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
+
+                    let isWeekday = state.currentDayType == .weekday
+                    let currentTimetables = isWeekday ? state.regularRouteWeekdayTimetables : state.regularRouteWeekendTimetables
+                    let regularCount = Self.m4RegularRoute.count
+
+                    switch times.count {
+                    case regularCount:
+                        let updated = updateTimetables(currentTimetables, times: times, seasonal: state.seasonal)
+                        if isWeekday {
+                            state.regularRouteWeekdayTimetables = updated
+                        } else {
+                            state.regularRouteWeekendTimetables = updated
+                        }
+                        state.incompleteJourney = []
+
+                    case regularCount - 1:
+                        let schoolIndex = Self.m4RegularRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
+                        let filtered = currentTimetables.filter { $0.stopId != Stops.paseoCabanillas.name }
+                        let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
+                        var merged = currentTimetables
+                        for i in 0..<regularCount {
+                            if i == schoolIndex {
+                                continue
+                            } else if i < schoolIndex {
+                                merged[i] = updated[i]
+                            } else {
+                                merged[i] = updated[i - 1]
+                            }
+                        }
+                        if isWeekday {
+                            state.regularRouteWeekdayTimetables = merged
+                        } else {
+                            state.regularRouteWeekendTimetables = merged
+                        }
+                        state.incompleteJourney = []
+
+                    default:
+                        DebugConfig.debugPrint("Incomplete route, accumulating...")
+                        state.incompleteJourney = times
+                    }
                 }
             }
         }
 
-        let allTimetables = state.regularRouteWeekdayTimetables +
-            state.regularRouteWeekendTimetables +
-            state.reverseRouteWeekdayTimetables +
-            state.reverseRouteWeekendTimetables
+        // Drop last stop from each group — it's the return to Azoguejo (arrival, not departure)
+        let allTimetables = state.regularRouteWeekdayTimetables.dropLast() +
+            state.regularRouteWeekendTimetables.dropLast() +
+            state.reverseRouteWeekdayTimetables.dropLast() +
+            state.reverseRouteWeekendTimetables.dropLast()
 
         let sortedTimetables = allTimetables.map { timetable in
             var sorted = timetable
