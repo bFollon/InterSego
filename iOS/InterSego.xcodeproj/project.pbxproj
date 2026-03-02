@@ -19,6 +19,9 @@
 		A1000001000000000000000A /* RouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000A /* RouteView.swift */; };
 		A1000001000000000000000B /* SeasonalAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000B /* SeasonalAvailability.swift */; };
 		A1000001000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000C /* Assets.xcassets */; };
+		A1000001000000000000000D /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* DebugConfig.swift */; };
+		A1000001000000000000000E /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000E /* NetworkMonitor.swift */; };
+		A1000001000000000000000F /* PDFURLScrapingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000F /* PDFURLScrapingService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +37,9 @@
 		A2000001000000000000000A /* RouteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteView.swift; sourceTree = "<group>"; };
 		A2000001000000000000000B /* SeasonalAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalAvailability.swift; sourceTree = "<group>"; };
 		A2000001000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000001000000000000000D /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = "<group>"; };
+		A2000001000000000000000E /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		A2000001000000000000000F /* PDFURLScrapingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFURLScrapingService.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -88,6 +94,9 @@
 		A50000010000000000000004 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				A2000001000000000000000D /* DebugConfig.swift */,
+				A2000001000000000000000E /* NetworkMonitor.swift */,
+				A2000001000000000000000F /* PDFURLScrapingService.swift */,
 				A50000010000000000000007 /* PDFParsing */,
 			);
 			path = Services;
@@ -204,6 +213,9 @@
 				A10000010000000000000009 /* RouteVariant.swift in Sources */,
 				A1000001000000000000000A /* RouteView.swift in Sources */,
 				A1000001000000000000000B /* SeasonalAvailability.swift in Sources */,
+				A1000001000000000000000D /* DebugConfig.swift in Sources */,
+				A1000001000000000000000E /* NetworkMonitor.swift in Sources */,
+				A1000001000000000000000F /* PDFURLScrapingService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -335,7 +347,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = C2R5BYHLA7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = InterSego;
@@ -364,7 +376,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = C2R5BYHLA7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = InterSego;
@@ -408,7 +420,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = AA0000010000000000000001 /* Project object */;
 }
