@@ -70,7 +70,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
         val reverseRouteWeekendTimetables: List<BusTimetable>
     ) {
         val seasonal: SeasonalAvailability
-            get() = if (isSummerSection) SeasonalAvailability.SUMMER_ONLY else SeasonalAvailability.SCHOOL_ONLY
+            get() = if (isSummerSection) SeasonalAvailability.YEAR_ROUND else SeasonalAvailability.SCHOOL_ONLY
     }
 
     companion object {
@@ -83,62 +83,77 @@ class M4Parser : CapableParser, RouteStopsProvider {
         private object Stops {
             val AZOGUEJO = BusStop(
                 name = "Azoguejo",
+                area = "Segovia",
                 coordinates = "40.948406, -4.116411",
             )
             val DELICIAS = BusStop(
                 name = "Delicias",
+                area = "Segovia",
                 coordinates = "40.954500, -4.108889",
             )
             val GASOLINERA = BusStop(
                 name = "Gasolinera",
+                area = "La Lastrilla",
                 coordinates = "40.965944, -4.106072",
             )
             val PENSION = BusStop(
                 name = "Pensión",
+                area = "La Lastrilla",
                 coordinates = "40.969289, -4.107552",
             )
             val POLIGONO = BusStop(
                 name = "Polígono",
+                area = "La Lastrilla",
                 coordinates = "40.972010, -4.108356",
             )
             val CTRA_VALLADOLID_33 = BusStop(
                 name = "Carretera de Valladolid",
+                area = "La Lastrilla",
                 coordinates = "40.970464, -4.104010",
             )
             val LEOPOLDO_MORENO = BusStop(
                 name = "Leopoldo Moreno",
+                area = "La Lastrilla",
                 coordinates = "40.967679, -4.102850",
             )
             val COLEGIO = BusStop(
                 name = "Colegio",
+                area = "La Lastrilla",
                 coordinates = "40.966693, -4.102033",
             )
             val PARROQ_SOTILLO = BusStop(
                 name = "Parroquia el Sotillo",
+                area = "El Sotillo",
                 coordinates = "40.963449, -4.095073",
             )
             val HOTEL_AV_SOTILLO = BusStop(
                 name = "Hotel Avenida del Sotillo",
+                area = "El Sotillo",
                 coordinates = "40.965769, -4.097825",
             )
             val MASPALOMAS = BusStop(
                 name = "Calle Maspalomas",
+                area = "El Sotillo",
                 coordinates = "40.965714, -4.094892",
             )
             val CENTRO_BOAL = BusStop(
                 name = "Centro Cultural Julio Boal",
+                area = "El Sotillo",
                 coordinates = "40.967592, -4.091377",
             )
             val PASEO_CABANILLAS = BusStop(
                 name = "Colegio Madres Concepcionistas",
+                area = "El Sotillo",
                 coordinates = "40.962806, -4.092689",
             )
             val RAFAEL_DE_LAS_HERAS = BusStop(
                 name = "Rafael de las Heras",
+                area = "El Sotillo",
                 coordinates = "40.961939, -4.096711",
             )
             val VENTA_MAGULLO = BusStop(
                 name = "Venta Magullo",
+                area = "El Sotillo",
                 coordinates = "40.960876, -4.100906",
             )
         }
@@ -195,7 +210,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
         return if (routeId.equals("M4", ignoreCase = true)) {
-            listOf(m4RegularRoute, m4ReverseRoute)
+            // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
+            listOf(m4RegularRoute.dropLast(1), m4ReverseRoute.dropLast(1))
         } else {
             emptyList()
         }
@@ -207,13 +223,13 @@ class M4Parser : CapableParser, RouteStopsProvider {
             RouteVariant(
                 id = "regular",
                 label = DIRECTION_REGULAR,
-                stops = m4RegularRoute,
+                stops = m4RegularRoute.dropLast(1),
                 direction = DIRECTION_REGULAR
             ),
             RouteVariant(
                 id = "reverse",
                 label = DIRECTION_REVERSE,
-                stops = m4ReverseRoute,
+                stops = m4ReverseRoute.dropLast(1),
                 direction = DIRECTION_REVERSE
             ),
         )
@@ -449,11 +465,11 @@ class M4Parser : CapableParser, RouteStopsProvider {
             }
         }
 
-        // Flatten all 4 timetable lists into a single list
-        val allTimetables = finalState.regularRouteWeekdayTimetables +
-                finalState.regularRouteWeekendTimetables +
-                finalState.reverseRouteWeekdayTimetables +
-                finalState.reverseRouteWeekendTimetables
+        // Flatten all 4 timetable lists, dropping last stop (Azoguejo arrival) from each
+        val allTimetables = finalState.regularRouteWeekdayTimetables.dropLast(1) +
+                finalState.regularRouteWeekendTimetables.dropLast(1) +
+                finalState.reverseRouteWeekdayTimetables.dropLast(1) +
+                finalState.reverseRouteWeekendTimetables.dropLast(1)
 
         // Sort departures within each timetable
         val sortedTimetables = allTimetables.map { timetable ->
