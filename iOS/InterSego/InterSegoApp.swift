@@ -27,11 +27,60 @@ struct InterSegoApp: App {
 }
 
 struct ContentView: View {
+    @State private var isInitialized = false
+    @State private var routes: [BusRoute] = []
+    @State private var supportedRoutes: Set<String> = []
+    @State private var selectedRoute: BusRoute?
+
     var body: some View {
         NavigationStack {
-            Text("InterSego")
-                .font(.largeTitle)
-                .navigationTitle("InterSego - Segovia")
+            Group {
+                if isInitialized {
+                    RouteSelectionView(
+                        routes: routes,
+                        supportedRoutes: supportedRoutes,
+                        onRouteSelected: { route in
+                            selectedRoute = route
+                        }
+                    )
+                } else {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Cargando...")
+                            .foregroundStyle(.secondary)
+                    }
+                    .navigationTitle("InterSego")
+                }
+            }
         }
+        .task {
+            await initialize()
+        }
+    }
+
+    private func initialize() async {
+        DebugConfig.debugPrint("InterSego: Starting initialization...")
+
+        // Ensure network monitor is alive (starts in init)
+        _ = NetworkMonitor.shared
+
+        // Initialize PDF URL repository
+        let success = await PDFURLRepository.shared.initializeURLs()
+        if success {
+            DebugConfig.debugPrint("InterSego: PDF URLs initialized successfully")
+        } else {
+            DebugConfig.debugWarn("InterSego: PDF URL initialization failed, using fallback URLs")
+        }
+
+        // Load routes
+        routes = BusRouteRegistry.knownRoutes()
+
+        // Get supported routes from PDFProcessingService
+        let supported = await PDFProcessingService.shared.getSupportedRoutes()
+        supportedRoutes = Set(supported)
+
+        DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
+        isInitialized = true
     }
 }
