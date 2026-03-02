@@ -17,6 +17,13 @@
 
 import SwiftUI
 
+struct StopSelection: Hashable {
+    let route: BusRoute
+    let stop: BusStop
+    let direction: String
+    let departureLabel: String?
+}
+
 @main
 struct InterSegoApp: App {
     var body: some Scene {
@@ -54,7 +61,15 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(for: BusRoute.self) { route in
-                RouteStopsContainer(route: route)
+                RouteStopsContainer(route: route, navigationPath: $navigationPath)
+            }
+            .navigationDestination(for: StopSelection.self) { selection in
+                NextDepartureView(
+                    route: selection.route,
+                    stop: selection.stop,
+                    direction: selection.direction,
+                    selectedVariantLabel: selection.departureLabel
+                )
             }
         }
         .task {
@@ -64,6 +79,7 @@ struct ContentView: View {
 
     private struct RouteStopsContainer: View {
         let route: BusRoute
+        @Binding var navigationPath: NavigationPath
         @State private var routeViews: [RouteView]?
 
         var body: some View {
@@ -73,7 +89,13 @@ struct ContentView: View {
                         route: route,
                         views: views,
                         onStopSelected: { stop, direction, departureLabel in
-                            DebugConfig.debugPrint("Selected stop: \(stop.name), direction: \(direction)")
+                            let selection = StopSelection(
+                                route: route,
+                                stop: stop,
+                                direction: direction,
+                                departureLabel: departureLabel
+                            )
+                            navigationPath.append(selection)
                         }
                     )
                 } else {

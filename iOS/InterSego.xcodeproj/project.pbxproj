@@ -36,6 +36,7 @@
 		A1000001000000000000001B /* BusRouteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001B /* BusRouteRegistry.swift */; };
 		A1000001000000000000001C /* RouteSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001C /* RouteSelectionView.swift */; };
 		A1000001000000000000001D /* RouteStopsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001D /* RouteStopsView.swift */; };
+		A1000001000000000000001E /* NextDepartureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001E /* NextDepartureView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -68,6 +69,7 @@
 		A2000001000000000000001B /* BusRouteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusRouteRegistry.swift; sourceTree = "<group>"; };
 		A2000001000000000000001C /* RouteSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectionView.swift; sourceTree = "<group>"; };
 		A2000001000000000000001D /* RouteStopsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteStopsView.swift; sourceTree = "<group>"; };
+		A2000001000000000000001E /* NextDepartureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextDepartureView.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -150,6 +152,7 @@
 			children = (
 				A2000001000000000000001C /* RouteSelectionView.swift */,
 				A2000001000000000000001D /* RouteStopsView.swift */,
+				A2000001000000000000001E /* NextDepartureView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -272,6 +275,7 @@
 				A1000001000000000000001B /* BusRouteRegistry.swift in Sources */,
 				A1000001000000000000001C /* RouteSelectionView.swift in Sources */,
 				A1000001000000000000001D /* RouteStopsView.swift in Sources */,
+				A1000001000000000000001E /* NextDepartureView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
