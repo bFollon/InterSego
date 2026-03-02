@@ -53,8 +53,7 @@ actor PDFProcessingService {
             throw PDFParsingError("No parser available for route \(routeId)")
         }
 
-        let pdfUrl = await PDFURLRepository.shared.getURL(routeId: routeId)
-        guard !pdfUrl.isEmpty else {
+        guard let pdfUrl = await PDFURLRepository.shared.getURL(routeId: routeId) else {
             DebugConfig.debugError("PDFProcessingService: No URL found for route \(routeId)")
             throw PDFParsingError("No PDF URL available for route \(routeId)")
         }

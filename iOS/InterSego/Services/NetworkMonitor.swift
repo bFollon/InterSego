@@ -23,22 +23,26 @@ final class NetworkMonitor: @unchecked Sendable {
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.github.bfollon.intersego.networkmonitor")
-    private var currentPath: NWPath?
+    private let lock = NSLock()
+    private var _currentPath: NWPath?
 
     private init() {
         monitor.pathUpdateHandler = { [weak self] path in
-            self?.currentPath = path
+            guard let self else { return }
+            self.lock.withLock { self._currentPath = path }
             DebugConfig.debugPrint("NetworkMonitor: Status changed - \(path.status)")
         }
         monitor.start(queue: queue)
         DebugConfig.debugPrint("NetworkMonitor: Initialized")
     }
 
+    private var currentPath: NWPath? {
+        lock.withLock { _currentPath }
+    }
+
     var isOnline: Bool {
         guard let path = currentPath else {
-            // On first check before pathUpdateHandler fires, do a synchronous check
-            let path = monitor.currentPath
-            return path.status == .satisfied
+            return monitor.currentPath.status == .satisfied
         }
         return path.status == .satisfied
     }

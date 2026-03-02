@@ -38,21 +38,19 @@ struct BusStop: Codable, Hashable, Identifiable {
         self.stopCode = stopCode
     }
 
-    var resolvedLatitude: Double? {
+    private var parsedCoordinates: (lat: Double, lon: Double)? {
         let parts = coordinates.split(separator: ",")
-        guard let first = parts.first else { return nil }
-        return Double(first.trimmingCharacters(in: .whitespaces))
+        guard parts.count >= 2,
+              let lat = Double(parts[0].trimmingCharacters(in: .whitespaces)),
+              let lon = Double(parts[1].trimmingCharacters(in: .whitespaces))
+        else { return nil }
+        return (lat, lon)
     }
 
-    var resolvedLongitude: Double? {
-        let parts = coordinates.split(separator: ",")
-        guard parts.count >= 2 else { return nil }
-        return Double(parts[1].trimmingCharacters(in: .whitespaces))
-    }
+    var resolvedLatitude: Double? { parsedCoordinates?.lat }
+    var resolvedLongitude: Double? { parsedCoordinates?.lon }
 
-    var hasCoordinates: Bool {
-        resolvedLatitude != nil && resolvedLongitude != nil
-    }
+    var hasCoordinates: Bool { parsedCoordinates != nil }
 
     var displayName: String {
         if let stopCode {

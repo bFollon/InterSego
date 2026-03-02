@@ -48,7 +48,7 @@ actor TimetableService {
 
         // Tier 2: Persistent cache
         if !shouldForceRefresh {
-            if let cachedData = TimetableCacheService.shared.loadCachedTimetables(routeId: routeId) {
+            if let cachedData = await TimetableCacheService.shared.loadCachedTimetables(routeId: routeId) {
                 DebugConfig.debugPrint("TimetableService: Using persistent cache for route \(routeId)")
                 cachedTimetables[routeId] = cachedData
                 return cachedData
@@ -62,7 +62,7 @@ actor TimetableService {
             let timetables = try await PDFProcessingService.shared.parseTimetables(routeId: routeId)
 
             cachedTimetables[routeId] = timetables
-            TimetableCacheService.shared.saveTimetablesToCache(routeId: routeId, timetables: timetables)
+            await TimetableCacheService.shared.saveTimetablesToCache(routeId: routeId, timetables: timetables)
 
             DebugConfig.debugPrint("TimetableService: Successfully loaded and cached \(timetables.count) timetables for \(routeId)")
             return timetables
@@ -98,15 +98,15 @@ actor TimetableService {
         cachedTimetables[routeId] != nil
     }
 
-    func clearCache() {
+    func clearCache() async {
         cachedTimetables.removeAll()
-        TimetableCacheService.shared.clearAllCache()
+        await TimetableCacheService.shared.clearAllCache()
         DebugConfig.debugPrint("TimetableService: All caches cleared")
     }
 
-    func clearCacheForRoute(routeId: String) {
+    func clearCacheForRoute(routeId: String) async {
         cachedTimetables.removeValue(forKey: routeId)
-        TimetableCacheService.shared.clearRouteCache(routeId: routeId)
+        await TimetableCacheService.shared.clearRouteCache(routeId: routeId)
         DebugConfig.debugPrint("TimetableService: Cleared cache for route \(routeId)")
     }
 

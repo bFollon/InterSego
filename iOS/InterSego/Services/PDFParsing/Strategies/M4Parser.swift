@@ -205,13 +205,17 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
         DebugConfig.debugPrint("M4Parser: Extracted \(lines.count) lines")
 
-        DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
-        for (index, line) in lines.enumerated() {
-            if !line.isEmpty {
-                DebugConfig.debugPrint("  Line \(index): \(line)")
+        #if DEBUG
+        if DebugConfig.isDebugEnabled {
+            DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
+            for (index, line) in lines.enumerated() {
+                if !line.isEmpty {
+                    DebugConfig.debugPrint("  Line \(index): \(line)")
+                }
             }
+            DebugConfig.debugPrint("M4Parser: ==========================")
         }
-        DebugConfig.debugPrint("M4Parser: ==========================")
+        #endif
 
         let timetables = parseTimeTable(lines)
 
@@ -274,6 +278,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
             if let newDayType = newDayType {
                 state.currentDayType = newDayType
+                state.isSummerSection = false
             } else if isSummerMarker {
                 state.isSummerSection = true
             } else if TimetableParserUtils.hasTimes(line) && hasAsteriskTimes(line) {
@@ -292,7 +297,6 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.reverseRouteWeekendTimetables = updated
                     }
                     state.incompleteJourney = []
-                    state.isSummerSection = false
 
                 case reverseCount - 1:
                     let lastIndex = reverseCount - 1
@@ -311,7 +315,6 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.reverseRouteWeekendTimetables = merged
                     }
                     state.incompleteJourney = []
-                    state.isSummerSection = false
 
                 default:
                     let lastIndex = reverseCount - 1
@@ -334,7 +337,6 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.reverseRouteWeekendTimetables = merged
                     }
                     state.incompleteJourney = []
-                    state.isSummerSection = false
                 }
 
             } else if TimetableParserUtils.hasTimes(line) {
@@ -353,7 +355,6 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.regularRouteWeekendTimetables = updated
                     }
                     state.incompleteJourney = []
-                    state.isSummerSection = false
 
                 case regularCount - 1:
                     let schoolIndex = Self.m4RegularRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
@@ -375,7 +376,6 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.regularRouteWeekendTimetables = merged
                     }
                     state.incompleteJourney = []
-                    state.isSummerSection = false
 
                 default:
                     DebugConfig.debugPrint("Incomplete route, accumulating...")
@@ -397,10 +397,14 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
         DebugConfig.debugPrint("Created \(sortedTimetables.count) timetables")
 
-        sortedTimetables.prefix(5).forEach { DebugConfig.debugPrint("\($0)") }
-        sortedTimetables.filter { $0.direction == Self.directionReverse }.prefix(5).forEach {
-            DebugConfig.debugPrint("\($0)")
+        #if DEBUG
+        if DebugConfig.isDebugEnabled {
+            sortedTimetables.prefix(5).forEach { DebugConfig.debugPrint("\($0)") }
+            sortedTimetables.filter { $0.direction == Self.directionReverse }.prefix(5).forEach {
+                DebugConfig.debugPrint("\($0)")
+            }
         }
+        #endif
 
         return sortedTimetables
     }

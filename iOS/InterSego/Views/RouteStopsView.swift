@@ -25,15 +25,18 @@ struct RouteStopsView: View {
     @State private var currentViewId: String = ""
     @Environment(\.dismiss) private var dismiss
 
-    private var viewById: [String: RouteView] {
-        Dictionary(uniqueKeysWithValues: views.map { ($0.id, $0) })
-    }
-
-    private var currentView: RouteView {
-        viewById[currentViewId] ?? views.first!
+    private var currentView: RouteView? {
+        views.first { $0.id == currentViewId } ?? views.first
     }
 
     var body: some View {
+        guard let currentView else {
+            return AnyView(Text("No hay datos disponibles").foregroundColor(.secondary))
+        }
+        return AnyView(mainContent(currentView: currentView))
+    }
+
+    private func mainContent(currentView: RouteView) -> some View {
         VStack(spacing: 0) {
             // Tab chips (if available)
             if let tabs = currentView.tabs, !tabs.isEmpty {

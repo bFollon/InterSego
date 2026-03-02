@@ -110,6 +110,8 @@ actor PDFDownloadService {
 
 /// Lenient SSL delegate for linecar.es certificate chain issues
 private final class LenientSSLDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    private let allowedHosts: Set<String> = ["linecar.es", "www.linecar.es", "avilabus.es", "www.avilabus.es"]
+
     func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async
         -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
@@ -118,13 +120,17 @@ private final class LenientSSLDelegate: NSObject, URLSessionDelegate, @unchecked
         }
 
         let host = challenge.protectionSpace.host
-        let allowedHosts = ["linecar.es", "www.linecar.es", "avilabus.es", "www.avilabus.es"]
 
-        if allowedHosts.contains(where: { host.hasSuffix($0) }) {
-            let credential = URLCredential(trust: serverTrust)
-            return (.useCredential, credential)
+        guard allowedHosts.contains(host) else {
+            return (.performDefaultHandling, nil)
         }
 
-        return (.performDefaultHandling, nil)
+        // Accept the certificate if standard trust evaluation passes
+        if SecTrustEvaluateWithError(serverTrust, nil) {
+            return (.useCredential, URLCredential(trust: serverTrust))
+        }
+
+        // For known hosts with certificate chain issues, accept anyway
+        return (.useCredential, URLCredential(trust: serverTrust))
     }
 }

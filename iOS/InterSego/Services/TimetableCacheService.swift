@@ -17,7 +17,7 @@
 
 import Foundation
 
-class TimetableCacheService {
+actor TimetableCacheService {
     static let shared = TimetableCacheService()
 
     private let cacheDir: URL
@@ -42,8 +42,7 @@ class TimetableCacheService {
             let metaData = try Data(contentsOf: metadataFile)
             let metadata = try JSONDecoder().decode(CacheMetadata.self, from: metaData)
 
-            let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let pdfFile = documentsDir.appendingPathComponent("pdfs/\(routeId.lowercased()).pdf")
+            let pdfFile = pdfFileURL(routeId: routeId)
 
             guard FileManager.default.fileExists(atPath: pdfFile.path) else {
                 DebugConfig.debugPrint("TimetableCacheService: PDF file not found for route \(routeId), cache invalid")
@@ -96,8 +95,7 @@ class TimetableCacheService {
             let data = try encoder.encode(cachedData)
             try data.write(to: getCacheFile(routeId: routeId))
 
-            let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-            let pdfFile = documentsDir.appendingPathComponent("pdfs/\(routeId.lowercased()).pdf")
+            let pdfFile = pdfFileURL(routeId: routeId)
             let pdfLastModified: TimeInterval
             if FileManager.default.fileExists(atPath: pdfFile.path) {
                 let attrs = try FileManager.default.attributesOfItem(atPath: pdfFile.path)
@@ -141,6 +139,11 @@ class TimetableCacheService {
 
     private func getMetadataFile(routeId: String) -> URL {
         cacheDir.appendingPathComponent("\(routeId).meta.json")
+    }
+
+    private func pdfFileURL(routeId: String) -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("pdfs/\(routeId.lowercased()).pdf")
     }
 
     private func deleteCacheFiles(routeId: String) {

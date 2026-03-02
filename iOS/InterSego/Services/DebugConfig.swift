@@ -44,8 +44,6 @@ enum DebugConfig {
     }
 
     static func debugWarn(_ message: String) {
-        if isDebugEnabled {
-            logger.warning("[WARN] \(message)")
-        }
+        logger.warning("[WARN] \(message)")
     }
 }

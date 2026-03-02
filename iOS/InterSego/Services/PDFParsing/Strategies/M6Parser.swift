@@ -198,21 +198,23 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
     // MARK: - All routes by ID
 
-    private lazy var allRoutes: [Route] = [
-        Routes.Weekday.regular,
-        Routes.Weekday.reversed,
-        Routes.Weekday.extended,
-        Routes.Weekday.extendedReversed,
-        Routes.Weekday.circular,
-        Routes.Saturday.regular,
-        Routes.Saturday.reversed,
-        Routes.Sunday.regular,
-        Routes.Sunday.reversed,
-    ]
+    private let allRoutes: [Route]
+    private let routeById: [UUID: Route]
 
-    private lazy var routeById: [UUID: Route] = {
-        Dictionary(uniqueKeysWithValues: allRoutes.map { ($0.id, $0) })
-    }()
+    init() {
+        allRoutes = [
+            Routes.Weekday.regular,
+            Routes.Weekday.reversed,
+            Routes.Weekday.extended,
+            Routes.Weekday.extendedReversed,
+            Routes.Weekday.circular,
+            Routes.Saturday.regular,
+            Routes.Saturday.reversed,
+            Routes.Sunday.regular,
+            Routes.Sunday.reversed,
+        ]
+        routeById = Dictionary(uniqueKeysWithValues: allRoutes.map { ($0.id, $0) })
+    }
 
     // MARK: - Protocol Conformance
 
@@ -232,11 +234,15 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
         DebugConfig.debugPrint("M6Parser: Extracted \(lines.count) lines")
 
-        for (index, line) in lines.enumerated() {
-            if !line.isEmpty {
-                DebugConfig.debugPrint("  Line \(index): \(line)")
+        #if DEBUG
+        if DebugConfig.isDebugEnabled {
+            for (index, line) in lines.enumerated() {
+                if !line.isEmpty {
+                    DebugConfig.debugPrint("  Line \(index): \(line)")
+                }
             }
         }
+        #endif
 
         let reorderedLines = reorderSwappedLines(lines)
         let timetables = parseTimeTable(reorderedLines)

@@ -122,8 +122,8 @@ actor PDFCacheManager {
         }
 
         guard let remoteVersion = await checkRemoteVersion(url: pdfUrl) else {
-            DebugConfig.debugPrint("PDFCacheManager: Failed to check remote version, assuming cache is valid")
-            return true
+            DebugConfig.debugWarn("PDFCacheManager: Failed to check remote version, assuming cache is outdated")
+            return false
         }
 
         // 1. Last-Modified (most reliable)

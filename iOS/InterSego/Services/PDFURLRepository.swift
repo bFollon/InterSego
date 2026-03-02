@@ -184,26 +184,30 @@ actor PDFURLRepository {
 
     // MARK: - URL Resolution
 
-    func getURL(routeId: String) -> String {
+    func getURL(routeId: String) -> String? {
         let normalizedId = routeId.uppercased()
         let persistedURLs = loadPersistedURLs()
         if let url = persistedURLs[normalizedId] ?? Self.fallbackURLs[normalizedId] {
             return url
         }
         DebugConfig.debugError("No URL found for route: \(routeId)")
-        return ""
+        return nil
     }
 
     func resolveURLWithHealing(routeId: String) async -> URLResolutionResult {
         let normalizedId = routeId.uppercased()
 
         guard NetworkMonitor.shared.isOnline else {
-            let url = getURL(routeId: normalizedId)
+            guard let url = getURL(routeId: normalizedId) else {
+                return .failed("No URL available for route \(normalizedId)")
+            }
             DebugConfig.debugPrint("PDFURLRepository: Offline, using stored URL for \(normalizedId)")
             return .success(url)
         }
 
-        let currentURL = getURL(routeId: normalizedId)
+        guard let currentURL = getURL(routeId: normalizedId) else {
+            return .failed("No URL available for route \(normalizedId)")
+        }
         DebugConfig.debugPrint("PDFURLRepository: Resolving URL for \(normalizedId) with self-healing")
 
         let validation = await validateURL(currentURL)
