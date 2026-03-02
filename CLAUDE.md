@@ -41,6 +41,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Screen | Android | iOS | Notes |
 |---|---|---|---|
+| Splash screen | ✅ | ✅ | App icon + "InterSego" + "Interurbanos de Segovia", fade transition |
 | Route selection | ✅ | ✅ | |
 | Route stops (visual line display) | ✅ | ✅ | Direction toggle on both |
 | Next departure (live countdown) | ✅ | ✅ | iOS uses MapKit, Android uses OSM tiles |

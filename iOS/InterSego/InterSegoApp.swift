@@ -35,45 +35,48 @@ struct InterSegoApp: App {
 
 struct ContentView: View {
     @State private var isInitialized = false
+    @State private var showSplash = true
     @State private var routes: [BusRoute] = []
     @State private var supportedRoutes: Set<String> = []
     @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            Group {
-                if isInitialized {
-                    RouteSelectionView(
-                        routes: routes,
-                        supportedRoutes: supportedRoutes,
-                        onRouteSelected: { route in
-                            navigationPath.append(route)
-                        }
-                    )
-                } else {
-                    VStack(spacing: 16) {
-                        ProgressView()
-                            .controlSize(.large)
-                        Text("Cargando...")
-                            .foregroundStyle(.secondary)
+        ZStack {
+            NavigationStack(path: $navigationPath) {
+                Group {
+                    if isInitialized {
+                        RouteSelectionView(
+                            routes: routes,
+                            supportedRoutes: supportedRoutes,
+                            onRouteSelected: { route in
+                                navigationPath.append(route)
+                            }
+                        )
                     }
-                    .navigationTitle("InterSego")
+                }
+                .navigationDestination(for: BusRoute.self) { route in
+                    RouteStopsContainer(route: route, navigationPath: $navigationPath)
+                }
+                .navigationDestination(for: StopSelection.self) { selection in
+                    NextDepartureView(
+                        route: selection.route,
+                        stop: selection.stop,
+                        direction: selection.direction,
+                        selectedVariantLabel: selection.departureLabel
+                    )
                 }
             }
-            .navigationDestination(for: BusRoute.self) { route in
-                RouteStopsContainer(route: route, navigationPath: $navigationPath)
-            }
-            .navigationDestination(for: StopSelection.self) { selection in
-                NextDepartureView(
-                    route: selection.route,
-                    stop: selection.stop,
-                    direction: selection.direction,
-                    selectedVariantLabel: selection.departureLabel
-                )
+
+            if showSplash {
+                SplashScreenView()
+                    .transition(.opacity)
             }
         }
         .task {
             await initialize()
+            withAnimation(.easeOut(duration: 0.5)) {
+                showSplash = false
+            }
         }
     }
 
