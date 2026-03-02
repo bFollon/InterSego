@@ -27,6 +27,7 @@ final class NetworkMonitor: @unchecked Sendable {
     private var _currentPath: NWPath?
 
     private init() {
+        _currentPath = monitor.currentPath
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self else { return }
             self.lock.withLock { self._currentPath = path }
@@ -36,19 +37,16 @@ final class NetworkMonitor: @unchecked Sendable {
         DebugConfig.debugPrint("NetworkMonitor: Initialized")
     }
 
-    private var currentPath: NWPath? {
-        lock.withLock { _currentPath }
+    private var currentPath: NWPath {
+        lock.withLock { _currentPath! }
     }
 
     var isOnline: Bool {
-        guard let path = currentPath else {
-            return monitor.currentPath.status == .satisfied
-        }
-        return path.status == .satisfied
+        currentPath.status == .satisfied
     }
 
     var networkStateDescription: String {
-        guard let path = currentPath else { return "No inicializado" }
+        let path = currentPath
 
         guard path.status == .satisfied else { return "Sin conexión" }
 

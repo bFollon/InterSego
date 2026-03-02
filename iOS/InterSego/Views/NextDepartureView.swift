@@ -396,11 +396,7 @@ private struct NextDepartureCard: View {
     }
 
     private var showVariantLabel: Bool {
-        guard let label = departure.variantLabel, !label.isEmpty else { return false }
-        if let selected = selectedVariantLabel {
-            return label != selected
-        }
-        return label != "Regular"
+        departure.shouldShowVariantLabel(selectedVariantLabel: selectedVariantLabel)
     }
 
     var body: some View {
@@ -514,13 +510,7 @@ private struct DepartureTimeline: View {
                                 Text(departure.displayString)
                                     .font(.headline)
 
-                                let showLabel = {
-                                    guard let label = departure.variantLabel, !label.isEmpty else { return false }
-                                    if let selected = selectedVariantLabel {
-                                        return label != selected
-                                    }
-                                    return label != "Regular"
-                                }()
+                                let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: selectedVariantLabel)
 
                                 if showLabel, let label = departure.variantLabel {
                                     Text(label)

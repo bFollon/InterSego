@@ -142,8 +142,7 @@ actor TimetableCacheService {
     }
 
     private func pdfFileURL(routeId: String) -> URL {
-        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("pdfs/\(routeId.lowercased()).pdf")
+        AppDirectories.pdfs.appendingPathComponent("\(routeId.lowercased()).pdf")
     }
 
     private func deleteCacheFiles(routeId: String) {

@@ -62,6 +62,14 @@ struct DepartureTime: Codable, Comparable, Hashable {
         lhs.minutesSinceMidnight < rhs.minutesSinceMidnight
     }
 
+    func shouldShowVariantLabel(selectedVariantLabel: String?) -> Bool {
+        guard let label = variantLabel, !label.isEmpty else { return false }
+        if let selected = selectedVariantLabel {
+            return label != selected
+        }
+        return label != "Regular"
+    }
+
     static func fromString(_ timeString: String) -> DepartureTime? {
         let parts = timeString.split(separator: ":")
         guard parts.count == 2,

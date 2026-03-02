@@ -64,13 +64,8 @@ actor PDFCacheManager {
 
     // MARK: - File Management
 
-    private static var pdfDirectory: URL {
-        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsDir.appendingPathComponent("pdfs")
-    }
-
     func cachedFileURL(routeId: String) -> URL? {
-        let file = Self.pdfDirectory.appendingPathComponent(cacheFileName(routeId: routeId))
+        let file = AppDirectories.pdfs.appendingPathComponent(cacheFileName(routeId: routeId))
         return FileManager.default.fileExists(atPath: file.path) ? file : nil
     }
 
@@ -122,8 +117,8 @@ actor PDFCacheManager {
         }
 
         guard let remoteVersion = await checkRemoteVersion(url: pdfUrl) else {
-            DebugConfig.debugWarn("PDFCacheManager: Failed to check remote version, assuming cache is outdated")
-            return false
+            DebugConfig.debugWarn("PDFCacheManager: Failed to check remote version, using cached file")
+            return true
         }
 
         // 1. Last-Modified (most reliable)
@@ -183,7 +178,7 @@ actor PDFCacheManager {
     // MARK: - Cache Management
 
     func clearCache() {
-        try? FileManager.default.removeItem(at: Self.pdfDirectory)
+        try? FileManager.default.removeItem(at: AppDirectories.pdfs)
         UserDefaults.standard.removeObject(forKey: Self.versionStorageKey)
         DebugConfig.debugPrint("PDFCacheManager: Cleared all version info and PDFs")
     }

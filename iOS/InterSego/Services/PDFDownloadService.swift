@@ -31,13 +31,8 @@ actor PDFDownloadService {
         session = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
     }
 
-    private static var pdfDirectory: URL {
-        let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsDir.appendingPathComponent("pdfs")
-    }
-
     func downloadPDF(url: String, fileName: String, forceDownload: Bool = false) async -> URL? {
-        let pdfDir = Self.pdfDirectory
+        let pdfDir = AppDirectories.pdfs
         let outputFile = pdfDir.appendingPathComponent(fileName)
 
         // Create directory if needed
@@ -92,18 +87,18 @@ actor PDFDownloadService {
     }
 
     func clearCache() {
-        let pdfDir = Self.pdfDirectory
+        let pdfDir = AppDirectories.pdfs
         try? FileManager.default.removeItem(at: pdfDir)
         DebugConfig.debugPrint("PDFDownloadService: Cleared PDF cache")
     }
 
     func hasCachedFile(_ fileName: String) -> Bool {
-        let file = Self.pdfDirectory.appendingPathComponent(fileName)
+        let file = AppDirectories.pdfs.appendingPathComponent(fileName)
         return FileManager.default.fileExists(atPath: file.path)
     }
 
     func getCachedFile(_ fileName: String) -> URL? {
-        let file = Self.pdfDirectory.appendingPathComponent(fileName)
+        let file = AppDirectories.pdfs.appendingPathComponent(fileName)
         return FileManager.default.fileExists(atPath: file.path) ? file : nil
     }
 }
@@ -125,12 +120,13 @@ private final class LenientSSLDelegate: NSObject, URLSessionDelegate, @unchecked
             return (.performDefaultHandling, nil)
         }
 
-        // Accept the certificate if standard trust evaluation passes
+        // Accept the certificate only if standard trust evaluation passes
         if SecTrustEvaluateWithError(serverTrust, nil) {
             return (.useCredential, URLCredential(trust: serverTrust))
         }
 
-        // For known hosts with certificate chain issues, accept anyway
-        return (.useCredential, URLCredential(trust: serverTrust))
+        // Trust evaluation failed — do not bypass
+        DebugConfig.debugWarn("PDFDownloadService: Certificate validation failed for \(host)")
+        return (.performDefaultHandling, nil)
     }
 }

@@ -29,11 +29,13 @@ struct RouteStopsView: View {
         views.first { $0.id == currentViewId } ?? views.first
     }
 
+    @ViewBuilder
     var body: some View {
-        guard let currentView else {
-            return AnyView(Text("No hay datos disponibles").foregroundColor(.secondary))
+        if let currentView {
+            mainContent(currentView: currentView)
+        } else {
+            Text("No hay datos disponibles").foregroundColor(.secondary)
         }
-        return AnyView(mainContent(currentView: currentView))
     }
 
     private func mainContent(currentView: RouteView) -> some View {
@@ -43,8 +45,11 @@ struct RouteStopsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(tabs, id: \.viewId) { tab in
+                            // Selected if we're on this tab's view, or we're on its swapped variant
+                            // (e.g., currentViewId is "weekday-unified-reversed" and tab.viewId is "weekday-unified")
+                            let tabView = views.first { $0.id == tab.viewId }
                             let isSelected = currentViewId == tab.viewId
-                                || currentView.swapAction?.targetViewId == tab.viewId
+                                || tabView?.swapAction?.targetViewId == currentViewId
                             TabChip(label: tab.label, isSelected: isSelected) {
                                 if !isSelected {
                                     currentViewId = tab.viewId
@@ -93,7 +98,6 @@ struct RouteStopsView: View {
                 .padding(.horizontal, 16)
             }
         }
-        .navigationTitle("Línea \(route.number)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
