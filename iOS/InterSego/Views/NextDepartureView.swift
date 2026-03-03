@@ -193,6 +193,31 @@ struct NextDepartureView: View {
                         .padding(.vertical, 12)
                 }
 
+                // "Ver horario completo" button — only for today's schedule
+                if !todayDepartures.isEmpty {
+                    NavigationLink(value: DayScheduleSelection(
+                        route: route,
+                        stop: stop,
+                        direction: direction,
+                        departureLabel: selectedVariantLabel
+                    )) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "clock.arrow.2.circlepath")
+                                .font(.subheadline)
+                            Text("Ver horario completo")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                }
+
                 if let next = info.departure {
                     NextDepartureCard(
                         departure: next,

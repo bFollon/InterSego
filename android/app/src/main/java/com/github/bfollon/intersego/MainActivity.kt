@@ -73,6 +73,7 @@ import com.github.bfollon.intersego.services.CoordinateCache
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.NetworkMonitor
 import com.github.bfollon.intersego.services.PDFCacheManager
+import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
 import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
 import com.github.bfollon.intersego.ui.screens.RouteStopsScreen
@@ -529,6 +530,10 @@ fun AppNavigation() {
                 selectedVariantLabel = effectiveVariantLabel,
                 onBack = {
                     navController.popBackStack()
+                },
+                onDaySchedule = {
+                    val label = effectiveVariantLabel ?: "all"
+                    navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label")
                 }
             )
         }
@@ -539,6 +544,34 @@ fun AppNavigation() {
 
             TimetableScreen(
                 route = route,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable("day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
+            val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
+            val variantLabel = backStackEntry.arguments?.getString("variantLabel")
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
+                .firstNotNullOfOrNull { dayType ->
+                    pdfProcessingService.getRouteViews(routeId, dayType)
+                        .flatMap { it.stops }
+                        .find { it.stop.id == stopId }
+                        ?.stop
+                } ?: return@composable
+
+            val effectiveVariantLabel = if (variantLabel == "all") null else variantLabel
+
+            DayScheduleScreen(
+                route = route,
+                stop = stop,
+                direction = direction,
+                selectedVariantLabel = effectiveVariantLabel,
                 onBack = {
                     navController.popBackStack()
                 }

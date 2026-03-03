@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.HolidayVillage
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.NightsStay
@@ -71,7 +72,7 @@ import java.util.Calendar
  * Map a Calendar day-of-week to the set of DayType values that might match.
  * M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
  */
-private fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
+internal fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
     Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
     Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
     else -> setOf(DayType.WEEKDAY)
@@ -90,7 +91,8 @@ fun NextDepartureScreen(
     stop: BusStop,
     direction: String,  // e.g., "Lastrilla → Sotillo" or "Sotillo → Lastrilla"
     selectedVariantLabel: String? = null, // Label of the variant the user selected (labels from other variants are shown)
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onDaySchedule: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
@@ -317,6 +319,28 @@ fun NextDepartureScreen(
                         item {
                             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                                 FutureDayWarningCard(daysAhead = daysAhead)
+                            }
+                        }
+                    }
+
+                    // "Ver horario completo" button — only for today's schedule
+                    if (hasTodayDepartures) {
+                        item {
+                            OutlinedButton(
+                                onClick = onDaySchedule,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 12.dp),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AccessTime,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Ver horario completo")
                             }
                         }
                     }

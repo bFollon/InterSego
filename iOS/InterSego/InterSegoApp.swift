@@ -65,6 +65,14 @@ struct ContentView: View {
                         selectedVariantLabel: selection.departureLabel
                     )
                 }
+                .navigationDestination(for: DayScheduleSelection.self) { selection in
+                    DayScheduleView(
+                        route: selection.route,
+                        stop: selection.stop,
+                        direction: selection.direction,
+                        selectedVariantLabel: selection.departureLabel
+                    )
+                }
             }
 
             if showSplash {
