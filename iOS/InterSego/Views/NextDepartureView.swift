@@ -193,6 +193,17 @@ struct NextDepartureView: View {
                         .padding(.vertical, 12)
                 }
 
+                if let next = info.departure {
+                    NextDepartureCard(
+                        departure: next,
+                        currentTime: currentTime,
+                        selectedVariantLabel: selectedVariantLabel,
+                        daysAhead: info.daysAhead
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
+
                 // "Ver horario completo" button — only for today's schedule
                 if !todayDepartures.isEmpty {
                     NavigationLink(value: DayScheduleSelection(
@@ -216,17 +227,6 @@ struct NextDepartureView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
-                }
-
-                if let next = info.departure {
-                    NextDepartureCard(
-                        departure: next,
-                        currentTime: currentTime,
-                        selectedVariantLabel: selectedVariantLabel,
-                        daysAhead: info.daysAhead
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
                 }
 
                 if !info.following.isEmpty {

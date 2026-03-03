@@ -323,6 +323,22 @@ fun NextDepartureScreen(
                         }
                     }
 
+                    // Spacer after header
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Next departure with circular progress
+                    item {
+                        NextDepartureWithProgress(
+                            departure = nextDeparture,
+                            currentTime = currentTime,
+                            selectedVariantLabel = selectedVariantLabel,
+                            daysAhead = daysAhead,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+
                     // "Ver horario completo" button — only for today's schedule
                     if (hasTodayDepartures) {
                         item {
@@ -343,22 +359,6 @@ fun NextDepartureScreen(
                                 Text("Ver horario completo")
                             }
                         }
-                    }
-
-                    // Spacer after header
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-
-                    // Next departure with circular progress
-                    item {
-                        NextDepartureWithProgress(
-                            departure = nextDeparture,
-                            currentTime = currentTime,
-                            selectedVariantLabel = selectedVariantLabel,
-                            daysAhead = daysAhead,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
                     }
 
                     // Following departures section
