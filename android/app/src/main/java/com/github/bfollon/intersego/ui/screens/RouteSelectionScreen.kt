@@ -79,7 +79,11 @@ fun RouteSelectionScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(routes) { route ->
+                val sortedRoutes = routes.sortedWith(
+                    compareByDescending<BusRoute> { pdfProcessingService.hasParserFor(it.id) }
+                        .thenBy { it.number }
+                )
+                items(sortedRoutes) { route ->
                     val isAvailable = pdfProcessingService.hasParserFor(route.id)
                     RouteCard(
                         route = route,
