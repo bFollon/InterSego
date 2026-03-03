@@ -23,25 +23,33 @@ struct RouteSelectionView: View {
     let onRouteSelected: (BusRoute) -> Void
 
     var body: some View {
-        List {
-            Section {
+        ScrollView {
+            VStack(spacing: 0) {
                 Text("Selecciona una línea")
                     .font(.headline)
-            }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 4)
 
-            ForEach(routes) { route in
-                let isAvailable = supportedRoutes.contains(route.id)
-                RouteCardView(route: route, isAvailable: isAvailable)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if isAvailable {
-                            onRouteSelected(route)
-                        }
+                LazyVStack(spacing: 12) {
+                    ForEach(routes) { route in
+                        let isAvailable = supportedRoutes.contains(route.id)
+                        RouteCardView(route: route, isAvailable: isAvailable)
+                            .contentShape(RoundedRectangle(cornerRadius: 12))
+                            .onTapGesture {
+                                if isAvailable {
+                                    onRouteSelected(route)
+                                }
+                            }
                     }
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
             }
         }
-        .listStyle(.plain)
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("InterSego")
     }
 }
@@ -56,7 +64,7 @@ private struct RouteCardView: View {
                 Text(route.number)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(isAvailable ? .primary : .secondary)
+                    .foregroundColor(isAvailable ? .accentColor : .secondary)
 
                 Text(route.name)
                     .font(.body)
@@ -70,7 +78,7 @@ private struct RouteCardView: View {
                     .foregroundColor(.green)
             } else {
                 HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle")
+                    Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.secondary)
                     Text("Próximamente")
                         .font(.caption)
@@ -78,7 +86,13 @@ private struct RouteCardView: View {
                 }
             }
         }
-        .padding(.vertical, 8)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemGroupedBackground))
+                .opacity(isAvailable ? 1.0 : 0.5)
+        )
+        .shadow(color: .black.opacity(isAvailable ? 0.1 : 0), radius: 4, y: 2)
         .opacity(isAvailable ? 1.0 : 0.6)
     }
 }
