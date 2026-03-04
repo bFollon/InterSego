@@ -17,6 +17,10 @@
 
 import SwiftUI
 
+enum HomeDestination: Hashable {
+    case routeList
+}
+
 struct StopSelection: Hashable {
     let route: BusRoute
     let stop: BusStop
@@ -45,14 +49,19 @@ struct ContentView: View {
             NavigationStack(path: $navigationPath) {
                 Group {
                     if isInitialized {
-                        RouteSelectionView(
-                            routes: routes,
-                            supportedRoutes: supportedRoutes,
-                            onRouteSelected: { route in
-                                navigationPath.append(route)
-                            }
-                        )
+                        LandingView(onShowRouteList: {
+                            navigationPath.append(HomeDestination.routeList)
+                        })
                     }
+                }
+                .navigationDestination(for: HomeDestination.self) { _ in
+                    RouteSelectionView(
+                        routes: routes,
+                        supportedRoutes: supportedRoutes,
+                        onRouteSelected: { route in
+                            navigationPath.append(route)
+                        }
+                    )
                 }
                 .navigationDestination(for: BusRoute.self) { route in
                     RouteStopsContainer(route: route, navigationPath: $navigationPath)

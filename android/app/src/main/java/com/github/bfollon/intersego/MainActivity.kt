@@ -74,6 +74,7 @@ import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.NetworkMonitor
 import com.github.bfollon.intersego.services.PDFCacheManager
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
+import com.github.bfollon.intersego.ui.screens.LandingScreen
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
 import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
 import com.github.bfollon.intersego.ui.screens.RouteStopsScreen
@@ -463,8 +464,16 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "route_selection"
+        startDestination = "landing"
     ) {
+        composable("landing") {
+            LandingScreen(
+                onNavigateToRouteList = {
+                    navController.navigate("route_selection")
+                }
+            )
+        }
+
         composable("route_selection") {
             RouteSelectionScreen(
                 routes = routes,

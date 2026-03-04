@@ -40,6 +40,7 @@
 		A1000001000000000000001F /* AppDirectories.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001F /* AppDirectories.swift */; };
 		A10000010000000000000020 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* SplashScreenView.swift */; };
 		A10000010000000000000021 /* DayScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000021 /* DayScheduleView.swift */; };
+		A10000010000000000000022 /* LandingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* LandingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -76,6 +77,7 @@
 		A2000001000000000000001F /* AppDirectories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDirectories.swift; sourceTree = "<group>"; };
 		A20000010000000000000020 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
 		A20000010000000000000021 /* DayScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayScheduleView.swift; sourceTree = "<group>"; };
+		A20000010000000000000022 /* LandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingView.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -162,6 +164,7 @@
 				A2000001000000000000001E /* NextDepartureView.swift */,
 				A20000010000000000000020 /* SplashScreenView.swift */,
 				A20000010000000000000021 /* DayScheduleView.swift */,
+				A20000010000000000000022 /* LandingView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -288,6 +291,7 @@
 				A1000001000000000000001F /* AppDirectories.swift in Sources */,
 				A10000010000000000000020 /* SplashScreenView.swift in Sources */,
 				A10000010000000000000021 /* DayScheduleView.swift in Sources */,
+				A10000010000000000000022 /* LandingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
