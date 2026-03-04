@@ -31,3 +31,4 @@ val RouteLightOrange = Color(0xFFFFB74D)
 // Semantic UI colors
 val SuccessGreen = Color(0xFF4CAF50)
 val WarningOrange = Color(0xFFFFA726)
+val WarningOrangeText = Color(0xFF8B5E00)  // Darker orange-brown for text on light orange backgrounds

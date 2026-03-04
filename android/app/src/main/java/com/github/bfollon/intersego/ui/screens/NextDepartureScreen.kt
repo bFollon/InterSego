@@ -20,6 +20,7 @@ package com.github.bfollon.intersego.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +37,9 @@ import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +49,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import com.github.bfollon.intersego.ui.theme.WarningOrange
+import com.github.bfollon.intersego.ui.theme.WarningOrangeText
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -336,6 +342,15 @@ fun NextDepartureScreen(
                             selectedVariantLabel = selectedVariantLabel,
                             daysAhead = daysAhead,
                             modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+
+                    // Disclaimer card
+                    item {
+                        TimesDisclaimerCard(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .padding(top = 16.dp)
                         )
                     }
 
@@ -996,6 +1011,100 @@ fun DepartureTimeline(
                 }
             }
         }
+    }
+}
+
+/**
+ * Expandable disclaimer card informing users that departure times are approximate.
+ */
+@Composable
+fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(
+                role = Role.Button,
+                onClickLabel = if (expanded) "Contraer aviso" else "Expandir aviso"
+            ) { expanded = !expanded },
+        colors = CardDefaults.cardColors(
+            containerColor = WarningOrange.copy(alpha = 0.15f)
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = null,
+                    tint = WarningOrange,
+                    modifier = Modifier.size(18.dp)
+                )
+
+                Text(
+                    text = "Los horarios son orientativos",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarningOrangeText,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp
+                        else Icons.Default.KeyboardArrowDown,
+                    contentDescription = if (expanded) "Contraer" else "Expandir",
+                    tint = WarningOrange,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            if (expanded) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Se recomienda estar en la parada con 10–15 minutos de antelación.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = WarningOrangeText,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    DisclaimerBulletPoint("Los horarios oficiales solo ofrecen una orientación del paso del autobús.")
+                    DisclaimerBulletPoint("Los autobuses no disponen de GPS para estimar la hora de paso.")
+                    DisclaimerBulletPoint("Se han dado casos de adelantos y retrasos respecto al horario previsto.")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DisclaimerBulletPoint(text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(start = 4.dp)
+    ) {
+        Text(
+            text = "•",
+            style = MaterialTheme.typography.bodySmall,
+            color = WarningOrangeText
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = WarningOrangeText
+        )
     }
 }
 

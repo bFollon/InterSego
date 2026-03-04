@@ -46,6 +46,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Route stops (visual line display) | ✅ | ✅ | Direction toggle on both |
 | Next departure (live countdown) | ✅ | ✅ | iOS uses MapKit, Android uses OSM tiles |
 | Day schedule (full day view) | ✅ | ✅ | All today's departures with "Ahora" marker, auto-scrolls |
+| Times disclaimer card | ✅ | ✅ | Expandable card on NextDeparture screen, explains approximate times |
 | Timetable (full schedule view) | ✅ (dead code) | ❌ | Android has it but no navigation to it |
 
 ### Location & Geolocation

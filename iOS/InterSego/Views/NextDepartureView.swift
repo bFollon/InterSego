@@ -204,6 +204,10 @@ struct NextDepartureView: View {
                     .padding(.top, 8)
                 }
 
+                TimesDisclaimerCard()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
                 // "Ver horario completo" button — only for today's schedule
                 if !todayDepartures.isEmpty {
                     NavigationLink(value: DayScheduleSelection(
@@ -378,6 +382,80 @@ private struct FutureDayWarningCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - Times Disclaimer Card
+
+private let warningOrangeText = Color(red: 0.55, green: 0.37, blue: 0.0)
+
+private struct TimesDisclaimerCard: View {
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle")
+                    .font(.subheadline)
+                    .foregroundColor(.orange)
+
+                Text("Los horarios son orientativos")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(warningOrangeText)
+
+                Spacer()
+
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            }
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Se recomienda estar en la parada con 10–15 minutos de antelación.")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(warningOrangeText)
+
+                    DisclaimerBulletPoint("Los horarios oficiales solo ofrecen una orientación del paso del autobús.")
+                    DisclaimerBulletPoint("Los autobuses no disponen de GPS para estimar la hora de paso.")
+                    DisclaimerBulletPoint("Se han dado casos de adelantos y retrasos respecto al horario previsto.")
+                }
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .onTapGesture {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                isExpanded.toggle()
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("Los horarios son orientativos")
+        .accessibilityHint(isExpanded ? "Contraer" : "Expandir")
+    }
+}
+
+private struct DisclaimerBulletPoint: View {
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("•")
+                .font(.caption)
+            Text(text)
+                .font(.caption)
+        }
+        .foregroundColor(warningOrangeText)
+        .padding(.leading, 4)
     }
 }
 
