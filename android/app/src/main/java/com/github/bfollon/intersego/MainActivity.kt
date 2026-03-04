@@ -319,7 +319,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
  */
 @Composable
 fun SplashScreen() {
-    val iconGreen = Color(0xFF60A37F)
+    val iconGreen = Color(0xFF3CA27A)
     val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
 
     var logoVisible by remember { mutableStateOf(false) }
