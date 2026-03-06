@@ -24,8 +24,8 @@ enum HomeDestination: Hashable {
 struct StopSelection: Hashable {
     let route: BusRoute
     let stop: BusStop
-    let direction: String
-    let departureLabel: String?
+    let routeViews: [RouteView]
+    let currentViewId: String
 }
 
 @main
@@ -70,8 +70,8 @@ struct ContentView: View {
                     NextDepartureView(
                         route: selection.route,
                         stop: selection.stop,
-                        direction: selection.direction,
-                        selectedVariantLabel: selection.departureLabel
+                        routeViews: selection.routeViews,
+                        currentViewId: selection.currentViewId
                     )
                 }
                 .navigationDestination(for: DayScheduleSelection.self) { selection in
@@ -108,12 +108,12 @@ struct ContentView: View {
                     RouteStopsView(
                         route: route,
                         views: views,
-                        onStopSelected: { stop, direction, departureLabel in
+                        onStopSelected: { stop, viewId in
                             let selection = StopSelection(
                                 route: route,
                                 stop: stop,
-                                direction: direction,
-                                departureLabel: departureLabel
+                                routeViews: views,
+                                currentViewId: viewId
                             )
                             navigationPath.append(selection)
                         }

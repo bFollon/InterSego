@@ -32,7 +32,7 @@ enum BusRouteRegistry {
                      pdfURL: "", routeType: .urban),
             BusRoute(id: "M4", number: "M4", name: "La Lastrilla - El Sotillo",
                      origin: "La Lastrilla", destination: "El Sotillo",
-                     pdfURL: "", routeType: .urban),
+                     pdfURL: "", routeType: .urban, isCircular: true),
             BusRoute(id: "M5", number: "M5", name: "Línea Metropolitana 5",
                      origin: "Segovia", destination: "Área Metropolitana",
                      pdfURL: "", routeType: .urban),

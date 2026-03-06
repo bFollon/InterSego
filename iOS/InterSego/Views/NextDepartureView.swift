@@ -81,14 +81,29 @@ private struct DepartureInfo {
 struct NextDepartureView: View {
     let route: BusRoute
     let stop: BusStop
-    let direction: String
-    let selectedVariantLabel: String?
+    let routeViews: [RouteView]
 
+    @State private var currentViewId: String
     @State private var timetables: [BusTimetable] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var currentTime = Date()
     @Environment(\.dismiss) private var dismiss
+
+    init(route: BusRoute, stop: BusStop, routeViews: [RouteView], currentViewId: String) {
+        self.route = route
+        self.stop = stop
+        self.routeViews = routeViews
+        _currentViewId = State(initialValue: currentViewId)
+    }
+
+    private var activeView: RouteView? {
+        routeViews.first { $0.id == currentViewId } ?? routeViews.first
+    }
+
+    private var direction: String { activeView?.direction ?? "" }
+    private var selectedVariantLabel: String? { activeView?.departureLabel }
+    private var swapViewId: String? { activeView?.swapAction?.targetViewId }
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
@@ -149,6 +164,17 @@ struct NextDepartureView: View {
         content
             .navigationTitle("Línea \(route.number)")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let targetId = swapViewId {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            currentViewId = targetId
+                        } label: {
+                            Image(systemName: "arrow.up.arrow.down")
+                        }
+                    }
+                }
+            }
             .task {
                 await loadTimetables()
             }
@@ -185,7 +211,7 @@ struct NextDepartureView: View {
         let info = departureInfo
         return ScrollView {
             VStack(spacing: 0) {
-                StopHeroHeader(route: route, stop: stop)
+                StopHeroHeader(route: route, stop: stop, direction: direction)
 
                 if info.daysAhead > 0 {
                     FutureDayWarningCard(daysAhead: info.daysAhead)
@@ -271,6 +297,15 @@ struct NextDepartureView: View {
 private struct StopHeroHeader: View {
     let route: BusRoute
     let stop: BusStop
+    let direction: String
+
+    private var directionLabel: String {
+        if route.isCircular {
+            return direction
+        }
+        let destination = direction.split(separator: "→").last?.trimmingCharacters(in: .whitespaces) ?? direction
+        return "Dirección \(destination)"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -288,6 +323,15 @@ private struct StopHeroHeader: View {
             Text(stop.name)
                 .font(.title)
                 .fontWeight(.bold)
+
+            // Direction pill
+            Text(directionLabel)
+                .font(.caption)
+                .foregroundColor(.accentColor)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.accentColor.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
 
             // Area pill
             if let area = stop.area {

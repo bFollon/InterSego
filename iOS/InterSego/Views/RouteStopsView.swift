@@ -20,7 +20,7 @@ import SwiftUI
 struct RouteStopsView: View {
     let route: BusRoute
     let views: [RouteView]
-    let onStopSelected: (BusStop, String, String?) -> Void
+    let onStopSelected: (BusStop, String) -> Void
 
     @State private var currentViewId: String = ""
     @Environment(\.dismiss) private var dismiss
@@ -87,11 +87,7 @@ struct RouteStopsView: View {
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            onStopSelected(
-                                viewStop.stop,
-                                currentView.direction,
-                                currentView.departureLabel
-                            )
+                            onStopSelected(viewStop.stop, currentView.id)
                         }
                     }
                 }
