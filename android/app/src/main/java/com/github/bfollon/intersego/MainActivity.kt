@@ -196,7 +196,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 origin = "La Lastrilla",
                 destination = "El Sotillo",
                 pdfURL = "",
-                routeType = RouteType.URBAN
+                routeType = RouteType.URBAN,
+                isCircular = true
             ),
             BusRoute(
                 id = "M5",
@@ -506,42 +507,44 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 },
-                onStopSelected = { stop, direction, departureLabel ->
-                    val label = departureLabel ?: "all"
-                    navController.navigate("next_departure/${route.id}/${stop.id}/$direction/$label")
+                onStopSelected = { stop, viewId ->
+                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
                 }
             )
         }
 
-        composable("next_departure/{routeId}/{stopId}/{direction}/{variantLabel}") { backStackEntry ->
+        composable("next_departure/{routeId}/{stopId}/{viewId}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
-            val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
-            val variantLabel = backStackEntry.arguments?.getString("variantLabel")
+            val initialViewId = backStackEntry.arguments?.getString("viewId") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Find the stop from all views by ID (dynamic lookup across day types)
-            val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
-                .firstNotNullOfOrNull { dayType ->
-                    pdfProcessingService.getRouteViews(routeId, dayType)
-                        .flatMap { it.stops }
-                        .find { it.stop.id == stopId }
-                        ?.stop
-                } ?: return@composable
+            val currentDayType = remember {
+                when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
+                    java.util.Calendar.SATURDAY -> DayType.SATURDAY
+                    java.util.Calendar.SUNDAY -> DayType.SUNDAY
+                    else -> DayType.WEEKDAY
+                }
+            }
+            val views = remember(routeId, currentDayType) {
+                pdfProcessingService.getRouteViews(routeId, currentDayType)
+            }
 
-            // "all" means show all departures without variant badges
-            val effectiveVariantLabel = if (variantLabel == "all") null else variantLabel
+            // Find the stop from all views by ID
+            val stop = remember(views, stopId) {
+                views.flatMap { it.stops }.find { it.stop.id == stopId }?.stop
+            } ?: return@composable
 
             NextDepartureScreen(
                 route = route,
                 stop = stop,
-                direction = direction,
-                selectedVariantLabel = effectiveVariantLabel,
+                views = views,
+                initialViewId = initialViewId,
                 onBack = {
                     navController.popBackStack()
                 },
-                onDaySchedule = {
-                    val label = effectiveVariantLabel ?: "all"
+                onDaySchedule = { direction, variantLabel ->
+                    val label = variantLabel ?: "all"
                     navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label")
                 }
             )

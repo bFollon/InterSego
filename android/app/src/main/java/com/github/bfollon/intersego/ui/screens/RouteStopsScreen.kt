@@ -58,7 +58,7 @@ fun RouteStopsScreen(
     route: BusRoute,
     views: List<RouteView>,
     onBack: () -> Unit,
-    onStopSelected: (BusStop, String, String?) -> Unit  // stop, direction, departureLabel
+    onStopSelected: (BusStop, String) -> Unit  // stop, viewId
 ) {
     var currentViewId by remember { mutableStateOf(views.first().id) }
     val viewById = remember(views) { views.associateBy { it.id } }
@@ -167,11 +167,7 @@ fun RouteStopsScreen(
                         isFirst = index == 0,
                         isLast = index == stops.lastIndex,
                         onClick = {
-                            onStopSelected(
-                                viewStop.stop,
-                                currentView.direction,
-                                currentView.departureLabel
-                            )
+                            onStopSelected(viewStop.stop, currentView.id)
                         }
                     )
                 }

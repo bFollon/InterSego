@@ -32,6 +32,7 @@ data class BusRoute(
     val destination: String,            // End point
     val pdfURL: String,                 // URL to timetable PDF
     val routeType: RouteType,           // URBAN or INTERURBAN
+    val isCircular: Boolean = false,    // True if route forms a loop (no single destination)
     val color: String? = null,          // Optional route color for UI (hex code)
     val active: Boolean = true          // Whether route is currently in service
 ) {

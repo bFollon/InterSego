@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.HolidayVillage
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.NightsStay
@@ -61,6 +62,7 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.data.RouteView
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TimetableService
@@ -95,13 +97,19 @@ internal fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfW
 fun NextDepartureScreen(
     route: BusRoute,
     stop: BusStop,
-    direction: String,  // e.g., "Lastrilla → Sotillo" or "Sotillo → Lastrilla"
-    selectedVariantLabel: String? = null, // Label of the variant the user selected (labels from other variants are shown)
+    views: List<RouteView>,
+    initialViewId: String,
     onBack: () -> Unit,
-    onDaySchedule: () -> Unit = {}
+    onDaySchedule: (direction: String, variantLabel: String?) -> Unit = { _, _ -> }
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
+
+    var currentViewId by remember { mutableStateOf(initialViewId) }
+    val activeView = views.find { it.id == currentViewId } ?: views.first()
+    val direction = activeView.direction
+    val selectedVariantLabel = activeView.departureLabel
+    val swapViewId = activeView.swapAction?.targetViewId
 
     var timetables by remember { mutableStateOf<List<com.github.bfollon.intersego.data.BusTimetable>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -250,6 +258,16 @@ fun NextDepartureScreen(
                         )
                     }
                 },
+                actions = {
+                    swapViewId?.let { targetId ->
+                        IconButton(onClick = { currentViewId = targetId }) {
+                            Icon(
+                                imageVector = Icons.Filled.SwapVert,
+                                contentDescription = "Cambiar dirección"
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -314,6 +332,7 @@ fun NextDepartureScreen(
                         StopHeroHeader(
                             route = route,
                             stop = stop,
+                            direction = direction,
                             onNavigateClick = {
                                 openMapsForStop(context, stop)
                             }
@@ -358,7 +377,7 @@ fun NextDepartureScreen(
                     if (hasTodayDepartures) {
                         item {
                             OutlinedButton(
-                                onClick = onDaySchedule,
+                                onClick = { onDaySchedule(direction, selectedVariantLabel) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp)
@@ -587,9 +606,16 @@ fun DepartureTimeBadge(
 fun StopHeroHeader(
     route: BusRoute,
     stop: BusStop,
+    direction: String,
     modifier: Modifier = Modifier,
     onNavigateClick: () -> Unit
 ) {
+    val directionLabel = if (route.isCircular) {
+        direction
+    } else {
+        val destination = direction.split("→").lastOrNull()?.trim() ?: direction
+        "Dirección $destination"
+    }
     val mapData = remember(stop) { StaticMapService.getStaticMapData(stop) }
 
     Box(
@@ -631,6 +657,19 @@ fun StopHeroHeader(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
+
+            // Direction pill
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            ) {
+                Text(
+                    text = directionLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
 
             // Area pill (if available)
             stop.area?.let {
