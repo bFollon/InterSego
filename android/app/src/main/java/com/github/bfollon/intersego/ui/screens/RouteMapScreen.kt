@@ -39,8 +39,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import android.content.Context
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import org.json.JSONArray
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -119,6 +121,7 @@ fun RouteMapScreen(
         key(currentViewId) {
             RouteOsmMapView(
                 stops = stopsWithCoords,
+                routeId = route.id,
                 currentViewId = currentViewId,
                 onStopSelected = onStopSelected,
                 modifier = Modifier
@@ -132,6 +135,7 @@ fun RouteMapScreen(
 @Composable
 private fun RouteOsmMapView(
     stops: List<BusStop>,
+    routeId: String,
     currentViewId: String,
     onStopSelected: (BusStop, String) -> Unit,
     modifier: Modifier = Modifier
@@ -139,6 +143,11 @@ private fun RouteOsmMapView(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val mapViewRef = remember { mutableStateOf<MapView?>(null) }
+
+    // Load road-following polyline from bundled assets; falls back to empty (→ straight line)
+    val routePolyline = remember(routeId, currentViewId) {
+        loadPolylineFromAssets(context, routeId, currentViewId)
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -168,20 +177,20 @@ private fun RouteOsmMapView(
                 mapView.setMultiTouchControls(true)
                 mapView.isTilesScaledToDpi = true
 
-                addStopOverlays(mapView, stops, currentViewId, onStopSelected)
+                addStopOverlays(mapView, stops, routePolyline, currentViewId, onStopSelected)
 
-                // Zoom to fit all stops once the view is laid out
-                if (stops.size >= 2) {
-                    val points = stops.mapNotNull { stop ->
+                // Zoom to fit: prefer road polyline bounds, fall back to stop coordinates
+                val boundsPoints = routePolyline.ifEmpty {
+                    stops.mapNotNull { stop ->
                         val lat = stop.resolvedLatitude ?: return@mapNotNull null
                         val lon = stop.resolvedLongitude ?: return@mapNotNull null
                         GeoPoint(lat, lon)
                     }
-                    if (points.size >= 2) {
-                        val boundingBox = BoundingBox.fromGeoPoints(points)
-                        mapView.post {
-                            mapView.zoomToBoundingBox(boundingBox.increaseByScale(1.3f), false)
-                        }
+                }
+                if (boundsPoints.size >= 2) {
+                    val boundingBox = BoundingBox.fromGeoPoints(boundsPoints)
+                    mapView.post {
+                        mapView.zoomToBoundingBox(boundingBox.increaseByScale(1.3f), false)
                     }
                 } else if (stops.size == 1) {
                     val lat = stops[0].resolvedLatitude ?: return@also
@@ -194,24 +203,51 @@ private fun RouteOsmMapView(
     )
 }
 
+/**
+ * Loads a pre-computed road-following polyline from bundled assets.
+ * Returns an empty list if the file is missing or cannot be parsed.
+ */
+private fun loadPolylineFromAssets(
+    context: Context,
+    routeId: String,
+    viewId: String
+): List<GeoPoint> {
+    return try {
+        val json = context.assets
+            .open("route_polylines/$routeId-$viewId.json")
+            .bufferedReader()
+            .readText()
+        val array = JSONArray(json)
+        (0 until array.length()).map { i ->
+            val pair = array.getJSONArray(i)
+            GeoPoint(pair.getDouble(0), pair.getDouble(1))
+        }
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 private fun addStopOverlays(
     mapView: MapView,
     stops: List<BusStop>,
+    routePolyline: List<GeoPoint>,
     currentViewId: String,
     onStopSelected: (BusStop, String) -> Unit
 ) {
     mapView.overlays.clear()
 
-    val points = stops.mapNotNull { stop ->
-        val lat = stop.resolvedLatitude ?: return@mapNotNull null
-        val lon = stop.resolvedLongitude ?: return@mapNotNull null
-        GeoPoint(lat, lon)
+    // Use road-following polyline if available, otherwise fall back to straight lines between stops
+    val polylinePoints = routePolyline.ifEmpty {
+        stops.mapNotNull { stop ->
+            val lat = stop.resolvedLatitude ?: return@mapNotNull null
+            val lon = stop.resolvedLongitude ?: return@mapNotNull null
+            GeoPoint(lat, lon)
+        }
     }
 
-    // Draw polyline connecting stops in order
-    if (points.size >= 2) {
+    if (polylinePoints.size >= 2) {
         val polyline = Polyline(mapView).apply {
-            setPoints(points)
+            setPoints(polylinePoints)
             outlinePaint.color = android.graphics.Color.parseColor("#1c74d3")
             outlinePaint.strokeWidth = 6f
         }

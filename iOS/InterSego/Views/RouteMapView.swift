@@ -31,6 +31,7 @@ struct RouteMapView: View {
 
     @State private var currentViewId: String = ""
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var routePolyline: [CLLocationCoordinate2D] = []
 
     private var currentView: RouteView? {
         routeViews.first { $0.id == currentViewId } ?? routeViews.first
@@ -40,8 +41,10 @@ struct RouteMapView: View {
         currentView?.stops.map { $0.stop }.filter { $0.hasCoordinates } ?? []
     }
 
-    private var coordinates: [CLLocationCoordinate2D] {
-        stopsWithCoords.compactMap { stop in
+    /// Road-following coordinates if loaded, otherwise straight lines between stops.
+    private var polylineCoordinates: [CLLocationCoordinate2D] {
+        if !routePolyline.isEmpty { return routePolyline }
+        return stopsWithCoords.compactMap { stop in
             guard let lat = stop.resolvedLatitude, let lon = stop.resolvedLongitude else { return nil }
             return CLLocationCoordinate2D(latitude: lat, longitude: lon)
         }
@@ -50,8 +53,8 @@ struct RouteMapView: View {
     var body: some View {
         Map(position: $cameraPosition) {
             // Polyline connecting stops in order
-            if coordinates.count >= 2 {
-                MapPolyline(coordinates: coordinates)
+            if polylineCoordinates.count >= 2 {
+                MapPolyline(coordinates: polylineCoordinates)
                     .stroke(Color.accentColor, lineWidth: 4)
             }
 
@@ -96,11 +99,30 @@ struct RouteMapView: View {
         .onAppear {
             if currentViewId.isEmpty {
                 currentViewId = initialViewId
-                fitCamera()
             }
         }
-        .onChange(of: currentViewId) {
+        .task(id: currentViewId) {
+            guard !currentViewId.isEmpty else { return }
+            routePolyline = loadBundledPolyline(routeId: route.id, viewId: currentViewId)
             fitCamera()
+        }
+    }
+
+    /// Loads a pre-computed road-following polyline from the app bundle.
+    /// Returns an empty array if the file is missing or cannot be parsed.
+    private func loadBundledPolyline(routeId: String, viewId: String) -> [CLLocationCoordinate2D] {
+        guard let url = Bundle.main.url(
+            forResource: "\(routeId)-\(viewId)",
+            withExtension: "json",
+            subdirectory: "RoutePolylines"
+        ),
+        let data = try? Data(contentsOf: url),
+        let pairs = try? JSONDecoder().decode([[Double]].self, from: data)
+        else { return [] }
+
+        return pairs.compactMap { pair in
+            guard pair.count >= 2 else { return nil }
+            return CLLocationCoordinate2D(latitude: pair[0], longitude: pair[1])
         }
     }
 
