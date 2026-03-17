@@ -76,6 +76,7 @@ import com.github.bfollon.intersego.services.PDFCacheManager
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
+import com.github.bfollon.intersego.ui.screens.RouteMapScreen
 import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
 import com.github.bfollon.intersego.ui.screens.RouteStopsScreen
 import com.github.bfollon.intersego.ui.screens.TimetableScreen
@@ -509,6 +510,9 @@ fun AppNavigation() {
                 },
                 onStopSelected = { stop, viewId ->
                     navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                },
+                onMapSelected = { viewId ->
+                    navController.navigate("route_map/${route.id}/$viewId")
                 }
             )
         }
@@ -546,6 +550,33 @@ fun AppNavigation() {
                 onDaySchedule = { direction, variantLabel ->
                     val label = variantLabel ?: "all"
                     navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label")
+                }
+            )
+        }
+
+        composable("route_map/{routeId}/{viewId}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val initialViewId = backStackEntry.arguments?.getString("viewId") ?: return@composable
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            val currentDayType = remember {
+                when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
+                    java.util.Calendar.SATURDAY -> DayType.SATURDAY
+                    java.util.Calendar.SUNDAY -> DayType.SUNDAY
+                    else -> DayType.WEEKDAY
+                }
+            }
+            val views = remember(routeId, currentDayType) {
+                pdfProcessingService.getRouteViews(routeId, currentDayType)
+            }
+
+            RouteMapScreen(
+                route = route,
+                views = views,
+                initialViewId = initialViewId,
+                onBack = { navController.popBackStack() },
+                onStopSelected = { stop, viewId ->
+                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
                 }
             )
         }

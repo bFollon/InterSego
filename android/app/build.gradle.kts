@@ -89,6 +89,9 @@ dependencies {
     // Image loading
     implementation(libs.coil.compose)
 
+    // Map display (OSMDroid for route map screen)
+    implementation(libs.osmdroid.android)
+
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.mockk)

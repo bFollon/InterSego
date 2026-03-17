@@ -21,6 +21,7 @@ struct RouteStopsView: View {
     let route: BusRoute
     let views: [RouteView]
     let onStopSelected: (BusStop, String) -> Void
+    let onMapSelected: (String) -> Void
 
     @State private var currentViewId: String = ""
     @Environment(\.dismiss) private var dismiss
@@ -103,6 +104,13 @@ struct RouteStopsView: View {
                     Text(currentView.label)
                         .font(.caption)
                         .foregroundColor(.secondary)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    onMapSelected(currentView.id)
+                } label: {
+                    Image(systemName: "map")
                 }
             }
             if currentView.swapAction != nil {

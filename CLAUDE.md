@@ -48,6 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Next departure (live countdown) | ✅ | ✅ | iOS uses MapKit, Android uses OSM tiles |
 | Next departure — direction indicator | ✅ | ✅ | Pill below stop name; circular routes show "A → B", others "Dirección X" |
 | Next departure — direction swap button | ✅ | ✅ | Toolbar button toggles direction in-place, mirrors stop list behaviour |
+| Route map screen | ✅ | ✅ | Interactive map with stop markers + polyline; accessible via map button in stop list toolbar; direction swap supported; tap marker → NextDeparture. Android uses OSMDroid, iOS uses MapKit |
 | Day schedule (full day view) | ✅ | ✅ | All today's departures with "Ahora" marker, auto-scrolls |
 | Times disclaimer card | ✅ | ✅ | Expandable card on NextDeparture screen, explains approximate times |
 | Timetable (full schedule view) | ✅ (dead code) | ❌ | Android has it but no navigation to it |

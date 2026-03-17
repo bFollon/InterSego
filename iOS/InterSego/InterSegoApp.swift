@@ -28,6 +28,12 @@ struct StopSelection: Hashable {
     let currentViewId: String
 }
 
+struct MapSelection: Hashable {
+    let route: BusRoute
+    let routeViews: [RouteView]
+    let initialViewId: String
+}
+
 @main
 struct InterSegoApp: App {
     var body: some Scene {
@@ -82,6 +88,21 @@ struct ContentView: View {
                         selectedVariantLabel: selection.departureLabel
                     )
                 }
+                .navigationDestination(for: MapSelection.self) { selection in
+                    RouteMapView(
+                        route: selection.route,
+                        routeViews: selection.routeViews,
+                        initialViewId: selection.initialViewId,
+                        onStopSelected: { stop, viewId in
+                            navigationPath.append(StopSelection(
+                                route: selection.route,
+                                stop: stop,
+                                routeViews: selection.routeViews,
+                                currentViewId: viewId
+                            ))
+                        }
+                    )
+                }
             }
 
             if showSplash {
@@ -109,13 +130,19 @@ struct ContentView: View {
                         route: route,
                         views: views,
                         onStopSelected: { stop, viewId in
-                            let selection = StopSelection(
+                            navigationPath.append(StopSelection(
                                 route: route,
                                 stop: stop,
                                 routeViews: views,
                                 currentViewId: viewId
-                            )
-                            navigationPath.append(selection)
+                            ))
+                        },
+                        onMapSelected: { viewId in
+                            navigationPath.append(MapSelection(
+                                route: route,
+                                routeViews: views,
+                                initialViewId: viewId
+                            ))
                         }
                     )
                 } else {

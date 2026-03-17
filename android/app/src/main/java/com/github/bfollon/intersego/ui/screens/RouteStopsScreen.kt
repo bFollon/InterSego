@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -58,7 +59,8 @@ fun RouteStopsScreen(
     route: BusRoute,
     views: List<RouteView>,
     onBack: () -> Unit,
-    onStopSelected: (BusStop, String) -> Unit  // stop, viewId
+    onStopSelected: (BusStop, String) -> Unit,  // stop, viewId
+    onMapSelected: (String) -> Unit             // viewId
 ) {
     var currentViewId by remember { mutableStateOf(views.first().id) }
     val viewById = remember(views) { views.associateBy { it.id } }
@@ -86,6 +88,12 @@ fun RouteStopsScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { onMapSelected(currentViewId) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Map,
+                            contentDescription = "Ver en mapa"
+                        )
+                    }
                     currentView.swapAction?.let { swap ->
                         IconButton(onClick = {
                             currentViewId = swap.targetViewId
