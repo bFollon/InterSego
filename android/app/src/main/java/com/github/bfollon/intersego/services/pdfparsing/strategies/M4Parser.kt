@@ -95,6 +95,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
                 name = "Gasolinera",
                 area = "La Lastrilla",
                 coordinates = "40.965944, -4.106072",
+                routingCoordinates = "40.965897, -4.106276",
             )
             val PENSION = BusStop(
                 name = "Pensión",

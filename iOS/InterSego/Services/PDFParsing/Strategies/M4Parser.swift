@@ -55,7 +55,8 @@ class M4Parser: CapableParser, RouteStopsProvider {
         static let gasolinera = BusStop(
             name: "Gasolinera",
             area: "La Lastrilla",
-            coordinates: "40.965944, -4.106072"
+            coordinates: "40.965944, -4.106072",
+            routingCoordinates: "40.965897, -4.106276"
         )
         static let pension = BusStop(
             name: "Pensión",
