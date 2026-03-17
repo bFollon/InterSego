@@ -30,6 +30,10 @@ data class BusStop(
     val area: String? = null,           // San Cristóbal de Segovia
     val details: String? = null,        // Junto a C/X
     val coordinates: String,            // "40.948406, -4.116411"
+    val routingCoordinates: String? = null, // Optional coordinate used for route planning when the
+                                            // bus travels through a different point than the physical
+                                            // stop (e.g. stop is just after a turn the bus doesn't make).
+                                            // Falls back to [coordinates] when null.
     val routesServed: List<String> = emptyList(),  // List of route IDs that serve this stop
     val stopCode: String? = null,       // Optional official stop code
 ) {
@@ -41,6 +45,16 @@ data class BusStop(
 
     val hasCoordinates: Boolean
         get() = resolvedLatitude != null && resolvedLongitude != null
+
+    /** Latitude used for route planning. Falls back to [resolvedLatitude] when no routing override is set. */
+    val routingLatitude: Double?
+        get() = routingCoordinates?.split(",")?.getOrNull(0)?.trim()?.toDoubleOrNull()
+            ?: resolvedLatitude
+
+    /** Longitude used for route planning. Falls back to [resolvedLongitude] when no routing override is set. */
+    val routingLongitude: Double?
+        get() = routingCoordinates?.split(",")?.getOrNull(1)?.trim()?.toDoubleOrNull()
+            ?: resolvedLongitude
 
     /**
      * Display name with stop code if available
