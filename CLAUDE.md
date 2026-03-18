@@ -126,6 +126,21 @@ See `android/CLAUDE.md` for detailed Android development guide.
 
 **Build:** Open `iOS/InterSego.xcodeproj` in Xcode. Deployment target: iOS 17.0.
 
+#### PDFKit vs iText7 parsing differences
+
+PDFKit (iOS) and iText7 (Android) extract PDF text differently. Known artifacts in M6:
+
+- **Line swapping:** PDFKit sometimes returns two adjacent time rows in reversed order. Fixed by `reorderSwappedLines()` in `M6Parser`.
+- **Cell splitting:** Differently-formatted cells (e.g. highlighted departure cells like `**21:20`) are read as separate text blocks and may be attached to a later line (e.g. `**21:20 SÁBADOS`). Fixed by `preprocessLines()` in `M6Parser`, which splits mixed time+keyword lines and backward-merges orphaned leading times into their correct row.
+
+When porting parsers from Android or debugging parsing issues on iOS, always check for these two artifacts first.
+
+#### Parser cache versioning
+
+Each parser declares `capabilities.version` (e.g. `"0.3"`). This version is stored in `TimetableCache/<routeId>.meta.json` alongside the PDF timestamp. If the stored version doesn't match the current parser, the JSON cache is treated as stale and re-parsed automatically.
+
+**When to bump the parser version:** any time a code change affects the parsed output (bug fixes, new stops, corrected coordinates, etc.). Increment the version string in the parser's `capabilities` to force all existing devices to re-parse on next launch.
+
 ### Web (Future)
 Not yet implemented.
 
