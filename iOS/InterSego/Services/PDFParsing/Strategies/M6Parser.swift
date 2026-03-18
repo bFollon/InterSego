@@ -244,7 +244,8 @@ class M6Parser: CapableParser, RouteStopsProvider {
         }
         #endif
 
-        let reorderedLines = reorderSwappedLines(lines)
+        let preprocessedLines = preprocessLines(lines)
+        let reorderedLines = reorderSwappedLines(preprocessedLines)
         let timetables = parseTimeTable(reorderedLines)
 
         DebugConfig.debugPrint("M6Parser: Parsed \(timetables.count) timetables")
@@ -364,6 +365,72 @@ class M6Parser: CapableParser, RouteStopsProvider {
         default:
             return getRouteViews(routeId, dayType: .weekday)
         }
+    }
+
+    // MARK: - Line Preprocessing
+
+    /// Fixes two PDFKit artifacts that affect the M6 circular route:
+    ///
+    /// 1. **Split mixed lines**: PDFKit sometimes attaches a time from a
+    ///    differently-formatted cell (e.g. the highlighted `**21:20` departure)
+    ///    to the following section-header line, producing `**21:20 SÁBADOS`.
+    ///    Such lines are split into their time part and keyword part so that
+    ///    `detectDayType` can fire correctly.
+    ///
+    /// 2. **Merge orphaned leading times**: After splitting, a lone `**HH:MM`
+    ///    token may appear several lines after the `#`-prefixed circular row it
+    ///    belongs to (PDFKit read the highlighted cell as a separate text block).
+    ///    This pass scans backwards from each such orphan and prepends it to the
+    ///    nearest preceding circular (`#`-annotated) time row.
+    private func preprocessLines(_ lines: [String]) -> [String] {
+        // Step 1: Split lines that contain both times and a day-type keyword.
+        var expanded: [String] = []
+        for line in lines {
+            if TimetableParserUtils.hasTimes(line),
+               TimetableParserUtils.detectDayType(line) != nil {
+                let keywords = ["LUNES A VIERNES", "SÁBADOS", "SABADOS", "DOMINGOS"]
+                let upper = line.uppercased()
+                if let keyword = keywords.first(where: { upper.contains($0) }),
+                   let range = line.range(of: keyword, options: .caseInsensitive) {
+                    let timesPart = String(line[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                    let keywordPart = String(line[range.lowerBound...]).trimmingCharacters(in: .whitespaces)
+                    if !timesPart.isEmpty { expanded.append(timesPart) }
+                    if !keywordPart.isEmpty { expanded.append(keywordPart) }
+                    continue
+                }
+            }
+            expanded.append(line)
+        }
+
+        // Step 2: Backward-merge orphaned single-** times into the preceding
+        // circular (#) time row.
+        var result = expanded
+        var i = 0
+        while i < result.count {
+            let line = result[i]
+            guard TimetableParserUtils.hasTimes(line) else { i += 1; continue }
+
+            let annotated = TimetableParserUtils.extractAnnotatedTimes(line)
+            let isOrphanedDoubleAsterisk = annotated.count == 1
+                && annotated[0].modifier == .doubleAsterisk
+
+            if isOrphanedDoubleAsterisk {
+                var j = i - 1
+                while j >= 0 && !TimetableParserUtils.hasTimes(result[j]) { j -= 1 }
+                if j >= 0 {
+                    let prevAnnotated = TimetableParserUtils.extractAnnotatedTimes(result[j])
+                    if prevAnnotated.contains(where: { $0.modifier == .pound }) {
+                        DebugConfig.debugPrint("M6Parser: Merging orphaned \(line) into preceding circular row")
+                        result[j] = line + " " + result[j]
+                        result.remove(at: i)
+                        continue
+                    }
+                }
+            }
+            i += 1
+        }
+
+        return result
     }
 
     // MARK: - Line Reordering
