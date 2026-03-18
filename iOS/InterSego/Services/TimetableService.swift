@@ -32,6 +32,7 @@ actor TimetableService {
 
     func loadTimetables(routeId: String, forceRefresh: Bool = false) async -> [BusTimetable] {
         let isDebugParser = await PDFProcessingService.shared.isDebugParser(routeId: routeId)
+        let parserVersion = await PDFProcessingService.shared.getParserVersion(routeId: routeId)
         let shouldForceRefresh = forceRefresh || isDebugParser
 
         if isDebugParser {
@@ -48,7 +49,7 @@ actor TimetableService {
 
         // Tier 2: Persistent cache
         if !shouldForceRefresh {
-            if let cachedData = await TimetableCacheService.shared.loadCachedTimetables(routeId: routeId) {
+            if let cachedData = await TimetableCacheService.shared.loadCachedTimetables(routeId: routeId, parserVersion: parserVersion) {
                 DebugConfig.debugPrint("TimetableService: Using persistent cache for route \(routeId)")
                 cachedTimetables[routeId] = cachedData
                 return cachedData
@@ -62,7 +63,7 @@ actor TimetableService {
             let timetables = try await PDFProcessingService.shared.parseTimetables(routeId: routeId)
 
             cachedTimetables[routeId] = timetables
-            await TimetableCacheService.shared.saveTimetablesToCache(routeId: routeId, timetables: timetables)
+            await TimetableCacheService.shared.saveTimetablesToCache(routeId: routeId, timetables: timetables, parserVersion: parserVersion)
 
             DebugConfig.debugPrint("TimetableService: Successfully loaded and cached \(timetables.count) timetables for \(routeId)")
             return timetables

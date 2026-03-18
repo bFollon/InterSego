@@ -80,6 +80,10 @@ actor PDFProcessingService {
         Array(parsers.keys)
     }
 
+    func getParserVersion(routeId: String) -> String {
+        (parsers[routeId] as? CapableParser)?.capabilities.version ?? "1.0"
+    }
+
     func getParserMode(routeId: String) -> ParserMode? {
         (parsers[routeId] as? CapableParser)?.capabilities.mode
     }

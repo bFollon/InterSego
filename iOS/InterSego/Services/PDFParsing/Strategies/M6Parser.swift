@@ -27,7 +27,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M6"]),
         mode: .production,
-        version: "0.2"
+        version: "0.3"
     )
 
     // MARK: - Types

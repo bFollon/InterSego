@@ -29,7 +29,7 @@ actor TimetableCacheService {
         DebugConfig.debugPrint("TimetableCacheService: Cache directory at \(cacheDir.path)")
     }
 
-    func isCacheValid(routeId: String) -> Bool {
+    func isCacheValid(routeId: String, parserVersion: String) -> Bool {
         let cacheFile = getCacheFile(routeId: routeId)
         let metadataFile = getMetadataFile(routeId: routeId)
 
@@ -41,6 +41,11 @@ actor TimetableCacheService {
         do {
             let metaData = try Data(contentsOf: metadataFile)
             let metadata = try JSONDecoder().decode(CacheMetadata.self, from: metaData)
+
+            guard metadata.parserVersion == parserVersion else {
+                DebugConfig.debugPrint("TimetableCacheService: Cache invalid for route \(routeId) - parser version mismatch (cached: \(metadata.parserVersion ?? "nil"), current: \(parserVersion))")
+                return false
+            }
 
             let pdfFile = pdfFileURL(routeId: routeId)
 
@@ -66,8 +71,8 @@ actor TimetableCacheService {
         }
     }
 
-    func loadCachedTimetables(routeId: String) -> [BusTimetable]? {
-        guard isCacheValid(routeId: routeId) else { return nil }
+    func loadCachedTimetables(routeId: String, parserVersion: String) -> [BusTimetable]? {
+        guard isCacheValid(routeId: routeId, parserVersion: parserVersion) else { return nil }
 
         let cacheFile = getCacheFile(routeId: routeId)
 
@@ -83,7 +88,7 @@ actor TimetableCacheService {
         }
     }
 
-    func saveTimetablesToCache(routeId: String, timetables: [BusTimetable]) {
+    func saveTimetablesToCache(routeId: String, timetables: [BusTimetable], parserVersion: String) {
         do {
             let cachedData = CachedTimetables(
                 routeId: routeId,
@@ -108,7 +113,8 @@ actor TimetableCacheService {
                 routeId: routeId,
                 timetableCount: timetables.count,
                 cacheTimestamp: Date().timeIntervalSince1970,
-                pdfLastModified: pdfLastModified
+                pdfLastModified: pdfLastModified,
+                parserVersion: parserVersion
             )
             let metaData = try encoder.encode(metadata)
             try metaData.write(to: getMetadataFile(routeId: routeId))
@@ -161,5 +167,8 @@ actor TimetableCacheService {
         let timetableCount: Int
         let cacheTimestamp: TimeInterval
         let pdfLastModified: TimeInterval
+        /// Parser version at write time. Nil for caches written before versioning
+        /// was introduced — treated as a version mismatch (stale).
+        let parserVersion: String?
     }
 }
