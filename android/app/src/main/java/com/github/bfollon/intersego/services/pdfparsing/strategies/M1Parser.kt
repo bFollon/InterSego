@@ -30,126 +30,144 @@ import com.github.bfollon.intersego.services.pdfparsing.ParserMode
 import com.github.bfollon.intersego.services.pdfparsing.PDFParsingException
 import com.github.bfollon.intersego.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.intersego.services.pdfparsing.RouteStopsProvider
-import com.github.bfollon.intersego.services.pdfparsing.TimetableParserUtils
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
 import java.io.File
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 /**
- * Parser for M1 route (TODO: add route name once confirmed from PDF)
+ * Parser for M1 route (Segovia – Garcillán via Polígono, Casino, Valverde, Abades, Martín Miguel)
  *
  * PDF Structure:
- * - TODO: Document structure after analysing the extracted PDF lines
+ * - Two tables rendered side by side: outbound (left, 8 columns) and inbound (right, 7 columns).
+ * - Each decoded row = one departure: 15 times total (8 outbound stops + 7 inbound stops).
+ *   Index 7 in each outbound row is the return-to-Segovia terminal and is not stored.
+ * - Saturday section is appended inline in TEXT font after the last weekday row.
+ *   Saturday times are 'H'-delimited: first 4 = outbound (Segovia→Abades),
+ *   next 3 = inbound (Abades→Segovia).
+ * - Two font types:
+ *     Time font: 0xEC–0xF5 = digits 0–9 | 0x72 = row separator ('\n') |
+ *                0x57 = colon placeholder | 0x8E/0xC1/0xC9 = '*' | 0xB7 = '#'
+ *     Text font: standard +29 character-offset encoding (shared with M4/M6)
+ * - '*' on a time = summer only (13 Jun – 13 Sep → SeasonalAvailability.SUMMER_ONLY)
+ * - No Sunday service.
  *
- * Status: DEBUG skeleton — prints extracted lines for analysis, returns no timetables.
+ * Coordinates are placeholders (0.0, 0.0) pending real GPS data.
  */
 class M1Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
-        mode = ParserMode.DEBUG,
-        version = "0.1"
-    )
-
-    /**
-     * Internal state used during parsing.
-     * TODO: Expand once PDF structure is understood.
-     */
-    private data class ParsingState(
-        val currentDayType: DayType,
-        val regularRouteWeekdayTimetables: List<BusTimetable>,
-        val regularRouteWeekendTimetables: List<BusTimetable>,
-        val reverseRouteWeekdayTimetables: List<BusTimetable>,
-        val reverseRouteWeekendTimetables: List<BusTimetable>
+        mode = ParserMode.PRODUCTION,
+        version = "1.0"
     )
 
     companion object {
-        // TODO: Fill in direction labels once confirmed from PDF
-        private const val DIRECTION_REGULAR = "TODO: Regular direction"
-        private const val DIRECTION_REVERSE = "TODO: Reverse direction"
+        private const val DIRECTION_OUTBOUND = "Segovia → Garcillán"
+        private const val DIRECTION_INBOUND  = "Garcillán → Segovia"
 
-        // TODO: Define BusStop instances once stop names and coordinates are gathered
         private object Stops {
-            // Example:
-            // val STOP_NAME = BusStop(
-            //     name = "Stop Name",
-            //     area = "Area Name",
-            //     coordinates = "40.000000, -4.000000",
-            // )
+            val SEGOVIA       = BusStop(name = "Segovia",              coordinates = "0.0, 0.0")
+            val POLIGONO      = BusStop(name = "Polígono Industrial",  coordinates = "0.0, 0.0")
+            val CASINO        = BusStop(name = "Casino",               coordinates = "0.0, 0.0")
+            val VALVERDE      = BusStop(name = "Valverde de Majano",   coordinates = "0.0, 0.0")
+            val ABADES        = BusStop(name = "Abades",               coordinates = "0.0, 0.0")
+            val MARTIN_MIGUEL = BusStop(name = "Martín Miguel",        coordinates = "0.0, 0.0")
+            val GARCILLAN     = BusStop(name = "Garcillán",            coordinates = "0.0, 0.0")
         }
 
-        // TODO: Fill in stop lists once stops are defined above
-        val m1RegularRoute: List<BusStop> = emptyList()
-        val m1ReverseRoute: List<BusStop> = emptyList()
+        // Weekday outbound: 7 named stops (PDF has 8 columns; index 7 = return terminal, skipped)
+        val m1WeekdayOutbound: List<BusStop> = listOf(
+            Stops.SEGOVIA, Stops.POLIGONO, Stops.CASINO, Stops.VALVERDE,
+            Stops.ABADES, Stops.MARTIN_MIGUEL, Stops.GARCILLAN
+        )
+
+        val m1WeekdayInbound: List<BusStop> = listOf(
+            Stops.GARCILLAN, Stops.MARTIN_MIGUEL, Stops.ABADES, Stops.VALVERDE,
+            Stops.CASINO, Stops.POLIGONO, Stops.SEGOVIA
+        )
+
+        // Saturday runs a shorter variant: Segovia ↔ Abades only
+        val m1SaturdayOutbound: List<BusStop> = listOf(
+            Stops.SEGOVIA, Stops.CASINO, Stops.VALVERDE, Stops.ABADES
+        )
+
+        val m1SaturdayInbound: List<BusStop> = listOf(
+            Stops.ABADES, Stops.VALVERDE, Stops.SEGOVIA
+        )
+
+        private val TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm")
+
+        // Time token with optional suffix marker (* # I). The 'I' marker (seen on some inbound
+        // times, meaning is unclear) is captured but treated as year-round.
+        private val TIME_WITH_MARKER = Regex("""(\d{1,2}:\d{2})([*#I]?)""")
+
+        // Saturday times are separated by 'H' in the decoded text font section.
+        // Pattern captures the time (and optional '*') immediately before 'H'.
+        private val SAT_TIME_WITH_H = Regex("""(\d{1,2}:\d{2})([*]?)H""")
     }
 
-    override fun canParse(routeId: String): Boolean {
-        return capabilities.supportedRoutes.any { it.equals(routeId, ignoreCase = true) }
-    }
+    override fun canParse(routeId: String): Boolean =
+        capabilities.supportedRoutes.any { it.equals(routeId, ignoreCase = true) }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
-        return if (routeId.equals("M1", ignoreCase = true)) {
-            listOf(m1RegularRoute, m1ReverseRoute)
-        } else {
-            emptyList()
-        }
+        if (!routeId.equals("M1", ignoreCase = true)) return emptyList()
+        return listOf(m1WeekdayOutbound, m1WeekdayInbound)
     }
 
     override fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
         if (!routeId.equals("M1", ignoreCase = true)) return emptyList()
-        return listOf(
-            RouteVariant(
-                id = "regular",
-                label = DIRECTION_REGULAR,
-                stops = m1RegularRoute,
-                direction = DIRECTION_REGULAR
-            ),
-            RouteVariant(
-                id = "reverse",
-                label = DIRECTION_REVERSE,
-                stops = m1ReverseRoute,
-                direction = DIRECTION_REVERSE
-            ),
-        )
+        return when (dayType) {
+            DayType.SATURDAY -> listOf(
+                RouteVariant("outbound", DIRECTION_OUTBOUND, m1SaturdayOutbound, DIRECTION_OUTBOUND),
+                RouteVariant("inbound",  DIRECTION_INBOUND,  m1SaturdayInbound,  DIRECTION_INBOUND)
+            )
+            DayType.SUNDAY -> emptyList()
+            else -> listOf(
+                RouteVariant("outbound", DIRECTION_OUTBOUND, m1WeekdayOutbound, DIRECTION_OUTBOUND),
+                RouteVariant("inbound",  DIRECTION_INBOUND,  m1WeekdayInbound,  DIRECTION_INBOUND)
+            )
+        }
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {
         DebugConfig.debugPrint("M1Parser: Starting PDF parsing for $pdfPath")
 
         val file = File(pdfPath)
-        if (!file.exists()) {
-            throw PDFParsingException("PDF file not found: $pdfPath")
-        }
+        if (!file.exists()) throw PDFParsingException("PDF file not found: $pdfPath")
 
-        val pdfReader = PdfReader(file)
+        val pdfReader   = PdfReader(file)
         val pdfDocument = PdfDocument(pdfReader)
 
         try {
             val allLines = mutableListOf<String>()
 
             for (pageNum in 1..pdfDocument.numberOfPages) {
-                DebugConfig.debugPrint("M1Parser: Processing page $pageNum")
                 val page = pdfDocument.getPage(pageNum)
 
-                val extractedText = PDFTextDecoder.extractText(page, tag = "M1Parser")
-                val lines = extractedText.lines()
+                // M1 uses two font types that need different decoding strategies.
+                // We bypass PDFTextDecoder.extractText() and decode the raw glyph stream
+                // ourselves to handle both fonts in a single pass.
+                val strategy = PDFTextDecoder.RawGlyphExtractionStrategy()
+                PdfCanvasProcessor(strategy).processPageContent(page)
+                val rawText = strategy.resultantText
 
-                DebugConfig.debugPrint("M1Parser: Page $pageNum has ${lines.size} lines")
+                val decoded = decodeM1Text(rawText)
 
-                DebugConfig.debugPrint("M1Parser: ===== EXTRACTED TEXT (page $pageNum) =====")
-                lines.forEachIndexed { index, line ->
-                    if (line.isNotEmpty()) {
-                        DebugConfig.debugPrint("  Line $index: $line")
-                    }
-                }
-                DebugConfig.debugPrint("M1Parser: ==========================================")
+                // Normalise colon placeholder and compress whitespace.
+                val normalised = decoded
+                    .replace(Regex(""" t """), ":")
+                    .replace(Regex("""(\d) (\d)"""), "$1$2")
+                    .replace(Regex("""(\d) (\d)"""), "$1$2") // second pass for triple-digit runs
+                    .replace(Regex(""" +"""), " ")
 
-                allLines.addAll(lines)
+                allLines.addAll(normalised.lines())
             }
 
             val timetables = parseTimeTable(allLines)
-            DebugConfig.debugPrint("M1Parser: Finished parsing, created ${timetables.size} timetables")
+            DebugConfig.debugPrint("M1Parser: Parsed ${timetables.size} timetables")
             return timetables
 
         } catch (e: Exception) {
@@ -160,67 +178,148 @@ class M1Parser : CapableParser, RouteStopsProvider {
         }
     }
 
-    private fun createInitialTimetables(stops: List<BusStop>, dayType: DayType, direction: String): List<BusTimetable> {
-        return stops.map { stop ->
-            BusTimetable(
-                routeId = "M1",
-                stopId = stop.name,
-                dayType = dayType,
-                direction = direction,
-                departures = emptyList()
-            )
+    /**
+     * Decode M1 PDF raw glyph stream.
+     *
+     * The M1 PDF uses two font encodings:
+     *   Time font  — codes 0xEC–0xF5 map to digits 0–9; 0x72 = row separator ('\n');
+     *                0x57 = colon placeholder; 0x8E/0xC1/0xC9 = '*'; 0xB7 = '#'
+     *   Text font  — standard +29 offset encoding (shared with other Linecar PDFs)
+     *
+     * 0x57 is the colon placeholder in the time font AND decodes to 't' via +29 in the
+     * text font (0x57 + 29 = 0x74 = 't'). Both cases produce 't', which the caller
+     * normalises to ':' via " t " → ":".
+     */
+    private fun decodeM1Text(raw: String): String {
+        val sb = StringBuilder()
+        for (ch in raw) {
+            val code = ch.code
+            when {
+                code == 0x00                              -> continue  // null byte (2-byte CID encoding)
+                code in 0xEC..0xF5                        -> sb.append(('0' + (code - 0xEC)).toChar())
+                code == 0x72                              -> sb.append('\n')
+                code == 0x8E || code == 0xC1 || code == 0xC9 -> sb.append('*')
+                code == 0xB7                              -> sb.append('#')
+                else -> {
+                    val shifted = code + 29
+                    if (shifted in 0x20..0x7E || shifted == 0x0A || shifted == 0x0D) {
+                        sb.append(shifted.toChar())
+                    }
+                    // Codes that map outside printable ASCII are discarded.
+                }
+            }
         }
-    }
-
-    private fun updateTimetables(timetables: List<BusTimetable>, times: List<LocalTime>, seasonal: SeasonalAvailability): List<BusTimetable> {
-        return timetables.zip(times).map { (timetable, time) ->
-            timetable.copy(
-                departures = timetable.departures + DepartureTime(time.hour, time.minute, seasonalAvailability = seasonal)
-            )
-        }
+        return sb.toString()
     }
 
     private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
-        // TODO: Implement parsing logic once PDF structure is understood from the debug output above.
-        // Use M4Parser as a reference for a simple line-per-journey approach.
-        //
-        // Suggested steps:
-        // 1. Run the app with DEBUG mode and check logcat for "M1Parser" tag
-        // 2. Identify day type headers (LUNES A VIERNES, SÁBADOS, DOMINGOS)
-        // 3. Identify time rows and how many times per row (= number of stops)
-        // 4. Map the times per row to stop positions
-        // 5. Fill in Stops above and m1RegularRoute / m1ReverseRoute
-        // 6. Implement the state machine below (modelled on M4Parser)
-        // 7. Change mode to ParserMode.PRODUCTION when complete
+        // Departure accumulators per stop index.
+        val outDepsWk  = Array(m1WeekdayOutbound.size)   { mutableListOf<DepartureTime>() }
+        val inDepsWk   = Array(m1WeekdayInbound.size)    { mutableListOf<DepartureTime>() }
+        val outDepsSat = Array(m1SaturdayOutbound.size)  { mutableListOf<DepartureTime>() }
+        val inDepsSat  = Array(m1SaturdayInbound.size)   { mutableListOf<DepartureTime>() }
 
-        if (m1RegularRoute.isEmpty()) {
-            DebugConfig.debugPrint("M1Parser: Stops not yet defined — returning empty timetables (DEBUG skeleton)")
-            return emptyList()
-        }
+        // Buffer accumulates (time, seasonal) pairs from multiple decoded rows until
+        // enough times are available to form a complete departure record (15 = 8 + 7).
+        val buffer = mutableListOf<Pair<LocalTime, SeasonalAvailability>>()
 
-        val initialState = ParsingState(
-            currentDayType = DayType.WEEKDAY,
-            regularRouteWeekdayTimetables = createInitialTimetables(m1RegularRoute, DayType.WEEKDAY, DIRECTION_REGULAR),
-            regularRouteWeekendTimetables = createInitialTimetables(m1RegularRoute, DayType.WEEKEND, DIRECTION_REGULAR),
-            reverseRouteWeekdayTimetables = createInitialTimetables(m1ReverseRoute, DayType.WEEKDAY, DIRECTION_REVERSE),
-            reverseRouteWeekendTimetables = createInitialTimetables(m1ReverseRoute, DayType.WEEKEND, DIRECTION_REVERSE)
-        )
+        for (line in lines) {
+            // The Saturday section (TEXT font, 'H'-delimited times) may appear inline
+            // at the end of the last weekday row. Split off that portion before
+            // adding weekday times to the buffer.
+            val satStart = SAT_TIME_WITH_H.find(line)
+            val weekdayPart = if (satStart != null) line.substring(0, satStart.range.first) else line
+            val satPart     = if (satStart != null) line.substring(satStart.range.first)    else ""
 
-        val finalState = lines.fold(initialState) { state, line ->
-            val newDayType = TimetableParserUtils.detectDayType(line)
-            when {
-                newDayType != null -> state.copy(currentDayType = newDayType)
-                TimetableParserUtils.hasTimes(line) -> {
-                    // TODO: handle time rows here
-                    state
+            // --- Weekday times ---
+            buffer.addAll(extractTimesWithSeasonal(weekdayPart))
+
+            // Process complete rows: 8 outbound positions + 7 inbound positions = 15.
+            // Outbound index 7 (return-to-Segovia terminal) is decoded but not stored.
+            while (buffer.size >= 15) {
+                val row = buffer.subList(0, 15).toList()
+                buffer.subList(0, 15).clear()
+
+                for (i in outDepsWk.indices) {  // 0..6
+                    outDepsWk[i].add(DepartureTime(row[i].first.hour, row[i].first.minute,
+                        seasonalAvailability = row[i].second))
                 }
-                else -> state
+                for (i in inDepsWk.indices) {   // 0..6  → PDF indices 8..14
+                    inDepsWk[i].add(DepartureTime(row[i + 8].first.hour, row[i + 8].first.minute,
+                        seasonalAvailability = row[i + 8].second))
+                }
+            }
+
+            // --- Saturday times (H-delimited) ---
+            if (satPart.isNotEmpty()) {
+                val satTimes = SAT_TIME_WITH_H.findAll(satPart).map { m ->
+                    val timeStr  = m.groupValues[1]
+                    val seasonal = if (m.groupValues[2] == "*") SeasonalAvailability.SUMMER_ONLY
+                                   else                          SeasonalAvailability.YEAR_ROUND
+                    Pair(LocalTime.parse(timeStr, TIME_FORMATTER), seasonal)
+                }.toList()
+
+                for (i in outDepsSat.indices) {
+                    if (i < satTimes.size) {
+                        outDepsSat[i].add(DepartureTime(satTimes[i].first.hour,
+                            satTimes[i].first.minute, seasonalAvailability = satTimes[i].second))
+                    }
+                }
+                for (i in inDepsSat.indices) {
+                    val idx = i + m1SaturdayOutbound.size
+                    if (idx < satTimes.size) {
+                        inDepsSat[i].add(DepartureTime(satTimes[idx].first.hour,
+                            satTimes[idx].first.minute, seasonalAvailability = satTimes[idx].second))
+                    }
+                }
             }
         }
 
-        return finalState.regularRouteWeekdayTimetables +
-                finalState.regularRouteWeekendTimetables +
-                finalState.reverseRouteWeekdayTimetables +
-                finalState.reverseRouteWeekendTimetables
+        // Drain any remaining buffer: a leftover of 8 means an outbound-only departure;
+        // 7 means an inbound-only departure.
+        when (buffer.size) {
+            8 -> for (i in outDepsWk.indices) {
+                outDepsWk[i].add(DepartureTime(buffer[i].first.hour, buffer[i].first.minute,
+                    seasonalAvailability = buffer[i].second))
+            }
+            7 -> for (i in inDepsWk.indices) {
+                inDepsWk[i].add(DepartureTime(buffer[i].first.hour, buffer[i].first.minute,
+                    seasonalAvailability = buffer[i].second))
+            }
+            else -> if (buffer.isNotEmpty()) {
+                DebugConfig.debugPrint("M1Parser: ${buffer.size} leftover times after parsing — discarding")
+            }
+        }
+
+        return buildTimetables(m1WeekdayOutbound,  DayType.WEEKDAY,   DIRECTION_OUTBOUND, outDepsWk)  +
+               buildTimetables(m1WeekdayInbound,   DayType.WEEKDAY,   DIRECTION_INBOUND,  inDepsWk)   +
+               buildTimetables(m1SaturdayOutbound, DayType.SATURDAY,  DIRECTION_OUTBOUND, outDepsSat) +
+               buildTimetables(m1SaturdayInbound,  DayType.SATURDAY,  DIRECTION_INBOUND,  inDepsSat)
+    }
+
+    /** Extract (time, seasonal) pairs from a single decoded line, ignoring non-time content. */
+    private fun extractTimesWithSeasonal(text: String): List<Pair<LocalTime, SeasonalAvailability>> =
+        TIME_WITH_MARKER.findAll(text).mapNotNull { m ->
+            try {
+                val time     = LocalTime.parse(m.groupValues[1], TIME_FORMATTER)
+                val seasonal = if (m.groupValues[2] == "*") SeasonalAvailability.SUMMER_ONLY
+                               else                          SeasonalAvailability.YEAR_ROUND
+                Pair(time, seasonal)
+            } catch (_: Exception) { null }
+        }.toList()
+
+    private fun buildTimetables(
+        stops: List<BusStop>,
+        dayType: DayType,
+        direction: String,
+        deps: Array<MutableList<DepartureTime>>
+    ): List<BusTimetable> = stops.mapIndexed { i, stop ->
+        BusTimetable(
+            routeId   = "M1",
+            stopId    = stop.name,
+            dayType   = dayType,
+            direction = direction,
+            departures = deps[i]
+        )
     }
 }
