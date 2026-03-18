@@ -15,8 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import CoreGraphics
 import Foundation
 import PDFKit
+
+/// Accumulates raw PDF glyph bytes during a CGPDFScanner pass.
+private class M1GlyphCollector {
+    var rawBytes: [UInt8] = []
+}
 
 /// Parser for M1 route (Segovia – Garcillán via Polígono, Casino, Valverde, Abades, Martín Miguel)
 ///
@@ -32,14 +38,9 @@ import PDFKit
 ///                0x57 = colon placeholder ('t') | 0x8E/0xC1/0xC9 = '*' | 0xB7 = '#'
 ///     Text font: standard +29 character-offset encoding (shared with M4/M6)
 ///
-/// PDFKit decoding assumption: For fonts with non-standard encodings, PDFKit maps raw font byte
-/// values directly to Unicode codepoints (confirmed empirically for M4/M6). This means:
-///   - Time font digit 0xEC → PDFKit returns U+00EC (ì), which we remap to '0'.
-///   - Time font row separator 0x72 → PDFKit returns U+0072 ('r'), which we remap to '\n'.
-///   - Time font colon 0x57 → PDFKit returns U+0057 ('W'), which we remap to 't'.
-///   - Text font chars (0x01–0x1C) → PDFKit returns control chars, decoded via +29 offset.
-///
-/// If PDFKit behaviour differs, this parser may require a CGPDFScanner-based raw extraction.
+/// PDFKit's page.string returns an empty string for M1 (no ToUnicode tables in the fonts).
+/// This parser uses CGPDFScanner to extract raw glyph bytes directly from the content stream,
+/// mirroring Android's RawGlyphExtractionStrategy / PdfCanvasProcessor approach.
 ///
 /// '*' on a time = summer only (13 Jun – 13 Sep → SeasonalAvailability.summerOnly).
 /// No Sunday service.
@@ -157,13 +158,21 @@ class M1Parser: CapableParser, RouteStopsProvider {
         var allLines: [String] = []
 
         for pageIndex in 0..<document.pageCount {
-            guard let page = document.page(at: pageIndex) else { continue }
+            guard let page = document.page(at: pageIndex),
+                  let cgPage = page.pageRef else { continue }
 
-            // M1 uses two font types. We get PDFKit's raw Unicode output and apply our own
-            // decoder rather than PDFTextExtractor.extractText(), which would apply +29 globally
-            // and corrupt the time font digit codes (0xEC–0xF5 → out of ASCII range → '?').
-            let rawText = page.string ?? ""
+            // M1 uses non-standard font encodings that PDFKit cannot decode via page.string
+            // (returns empty string). Use CGPDFScanner to extract raw glyph bytes directly,
+            // then apply the M1-specific decoder — mirrors Android's RawGlyphExtractionStrategy.
+            let rawText = extractRawGlyphs(from: cgPage)
+
+            let rawSample = rawText.prefix(80)
+            let rawCodepoints = rawSample.unicodeScalars.map { "U+\(String(format: "%04X", $0.value))" }.joined(separator: " ")
+            DebugConfig.debugPrint("M1Parser[p\(pageIndex)] raw codepoints (first 80): \(rawCodepoints)")
+
             let decoded = Self.decodeM1Text(rawText)
+            let decodedSample = decoded.prefix(80)
+            DebugConfig.debugPrint("M1Parser[p\(pageIndex)] after decodeM1Text (first 80): \(String(decodedSample).debugDescription)")
 
             // Normalise: colon placeholder → ':', collapse spaces.
             var normalised = decoded.replacingOccurrences(of: " t ", with: ":")
@@ -174,7 +183,14 @@ class M1Parser: CapableParser, RouteStopsProvider {
             normalised = Self.multiSpacePattern.stringByReplacingMatches(
                 in: normalised, range: NSRange(normalised.startIndex..., in: normalised), withTemplate: " ")
 
-            allLines += normalised.components(separatedBy: "\n")
+            let pageLines = normalised.components(separatedBy: "\n")
+            DebugConfig.debugPrint("M1Parser[p\(pageIndex)] lines after normalisation: \(pageLines.count)")
+            pageLines.prefix(10).enumerated().forEach { i, line in
+                if !line.trimmingCharacters(in: .whitespaces).isEmpty {
+                    DebugConfig.debugPrint("M1Parser[p\(pageIndex)]   line[\(i)]: \(line.debugDescription)")
+                }
+            }
+            allLines += pageLines
         }
 
         let timetables = parseTimeTable(allLines)
@@ -182,21 +198,70 @@ class M1Parser: CapableParser, RouteStopsProvider {
         return timetables
     }
 
+    /// Extracts raw PDF glyph bytes using CGPDFScanner, bypassing PDFKit's font decoding.
+    /// Returns a String where each character's Unicode value equals the raw byte value (U+0000–U+00FF).
+    private func extractRawGlyphs(from cgPage: CGPDFPage) -> String {
+        let collector = M1GlyphCollector()
+
+        let stream = CGPDFContentStreamCreateWithPage(cgPage)
+        defer { CGPDFContentStreamRelease(stream) }
+
+        let table = CGPDFOperatorTableCreate()!
+        defer { CGPDFOperatorTableRelease(table) }
+
+        let info = Unmanaged.passUnretained(collector).toOpaque()
+
+        // Tj: show string — collect raw bytes
+        CGPDFOperatorTableSetCallback(table, "Tj") { scanner, info in
+            guard let info = info else { return }
+            let c = Unmanaged<M1GlyphCollector>.fromOpaque(info).takeUnretainedValue()
+            var str: CGPDFStringRef?
+            guard CGPDFScannerPopString(scanner, &str), let s = str else { return }
+            let len = CGPDFStringGetLength(s)
+            if let bytes = CGPDFStringGetBytePtr(s) {
+                for i in 0..<len { c.rawBytes.append(bytes[i]) }
+            }
+        }
+
+        // TJ: show array (with kerning) — collect raw bytes from string elements only
+        CGPDFOperatorTableSetCallback(table, "TJ") { scanner, info in
+            guard let info = info else { return }
+            let c = Unmanaged<M1GlyphCollector>.fromOpaque(info).takeUnretainedValue()
+            var arr: CGPDFArrayRef?
+            guard CGPDFScannerPopArray(scanner, &arr), let array = arr else { return }
+            let count = CGPDFArrayGetCount(array)
+            for i in 0..<count {
+                var str: CGPDFStringRef?
+                if CGPDFArrayGetString(array, i, &str), let s = str {
+                    let len = CGPDFStringGetLength(s)
+                    if let bytes = CGPDFStringGetBytePtr(s) {
+                        for j in 0..<len { c.rawBytes.append(bytes[j]) }
+                    }
+                }
+            }
+        }
+
+        let scanner = CGPDFScannerCreate(stream, table, info)
+        defer { CGPDFScannerRelease(scanner) }
+        CGPDFScannerScan(scanner)
+
+        return String(collector.rawBytes.map { Character(UnicodeScalar($0)) })
+    }
+
     // MARK: - M1 Font Decoder
 
-    /// Decode M1 PDF raw PDFKit string output.
+    /// Decode M1 raw PDF glyph bytes (extracted via CGPDFScanner).
     ///
-    /// PDFKit maps raw font byte values to Unicode codepoints for broken fonts (confirmed
-    /// empirically for M4/M6). This decoder handles both font types accordingly:
+    /// The M1 PDF uses two font encodings — each raw byte is treated as its glyph code:
     ///
-    ///   Time font codes (high byte):
-    ///     U+00EC–U+00F5 (ì–õ) → digits '0'–'9'
-    ///     U+0072 ('r')         → '\n' (row separator)
-    ///     U+0057 ('W')         → 't'  (colon placeholder, normalised later to ':')
-    ///     U+008E, U+00C1, U+00C9 → '*' (seasonal marker)
-    ///     U+00B7               → '#'  (special marker)
+    ///   Time font codes:
+    ///     0xEC–0xF5 → digits '0'–'9'
+    ///     0x72      → '\n' (row separator)
+    ///     0x57      → 't'  (colon placeholder, normalised later to ':')
+    ///     0x8E, 0xC1, 0xC9 → '*' (seasonal marker)
+    ///     0xB7      → '#'  (special marker)
     ///
-    ///   Text font codes (low byte, 0x01–0x1C control chars):
+    ///   Text font codes (standard +29 offset encoding, shared with M4/M6):
     ///     Apply +29 offset to recover printable ASCII.
     private static func decodeM1Text(_ raw: String) -> String {
         var result = ""
@@ -314,6 +379,12 @@ class M1Parser: CapableParser, RouteStopsProvider {
         } else if !buffer.isEmpty {
             DebugConfig.debugPrint("M1Parser: \(buffer.count) leftover times after parsing — discarding")
         }
+
+        let wkOutTotal = outDepsWk.map(\.count).reduce(0, +)
+        let wkInTotal  = inDepsWk.map(\.count).reduce(0, +)
+        let satOutTotal = outDepsSat.map(\.count).reduce(0, +)
+        let satInTotal  = inDepsSat.map(\.count).reduce(0, +)
+        DebugConfig.debugPrint("M1Parser: departure counts — wkOut=\(wkOutTotal) wkIn=\(wkInTotal) satOut=\(satOutTotal) satIn=\(satInTotal)")
 
         return buildTimetables(stops: Self.m1WeekdayOutbound,  dayType: .weekday,   direction: Self.directionOutbound, deps: outDepsWk)
              + buildTimetables(stops: Self.m1WeekdayInbound,   dayType: .weekday,   direction: Self.directionInbound,  deps: inDepsWk)
