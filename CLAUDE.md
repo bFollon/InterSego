@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences |
 | M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation |
-| M1 | 🚧 (needs testing) | 🚧 (needs testing) | Stops defined (placeholder 0.0,0.0 coords), full parsing logic implemented; iOS PDFKit time-font decoding unverified on device |
+| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); PDF font encoding too complex to parse reliably on both platforms; placeholder 0.0,0.0 coords |
 | M2 | ❌ | ❌ | |
 | M3 | ❌ | ❌ | |
 | M5 | ❌ | ❌ | |

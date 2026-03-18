@@ -27,32 +27,24 @@ import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.pdfparsing.CapableParser
 import com.github.bfollon.intersego.services.pdfparsing.ParserCapabilities
 import com.github.bfollon.intersego.services.pdfparsing.ParserMode
-import com.github.bfollon.intersego.services.pdfparsing.PDFParsingException
-import com.github.bfollon.intersego.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.intersego.services.pdfparsing.RouteStopsProvider
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfReader
-import com.itextpdf.kernel.pdf.canvas.parser.PdfCanvasProcessor
-import java.io.File
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
 
 /**
  * Parser for M1 route (Segovia – Garcillán via Polígono, Casino, Valverde, Abades, Martín Miguel)
  *
- * PDF Structure:
- * - Two tables rendered side by side: outbound (left, 8 columns) and inbound (right, 7 columns).
- * - Each decoded row = one departure: 15 times total (8 outbound stops + 7 inbound stops).
- *   Index 7 in each outbound row is the return-to-Segovia terminal and is not stored.
- * - Saturday section is appended inline in TEXT font after the last weekday row.
- *   Saturday times are 'H'-delimited: first 4 = outbound (Segovia→Abades),
- *   next 3 = inbound (Abades→Segovia).
- * - Two font types:
- *     Time font: 0xEC–0xF5 = digits 0–9 | 0x72 = row separator ('\n') |
- *                0x57 = colon placeholder | 0x8E/0xC1/0xC9 = '*' | 0xB7 = '#'
- *     Text font: standard +29 character-offset encoding (shared with M4/M6)
- * - '*' on a time = summer only (13 Jun – 13 Sep → SeasonalAvailability.SUMMER_ONLY)
- * - No Sunday service.
+ * The M1 PDF uses non-standard font encodings (no ToUnicode tables) and a sparse table layout
+ * where most rows have dashes in many columns. Reliable PDF extraction is not feasible, so
+ * timetable data is hardcoded from the official Linecar schedule.
+ *
+ * Source: Linecar M1 PDF, verified from screenshot dated 2026-03-18.
+ *
+ * Markers:
+ *   * = summer only (13 Jun – 13 Sep, SeasonalAvailability.SUMMER_ONLY)
+ *   # = Garcillán only on Fridays (treated as YEAR_ROUND for simplicity)
+ *   H = highlighted cell in PDF (no semantic meaning, ignored)
+ *   L Y V = Lunes y Viernes (Mon & Fri only, treated as YEAR_ROUND for simplicity)
+ *
+ * No Sunday service. Saturday runs a shorter Segovia ↔ Abades variant (SG-Labajos route).
  *
  * Coordinates are placeholders (0.0, 0.0) pending real GPS data.
  */
@@ -60,8 +52,8 @@ class M1Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
-        mode = ParserMode.DEBUG,
-        version = "1.0"
+        mode = ParserMode.PRODUCTION,
+        version = "1.1"
     )
 
     companion object {
@@ -89,7 +81,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
             Stops.CASINO, Stops.POLIGONO, Stops.SEGOVIA
         )
 
-        // Saturday runs a shorter variant: Segovia ↔ Abades only
+        // Saturday runs a shorter variant: Segovia ↔ Abades only (SG-Labajos route)
         val m1SaturdayOutbound: List<BusStop> = listOf(
             Stops.SEGOVIA, Stops.CASINO, Stops.VALVERDE, Stops.ABADES
         )
@@ -97,16 +89,6 @@ class M1Parser : CapableParser, RouteStopsProvider {
         val m1SaturdayInbound: List<BusStop> = listOf(
             Stops.ABADES, Stops.VALVERDE, Stops.SEGOVIA
         )
-
-        private val TIME_FORMATTER = DateTimeFormatter.ofPattern("H:mm")
-
-        // Time token with optional suffix marker (* # I). The 'I' marker (seen on some inbound
-        // times, meaning is unclear) is captured but treated as year-round.
-        private val TIME_WITH_MARKER = Regex("""(\d{1,2}:\d{2})([*#I]?)""")
-
-        // Saturday times are separated by 'H' in the decoded text font section.
-        // Pattern captures the time (and optional '*') immediately before 'H'.
-        private val SAT_TIME_WITH_H = Regex("""(\d{1,2}:\d{2})([*]?)H""")
     }
 
     override fun canParse(routeId: String): Boolean =
@@ -133,180 +115,78 @@ class M1Parser : CapableParser, RouteStopsProvider {
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {
-        DebugConfig.debugPrint("M1Parser: Starting PDF parsing for $pdfPath")
-
-        val file = File(pdfPath)
-        if (!file.exists()) throw PDFParsingException("PDF file not found: $pdfPath")
-
-        val pdfReader   = PdfReader(file)
-        val pdfDocument = PdfDocument(pdfReader)
-
-        try {
-            val allLines = mutableListOf<String>()
-
-            for (pageNum in 1..pdfDocument.numberOfPages) {
-                val page = pdfDocument.getPage(pageNum)
-
-                // M1 uses two font types that need different decoding strategies.
-                // We bypass PDFTextDecoder.extractText() and decode the raw glyph stream
-                // ourselves to handle both fonts in a single pass.
-                val strategy = PDFTextDecoder.RawGlyphExtractionStrategy()
-                PdfCanvasProcessor(strategy).processPageContent(page)
-                val rawText = strategy.resultantText
-
-                val decoded = decodeM1Text(rawText)
-
-                // Normalise colon placeholder and compress whitespace.
-                val normalised = decoded
-                    .replace(Regex(""" t """), ":")
-                    .replace(Regex("""(\d) (\d)"""), "$1$2")
-                    .replace(Regex("""(\d) (\d)"""), "$1$2") // second pass for triple-digit runs
-                    .replace(Regex(""" +"""), " ")
-
-                allLines.addAll(normalised.lines())
-            }
-
-            val timetables = parseTimeTable(allLines)
-            DebugConfig.debugPrint("M1Parser: Parsed ${timetables.size} timetables")
-            return timetables
-
-        } catch (e: Exception) {
-            DebugConfig.debugError("M1Parser: Error parsing PDF", e)
-            throw PDFParsingException("Failed to parse M1 PDF: ${e.message}", e)
-        } finally {
-            pdfDocument.close()
-        }
+        DebugConfig.debugPrint("M1Parser: returning hardcoded timetable (PDF parsing bypassed)")
+        return buildStaticTimetables()
     }
 
-    /**
-     * Decode M1 PDF raw glyph stream.
-     *
-     * The M1 PDF uses two font encodings:
-     *   Time font  — codes 0xEC–0xF5 map to digits 0–9; 0x72 = row separator ('\n');
-     *                0x57 = colon placeholder; 0x8E/0xC1/0xC9 = '*'; 0xB7 = '#'
-     *   Text font  — standard +29 offset encoding (shared with other Linecar PDFs)
-     *
-     * 0x57 is the colon placeholder in the time font AND decodes to 't' via +29 in the
-     * text font (0x57 + 29 = 0x74 = 't'). Both cases produce 't', which the caller
-     * normalises to ':' via " t " → ":".
-     */
-    private fun decodeM1Text(raw: String): String {
-        val sb = StringBuilder()
-        for (ch in raw) {
-            val code = ch.code
-            when {
-                code == 0x00                              -> continue  // null byte (2-byte CID encoding)
-                code in 0xEC..0xF5                        -> sb.append(('0' + (code - 0xEC)).toChar())
-                code == 0x72                              -> sb.append('\n')
-                code == 0x8E || code == 0xC1 || code == 0xC9 -> sb.append('*')
-                code == 0xB7                              -> sb.append('#')
-                else -> {
-                    val shifted = code + 29
-                    if (shifted in 0x20..0x7E || shifted == 0x0A || shifted == 0x0D) {
-                        sb.append(shifted.toChar())
-                    }
-                    // Codes that map outside printable ASCII are discarded.
-                }
-            }
-        }
-        return sb.toString()
+    // ── Static timetable (weekday outbound, 11 rows × 7 stops) ───────────────────────────────
+    //
+    // Rows match the PDF table top-to-bottom. Dashes in the PDF = stop omitted from that array.
+    // Index 7 in the PDF outbound table (return-to-Segovia terminal) is not stored.
+
+    private fun buildStaticTimetables(): List<BusTimetable> {
+        val yr = SeasonalAvailability.YEAR_ROUND
+        val su = SeasonalAvailability.SUMMER_ONLY
+
+        // ── Weekday outbound ─────────────────────────────────────────────────────────────────
+        val wkOut = arrayOf(
+            // Segovia (11 departures)
+            mutableListOf(t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)),
+            // Polígono IND. (9 departures — rows 6 and 10 are dashes)
+            mutableListOf(t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)),
+            // Casino (6 departures — rows 1-3 and 8 are dashes; rows 4,5,7,9,11 are summer-only)
+            mutableListOf(t(10,15,su), t(12,10,su), t(13,7), t(14,50,su), t(18,10,su), t(21,0,su)),
+            // Valverde (8 departures — rows 1,2,4 are dashes)
+            mutableListOf(t(8,40), t(12,15), t(13,10), t(14,55), t(15,25), t(18,15), t(19,40), t(21,5)),
+            // Abades (8 departures — rows 1,2,4 are dashes)
+            mutableListOf(t(8,45), t(12,20), t(13,15), t(15,0), t(15,30), t(18,20), t(19,45), t(21,10)),
+            // Martín Miguel (3 departures — only rows 5,8,11)
+            mutableListOf(t(12,25), t(15,35), t(21,15)),
+            // Garcillán (4 departures — only rows 5,8,10,11; row 10 is #=Fridays-only, kept as yearRound)
+            mutableListOf(t(12,30), t(15,40), t(19,50), t(21,20))
+        )
+
+        // ── Weekday inbound ──────────────────────────────────────────────────────────────────
+        val wkIn = arrayOf(
+            // Garcillán (7 departures)
+            mutableListOf(t(6,55), t(8,40,su), t(10,40,su), t(12,30), t(15,40), t(16,25), t(21,20)),
+            // Martín Miguel (5 departures — rows 2,3,5,7,9-11 are dashes)
+            mutableListOf(t(7,0), t(9,40), t(12,25), t(15,35), t(21,15)),
+            // Abades (9 departures)
+            mutableListOf(t(7,5), t(7,40), t(10,45), t(12,20), t(15,0), t(15,30), t(16,0), t(18,20), t(21,10)),
+            // Valverde (10 departures)
+            mutableListOf(t(7,10), t(7,50), t(9,40), t(10,50), t(12,15), t(15,5), t(15,25), t(16,5), t(18,25), t(21,5)),
+            // Casino (3 departures — only rows 6,9,12; rows 6,12 are summer-only)
+            mutableListOf(t(12,10,su), t(16,10), t(21,0,su)),
+            // Polígono IND. (7 departures)
+            mutableListOf(t(7,15), t(10,55), t(12,5), t(15,10), t(15,20), t(18,5), t(20,55)),
+            // Segovia (12 departures)
+            mutableListOf(t(7,25), t(8,0), t(8,55), t(10,0), t(11,0), t(12,45), t(15,15), t(16,0), t(16,20), t(16,50), t(18,35), t(21,35))
+        )
+
+        // ── Saturday outbound: Segovia → Abades ─────────────────────────────────────────────
+        val satOut = arrayOf(
+            mutableListOf(t(13,30)), // Segovia
+            mutableListOf(t(13,40)), // Casino
+            mutableListOf(t(13,45)), // Valverde
+            mutableListOf(t(13,50))  // Abades
+        )
+
+        // ── Saturday inbound: Abades → Segovia ──────────────────────────────────────────────
+        val satIn = arrayOf(
+            mutableListOf(t(10,45)), // Abades
+            mutableListOf(t(10,50)), // Valverde
+            mutableListOf(t(11,0))   // Segovia
+        )
+
+        return buildTimetables(m1WeekdayOutbound,  DayType.WEEKDAY,   DIRECTION_OUTBOUND, wkOut)  +
+               buildTimetables(m1WeekdayInbound,   DayType.WEEKDAY,   DIRECTION_INBOUND,  wkIn)   +
+               buildTimetables(m1SaturdayOutbound, DayType.SATURDAY,  DIRECTION_OUTBOUND, satOut) +
+               buildTimetables(m1SaturdayInbound,  DayType.SATURDAY,  DIRECTION_INBOUND,  satIn)
     }
 
-    private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
-        // Departure accumulators per stop index.
-        val outDepsWk  = Array(m1WeekdayOutbound.size)   { mutableListOf<DepartureTime>() }
-        val inDepsWk   = Array(m1WeekdayInbound.size)    { mutableListOf<DepartureTime>() }
-        val outDepsSat = Array(m1SaturdayOutbound.size)  { mutableListOf<DepartureTime>() }
-        val inDepsSat  = Array(m1SaturdayInbound.size)   { mutableListOf<DepartureTime>() }
-
-        // Buffer accumulates (time, seasonal) pairs from multiple decoded rows until
-        // enough times are available to form a complete departure record (15 = 8 + 7).
-        val buffer = mutableListOf<Pair<LocalTime, SeasonalAvailability>>()
-
-        for (line in lines) {
-            // The Saturday section (TEXT font, 'H'-delimited times) may appear inline
-            // at the end of the last weekday row. Split off that portion before
-            // adding weekday times to the buffer.
-            val satStart = SAT_TIME_WITH_H.find(line)
-            val weekdayPart = if (satStart != null) line.substring(0, satStart.range.first) else line
-            val satPart     = if (satStart != null) line.substring(satStart.range.first)    else ""
-
-            // --- Weekday times ---
-            buffer.addAll(extractTimesWithSeasonal(weekdayPart))
-
-            // Process complete rows: 8 outbound positions + 7 inbound positions = 15.
-            // Outbound index 7 (return-to-Segovia terminal) is decoded but not stored.
-            while (buffer.size >= 15) {
-                val row = buffer.subList(0, 15).toList()
-                buffer.subList(0, 15).clear()
-
-                for (i in outDepsWk.indices) {  // 0..6
-                    outDepsWk[i].add(DepartureTime(row[i].first.hour, row[i].first.minute,
-                        seasonalAvailability = row[i].second))
-                }
-                for (i in inDepsWk.indices) {   // 0..6  → PDF indices 8..14
-                    inDepsWk[i].add(DepartureTime(row[i + 8].first.hour, row[i + 8].first.minute,
-                        seasonalAvailability = row[i + 8].second))
-                }
-            }
-
-            // --- Saturday times (H-delimited) ---
-            if (satPart.isNotEmpty()) {
-                val satTimes = SAT_TIME_WITH_H.findAll(satPart).map { m ->
-                    val timeStr  = m.groupValues[1]
-                    val seasonal = if (m.groupValues[2] == "*") SeasonalAvailability.SUMMER_ONLY
-                                   else                          SeasonalAvailability.YEAR_ROUND
-                    Pair(LocalTime.parse(timeStr, TIME_FORMATTER), seasonal)
-                }.toList()
-
-                for (i in outDepsSat.indices) {
-                    if (i < satTimes.size) {
-                        outDepsSat[i].add(DepartureTime(satTimes[i].first.hour,
-                            satTimes[i].first.minute, seasonalAvailability = satTimes[i].second))
-                    }
-                }
-                for (i in inDepsSat.indices) {
-                    val idx = i + m1SaturdayOutbound.size
-                    if (idx < satTimes.size) {
-                        inDepsSat[i].add(DepartureTime(satTimes[idx].first.hour,
-                            satTimes[idx].first.minute, seasonalAvailability = satTimes[idx].second))
-                    }
-                }
-            }
-        }
-
-        // Drain any remaining buffer: a leftover of 8 means an outbound-only departure;
-        // 7 means an inbound-only departure.
-        when (buffer.size) {
-            8 -> for (i in outDepsWk.indices) {
-                outDepsWk[i].add(DepartureTime(buffer[i].first.hour, buffer[i].first.minute,
-                    seasonalAvailability = buffer[i].second))
-            }
-            7 -> for (i in inDepsWk.indices) {
-                inDepsWk[i].add(DepartureTime(buffer[i].first.hour, buffer[i].first.minute,
-                    seasonalAvailability = buffer[i].second))
-            }
-            else -> if (buffer.isNotEmpty()) {
-                DebugConfig.debugPrint("M1Parser: ${buffer.size} leftover times after parsing — discarding")
-            }
-        }
-
-        return buildTimetables(m1WeekdayOutbound,  DayType.WEEKDAY,   DIRECTION_OUTBOUND, outDepsWk)  +
-               buildTimetables(m1WeekdayInbound,   DayType.WEEKDAY,   DIRECTION_INBOUND,  inDepsWk)   +
-               buildTimetables(m1SaturdayOutbound, DayType.SATURDAY,  DIRECTION_OUTBOUND, outDepsSat) +
-               buildTimetables(m1SaturdayInbound,  DayType.SATURDAY,  DIRECTION_INBOUND,  inDepsSat)
-    }
-
-    /** Extract (time, seasonal) pairs from a single decoded line, ignoring non-time content. */
-    private fun extractTimesWithSeasonal(text: String): List<Pair<LocalTime, SeasonalAvailability>> =
-        TIME_WITH_MARKER.findAll(text).mapNotNull { m ->
-            try {
-                val time     = LocalTime.parse(m.groupValues[1], TIME_FORMATTER)
-                val seasonal = if (m.groupValues[2] == "*") SeasonalAvailability.SUMMER_ONLY
-                               else                          SeasonalAvailability.YEAR_ROUND
-                Pair(time, seasonal)
-            } catch (_: Exception) { null }
-        }.toList()
+    private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
+        DepartureTime(h, m, seasonalAvailability = s)
 
     private fun buildTimetables(
         stops: List<BusStop>,
@@ -315,10 +195,10 @@ class M1Parser : CapableParser, RouteStopsProvider {
         deps: Array<MutableList<DepartureTime>>
     ): List<BusTimetable> = stops.mapIndexed { i, stop ->
         BusTimetable(
-            routeId   = "M1",
-            stopId    = stop.name,
-            dayType   = dayType,
-            direction = direction,
+            routeId    = "M1",
+            stopId     = stop.name,
+            dayType    = dayType,
+            direction  = direction,
             departures = deps[i]
         )
     }

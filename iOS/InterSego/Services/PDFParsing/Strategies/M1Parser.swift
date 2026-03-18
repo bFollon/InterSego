@@ -15,43 +15,31 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import CoreGraphics
 import Foundation
-import PDFKit
-
-/// Accumulates raw PDF glyph bytes during a CGPDFScanner pass.
-private class M1GlyphCollector {
-    var rawBytes: [UInt8] = []
-}
 
 /// Parser for M1 route (Segovia – Garcillán via Polígono, Casino, Valverde, Abades, Martín Miguel)
 ///
-/// PDF Structure:
-/// - Two tables rendered side by side: outbound (left, 8 columns) and inbound (right, 7 columns).
-/// - Each decoded row = one departure: 15 times total (8 outbound stops + 7 inbound stops).
-///   Index 7 in each outbound row is the return-to-Segovia terminal and is not stored.
-/// - Saturday section is appended inline in TEXT font after the last weekday row.
-///   Saturday times are 'H'-delimited: first 4 = outbound (Segovia→Abades),
-///   next 3 = inbound (Abades→Segovia).
-/// - Two font types in the PDF:
-///     Time font: raw codes 0xEC–0xF5 = digits 0–9 | 0x72 = row separator ('\n') |
-///                0x57 = colon placeholder ('t') | 0x8E/0xC1/0xC9 = '*' | 0xB7 = '#'
-///     Text font: standard +29 character-offset encoding (shared with M4/M6)
+/// The M1 PDF uses non-standard font encodings (no ToUnicode tables) and a sparse table layout
+/// where most rows have dashes in many columns. Reliable PDF extraction is not feasible, so
+/// timetable data is hardcoded from the official Linecar schedule.
 ///
-/// PDFKit's page.string returns an empty string for M1 (no ToUnicode tables in the fonts).
-/// This parser uses CGPDFScanner to extract raw glyph bytes directly from the content stream,
-/// mirroring Android's RawGlyphExtractionStrategy / PdfCanvasProcessor approach.
+/// Source: Linecar M1 PDF, verified from screenshot dated 2026-03-18.
 ///
-/// '*' on a time = summer only (13 Jun – 13 Sep → SeasonalAvailability.summerOnly).
-/// No Sunday service.
+/// Markers:
+///   * = summer only (13 Jun – 13 Sep, SeasonalAvailability.summerOnly)
+///   # = Garcillán only on Fridays (treated as yearRound for simplicity)
+///   H = highlighted cell in PDF (no semantic meaning, ignored)
+///   L Y V = Lunes y Viernes (Mon & Fri only, treated as yearRound for simplicity)
+///
+/// No Sunday service. Saturday runs a shorter Segovia ↔ Abades variant (SG-Labajos route).
 ///
 /// Coordinates are placeholders (0.0, 0.0) pending real GPS data.
 class M1Parser: CapableParser, RouteStopsProvider {
 
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
-        mode: .debug,
-        version: "1.0"
+        mode: .production,
+        version: "1.1"
     )
 
     // MARK: - Directions
@@ -82,7 +70,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
         Stops.casino, Stops.poligono, Stops.segovia
     ]
 
-    // Saturday runs a shorter variant: Segovia ↔ Abades only
+    // Saturday runs a shorter variant: Segovia ↔ Abades only (SG-Labajos route)
     static let m1SaturdayOutbound: [BusStop] = [
         Stops.segovia, Stops.casino, Stops.valverde, Stops.abades
     ]
@@ -90,26 +78,6 @@ class M1Parser: CapableParser, RouteStopsProvider {
     static let m1SaturdayInbound: [BusStop] = [
         Stops.abades, Stops.valverde, Stops.segovia
     ]
-
-    // MARK: - Patterns
-
-    // Time token with optional suffix marker (* # I)
-    private static let timeWithMarkerPattern = try! NSRegularExpression(
-        pattern: #"(\d{1,2}:\d{2})([*#I]?)"#
-    )
-
-    // Saturday times are separated by 'H' in the decoded text section.
-    private static let satTimePattern = try! NSRegularExpression(
-        pattern: #"(\d{1,2}:\d{2})([*]?)H"#
-    )
-
-    private static let digitSpaceDigitPattern = try! NSRegularExpression(
-        pattern: #"(\d) (\d)"#
-    )
-
-    private static let multiSpacePattern = try! NSRegularExpression(
-        pattern: #" +"#
-    )
 
     // MARK: - Protocol Conformance
 
@@ -145,289 +113,77 @@ class M1Parser: CapableParser, RouteStopsProvider {
     }
 
     func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
-        DebugConfig.debugPrint("M1Parser: Starting PDF parsing for \(pdfPath)")
-
-        guard FileManager.default.fileExists(atPath: pdfPath) else {
-            throw PDFParsingError("PDF file not found: \(pdfPath)")
-        }
-
-        guard let document = PDFDocument(url: URL(fileURLWithPath: pdfPath)) else {
-            throw PDFParsingError("Could not open PDF at \(pdfPath)")
-        }
-
-        var allLines: [String] = []
-
-        for pageIndex in 0..<document.pageCount {
-            guard let page = document.page(at: pageIndex),
-                  let cgPage = page.pageRef else { continue }
-
-            // M1 uses non-standard font encodings that PDFKit cannot decode via page.string
-            // (returns empty string). Use CGPDFScanner to extract raw glyph bytes directly,
-            // then apply the M1-specific decoder — mirrors Android's RawGlyphExtractionStrategy.
-            let rawText = extractRawGlyphs(from: cgPage)
-
-            let rawSample = rawText.prefix(80)
-            let rawCodepoints = rawSample.unicodeScalars.map { "U+\(String(format: "%04X", $0.value))" }.joined(separator: " ")
-            DebugConfig.debugPrint("M1Parser[p\(pageIndex)] raw codepoints (first 80): \(rawCodepoints)")
-
-            let decoded = Self.decodeM1Text(rawText)
-            let decodedSample = decoded.prefix(80)
-            DebugConfig.debugPrint("M1Parser[p\(pageIndex)] after decodeM1Text (first 80): \(String(decodedSample).debugDescription)")
-
-            // Normalise: colon placeholder → ':', collapse spaces.
-            var normalised = decoded.replacingOccurrences(of: " t ", with: ":")
-            normalised = Self.digitSpaceDigitPattern.stringByReplacingMatches(
-                in: normalised, range: NSRange(normalised.startIndex..., in: normalised), withTemplate: "$1$2")
-            normalised = Self.digitSpaceDigitPattern.stringByReplacingMatches(
-                in: normalised, range: NSRange(normalised.startIndex..., in: normalised), withTemplate: "$1$2")
-            normalised = Self.multiSpacePattern.stringByReplacingMatches(
-                in: normalised, range: NSRange(normalised.startIndex..., in: normalised), withTemplate: " ")
-
-            let pageLines = normalised.components(separatedBy: "\n")
-            DebugConfig.debugPrint("M1Parser[p\(pageIndex)] lines after normalisation: \(pageLines.count)")
-            pageLines.prefix(10).enumerated().forEach { i, line in
-                if !line.trimmingCharacters(in: .whitespaces).isEmpty {
-                    DebugConfig.debugPrint("M1Parser[p\(pageIndex)]   line[\(i)]: \(line.debugDescription)")
-                }
-            }
-            allLines += pageLines
-        }
-
-        let timetables = parseTimeTable(allLines)
-        DebugConfig.debugPrint("M1Parser: Parsed \(timetables.count) timetables")
-        return timetables
+        DebugConfig.debugPrint("M1Parser: returning hardcoded timetable (PDF parsing bypassed)")
+        return buildStaticTimetables()
     }
 
-    /// Extracts raw PDF glyph bytes using CGPDFScanner, bypassing PDFKit's font decoding.
-    /// Returns a String where each character's Unicode value equals the raw byte value (U+0000–U+00FF).
-    private func extractRawGlyphs(from cgPage: CGPDFPage) -> String {
-        let collector = M1GlyphCollector()
+    // MARK: - Static Timetable (weekday outbound, 11 rows × 7 stops)
+    //
+    // Rows match the PDF table top-to-bottom. Dashes in the PDF = stop omitted from that array.
+    // Index 7 in the PDF outbound table (return-to-Segovia terminal) is not stored.
 
-        let stream = CGPDFContentStreamCreateWithPage(cgPage)
-        defer { CGPDFContentStreamRelease(stream) }
+    private func buildStaticTimetables() -> [BusTimetable] {
+        let su = SeasonalAvailability.summerOnly
 
-        let table = CGPDFOperatorTableCreate()!
-        defer { CGPDFOperatorTableRelease(table) }
+        // ── Weekday outbound ──────────────────────────────────────────────────────────────────
+        let wkOut: [[DepartureTime]] = [
+            // Segovia (11 departures)
+            [t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)],
+            // Polígono IND. (9 departures — rows 6 and 10 are dashes)
+            [t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)],
+            // Casino (6 departures — rows 1-3 and 8 are dashes; rows 4,5,7,9,11 are summer-only)
+            [t(10,15,su), t(12,10,su), t(13,7), t(14,50,su), t(18,10,su), t(21,0,su)],
+            // Valverde (8 departures — rows 1,2,4 are dashes)
+            [t(8,40), t(12,15), t(13,10), t(14,55), t(15,25), t(18,15), t(19,40), t(21,5)],
+            // Abades (8 departures — rows 1,2,4 are dashes)
+            [t(8,45), t(12,20), t(13,15), t(15,0), t(15,30), t(18,20), t(19,45), t(21,10)],
+            // Martín Miguel (3 departures — only rows 5,8,11)
+            [t(12,25), t(15,35), t(21,15)],
+            // Garcillán (4 departures — only rows 5,8,10,11; row 10 is #=Fridays-only, kept as yearRound)
+            [t(12,30), t(15,40), t(19,50), t(21,20)],
+        ]
 
-        let info = Unmanaged.passUnretained(collector).toOpaque()
+        // ── Weekday inbound ───────────────────────────────────────────────────────────────────
+        let wkIn: [[DepartureTime]] = [
+            // Garcillán (7 departures)
+            [t(6,55), t(8,40,su), t(10,40,su), t(12,30), t(15,40), t(16,25), t(21,20)],
+            // Martín Miguel (5 departures — rows 2,3,5,7,9-11 are dashes)
+            [t(7,0), t(9,40), t(12,25), t(15,35), t(21,15)],
+            // Abades (9 departures)
+            [t(7,5), t(7,40), t(10,45), t(12,20), t(15,0), t(15,30), t(16,0), t(18,20), t(21,10)],
+            // Valverde (10 departures)
+            [t(7,10), t(7,50), t(9,40), t(10,50), t(12,15), t(15,5), t(15,25), t(16,5), t(18,25), t(21,5)],
+            // Casino (3 departures — only rows 6,9,12; rows 6,12 are summer-only)
+            [t(12,10,su), t(16,10), t(21,0,su)],
+            // Polígono IND. (7 departures)
+            [t(7,15), t(10,55), t(12,5), t(15,10), t(15,20), t(18,5), t(20,55)],
+            // Segovia (12 departures)
+            [t(7,25), t(8,0), t(8,55), t(10,0), t(11,0), t(12,45), t(15,15), t(16,0), t(16,20), t(16,50), t(18,35), t(21,35)],
+        ]
 
-        // Tj: show string — collect raw bytes
-        CGPDFOperatorTableSetCallback(table, "Tj") { scanner, info in
-            guard let info = info else { return }
-            let c = Unmanaged<M1GlyphCollector>.fromOpaque(info).takeUnretainedValue()
-            var str: CGPDFStringRef?
-            guard CGPDFScannerPopString(scanner, &str), let s = str else { return }
-            let len = CGPDFStringGetLength(s)
-            if let bytes = CGPDFStringGetBytePtr(s) {
-                for i in 0..<len { c.rawBytes.append(bytes[i]) }
-            }
-        }
+        // ── Saturday outbound: Segovia → Abades ───────────────────────────────────────────────
+        let satOut: [[DepartureTime]] = [
+            [t(13,30)], // Segovia
+            [t(13,40)], // Casino
+            [t(13,45)], // Valverde
+            [t(13,50)], // Abades
+        ]
 
-        // TJ: show array (with kerning) — collect raw bytes from string elements only
-        CGPDFOperatorTableSetCallback(table, "TJ") { scanner, info in
-            guard let info = info else { return }
-            let c = Unmanaged<M1GlyphCollector>.fromOpaque(info).takeUnretainedValue()
-            var arr: CGPDFArrayRef?
-            guard CGPDFScannerPopArray(scanner, &arr), let array = arr else { return }
-            let count = CGPDFArrayGetCount(array)
-            for i in 0..<count {
-                var str: CGPDFStringRef?
-                if CGPDFArrayGetString(array, i, &str), let s = str {
-                    let len = CGPDFStringGetLength(s)
-                    if let bytes = CGPDFStringGetBytePtr(s) {
-                        for j in 0..<len { c.rawBytes.append(bytes[j]) }
-                    }
-                }
-            }
-        }
+        // ── Saturday inbound: Abades → Segovia ────────────────────────────────────────────────
+        let satIn: [[DepartureTime]] = [
+            [t(10,45)], // Abades
+            [t(10,50)], // Valverde
+            [t(11,0)],  // Segovia
+        ]
 
-        let scanner = CGPDFScannerCreate(stream, table, info)
-        defer { CGPDFScannerRelease(scanner) }
-        CGPDFScannerScan(scanner)
-
-        return String(collector.rawBytes.map { Character(UnicodeScalar($0)) })
+        return buildTimetables(stops: Self.m1WeekdayOutbound,  dayType: .weekday,   direction: Self.directionOutbound, deps: wkOut)
+             + buildTimetables(stops: Self.m1WeekdayInbound,   dayType: .weekday,   direction: Self.directionInbound,  deps: wkIn)
+             + buildTimetables(stops: Self.m1SaturdayOutbound, dayType: .saturday,  direction: Self.directionOutbound, deps: satOut)
+             + buildTimetables(stops: Self.m1SaturdayInbound,  dayType: .saturday,  direction: Self.directionInbound,  deps: satIn)
     }
 
-    // MARK: - M1 Font Decoder
-
-    /// Decode M1 raw PDF glyph bytes (extracted via CGPDFScanner).
-    ///
-    /// The M1 PDF uses two font encodings — each raw byte is treated as its glyph code:
-    ///
-    ///   Time font codes:
-    ///     0xEC–0xF5 → digits '0'–'9'
-    ///     0x72      → '\n' (row separator)
-    ///     0x57      → 't'  (colon placeholder, normalised later to ':')
-    ///     0x8E, 0xC1, 0xC9 → '*' (seasonal marker)
-    ///     0xB7      → '#'  (special marker)
-    ///
-    ///   Text font codes (standard +29 offset encoding, shared with M4/M6):
-    ///     Apply +29 offset to recover printable ASCII.
-    private static func decodeM1Text(_ raw: String) -> String {
-        var result = ""
-        result.reserveCapacity(raw.unicodeScalars.count)
-        for scalar in raw.unicodeScalars {
-            let code = Int(scalar.value)
-            switch code {
-            case 0x00:
-                continue  // null byte (2-byte CID encoding artefact)
-            case 0xEC...0xF5:
-                // Time font digits 0–9
-                result.append(Character(UnicodeScalar(Int(("0" as UnicodeScalar).value) + code - 0xEC)!))
-            case 0x72:
-                // Time font row separator
-                result.append("\n")
-            case 0x57:
-                // Time font colon placeholder (also text font 'W' raw = 0x3A → ':' after +29,
-                // but that path goes through the +29 branch below). Here we're seeing the time
-                // font's raw 0x57 mapped to 'W' by PDFKit, so convert to 't'.
-                result.append("t")
-            case 0x8E, 0xC1, 0xC9:
-                result.append("*")
-            case 0xB7:
-                result.append("#")
-            default:
-                // Text font: apply +29 offset
-                let shifted = code + 29
-                if (0x20...0x7E).contains(shifted) || shifted == 0x0A || shifted == 0x0D {
-                    result.append(Character(UnicodeScalar(shifted)!))
-                }
-                // Codes that map outside printable ASCII are discarded.
-            }
-        }
-        return result
-    }
-
-    // MARK: - Parsing
-
-    private func parseTimeTable(_ lines: [String]) -> [BusTimetable] {
-        // Departure accumulators per stop index.
-        var outDepsWk  = Array(repeating: [DepartureTime](), count: Self.m1WeekdayOutbound.count)
-        var inDepsWk   = Array(repeating: [DepartureTime](), count: Self.m1WeekdayInbound.count)
-        var outDepsSat = Array(repeating: [DepartureTime](), count: Self.m1SaturdayOutbound.count)
-        var inDepsSat  = Array(repeating: [DepartureTime](), count: Self.m1SaturdayInbound.count)
-
-        // Buffer accumulates (time, seasonal) pairs until we have a full row (15 = 8 + 7).
-        var buffer: [(hour: Int, minute: Int, seasonal: SeasonalAvailability)] = []
-
-        for line in lines {
-            // Split off the Saturday section (H-delimited times in TEXT font) if present.
-            let satRange = Self.satTimePattern.rangeOfFirstMatch(
-                in: line, range: NSRange(line.startIndex..., in: line))
-            let weekdayPart: String
-            let satPart: String
-            if satRange.location != NSNotFound, let swiftRange = Range(satRange, in: line) {
-                weekdayPart = String(line[line.startIndex..<swiftRange.lowerBound])
-                satPart     = String(line[swiftRange.lowerBound...])
-            } else {
-                weekdayPart = line
-                satPart     = ""
-            }
-
-            // --- Weekday times ---
-            buffer += extractTimesWithSeasonal(from: weekdayPart)
-
-            while buffer.count >= 15 {
-                let row = Array(buffer.prefix(15))
-                buffer.removeFirst(15)
-
-                // Outbound: indices 0–6 (stop 0–6); index 7 = return terminal (skipped)
-                for i in 0..<Self.m1WeekdayOutbound.count {
-                    outDepsWk[i].append(DepartureTime(hour: row[i].hour, minute: row[i].minute,
-                                                      seasonalAvailability: row[i].seasonal))
-                }
-                // Inbound: PDF indices 8–14
-                for i in 0..<Self.m1WeekdayInbound.count {
-                    let r = row[i + 8]
-                    inDepsWk[i].append(DepartureTime(hour: r.hour, minute: r.minute,
-                                                     seasonalAvailability: r.seasonal))
-                }
-            }
-
-            // --- Saturday times (H-delimited) ---
-            if !satPart.isEmpty {
-                let satTimes = extractSaturdayTimes(from: satPart)
-                for i in 0..<Self.m1SaturdayOutbound.count {
-                    if i < satTimes.count {
-                        outDepsSat[i].append(DepartureTime(hour: satTimes[i].hour,
-                                                           minute: satTimes[i].minute,
-                                                           seasonalAvailability: satTimes[i].seasonal))
-                    }
-                }
-                for i in 0..<Self.m1SaturdayInbound.count {
-                    let idx = i + Self.m1SaturdayOutbound.count
-                    if idx < satTimes.count {
-                        inDepsSat[i].append(DepartureTime(hour: satTimes[idx].hour,
-                                                          minute: satTimes[idx].minute,
-                                                          seasonalAvailability: satTimes[idx].seasonal))
-                    }
-                }
-            }
-        }
-
-        // Drain remaining buffer: 8 = outbound-only, 7 = inbound-only.
-        if buffer.count == 8 {
-            for i in 0..<Self.m1WeekdayOutbound.count {
-                outDepsWk[i].append(DepartureTime(hour: buffer[i].hour, minute: buffer[i].minute,
-                                                  seasonalAvailability: buffer[i].seasonal))
-            }
-        } else if buffer.count == 7 {
-            for i in 0..<Self.m1WeekdayInbound.count {
-                inDepsWk[i].append(DepartureTime(hour: buffer[i].hour, minute: buffer[i].minute,
-                                                 seasonalAvailability: buffer[i].seasonal))
-            }
-        } else if !buffer.isEmpty {
-            DebugConfig.debugPrint("M1Parser: \(buffer.count) leftover times after parsing — discarding")
-        }
-
-        let wkOutTotal = outDepsWk.map(\.count).reduce(0, +)
-        let wkInTotal  = inDepsWk.map(\.count).reduce(0, +)
-        let satOutTotal = outDepsSat.map(\.count).reduce(0, +)
-        let satInTotal  = inDepsSat.map(\.count).reduce(0, +)
-        DebugConfig.debugPrint("M1Parser: departure counts — wkOut=\(wkOutTotal) wkIn=\(wkInTotal) satOut=\(satOutTotal) satIn=\(satInTotal)")
-
-        return buildTimetables(stops: Self.m1WeekdayOutbound,  dayType: .weekday,   direction: Self.directionOutbound, deps: outDepsWk)
-             + buildTimetables(stops: Self.m1WeekdayInbound,   dayType: .weekday,   direction: Self.directionInbound,  deps: inDepsWk)
-             + buildTimetables(stops: Self.m1SaturdayOutbound, dayType: .saturday,  direction: Self.directionOutbound, deps: outDepsSat)
-             + buildTimetables(stops: Self.m1SaturdayInbound,  dayType: .saturday,  direction: Self.directionInbound,  deps: inDepsSat)
-    }
-
-    private func extractTimesWithSeasonal(
-        from text: String
-    ) -> [(hour: Int, minute: Int, seasonal: SeasonalAvailability)] {
-        let range = NSRange(text.startIndex..., in: text)
-        return Self.timeWithMarkerPattern.matches(in: text, range: range).compactMap { match in
-            guard let timeRange   = Range(match.range(at: 1), in: text),
-                  let markerRange = Range(match.range(at: 2), in: text) else { return nil }
-            let timeStr   = String(text[timeRange])
-            let marker    = String(text[markerRange])
-            guard let (h, m) = parseTime(timeStr) else { return nil }
-            let seasonal: SeasonalAvailability = marker == "*" ? .summerOnly : .yearRound
-            return (hour: h, minute: m, seasonal: seasonal)
-        }
-    }
-
-    private func extractSaturdayTimes(
-        from text: String
-    ) -> [(hour: Int, minute: Int, seasonal: SeasonalAvailability)] {
-        let range = NSRange(text.startIndex..., in: text)
-        return Self.satTimePattern.matches(in: text, range: range).compactMap { match in
-            guard let timeRange   = Range(match.range(at: 1), in: text),
-                  let markerRange = Range(match.range(at: 2), in: text) else { return nil }
-            let timeStr = String(text[timeRange])
-            let marker  = String(text[markerRange])
-            guard let (h, m) = parseTime(timeStr) else { return nil }
-            let seasonal: SeasonalAvailability = marker == "*" ? .summerOnly : .yearRound
-            return (hour: h, minute: m, seasonal: seasonal)
-        }
-    }
-
-    private func parseTime(_ timeStr: String) -> (Int, Int)? {
-        let parts = timeStr.split(separator: ":")
-        guard parts.count == 2,
-              let h = Int(parts[0]),
-              let m = Int(parts[1]) else { return nil }
-        return (h, m)
+    private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
+        DepartureTime(hour: h, minute: m, seasonalAvailability: s)
     }
 
     private func buildTimetables(
