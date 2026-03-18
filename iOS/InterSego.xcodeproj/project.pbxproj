@@ -31,6 +31,7 @@
 		A10000010000000000000016 /* TimetableParserUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000016 /* TimetableParserUtils.swift */; };
 		A10000010000000000000017 /* M4Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000017 /* M4Parser.swift */; };
 		A10000010000000000000018 /* M6Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000018 /* M6Parser.swift */; };
+		A10000010000000000000031 /* M1Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* M1Parser.swift */; };
 		A10000010000000000000019 /* PDFProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* PDFProcessingService.swift */; };
 		A1000001000000000000001A /* TimetableService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001A /* TimetableService.swift */; };
 		A1000001000000000000001B /* BusRouteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001B /* BusRouteRegistry.swift */; };
@@ -70,6 +71,7 @@
 		A20000010000000000000016 /* TimetableParserUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableParserUtils.swift; sourceTree = "<group>"; };
 		A20000010000000000000017 /* M4Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M4Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000018 /* M6Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M6Parser.swift; sourceTree = "<group>"; };
+		A20000010000000000000031 /* M1Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M1Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000019 /* PDFProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFProcessingService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001A /* TimetableService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001B /* BusRouteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusRouteRegistry.swift; sourceTree = "<group>"; };
@@ -189,6 +191,7 @@
 		A50000010000000000000008 /* Strategies */ = {
 			isa = PBXGroup;
 			children = (
+				A20000010000000000000031 /* M1Parser.swift */,
 				A20000010000000000000017 /* M4Parser.swift */,
 				A20000010000000000000018 /* M6Parser.swift */,
 			);
@@ -287,6 +290,7 @@
 				A10000010000000000000014 /* BusTimetableParser.swift in Sources */,
 				A10000010000000000000015 /* PDFTextExtractor.swift in Sources */,
 				A10000010000000000000016 /* TimetableParserUtils.swift in Sources */,
+				A10000010000000000000031 /* M1Parser.swift in Sources */,
 				A10000010000000000000017 /* M4Parser.swift in Sources */,
 				A10000010000000000000018 /* M6Parser.swift in Sources */,
 				A10000010000000000000019 /* PDFProcessingService.swift in Sources */,
@@ -445,7 +449,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -479,7 +483,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.2;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

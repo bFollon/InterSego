@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences |
 | M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation |
-| M1 | ❌ | ❌ | |
+| M1 | 🚧 (DEBUG skeleton) | 🚧 (DEBUG skeleton) | Parser registered, prints PDF lines, returns empty timetables until stops are mapped |
 | M2 | ❌ | ❌ | |
 | M3 | ❌ | ❌ | |
 | M5 | ❌ | ❌ | |

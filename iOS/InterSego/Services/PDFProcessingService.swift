@@ -32,7 +32,7 @@ actor PDFProcessingService {
     private var parsers: [String: BusTimetableParser] = [:]
 
     private init() {
-        let allParsers: [BusTimetableParser] = [M4Parser(), M6Parser()]
+        let allParsers: [BusTimetableParser] = [M1Parser(), M4Parser(), M6Parser()]
         for parser in allParsers {
             if let capable = parser as? CapableParser {
                 for routeId in capable.capabilities.supportedRoutes {
