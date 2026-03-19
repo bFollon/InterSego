@@ -433,6 +433,21 @@ private fun DayScheduleTimelineRow(
                             )
                         }
                     }
+
+                    // Seasonal label badge
+                    departure.seasonalAvailability.displayLabel?.let { label ->
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
 
                 if (!departure.notes.isNullOrBlank()) {

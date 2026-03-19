@@ -324,6 +324,16 @@ private struct DayScheduleTimelineRow: View {
                                 .background(Color(.systemGray5))
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
                         }
+
+                        if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                            Text(seasonalLabel)
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.12))
+                                .foregroundColor(.accentColor)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        }
                     }
 
                     if let notes = departure.notes, !notes.isEmpty {

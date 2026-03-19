@@ -53,6 +53,16 @@ enum class SeasonalAvailability {
         FRI_ONLY          -> weekday == null || weekday == java.util.Calendar.FRIDAY
     }
 
+    /** Short Spanish label shown in the UI alongside a departure time, or null for year-round service. */
+    val displayLabel: String? get() = when (this) {
+        YEAR_ROUND        -> null
+        MON_FRI_ONLY      -> "Lun-Vie"
+        FRI_ONLY          -> "Viernes"
+        JUNE_TO_SEPT_ONLY -> "Jun-Sep"
+        SUMMER_ONLY       -> "Jul-Ago"
+        SCHOOL_ONLY       -> "Escolar"
+    }
+
     companion object {
         val DEFAULT_SUMMER_MONTHS: Set<Month> = setOf(Month.JULY, Month.AUGUST)
         val JUNE_TO_SEPT_MONTHS: Set<Month>   = setOf(Month.JUNE, Month.JULY, Month.AUGUST, Month.SEPTEMBER)

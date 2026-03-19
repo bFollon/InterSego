@@ -37,6 +37,18 @@ enum SeasonalAvailability: String, Codable {
     ///
     /// When `weekday` is nil, day-of-week restrictions (`.monFriOnly`, `.friOnly`) are treated
     /// as unrestricted — useful for callers that only have month context.
+    /// Short Spanish label shown in the UI alongside a departure time, or nil for year-round service.
+    var displayLabel: String? {
+        switch self {
+        case .yearRound:      return nil
+        case .monFriOnly:     return "Lun-Vie"
+        case .friOnly:        return "Viernes"
+        case .juneToSeptOnly: return "Jun-Sep"
+        case .summerOnly:     return "Jul-Ago"
+        case .schoolOnly:     return "Escolar"
+        }
+    }
+
     func runsIn(month: Int, weekday: Int? = nil, summerMonths: Set<Int> = defaultSummerMonths) -> Bool {
         switch self {
         case .yearRound:        return true

@@ -55,7 +55,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
         mode = ParserMode.PRODUCTION,
-        version = "1.5"
+        version = "1.6"
     )
 
     companion object {
@@ -140,6 +140,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
         val yr  = SeasonalAvailability.YEAR_ROUND
         val jun = SeasonalAvailability.JUNE_TO_SEPT_ONLY
         val fri = SeasonalAvailability.FRI_ONLY
+        val lyv = SeasonalAvailability.MON_FRI_ONLY
 
         // ── Weekday Direction A (circularA): full outbound via all villages + direct return ──────
         //
@@ -182,12 +183,12 @@ class M1Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(6,52)),
             // GARCILLAN turning point; 8:40 and 10:40 are (*) = gasolinera pickup = year-round
             mutableListOf(t(6,55), t(8,40,yr), t(10,40,yr), t(16,25)),
-            // MARTIN_MIGUEL return leg
-            mutableListOf(t(7,0), t(9,40)),
+            // MARTIN_MIGUEL return leg (9:40 = L Y V Mondays & Fridays only)
+            mutableListOf(t(7,0), t(9,40,lyv)),
             // ABADES return leg
             mutableListOf(t(7,5), t(7,40), t(10,45), t(16,0), t(18,20)),
-            // VALVERDE return leg
-            mutableListOf(t(7,10), t(7,50), t(9,40), t(10,50), t(15,5), t(16,5), t(18,25)),
+            // VALVERDE return leg (9:40 = L Y V Mondays & Fridays only)
+            mutableListOf(t(7,10), t(7,50), t(9,40,lyv), t(10,50), t(15,5), t(16,5), t(18,25)),
             // CASINO return leg
             mutableListOf(t(16,10)),
             // POLIGONO_2_B_IN return leg

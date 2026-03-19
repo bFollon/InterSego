@@ -562,6 +562,16 @@ private struct NextDepartureCard: View {
                         .background(Color(.systemGray5))
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
+
+                if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                    Text(seasonalLabel)
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.accentColor.opacity(0.12))
+                        .foregroundColor(.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
             }
 
             // Countdown
@@ -664,6 +674,16 @@ private struct DepartureTimeline: View {
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
                                         .background(Color(.systemGray5))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
+
+                                if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                                    Text(seasonalLabel)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.accentColor.opacity(0.12))
+                                        .foregroundColor(.accentColor)
                                         .clipShape(RoundedRectangle(cornerRadius: 4))
                                 }
                             }

@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences; v1.2 (stable stop IDs) |
 | M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; Android v0.4, iOS v0.5 (stable stop IDs) |
-| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); v1.5; isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); ★=JUNE_TO_SEPT_ONLY, (*)=YEAR_ROUND, LYV=MON_FRI_ONLY, #=FRI_ONLY |
+| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); v1.6; isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); ★=JUNE_TO_SEPT_ONLY, (*)=YEAR_ROUND, LYV=MON_FRI_ONLY (circularB: Martín Miguel 9:40, Valverde 9:40), #=FRI_ONLY |
 | M2 | ❌ | ❌ | |
 | M3 | ❌ | ❌ | |
 | M5 | ❌ | ❌ | |

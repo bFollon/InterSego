@@ -41,7 +41,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
         mode: .production,
-        version: "1.5"
+        version: "1.6"
     )
 
     // MARK: - Directions
@@ -137,6 +137,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
     private func buildStaticTimetables() -> [BusTimetable] {
         let jun = SeasonalAvailability.juneToSeptOnly
         let fri = SeasonalAvailability.friOnly
+        let lyv = SeasonalAvailability.monFriOnly
 
         // ── Weekday Direction A (circularA): full outbound via all villages + direct return ──────
         //
@@ -179,12 +180,12 @@ class M1Parser: CapableParser, RouteStopsProvider {
             [t(6,52)],
             // GARCILLAN turning point; 8:40 and 10:40 are (*) = gasolinera pickup = year-round
             [t(6,55), t(8,40), t(10,40), t(16,25)],
-            // MARTIN_MIGUEL return leg
-            [t(7,0), t(9,40)],
+            // MARTIN_MIGUEL return leg (9:40 = L Y V Mondays & Fridays only)
+            [t(7,0), t(9,40,lyv)],
             // ABADES return leg
             [t(7,5), t(7,40), t(10,45), t(16,0), t(18,20)],
-            // VALVERDE return leg
-            [t(7,10), t(7,50), t(9,40), t(10,50), t(15,5), t(16,5), t(18,25)],
+            // VALVERDE return leg (9:40 = L Y V Mondays & Fridays only)
+            [t(7,10), t(7,50), t(9,40,lyv), t(10,50), t(15,5), t(16,5), t(18,25)],
             // CASINO return leg
             [t(16,10)],
             // POLIGONO_2_B_IN return leg
