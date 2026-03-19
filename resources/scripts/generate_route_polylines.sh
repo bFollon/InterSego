@@ -263,5 +263,42 @@ $M6_TABANERA_2_ROUTING;$M6_TABANERA_ROUTING;\
 $M6_PALAZUELOS_COLEGIO_ROUTING;$M6_PALAZUELOS_ROUTING;\
 $M6_PLAZA_TOROS_ROUTING;$M6_LA_PISTA_ROUTING;$M6_ANDRES_LAGUNA_ROUTING;$M6_ESTACION_BUS_ROUTING"
 
+# ---------------------------------------------------------------------------
+# M1 — view IDs: "outbound", "inbound"
+# ---------------------------------------------------------------------------
+
+# --- M1 stop coordinates ---
+M1_SEGOVIA="-4.122431,40.944973"
+M1_POLIGONO="-4.198156,40.957976"
+M1_POLIGONO_2="-4.206457,40.957554"
+M1_CASINO="-4.209251,40.965154"
+M1_VALVERDE="-4.235343,40.956274"
+M1_ABADES="-4.267038,40.915804"
+M1_MARTIN_MIGUEL="-4.268660,40.951889"
+M1_GARCILLAN="-4.264724,40.976809"
+
+# Routing overrides (physical coords used directly — override if routingCoordinates is set in M1Parser)
+M1_SEGOVIA_ROUTING="$M1_SEGOVIA"
+M1_POLIGONO_ROUTING="$M1_POLIGONO"
+M1_POLIGONO_2_ROUTING="$M1_POLIGONO_2"
+M1_CASINO_ROUTING="$M1_CASINO"
+M1_VALVERDE_ROUTING="$M1_VALVERDE"
+M1_ABADES_ROUTING="$M1_ABADES"
+M1_MARTIN_MIGUEL_ROUTING="$M1_MARTIN_MIGUEL"
+M1_GARCILLAN_ROUTING="$M1_GARCILLAN"
+
+echo ""
+echo "=== M1 ==="
+
+# outbound: Segovia → Polígono → Polígono 2 → Casino → Valverde → Abades → Martín Miguel → Garcillán
+save_polyline "M1-outbound" \
+    "$M1_SEGOVIA_ROUTING;$M1_POLIGONO_ROUTING;$M1_POLIGONO_2_ROUTING;$M1_CASINO_ROUTING;\
+$M1_VALVERDE_ROUTING;$M1_ABADES_ROUTING;$M1_MARTIN_MIGUEL_ROUTING;$M1_GARCILLAN_ROUTING"
+
+# inbound: Garcillán → Martín Miguel → Abades → Valverde → Casino → Polígono 2 → Polígono → Segovia
+save_polyline "M1-inbound" \
+    "$M1_GARCILLAN_ROUTING;$M1_MARTIN_MIGUEL_ROUTING;$M1_ABADES_ROUTING;$M1_VALVERDE_ROUTING;\
+$M1_CASINO_ROUTING;$M1_POLIGONO_2_ROUTING;$M1_POLIGONO_ROUTING;$M1_SEGOVIA_ROUTING"
+
 echo ""
 echo "Done. Files written to: $OUTPUT_DIR"
