@@ -39,7 +39,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
         mode: .production,
-        version: "1.1"
+        version: "1.2"
     )
 
     // MARK: - Directions
@@ -50,24 +50,26 @@ class M1Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let segovia      = BusStop(name: "Segovia",             coordinates: "0.0, 0.0")
-        static let poligono     = BusStop(name: "Polígono Industrial", coordinates: "0.0, 0.0")
-        static let casino       = BusStop(name: "Casino",              coordinates: "0.0, 0.0")
-        static let valverde     = BusStop(name: "Valverde de Majano",  coordinates: "0.0, 0.0")
-        static let abades       = BusStop(name: "Abades",              coordinates: "0.0, 0.0")
-        static let martinMiguel = BusStop(name: "Martín Miguel",       coordinates: "0.0, 0.0")
-        static let garcillan    = BusStop(name: "Garcillán",           coordinates: "0.0, 0.0")
+        static let segovia      = BusStop(name: "Segovia",             coordinates: "40.944973, -4.122431")
+        static let poligono     = BusStop(name: "Polígono Industrial", coordinates: "40.957976, -4.198156")
+        static let poligono2    = BusStop(name: "Polígono Industrial", coordinates: "40.957554, -4.206457")
+        static let casino       = BusStop(name: "Casino",              coordinates: "40.965154, -4.209251")
+        static let valverde     = BusStop(name: "Valverde de Majano",  coordinates: "40.956274, -4.235343")
+        static let abades       = BusStop(name: "Abades",              coordinates: "40.915804, -4.267038")
+        static let martinMiguel = BusStop(name: "Martín Miguel",       coordinates: "40.951889, -4.268660")
+        static let garcillan    = BusStop(name: "Garcillán",           coordinates: "40.976809, -4.264724")
     }
 
-    // Weekday outbound: 7 named stops (PDF has 8 columns; index 7 = return terminal, skipped)
+    // Weekday outbound: 8 named stops (PDF has 8 columns; index 7 = return terminal, skipped)
+    // Polígono is a two-stop cluster: poligono → poligono2 on the way out.
     static let m1WeekdayOutbound: [BusStop] = [
-        Stops.segovia, Stops.poligono, Stops.casino, Stops.valverde,
+        Stops.segovia, Stops.poligono, Stops.poligono2, Stops.casino, Stops.valverde,
         Stops.abades, Stops.martinMiguel, Stops.garcillan
     ]
 
     static let m1WeekdayInbound: [BusStop] = [
         Stops.garcillan, Stops.martinMiguel, Stops.abades, Stops.valverde,
-        Stops.casino, Stops.poligono, Stops.segovia
+        Stops.casino, Stops.poligono2, Stops.poligono, Stops.segovia
     ]
 
     // Saturday runs a shorter variant: Segovia ↔ Abades only (SG-Labajos route)
@@ -117,10 +119,11 @@ class M1Parser: CapableParser, RouteStopsProvider {
         return buildStaticTimetables()
     }
 
-    // MARK: - Static Timetable (weekday outbound, 11 rows × 7 stops)
+    // MARK: - Static Timetable (weekday outbound, 11 rows × 8 stops)
     //
     // Rows match the PDF table top-to-bottom. Dashes in the PDF = stop omitted from that array.
     // Index 7 in the PDF outbound table (return-to-Segovia terminal) is not stored.
+    // Polígono is a two-stop cluster; both stops share the same scheduled times.
 
     private func buildStaticTimetables() -> [BusTimetable] {
         let su = SeasonalAvailability.summerOnly
@@ -129,8 +132,10 @@ class M1Parser: CapableParser, RouteStopsProvider {
         let wkOut: [[DepartureTime]] = [
             // Segovia (11 departures)
             [t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)],
-            // Polígono IND. (9 departures — rows 6 and 10 are dashes)
+            // Polígono IND. stop 1 (9 departures — rows 6 and 10 are dashes)
             [t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)],
+            // Polígono IND. stop 2 — cluster, +2 min estimate from stop 1
+            [t(6,52), t(7,42), t(8,37), t(10,12), t(12,7), t(14,47), t(15,22), t(18,7), t(20,57)],
             // Casino (6 departures — rows 1-3 and 8 are dashes; rows 4,5,7,9,11 are summer-only)
             [t(10,15,su), t(12,10,su), t(13,7), t(14,50,su), t(18,10,su), t(21,0,su)],
             // Valverde (8 departures — rows 1,2,4 are dashes)
@@ -155,8 +160,10 @@ class M1Parser: CapableParser, RouteStopsProvider {
             [t(7,10), t(7,50), t(9,40), t(10,50), t(12,15), t(15,5), t(15,25), t(16,5), t(18,25), t(21,5)],
             // Casino (3 departures — only rows 6,9,12; rows 6,12 are summer-only)
             [t(12,10,su), t(16,10), t(21,0,su)],
-            // Polígono IND. (7 departures)
+            // Polígono IND. stop 2 — cluster, PDF anchor time (stop 1 is +2 min)
             [t(7,15), t(10,55), t(12,5), t(15,10), t(15,20), t(18,5), t(20,55)],
+            // Polígono IND. stop 1 — +2 min from stop 2
+            [t(7,17), t(10,57), t(12,7), t(15,12), t(15,22), t(18,7), t(20,57)],
             // Segovia (12 departures)
             [t(7,25), t(8,0), t(8,55), t(10,0), t(11,0), t(12,45), t(15,15), t(16,0), t(16,20), t(16,50), t(18,35), t(21,35)],
         ]

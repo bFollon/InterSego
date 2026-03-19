@@ -53,7 +53,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
         mode = ParserMode.PRODUCTION,
-        version = "1.1"
+        version = "1.2"
     )
 
     companion object {
@@ -61,24 +61,27 @@ class M1Parser : CapableParser, RouteStopsProvider {
         private const val DIRECTION_INBOUND  = "Garcillán → Segovia"
 
         private object Stops {
-            val SEGOVIA       = BusStop(name = "Segovia",              coordinates = "0.0, 0.0")
-            val POLIGONO      = BusStop(name = "Polígono Industrial",  coordinates = "0.0, 0.0")
-            val CASINO        = BusStop(name = "Casino",               coordinates = "0.0, 0.0")
-            val VALVERDE      = BusStop(name = "Valverde de Majano",   coordinates = "0.0, 0.0")
-            val ABADES        = BusStop(name = "Abades",               coordinates = "0.0, 0.0")
-            val MARTIN_MIGUEL = BusStop(name = "Martín Miguel",        coordinates = "0.0, 0.0")
-            val GARCILLAN     = BusStop(name = "Garcillán",            coordinates = "0.0, 0.0")
+            val SEGOVIA       = BusStop(name = "Segovia",              coordinates = "40.944973, -4.122431")
+            val POLIGONO      = BusStop(name = "Polígono Industrial",  coordinates = "40.957976, -4.198156")
+            val POLIGONO_2      = BusStop(name = "Polígono Industrial",  coordinates = "40.957554, -4.206457")
+
+            val CASINO        = BusStop(name = "Casino",               coordinates = "40.965154, -4.209251")
+            val VALVERDE      = BusStop(name = "Valverde de Majano",   coordinates = "40.956274, -4.235343")
+            val ABADES        = BusStop(name = "Abades",               coordinates = "40.915804, -4.267038")
+            val MARTIN_MIGUEL = BusStop(name = "Martín Miguel",        coordinates = "40.951889, -4.268660")
+            val GARCILLAN     = BusStop(name = "Garcillán",            coordinates = "40.976809, -4.264724")
         }
 
-        // Weekday outbound: 7 named stops (PDF has 8 columns; index 7 = return terminal, skipped)
+        // Weekday outbound: 8 named stops (PDF has 8 columns; index 7 = return terminal, skipped)
+        // Polígono is a two-stop cluster: POLIGONO → POLIGONO_2 on the way out.
         val m1WeekdayOutbound: List<BusStop> = listOf(
-            Stops.SEGOVIA, Stops.POLIGONO, Stops.CASINO, Stops.VALVERDE,
+            Stops.SEGOVIA, Stops.POLIGONO, Stops.POLIGONO_2, Stops.CASINO, Stops.VALVERDE,
             Stops.ABADES, Stops.MARTIN_MIGUEL, Stops.GARCILLAN
         )
 
         val m1WeekdayInbound: List<BusStop> = listOf(
             Stops.GARCILLAN, Stops.MARTIN_MIGUEL, Stops.ABADES, Stops.VALVERDE,
-            Stops.CASINO, Stops.POLIGONO, Stops.SEGOVIA
+            Stops.CASINO, Stops.POLIGONO_2, Stops.POLIGONO, Stops.SEGOVIA
         )
 
         // Saturday runs a shorter variant: Segovia ↔ Abades only (SG-Labajos route)
@@ -119,10 +122,11 @@ class M1Parser : CapableParser, RouteStopsProvider {
         return buildStaticTimetables()
     }
 
-    // ── Static timetable (weekday outbound, 11 rows × 7 stops) ───────────────────────────────
+    // ── Static timetable (weekday outbound, 11 rows × 8 stops) ───────────────────────────────
     //
     // Rows match the PDF table top-to-bottom. Dashes in the PDF = stop omitted from that array.
     // Index 7 in the PDF outbound table (return-to-Segovia terminal) is not stored.
+    // Polígono is a two-stop cluster; both stops share the same scheduled times.
 
     private fun buildStaticTimetables(): List<BusTimetable> {
         val yr = SeasonalAvailability.YEAR_ROUND
@@ -132,8 +136,10 @@ class M1Parser : CapableParser, RouteStopsProvider {
         val wkOut = arrayOf(
             // Segovia (11 departures)
             mutableListOf(t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)),
-            // Polígono IND. (9 departures — rows 6 and 10 are dashes)
+            // Polígono IND. stop 1 (9 departures — rows 6 and 10 are dashes)
             mutableListOf(t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)),
+            // Polígono IND. stop 2 — cluster, +2 min estimate from stop 1
+            mutableListOf(t(6,52), t(7,42), t(8,37), t(10,12), t(12,7), t(14,47), t(15,22), t(18,7), t(20,57)),
             // Casino (6 departures — rows 1-3 and 8 are dashes; rows 4,5,7,9,11 are summer-only)
             mutableListOf(t(10,15,su), t(12,10,su), t(13,7), t(14,50,su), t(18,10,su), t(21,0,su)),
             // Valverde (8 departures — rows 1,2,4 are dashes)
@@ -158,8 +164,10 @@ class M1Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(7,10), t(7,50), t(9,40), t(10,50), t(12,15), t(15,5), t(15,25), t(16,5), t(18,25), t(21,5)),
             // Casino (3 departures — only rows 6,9,12; rows 6,12 are summer-only)
             mutableListOf(t(12,10,su), t(16,10), t(21,0,su)),
-            // Polígono IND. (7 departures)
+            // Polígono IND. stop 2 — cluster, PDF anchor time (stop 1 is +2 min)
             mutableListOf(t(7,15), t(10,55), t(12,5), t(15,10), t(15,20), t(18,5), t(20,55)),
+            // Polígono IND. stop 1 — +2 min from stop 2
+            mutableListOf(t(7,17), t(10,57), t(12,7), t(15,12), t(15,22), t(18,7), t(20,57)),
             // Segovia (12 departures)
             mutableListOf(t(7,25), t(8,0), t(8,55), t(10,0), t(11,0), t(12,45), t(15,15), t(16,0), t(16,20), t(16,50), t(18,35), t(21,35))
         )
