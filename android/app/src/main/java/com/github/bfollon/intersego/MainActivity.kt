@@ -18,11 +18,14 @@
 
 package com.github.bfollon.intersego
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.animateFloatAsState
@@ -62,6 +65,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.github.bfollon.intersego.services.ClosestStopFinderService
+import com.github.bfollon.intersego.services.LocationManager as BusLocationManager
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -465,6 +472,49 @@ fun AppNavigation() {
     // Force service initialization and log available routes
     com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${pdfProcessingService.getSupportedRoutes()}")
 
+    // --- Closest stop state ---
+    val coroutineScope = rememberCoroutineScope()
+    var isSearchingClosestStop by remember { mutableStateOf(false) }
+    var closestStopError by remember { mutableStateOf<String?>(null) }
+    val locationMgr = remember { BusLocationManager(activity) }
+    val closestStopFinder = remember { ClosestStopFinderService(activity) }
+
+    // Stable lambda stored in remember so the permission-result callback always holds a
+    // non-stale reference. coroutineScope and navController are stable across recompositions;
+    // the MutableState objects backing isSearchingClosestStop/closestStopError are also stable.
+    val launchClosestStopSearch: () -> Unit = remember(coroutineScope, navController) {
+        {
+            coroutineScope.launch {
+                isSearchingClosestStop = true
+                closestStopError = null
+                try {
+                    val location = locationMgr.requestLocationOnce()
+                    val result = closestStopFinder.findClosest(location, routes)
+                    navController.navigate("next_departure/${result.routeId}/${result.stopId}/${result.viewId}")
+                } catch (e: BusLocationManager.LocationError) {
+                    closestStopError = e.message
+                } catch (e: ClosestStopFinderService.ClosestStopError) {
+                    closestStopError = e.message
+                } catch (e: Exception) {
+                    closestStopError = "No se pudo encontrar la parada más cercana."
+                } finally {
+                    isSearchingClosestStop = false
+                }
+            }
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            launchClosestStopSearch()
+        } else {
+            closestStopError = "Permiso de ubicación denegado. Actívalo en Ajustes para usar esta función."
+        }
+    }
+    // --- End closest stop state ---
+
     NavHost(
         navController = navController,
         startDestination = "landing"
@@ -473,7 +523,17 @@ fun AppNavigation() {
             LandingScreen(
                 onNavigateToRouteList = {
                     navController.navigate("route_selection")
-                }
+                },
+                onFindClosestStop = {
+                    closestStopError = null
+                    if (locationMgr.hasLocationPermission()) {
+                        launchClosestStopSearch()
+                    } else {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                },
+                isSearchingClosestStop = isSearchingClosestStop,
+                closestStopError = closestStopError
             )
         }
 

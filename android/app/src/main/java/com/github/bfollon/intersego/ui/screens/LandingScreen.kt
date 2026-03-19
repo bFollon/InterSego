@@ -22,6 +22,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +54,10 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun LandingScreen(
-    onNavigateToRouteList: () -> Unit
+    onNavigateToRouteList: () -> Unit,
+    onFindClosestStop: () -> Unit = {},
+    isSearchingClosestStop: Boolean = false,
+    closestStopError: String? = null
 ) {
     val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
 
@@ -94,7 +102,43 @@ fun LandingScreen(
             LandingButton(
                 label = "Líneas de bus",
                 onClick = onNavigateToRouteList
-            )
+            ) {
+                BusLineIcon(size = 60)
+            }
+
+            LandingButton(
+                label = "Parada más cercana",
+                onClick = onFindClosestStop,
+                enabled = !isSearchingClosestStop
+            ) {
+                if (isSearchingClosestStop) {
+                    Box(
+                        modifier = Modifier.size(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOn,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(60.dp).padding(14.dp)
+                    )
+                }
+            }
+
+            if (closestStopError != null) {
+                Text(
+                    text = closestStopError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -104,7 +148,9 @@ fun LandingScreen(
 @Composable
 private fun LandingButton(
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    icon: @Composable () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -112,18 +158,22 @@ private fun LandingButton(
             .shadow(4.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick)
+            .then(
+                if (enabled) Modifier.clickable(onClick = onClick)
+                else Modifier
+            )
             .padding(vertical = 28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        BusLineIcon(size = 60)
+        icon()
 
         Text(
             text = label,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary
+            color = if (enabled) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
     }
 }

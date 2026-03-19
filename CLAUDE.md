@@ -42,7 +42,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Screen | Android | iOS | Notes |
 |---|---|---|---|
 | Splash screen | ✅ | ✅ | App icon + "InterSego" + "Interurbanos de Segovia", fade transition |
-| Landing screen (home hub) | ✅ | ✅ | Gradient title + "Líneas de bus" button card; permanent root, back from route list returns here |
+| Landing screen (home hub) | ✅ | ✅ | Gradient title + "Líneas de bus" + "Parada más cercana" button cards; permanent root, back from route list returns here |
+| Closest stop button | ✅ | ✅ | Geolocates user, finds nearest stop across all supported routes, navigates to NextDeparture; ties broken by soonest departure; inline error on failure |
 | Route selection | ✅ | ✅ | |
 | Route stops (visual line display) | ✅ | ✅ | Direction toggle on both |
 | Next departure (live countdown) | ✅ | ✅ | iOS uses MapKit, Android uses OSM tiles |
@@ -57,10 +58,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Feature | Android | iOS | Notes |
 |---|---|---|---|
-| Location manager | ✅ (backend only) | ❌ | Not used in any Android UI screen |
-| Closest bus stop service | ✅ (backend only) | ❌ | Not used in any Android UI screen |
-| Geocoding service | ✅ (backend only) | ❌ | Not used in any Android UI screen |
-| Coordinate cache | ✅ (backend only) | ❌ | Not used in any Android UI screen |
+| Location manager | ✅ | ✅ | Android: FusedLocationProviderClient; iOS: CLLocationManager (in ClosestStopService) |
+| Closest stop finder | ✅ | ✅ | Android: ClosestStopFinderService; iOS: ClosestStopService |
+| Geocoding service | ✅ (backend only) | ❌ | Not used in any UI screen (all stops have embedded coordinates) |
+| Coordinate cache | ✅ (backend only) | ❌ | Not used in any UI screen |
 
 ### Data Models
 

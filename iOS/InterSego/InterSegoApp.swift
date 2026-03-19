@@ -49,15 +49,36 @@ struct ContentView: View {
     @State private var routes: [BusRoute] = []
     @State private var supportedRoutes: Set<String> = []
     @State private var navigationPath = NavigationPath()
+    @State private var isSearchingClosestStop = false
+    @State private var closestStopError: String?
 
     var body: some View {
         ZStack {
             NavigationStack(path: $navigationPath) {
                 Group {
                     if isInitialized {
-                        LandingView(onShowRouteList: {
-                            navigationPath.append(HomeDestination.routeList)
-                        })
+                        LandingView(
+                            onShowRouteList: {
+                                navigationPath.append(HomeDestination.routeList)
+                            },
+                            onFindClosestStop: {
+                                Task {
+                                    isSearchingClosestStop = true
+                                    closestStopError = nil
+                                    do {
+                                        let selection = try await ClosestStopService.shared.findClosest()
+                                        navigationPath.append(selection)
+                                    } catch let error as ClosestStopError {
+                                        closestStopError = error.errorDescription
+                                    } catch {
+                                        closestStopError = "No se pudo encontrar la parada más cercana."
+                                    }
+                                    isSearchingClosestStop = false
+                                }
+                            },
+                            isSearchingClosestStop: isSearchingClosestStop,
+                            closestStopError: closestStopError
+                        )
                     }
                 }
                 .navigationDestination(for: HomeDestination.self) { _ in

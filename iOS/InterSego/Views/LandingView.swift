@@ -19,6 +19,9 @@ import SwiftUI
 
 struct LandingView: View {
     let onShowRouteList: () -> Void
+    let onFindClosestStop: () -> Void
+    let isSearchingClosestStop: Bool
+    let closestStopError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -59,6 +62,38 @@ struct LandingView: View {
                     .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                 }
                 .buttonStyle(.plain)
+
+                Button(action: onFindClosestStop) {
+                    VStack(spacing: 14) {
+                        if isSearchingClosestStop {
+                            ProgressView()
+                                .frame(width: 60, height: 60)
+                        } else {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 32))
+                                .foregroundColor(.accentColor)
+                                .frame(width: 60, height: 60)
+                        }
+                        Text("Parada más cercana")
+                            .font(.headline)
+                            .foregroundColor(.accentColor)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                }
+                .buttonStyle(.plain)
+                .disabled(isSearchingClosestStop)
+
+                if let error = closestStopError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
             }
             .padding(.horizontal, 24)
 
