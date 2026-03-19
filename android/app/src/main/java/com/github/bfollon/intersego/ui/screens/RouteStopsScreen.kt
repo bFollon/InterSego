@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -62,7 +63,7 @@ fun RouteStopsScreen(
     onStopSelected: (BusStop, String) -> Unit,  // stop, viewId
     onMapSelected: (String) -> Unit             // viewId
 ) {
-    var currentViewId by remember { mutableStateOf(views.first().id) }
+    var currentViewId by rememberSaveable { mutableStateOf(views.first().id) }
     val viewById = remember(views) { views.associateBy { it.id } }
     val currentView = viewById[currentViewId] ?: views.first()
 
