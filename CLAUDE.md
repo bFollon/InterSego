@@ -28,9 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Parser | Android | iOS | Notes |
 |---|---|---|---|
-| M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences |
-| M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation |
-| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); PDF font encoding too complex to parse reliably on both platforms; real GPS coords; v1.4 |
+| M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences; v1.2 (stable stop IDs) |
+| M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; Android v0.4, iOS v0.5 (stable stop IDs) |
+| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); v1.5; isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); ★=JUNE_TO_SEPT_ONLY, (*)=YEAR_ROUND, LYV=MON_FRI_ONLY, #=FRI_ONLY |
 | M2 | ❌ | ❌ | |
 | M3 | ❌ | ❌ | |
 | M5 | ❌ | ❌ | |

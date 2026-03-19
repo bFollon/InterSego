@@ -29,7 +29,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
-        version: "1.1"
+        version: "1.2"
     )
 
     // MARK: - Directions
@@ -43,77 +43,92 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
     private enum Stops {
         static let azoguejo = BusStop(
+            id: "m4-azoguejo",
             name: "Azoguejo",
             area: "Segovia",
             coordinates: "40.948406, -4.116411"
         )
         static let delicias = BusStop(
+            id: "m4-delicias",
             name: "Delicias",
             area: "Segovia",
             coordinates: "40.954500, -4.108889"
         )
         static let gasolinera = BusStop(
+            id: "m4-gasolinera",
             name: "Gasolinera",
             area: "La Lastrilla",
             coordinates: "40.965944, -4.106072",
             routingCoordinates: "40.965897, -4.106276"
         )
         static let pension = BusStop(
+            id: "m4-pension",
             name: "Pensión",
             area: "La Lastrilla",
             coordinates: "40.969289, -4.107552"
         )
         static let poligono = BusStop(
+            id: "m4-poligono",
             name: "Polígono",
             area: "La Lastrilla",
             coordinates: "40.972010, -4.108356"
         )
         static let ctraValladolid33 = BusStop(
+            id: "m4-ctra-valladolid-33",
             name: "Carretera de Valladolid",
             area: "La Lastrilla",
             coordinates: "40.970464, -4.104010"
         )
         static let leopoldoMoreno = BusStop(
+            id: "m4-leopoldo-moreno",
             name: "Leopoldo Moreno",
             area: "La Lastrilla",
             coordinates: "40.967679, -4.102850"
         )
         static let colegio = BusStop(
+            id: "m4-colegio",
             name: "Colegio",
             area: "La Lastrilla",
             coordinates: "40.966693, -4.102033"
         )
         static let parroqSotillo = BusStop(
+            id: "m4-parroq-sotillo",
             name: "Parroquia el Sotillo",
             area: "El Sotillo",
             coordinates: "40.963449, -4.095073"
         )
         static let hotelAvSotillo = BusStop(
+            id: "m4-hotel-av-sotillo",
             name: "Hotel Avenida del Sotillo",
             area: "El Sotillo",
             coordinates: "40.965769, -4.097825"
         )
         static let maspalomas = BusStop(
+            id: "m4-maspalomas",
             name: "Calle Maspalomas",
             area: "El Sotillo",
             coordinates: "40.965714, -4.094892"
         )
         static let centroBoal = BusStop(
+            id: "m4-centro-boal",
             name: "Centro Cultural Julio Boal",
             area: "El Sotillo",
             coordinates: "40.967592, -4.091377"
         )
         static let paseoCabanillas = BusStop(
+            id: "m4-paseo-cabanillas",
             name: "Colegio Madres Concepcionistas",
             area: "El Sotillo",
             coordinates: "40.962806, -4.092689"
         )
         static let rafaelDeLasHeras = BusStop(
+            id: "m4-rafael-de-las-heras",
             name: "Rafael de las Heras",
             area: "El Sotillo",
             coordinates: "40.961939, -4.096711"
         )
         static let ventaMagullo = BusStop(
+            id: "m4-venta-magullo",
             name: "Venta Magullo",
             area: "El Sotillo",
             coordinates: "40.960876, -4.100906"
@@ -256,7 +271,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
         stops.map { stop in
             BusTimetable(
                 routeId: "M4",
-                stopId: stop.name,
+                stopId: stop.id,
                 dayType: dayType,
                 departures: [],
                 direction: direction
@@ -383,7 +398,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
                     case regularCount - 1:
                         let schoolIndex = Self.m4RegularRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
-                        let filtered = currentTimetables.filter { $0.stopId != Stops.paseoCabanillas.name }
+                        let filtered = currentTimetables.filter { $0.stopId != Stops.paseoCabanillas.id }
                         let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
                         var merged = currentTimetables
                         for i in 0..<regularCount {

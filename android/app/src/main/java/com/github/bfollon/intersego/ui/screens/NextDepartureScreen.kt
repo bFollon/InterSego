@@ -141,9 +141,8 @@ fun NextDepartureScreen(
     }
 
     // Auto-detect current day types (supports both M4's WEEKEND and M6's SATURDAY/SUNDAY)
-    val currentDayTypes = remember {
-        dayTypesForCalendarDay(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))
-    }
+    val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
+    val currentDayTypes = remember { dayTypesForCalendarDay(currentDayOfWeek) }
 
     // Filter and merge all timetables for current stop, day type, AND direction
     // Multiple timetables may exist for the same stop (e.g., Regular + Extended variants)
@@ -153,11 +152,11 @@ fun NextDepartureScreen(
 
         val matching = timetables.filter {
             it.dayType in currentDayTypes &&
-            it.stopId == stop.name &&
+            it.stopId == stop.id &&
             it.direction == direction
         }
 
-        val merged = matching.flatMap { it.seasonalDepartures() }.sortedBy { it.toMinutesSinceMidnight() }
+        val merged = matching.flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }.sortedBy { it.toMinutesSinceMidnight() }
         DebugConfig.debugPrint("Found ${matching.size} matching timetables with ${merged.size} total departures")
         merged
     }
@@ -181,10 +180,10 @@ fun NextDepartureScreen(
             val departures = timetables
                 .filter {
                     it.dayType in futureDayTypes &&
-                    it.stopId == stop.name &&
+                    it.stopId == stop.id &&
                     it.direction == direction
                 }
-                .flatMap { it.seasonalDepartures() }
+                .flatMap { it.seasonalDepartures(weekday = calendar.get(Calendar.DAY_OF_WEEK)) }
                 .sortedBy { it.toMinutesSinceMidnight() }
 
             if (departures.isNotEmpty()) {

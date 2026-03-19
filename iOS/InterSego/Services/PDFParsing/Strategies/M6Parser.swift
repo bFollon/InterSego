@@ -27,7 +27,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M6"]),
         mode: .production,
-        version: "0.4"
+        version: "0.5"
     )
 
     // MARK: - Types
@@ -105,30 +105,30 @@ class M6Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let azoguejo = BusStop(name: "Azoguejo", area: "Segovia capital", coordinates: "40.948502, -4.115979")
-        static let delicias = BusStop(name: "Delicias", area: "Segovia capital", coordinates: "40.954500, -4.108889")
-        static let montecorredores = BusStop(name: "Montecorredores", area: "Segovia capital", coordinates: "40.952000, -4.097278")
-        static let sanCris = BusStop(name: "San Cristóbal de Segovia", area: "San Cristóbal de segovia", coordinates: "40.952056, -4.081139")
-        static let sanCrisIglesia = BusStop(name: "Iglesia", area: "San Cristóbal de segovia", coordinates: "40.951733, -4.077499")
-        static let sanCrisRotonda = BusStop(name: "Rotonda", area: "San Cristóbal de segovia", coordinates: "40.951224, -4.073449")
-        static let sonsoto = BusStop(name: "Potro", area: "Sonsoto", coordinates: "40.954774, -4.040524")
-        static let sonsoto2 = BusStop(name: "Sonsoto 2", area: "Sonsoto", details: "Junto a C/ Peñas lisas", coordinates: "40.957470, -4.039154")
-        static let trescasas = BusStop(name: "Plaza de la constitución", area: "Trescasas", coordinates: "40.961834, -4.037367")
-        static let trescasas2 = BusStop(name: "Trescasas 2", area: "Trescasas", coordinates: "40.963899, -4.034776")
-        static let cabanillas = BusStop(name: "Cabanillas", area: "Cabanillas", coordinates: "40.974402, -4.028241")
-        static let torrecaballeros = BusStop(name: "Torrecaballeros", area: "Torrecaballeros", coordinates: "40.991880, -4.022848")
-        static let torrecaballeros2 = BusStop(name: "Torrecaballeros 2", area: "Torrecaballeros", details: "Junto a la taberna del Rancho", coordinates: "40.995364, -4.021688")
-        static let torrecaballeros3 = BusStop(name: "Torrecaballeros 3", area: "Torrecaballeros", details: "En carretera hacia Turégano", coordinates: "40.999144, -4.020855")
-        static let andresLaguna = BusStop(name: "IES Andres Laguna", area: "Segovia capital", coordinates: "40.939106, -4.115582")
-        static let laPista = BusStop(name: "Glorieta La Pista", area: "Segovia capital", details: "Glorieta del Ballenoil", coordinates: "40.937354, -4.111411")
-        static let hermanitas = BusStop(name: "Residencia Hermanitas de los pobres", area: "Segovia capital", coordinates: "40.944234, -4.110012")
-        static let estacionBus = BusStop(name: "Estación de Autobuses de Segovia", area: "Segovia capital", coordinates: "40.944768, -4.121823")
-        static let plazaToros = BusStop(name: "Plaza de Toros", area: "Segovia capital", coordinates: "40.942093, -4.107603")
-        static let palazuelos = BusStop(name: "Palazuelos", area: "Palazuelos", coordinates: "40.931068, -4.064340")
-        static let palazuelosColegio = BusStop(name: "Colegio", area: "Palazuelos", coordinates: "40.933921, -4.063495")
-        static let tabanera = BusStop(name: "Tabanera", area: "Tabanera", coordinates: "40.934336, -4.067014")
-        static let tabanera2 = BusStop(name: "Tabanera 2", area: "Tabanera", coordinates: "40.937491, -4.065818")
-        static let jardinillos = BusStop(name: "Jardinillos de San Roque", area: "Segovia", details: "Frente a Policía Nacional", coordinates: "40.944361, -4.120831")
+        static let azoguejo = BusStop(id: "m6-azoguejo", name: "Azoguejo", area: "Segovia capital", coordinates: "40.948502, -4.115979")
+        static let delicias = BusStop(id: "m6-delicias", name: "Delicias", area: "Segovia capital", coordinates: "40.954500, -4.108889")
+        static let montecorredores = BusStop(id: "m6-montecorredores", name: "Montecorredores", area: "Segovia capital", coordinates: "40.952000, -4.097278")
+        static let sanCris = BusStop(id: "m6-sancris", name: "San Cristóbal de Segovia", area: "San Cristóbal de segovia", coordinates: "40.952056, -4.081139")
+        static let sanCrisIglesia = BusStop(id: "m6-sancris-iglesia", name: "Iglesia", area: "San Cristóbal de segovia", coordinates: "40.951733, -4.077499")
+        static let sanCrisRotonda = BusStop(id: "m6-sancris-rotonda", name: "Rotonda", area: "San Cristóbal de segovia", coordinates: "40.951224, -4.073449")
+        static let sonsoto = BusStop(id: "m6-sonsoto", name: "Potro", area: "Sonsoto", coordinates: "40.954774, -4.040524")
+        static let sonsoto2 = BusStop(id: "m6-sonsoto-2", name: "Sonsoto 2", area: "Sonsoto", details: "Junto a C/ Peñas lisas", coordinates: "40.957470, -4.039154")
+        static let trescasas = BusStop(id: "m6-trescasas", name: "Plaza de la constitución", area: "Trescasas", coordinates: "40.961834, -4.037367")
+        static let trescasas2 = BusStop(id: "m6-trescasas-2", name: "Trescasas 2", area: "Trescasas", coordinates: "40.963899, -4.034776")
+        static let cabanillas = BusStop(id: "m6-cabanillas", name: "Cabanillas", area: "Cabanillas", coordinates: "40.974402, -4.028241")
+        static let torrecaballeros = BusStop(id: "m6-torrecaballeros", name: "Torrecaballeros", area: "Torrecaballeros", coordinates: "40.991880, -4.022848")
+        static let torrecaballeros2 = BusStop(id: "m6-torrecaballeros-2", name: "Torrecaballeros 2", area: "Torrecaballeros", details: "Junto a la taberna del Rancho", coordinates: "40.995364, -4.021688")
+        static let torrecaballeros3 = BusStop(id: "m6-torrecaballeros-3", name: "Torrecaballeros 3", area: "Torrecaballeros", details: "En carretera hacia Turégano", coordinates: "40.999144, -4.020855")
+        static let andresLaguna = BusStop(id: "m6-andres-laguna", name: "IES Andres Laguna", area: "Segovia capital", coordinates: "40.939106, -4.115582")
+        static let laPista = BusStop(id: "m6-la-pista", name: "Glorieta La Pista", area: "Segovia capital", details: "Glorieta del Ballenoil", coordinates: "40.937354, -4.111411")
+        static let hermanitas = BusStop(id: "m6-hermanitas", name: "Residencia Hermanitas de los pobres", area: "Segovia capital", coordinates: "40.944234, -4.110012")
+        static let estacionBus = BusStop(id: "m6-estacion-bus", name: "Estación de Autobuses de Segovia", area: "Segovia capital", coordinates: "40.944768, -4.121823")
+        static let plazaToros = BusStop(id: "m6-plaza-toros", name: "Plaza de Toros", area: "Segovia capital", coordinates: "40.942093, -4.107603")
+        static let palazuelos = BusStop(id: "m6-palazuelos", name: "Palazuelos", area: "Palazuelos", coordinates: "40.931068, -4.064340")
+        static let palazuelosColegio = BusStop(id: "m6-palazuelos-colegio", name: "Colegio", area: "Palazuelos", coordinates: "40.933921, -4.063495")
+        static let tabanera = BusStop(id: "m6-tabanera", name: "Tabanera", area: "Tabanera", coordinates: "40.934336, -4.067014")
+        static let tabanera2 = BusStop(id: "m6-tabanera-2", name: "Tabanera 2", area: "Tabanera", coordinates: "40.937491, -4.065818")
+        static let jardinillos = BusStop(id: "m6-jardinillos", name: "Jardinillos de San Roque", area: "Segovia", details: "Frente a Policía Nacional", coordinates: "40.944361, -4.120831")
     }
 
     // MARK: - Routes
@@ -273,13 +273,13 @@ class M6Parser: CapableParser, RouteStopsProvider {
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
         guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return nil }
 
-        let extendedOnlyNames: Set<String> = [
-            Stops.andresLaguna.name, Stops.laPista.name, Stops.hermanitas.name
+        let extendedOnlyIds: Set<String> = [
+            Stops.andresLaguna.id, Stops.laPista.id, Stops.hermanitas.id
         ]
 
         func extendedStops(_ route: Route) -> [RouteViewStop] {
             route.stops.map { stop in
-                RouteViewStop(stop: stop, isExtendedOnly: extendedOnlyNames.contains(stop.name))
+                RouteViewStop(stop: stop, isExtendedOnly: extendedOnlyIds.contains(stop.id))
             }
         }
 
@@ -479,7 +479,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
         route.stops.map { stop in
             BusTimetable(
                 routeId: "M6",
-                stopId: stop.name,
+                stopId: stop.id,
                 dayType: dayType,
                 departures: [],
                 direction: direction

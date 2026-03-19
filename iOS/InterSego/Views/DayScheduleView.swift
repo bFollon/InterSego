@@ -41,18 +41,17 @@ struct DayScheduleView: View {
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
-    private var currentDayTypes: Set<DayType> {
-        let weekday = Calendar.current.component(.weekday, from: Date())
-        return dayTypesForToday(weekday)
-    }
+    private var currentWeekday: Int { Calendar.current.component(.weekday, from: Date()) }
+
+    private var currentDayTypes: Set<DayType> { dayTypesForToday(currentWeekday) }
 
     private var todayDepartures: [DepartureTime] {
         let matching = timetables.filter { timetable in
             currentDayTypes.contains(timetable.dayType)
-            && timetable.stopId == stop.name
+            && timetable.stopId == stop.id
             && timetable.direction == direction
         }
-        return matching.flatMap { $0.seasonalDepartures() }.sorted()
+        return matching.flatMap { $0.seasonalDepartures(weekday: currentWeekday) }.sorted()
     }
 
     private var dayTypeLabel: String {

@@ -91,16 +91,15 @@ fun DayScheduleScreen(
         }
     }
 
-    val currentDayTypes = remember {
-        dayTypesForCalendarDay(Calendar.getInstance().get(Calendar.DAY_OF_WEEK))
-    }
+    val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
+    val currentDayTypes = remember { dayTypesForCalendarDay(currentDayOfWeek) }
 
     val todayDepartures = remember(timetables, currentDayTypes, stop, direction) {
         timetables.filter {
             it.dayType in currentDayTypes &&
-            it.stopId == stop.name &&
+            it.stopId == stop.id &&
             it.direction == direction
-        }.flatMap { it.seasonalDepartures() }.sortedBy { it.toMinutesSinceMidnight() }
+        }.flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }.sortedBy { it.toMinutesSinceMidnight() }
     }
 
     val dayTypeLabel = remember {

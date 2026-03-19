@@ -35,9 +35,13 @@ struct BusTimetable: Codable, Identifiable {
         self.direction = direction
     }
 
-    func seasonalDepartures(month: Int? = nil) -> [DepartureTime] {
+    /// Departures filtered for the current season (month) and optional day of week.
+    /// - Parameters:
+    ///   - month: calendar month 1–12 (defaults to today)
+    ///   - weekday: Calendar.weekday value (Sun=1…Sat=7); nil disables day-of-week filtering
+    func seasonalDepartures(month: Int? = nil, weekday: Int? = nil) -> [DepartureTime] {
         let currentMonth = month ?? Calendar.current.component(.month, from: Date())
-        return departures.filter { $0.seasonalAvailability.runsIn(month: currentMonth) }
+        return departures.filter { $0.seasonalAvailability.runsIn(month: currentMonth, weekday: weekday) }
     }
 
     var firstDeparture: DepartureTime? {

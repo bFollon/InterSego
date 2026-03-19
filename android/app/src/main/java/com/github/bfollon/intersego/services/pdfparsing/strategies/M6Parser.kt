@@ -56,7 +56,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M6"),
         mode = ParserMode.PRODUCTION,
-        version = "0.3"
+        version = "0.4"
     )
 
     private data class ParsingState(
@@ -108,126 +108,150 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
         private object Stops {
             val AZOGUEJO = BusStop(
+                id = "m6-azoguejo",
                 name = "Azoguejo",
                 area = "Segovia capital",
                 coordinates = "40.948502, -4.115979"
             )
             val DELICIAS = BusStop(
+                id = "m6-delicias",
                 name = "Delicias",
                 coordinates = "40.954500, -4.108889",
                 area = "Segovia capital"
             )
             val MONTECORREDORES = BusStop(
+                id = "m6-montecorredores",
                 name = "Montecorredores",
                 coordinates = "40.952000, -4.097278",
                 area = "Segovia capital"
             )
             val SANCRIS = BusStop(
+                id = "m6-sancris",
                 name = "San Cristóbal de Segovia",
                 coordinates = "40.952056, -4.081139",
                 area = "San Cristóbal de segovia",
             )
             val SANCRIS_IGLESIA = BusStop(
+                id = "m6-sancris-iglesia",
                 name = "Iglesia",
                 area = "San Cristóbal de segovia",
                 coordinates = "40.951733, -4.077499",
             )
             val SANCRIS_ROTONDA = BusStop(
+                id = "m6-sancris-rotonda",
                 name = "Rotonda",
                 area = "San Cristóbal de segovia",
                 coordinates = "40.951224, -4.073449",
             )
             val SONSOTO = BusStop(
+                id = "m6-sonsoto",
                 name = "Potro",
                 area = "Sonsoto",
                 coordinates = "40.954774, -4.040524",
             )
             val SONSOTO_2 = BusStop(
+                id = "m6-sonsoto-2",
                 name = "Sonsoto 2",
                 details = "Junto a C/ Peñas lisas",
                 area = "Sonsoto",
                 coordinates = "40.957470, -4.039154",
             )
             val TRESCASAS = BusStop(
+                id = "m6-trescasas",
                 name = "Plaza de la constitución",
                 area = "Trescasas",
                 coordinates = "40.961834, -4.037367",
             )
             val TRESCASAS_2 = BusStop(
+                id = "m6-trescasas-2",
                 name = "Trescasas 2",
                 area = "Trescasas",
                 coordinates = "40.963899, -4.034776",
             )
             val CABANILLAS = BusStop(
+                id = "m6-cabanillas",
                 name = "Cabanillas",
                 coordinates = "40.974402, -4.028241",
                 area = "Cabanillas",
             )
             val TORRECABALLEROS = BusStop(
+                id = "m6-torrecaballeros",
                 name = "Torrecaballeros",
                 coordinates = "40.991880, -4.022848",
                 area = "Torrecaballeros",
             )
             val TORRECABALLEROS_2 = BusStop(
+                id = "m6-torrecaballeros-2",
                 name = "Torrecaballeros 2",
                 details = "Junto a la taberna del Rancho",
                 coordinates = "40.995364, -4.021688",
                 area = "Torrecaballeros",
             )
             val TORRECABALLEROS_3 = BusStop(
+                id = "m6-torrecaballeros-3",
                 name = "Torrecaballeros 3",
                 details = "En carretera hacia Turégano",
                 coordinates = "40.999144, -4.020855",
                 area = "Torrecaballeros",
             )
             val ANDRES_LAGUNA = BusStop(
+                id = "m6-andres-laguna",
                 name = "IES Andres Laguna",
                 coordinates = "40.939106, -4.115582",
                 area = "Segovia capital"
             )
             val LA_PISTA = BusStop(
+                id = "m6-la-pista",
                 name = "Glorieta La Pista",
                 details = "Glorieta del Ballenoil",
                 coordinates = "40.937354, -4.111411",
                 area = "Segovia capital"
             )
             val HERMANITAS = BusStop(
+                id = "m6-hermanitas",
                 name = "Residencia Hermanitas de los pobres",
                 coordinates = "40.944234, -4.110012",
                 area = "Segovia capital"
             )
             val ESTACION_BUS = BusStop(
+                id = "m6-estacion-bus",
                 name = "Estación de Autobuses de Segovia",
                 coordinates = "40.944768, -4.121823",
                 area = "Segovia capital"
             )
             val PLAZA_TOROS = BusStop(
+                id = "m6-plaza-toros",
                 name = "Plaza de Toros",
                 coordinates = "40.942093, -4.107603",
                 area = "Segovia capital"
             )
             val PALAZUELOS = BusStop(
+                id = "m6-palazuelos",
                 name = "Palazuelos",
                 coordinates = "40.931068, -4.064340",
                 area = "Palazuelos"
             )
             val PALAZUELOS_COLEGIO = BusStop(
+                id = "m6-palazuelos-colegio",
                 name = "Colegio",
                 area = "Palazuelos",
                 coordinates = "40.933921, -4.063495",
             )
             val TABANERA = BusStop(
+                id = "m6-tabanera",
                 name = "Tabanera",
                 coordinates = "40.934336, -4.067014",
                 area = "Tabanera"
             )
             val TABANERA_2 = BusStop(
+                id = "m6-tabanera-2",
                 name = "Tabanera 2",
                 coordinates = "40.937491, -4.065818",
                 area = "Tabanera"
             )
 
             val JARDINILLOS = BusStop(
+                id = "m6-jardinillos",
                 name = "Jardinillos de San Roque",
                 details = "Frente a Policía Nacional",
                 coordinates = "40.944361, -4.120831",
@@ -441,7 +465,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
         return route.stops.map { stop ->
             BusTimetable(
                 routeId = "M6",
-                stopId = stop.name,
+                stopId = stop.id,
                 dayType = dayType,
                 direction = direction,
                 departures = emptyList(),
@@ -778,12 +802,12 @@ class M6Parser : CapableParser, RouteStopsProvider {
     override fun getRouteViews(routeId: String, dayType: DayType): List<RouteView>? {
         if (!routeId.equals("M6", ignoreCase = true)) return null
 
-        val extendedOnlyNames = setOf(
-            Stops.ANDRES_LAGUNA.name, Stops.LA_PISTA.name, Stops.HERMANITAS.name
+        val extendedOnlyIds = setOf(
+            Stops.ANDRES_LAGUNA.id, Stops.LA_PISTA.id, Stops.HERMANITAS.id
         )
 
         fun extendedStops(route: Route): List<RouteViewStop> = route.stops.map { stop ->
-            RouteViewStop(stop, isExtendedOnly = stop.name in extendedOnlyNames)
+            RouteViewStop(stop, isExtendedOnly = stop.id in extendedOnlyIds)
         }
 
         fun plainStops(route: Route): List<RouteViewStop> = route.stops.map { RouteViewStop(it) }

@@ -23,7 +23,7 @@ enum BusRouteRegistry {
         [
             BusRoute(id: "M1", number: "M1", name: "Línea Metropolitana 1",
                      origin: "Segovia", destination: "Área Metropolitana",
-                     pdfURL: "", routeType: .urban),
+                     pdfURL: "", routeType: .urban, isCircular: true),
             BusRoute(id: "M2", number: "M2", name: "Línea Metropolitana 2",
                      origin: "Segovia", destination: "Área Metropolitana",
                      pdfURL: "", routeType: .urban),

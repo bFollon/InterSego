@@ -34,11 +34,15 @@ data class BusTimetable(
     val direction: String? = null,       // Optional direction: "Ida" or "Vuelta"
 ) {
     /**
-     * Departures filtered for the current season (month).
+     * Departures filtered for the current season (month) and optional day of week.
+     *
+     * @param month   the calendar month (defaults to today)
+     * @param weekday Calendar.DAY_OF_WEEK value (Sun=1…Sat=7); null disables day-of-week filtering
      */
     fun seasonalDepartures(
-        month: java.time.Month = LocalDate.now().month
-    ): List<DepartureTime> = departures.filter { it.seasonalAvailability.runsIn(month) }
+        month: java.time.Month = LocalDate.now().month,
+        weekday: Int? = null
+    ): List<DepartureTime> = departures.filter { it.seasonalAvailability.runsIn(month, weekday) }
 
     val firstDeparture: DepartureTime?
         get() = seasonalDepartures().minOrNull()

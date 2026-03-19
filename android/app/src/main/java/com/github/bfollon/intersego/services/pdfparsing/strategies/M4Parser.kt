@@ -54,7 +54,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
         mode = ParserMode.PRODUCTION,
-        version = "1.1"
+        version = "1.2"
     )
 
     /**
@@ -82,77 +82,92 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
         private object Stops {
             val AZOGUEJO = BusStop(
+                id = "m4-azoguejo",
                 name = "Azoguejo",
                 area = "Segovia",
                 coordinates = "40.948406, -4.116411",
             )
             val DELICIAS = BusStop(
+                id = "m4-delicias",
                 name = "Delicias",
                 area = "Segovia",
                 coordinates = "40.954500, -4.108889",
             )
             val GASOLINERA = BusStop(
+                id = "m4-gasolinera",
                 name = "Gasolinera",
                 area = "La Lastrilla",
                 coordinates = "40.965944, -4.106072",
                 routingCoordinates = "40.965897, -4.106276",
             )
             val PENSION = BusStop(
+                id = "m4-pension",
                 name = "Pensión",
                 area = "La Lastrilla",
                 coordinates = "40.969289, -4.107552",
             )
             val POLIGONO = BusStop(
+                id = "m4-poligono",
                 name = "Polígono",
                 area = "La Lastrilla",
                 coordinates = "40.972010, -4.108356",
             )
             val CTRA_VALLADOLID_33 = BusStop(
+                id = "m4-ctra-valladolid-33",
                 name = "Carretera de Valladolid",
                 area = "La Lastrilla",
                 coordinates = "40.970464, -4.104010",
             )
             val LEOPOLDO_MORENO = BusStop(
+                id = "m4-leopoldo-moreno",
                 name = "Leopoldo Moreno",
                 area = "La Lastrilla",
                 coordinates = "40.967679, -4.102850",
             )
             val COLEGIO = BusStop(
+                id = "m4-colegio",
                 name = "Colegio",
                 area = "La Lastrilla",
                 coordinates = "40.966693, -4.102033",
             )
             val PARROQ_SOTILLO = BusStop(
+                id = "m4-parroq-sotillo",
                 name = "Parroquia el Sotillo",
                 area = "El Sotillo",
                 coordinates = "40.963449, -4.095073",
             )
             val HOTEL_AV_SOTILLO = BusStop(
+                id = "m4-hotel-av-sotillo",
                 name = "Hotel Avenida del Sotillo",
                 area = "El Sotillo",
                 coordinates = "40.965769, -4.097825",
             )
             val MASPALOMAS = BusStop(
+                id = "m4-maspalomas",
                 name = "Calle Maspalomas",
                 area = "El Sotillo",
                 coordinates = "40.965714, -4.094892",
             )
             val CENTRO_BOAL = BusStop(
+                id = "m4-centro-boal",
                 name = "Centro Cultural Julio Boal",
                 area = "El Sotillo",
                 coordinates = "40.967592, -4.091377",
             )
             val PASEO_CABANILLAS = BusStop(
+                id = "m4-paseo-cabanillas",
                 name = "Colegio Madres Concepcionistas",
                 area = "El Sotillo",
                 coordinates = "40.962806, -4.092689",
             )
             val RAFAEL_DE_LAS_HERAS = BusStop(
+                id = "m4-rafael-de-las-heras",
                 name = "Rafael de las Heras",
                 area = "El Sotillo",
                 coordinates = "40.961939, -4.096711",
             )
             val VENTA_MAGULLO = BusStop(
+                id = "m4-venta-magullo",
                 name = "Venta Magullo",
                 area = "El Sotillo",
                 coordinates = "40.960876, -4.100906",
@@ -300,7 +315,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
         return stops.map { stop ->
             BusTimetable(
                 routeId = "M4",
-                stopId = stop.name,
+                stopId = stop.id,
                 dayType = dayType,
                 direction = direction,
                 departures = emptyList()
@@ -434,7 +449,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
                         m4RegularRoute.size - 1 -> { // Route without school stop
                             val filteredTimetables = currentTimetables.filter { tt ->
-                                tt.stopId != Stops.PASEO_CABANILLAS.name
+                                tt.stopId != Stops.PASEO_CABANILLAS.id
                             }
                             val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
                             // Merge back into full list

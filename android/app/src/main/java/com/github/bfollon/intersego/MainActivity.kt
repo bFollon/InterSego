@@ -170,7 +170,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "", // Will be resolved by PDFURLRepository
-                routeType = RouteType.URBAN
+                routeType = RouteType.URBAN,
+                isCircular = true
             ),
             BusRoute(
                 id = "M2",
