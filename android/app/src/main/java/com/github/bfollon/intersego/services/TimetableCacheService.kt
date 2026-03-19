@@ -48,7 +48,7 @@ class TimetableCacheService(private val context: Context) {
     /**
      * Check if cached timetables exist and are still valid for a route
      */
-    fun isCacheValid(routeId: String): Boolean {
+    fun isCacheValid(routeId: String, parserVersion: String? = null): Boolean {
         val cacheFile = getCacheFile(routeId)
         val metadataFile = getMetadataFile(routeId)
 
@@ -58,6 +58,13 @@ class TimetableCacheService(private val context: Context) {
 
         try {
             val metadata = json.decodeFromString<CacheMetadata>(metadataFile.readText())
+
+            // Check parser version: if version has changed, cache is stale
+            if (parserVersion != null && metadata.parserVersion != parserVersion) {
+                DebugConfig.debugPrint("TimetableCacheService: Cache invalid for route $routeId - parser version changed (cached: ${metadata.parserVersion}, current: $parserVersion)")
+                return false
+            }
+
             val pdfFile = File(context.filesDir, "pdfs/${routeId.lowercase()}.pdf")
 
             // Check if PDF file exists and hasn't been modified since cache was created
@@ -86,8 +93,8 @@ class TimetableCacheService(private val context: Context) {
     /**
      * Load cached timetables for a route (if valid)
      */
-    fun loadCachedTimetables(routeId: String): List<BusTimetable>? {
-        if (!isCacheValid(routeId)) {
+    fun loadCachedTimetables(routeId: String, parserVersion: String? = null): List<BusTimetable>? {
+        if (!isCacheValid(routeId, parserVersion)) {
             return null
         }
 
@@ -112,7 +119,7 @@ class TimetableCacheService(private val context: Context) {
     /**
      * Save parsed timetables to cache
      */
-    fun saveTimetablesToCache(routeId: String, timetables: List<BusTimetable>) {
+    fun saveTimetablesToCache(routeId: String, timetables: List<BusTimetable>, parserVersion: String? = null) {
         try {
             val startTime = System.currentTimeMillis()
 
@@ -133,7 +140,8 @@ class TimetableCacheService(private val context: Context) {
                 routeId = routeId,
                 timetableCount = timetables.size,
                 cacheTimestamp = System.currentTimeMillis(),
-                pdfLastModified = if (pdfFile.exists()) pdfFile.lastModified() else System.currentTimeMillis()
+                pdfLastModified = if (pdfFile.exists()) pdfFile.lastModified() else System.currentTimeMillis(),
+                parserVersion = parserVersion
             )
 
             val metadataFile = getMetadataFile(routeId)
@@ -238,6 +246,7 @@ class TimetableCacheService(private val context: Context) {
         val routeId: String,
         val timetableCount: Int,
         val cacheTimestamp: Long,
-        val pdfLastModified: Long
+        val pdfLastModified: Long,
+        val parserVersion: String? = null
     )
 }

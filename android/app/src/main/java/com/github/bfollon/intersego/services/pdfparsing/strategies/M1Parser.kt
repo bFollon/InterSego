@@ -52,8 +52,8 @@ class M1Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
-        mode = ParserMode.PRODUCTION,
-        version = "1.2"
+        mode = ParserMode.DEBUG,
+        version = "1.4"
     )
 
     companion object {
@@ -63,7 +63,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
         private object Stops {
             val SEGOVIA       = BusStop(name = "Segovia",              coordinates = "40.944973, -4.122431")
             val POLIGONO      = BusStop(name = "Polígono Industrial",  coordinates = "40.957976, -4.198156")
-            val POLIGONO_2      = BusStop(name = "Polígono Industrial",  coordinates = "40.957554, -4.206457")
+            val POLIGONO_2      = BusStop(name = "Polígono Industrial 2",  coordinates = "40.957554, -4.206457")
 
             val CASINO        = BusStop(name = "Casino",               coordinates = "40.965154, -4.209251")
             val VALVERDE      = BusStop(name = "Valverde de Majano",   coordinates = "40.956274, -4.235343")

@@ -56,7 +56,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M6"),
         mode = ParserMode.PRODUCTION,
-        version = "0.2"
+        version = "0.3"
     )
 
     private data class ParsingState(
@@ -97,7 +97,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     companion object {
         private const val DIRECTION_OUTBOUND = "Segovia → Torrecaballeros"
         private const val DIRECTION_INBOUND = "Torrecaballeros → Segovia"
-        private const val ESTIMATED_MINUTES_PER_CLUSTER_STOP = 5
+        private const val ESTIMATED_MINUTES_PER_CLUSTER_STOP = 2
         private const val ESTIMATED_TORRECAB_TO_DELICIAS_MINUTES = 15L
 
         val SUMMER_MONTHS: Set<Month> = setOf(Month.JULY, Month.AUGUST)

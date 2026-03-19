@@ -54,7 +54,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
         mode = ParserMode.PRODUCTION,
-        version = "1.0"
+        version = "1.1"
     )
 
     /**

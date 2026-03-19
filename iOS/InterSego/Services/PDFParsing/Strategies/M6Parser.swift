@@ -27,7 +27,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M6"]),
         mode: .production,
-        version: "0.3"
+        version: "0.4"
     )
 
     // MARK: - Types
@@ -92,7 +92,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
     private static let directionOutbound = "Segovia → Torrecaballeros"
     private static let directionInbound = "Torrecaballeros → Segovia"
-    private static let estimatedMinutesPerClusterStop = 5
+    private static let estimatedMinutesPerClusterStop = 2
     private static let estimatedTorrecabToDeliciasMinutes = 15
 
     private static let summerMonths: Set<Int> = [7, 8]

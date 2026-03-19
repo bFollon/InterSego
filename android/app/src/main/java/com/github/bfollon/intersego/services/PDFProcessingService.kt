@@ -168,6 +168,16 @@ class PDFProcessingService(private val context: Context) {
     }
 
     /**
+     * Get the version string of a parser for a route
+     *
+     * @param routeId Route ID to query
+     * @return Version string if parser exists and is CapableParser, null otherwise
+     */
+    fun getParserVersion(routeId: String): String? {
+        return (parsers[routeId] as? CapableParser)?.capabilities?.version
+    }
+
+    /**
      * Get route stop definitions from parser
      *
      * @param routeId Route ID to query

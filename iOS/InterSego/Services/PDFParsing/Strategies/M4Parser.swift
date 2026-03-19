@@ -29,7 +29,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
-        version: "1.0"
+        version: "1.1"
     )
 
     // MARK: - Directions

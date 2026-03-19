@@ -30,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences |
 | M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation |
-| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); PDF font encoding too complex to parse reliably on both platforms; placeholder 0.0,0.0 coords |
+| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); PDF font encoding too complex to parse reliably on both platforms; real GPS coords; v1.4 |
 | M2 | ❌ | ❌ | |
 | M3 | ❌ | ❌ | |
 | M5 | ❌ | ❌ | |
@@ -135,12 +135,6 @@ PDFKit (iOS) and iText7 (Android) extract PDF text differently. Known artifacts 
 
 When porting parsers from Android or debugging parsing issues on iOS, always check for these two artifacts first.
 
-#### Parser cache versioning
-
-Each parser declares `capabilities.version` (e.g. `"0.3"`). This version is stored in `TimetableCache/<routeId>.meta.json` alongside the PDF timestamp. If the stored version doesn't match the current parser, the JSON cache is treated as stale and re-parsed automatically.
-
-**When to bump the parser version:** any time a code change affects the parsed output (bug fixes, new stops, corrected coordinates, etc.). Increment the version string in the parser's `capabilities` to force all existing devices to re-parse on next launch.
-
 ### Web (Future)
 Not yet implemented.
 
@@ -156,6 +150,15 @@ Not yet implemented.
 - PDFs are scraped and cached locally
 - Self-healing URL system re-scrapes when PDFs return 404
 - Offline-first architecture with persistent caching
+
+## Parser Cache Versioning
+
+Both platforms implement parser-version–aware cache invalidation. Each parser declares `capabilities.version` (e.g. `"1.4"`). This version is written to `TimetableCache/<routeId>.meta.json` alongside the PDF timestamp. On next load, if the stored version doesn't match the current parser version the JSON cache is discarded and the route is re-parsed from scratch.
+
+**When to bump the parser version:** any time a code change affects the parsed output — bug fixes, new stops, corrected coordinates, timetable corrections, etc. Increment the version string in the parser's `capabilities` to force all existing devices to re-parse on next launch. Always bump on **both** platforms together.
+
+**Android:** implemented in `TimetableCacheService` (stores/checks `parserVersion` in `.meta.json`) via `PDFProcessingService.getParserVersion()`.
+**iOS:** implemented in `TimetableCacheService` (same `.meta.json` contract).
 
 ## Development Rules
 
