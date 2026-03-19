@@ -52,7 +52,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
-        mode = ParserMode.DEBUG,
+        mode = ParserMode.PRODUCTION,
         version = "1.4"
     )
 
