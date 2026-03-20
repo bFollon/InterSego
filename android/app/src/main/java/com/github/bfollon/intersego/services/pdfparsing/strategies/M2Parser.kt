@@ -68,11 +68,11 @@ class M2Parser : CapableParser, RouteStopsProvider {
             // Outbound stops
             val SEGOVIA          = BusStop(id = "m2-segovia",          name = "Segovia",              coordinates = "40.944973, -4.122431")
             val CASINO           = BusStop(id = "m2-casino",           name = "Casino",                coordinates = "40.965154, -4.209251")
-            val HONTANARES       = BusStop(id = "m2-hontanares",       name = "Hontanares de Eresma",  coordinates = "0.0, 0.0")
-            val LOS_HUERTOS      = BusStop(id = "m2-los-huertos",      name = "Los Huertos",           coordinates = "0.0, 0.0")
-            val VALSECA          = BusStop(id = "m2-valseca",          name = "Valseca",               coordinates = "0.0, 0.0")
+            val HONTANARES       = BusStop(id = "m2-hontanares",       name = "Hontanares de Eresma",  coordinates = "40.983628, -4.204160")
+            val LOS_HUERTOS      = BusStop(id = "m2-los-huertos",      name = "Los Huertos",           coordinates = "41.009124, -4.219216")
+            val VALSECA          = BusStop(id = "m2-valseca",          name = "Valseca",               coordinates = "40.999306, -4.174266")
             // Return-leg stops — same physical locations, distinct IDs for route positioning
-            val HONTANARES_RETURN = BusStop(id = "m2-hontanares-return", name = "Hontanares de Eresma", coordinates = "0.0, 0.0")
+            val HONTANARES_RETURN = BusStop(id = "m2-hontanares-return", name = "Hontanares de Eresma", coordinates = "40.983628, -4.204160")
             val CASINO_RETURN     = BusStop(id = "m2-casino-return",     name = "Casino",               coordinates = "40.965154, -4.209251")
             val SEGOVIA_RETURN    = BusStop(id = "m2-segovia-return",    name = "Segovia",              coordinates = "40.944973, -4.122431")
         }

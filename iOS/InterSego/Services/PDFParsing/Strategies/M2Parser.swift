@@ -57,11 +57,11 @@ class M2Parser: CapableParser, RouteStopsProvider {
         // Outbound stops
         static let segovia         = BusStop(id: "m2-segovia",          name: "Segovia",              coordinates: "40.944973, -4.122431")
         static let casino          = BusStop(id: "m2-casino",           name: "Casino",                coordinates: "40.965154, -4.209251")
-        static let hontanares      = BusStop(id: "m2-hontanares",       name: "Hontanares de Eresma",  coordinates: "0.0, 0.0")
-        static let losHuertos      = BusStop(id: "m2-los-huertos",      name: "Los Huertos",           coordinates: "0.0, 0.0")
-        static let valseca         = BusStop(id: "m2-valseca",          name: "Valseca",               coordinates: "0.0, 0.0")
+        static let hontanares      = BusStop(id: "m2-hontanares",       name: "Hontanares de Eresma",  coordinates: "40.983628, -4.204160")
+        static let losHuertos      = BusStop(id: "m2-los-huertos",      name: "Los Huertos",           coordinates: "41.009124, -4.219216")
+        static let valseca         = BusStop(id: "m2-valseca",          name: "Valseca",               coordinates: "40.999306, -4.174266")
         // Return-leg stops — same physical locations, distinct IDs for route positioning
-        static let hontanaresToReturn = BusStop(id: "m2-hontanares-return", name: "Hontanares de Eresma", coordinates: "0.0, 0.0")
+        static let hontanaresToReturn = BusStop(id: "m2-hontanares-return", name: "Hontanares de Eresma", coordinates: "40.983628, -4.204160")
         static let casinoReturn    = BusStop(id: "m2-casino-return",     name: "Casino",               coordinates: "40.965154, -4.209251")
         static let segoviaReturn   = BusStop(id: "m2-segovia-return",    name: "Segovia",              coordinates: "40.944973, -4.122431")
     }
