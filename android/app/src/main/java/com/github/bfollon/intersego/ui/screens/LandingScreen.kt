@@ -100,13 +100,6 @@ fun LandingScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             LandingButton(
-                label = "Líneas de bus",
-                onClick = onNavigateToRouteList
-            ) {
-                BusLineIcon(size = 60)
-            }
-
-            LandingButton(
                 label = "Parada más cercana",
                 onClick = onFindClosestStop,
                 enabled = !isSearchingClosestStop
@@ -126,6 +119,13 @@ fun LandingScreen(
                         modifier = Modifier.size(60.dp).padding(14.dp)
                     )
                 }
+            }
+
+            LandingButton(
+                label = "Líneas de bus",
+                onClick = onNavigateToRouteList
+            ) {
+                BusLineIcon(size = 60)
             }
 
             if (closestStopError != null) {

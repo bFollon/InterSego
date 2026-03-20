@@ -48,21 +48,6 @@ struct LandingView: View {
             Spacer()
 
             VStack(spacing: 16) {
-                Button(action: onShowRouteList) {
-                    VStack(spacing: 14) {
-                        BusLineIcon(size: 60)
-                        Text("Líneas de bus")
-                            .font(.headline)
-                            .foregroundColor(.accentColor)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 28)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-                }
-                .buttonStyle(.plain)
-
                 Button(action: onFindClosestStop) {
                     VStack(spacing: 14) {
                         if isSearchingClosestStop {
@@ -86,6 +71,21 @@ struct LandingView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isSearchingClosestStop)
+
+                Button(action: onShowRouteList) {
+                    VStack(spacing: 14) {
+                        BusLineIcon(size: 60)
+                        Text("Líneas de bus")
+                            .font(.headline)
+                            .foregroundColor(.accentColor)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                }
+                .buttonStyle(.plain)
 
                 if let error = closestStopError {
                     Text(error)
