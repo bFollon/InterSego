@@ -300,5 +300,37 @@ save_polyline "M1-inbound" \
     "$M1_GARCILLAN_ROUTING;$M1_MARTIN_MIGUEL_ROUTING;$M1_ABADES_ROUTING;$M1_VALVERDE_ROUTING;\
 $M1_CASINO_ROUTING;$M1_POLIGONO_2_ROUTING;$M1_POLIGONO_ROUTING;$M1_SEGOVIA_ROUTING"
 
+# ---------------------------------------------------------------------------
+# M2 — view IDs: "circularA", "circularB"
+# ---------------------------------------------------------------------------
+
+# --- M2 stop coordinates ---
+M2_SEGOVIA="-4.122431,40.944973"
+M2_CASINO="-4.209251,40.965154"
+M2_HONTANARES="-4.204160,40.983628"
+M2_LOS_HUERTOS="-4.219216,41.009124"
+M2_VALSECA="-4.174266,40.999306"
+
+# Routing overrides (physical coords used directly — override if routingCoordinates is set in M2Parser)
+M2_SEGOVIA_ROUTING="$M2_SEGOVIA"
+M2_CASINO_ROUTING="$M2_CASINO"
+M2_HONTANARES_ROUTING="$M2_HONTANARES"
+M2_LOS_HUERTOS_ROUTING="$M2_LOS_HUERTOS"
+M2_VALSECA_ROUTING="$M2_VALSECA"
+
+echo ""
+echo "=== M2 ==="
+
+# circularA (outbound view): Segovia → Casino → Hontanares → Los Huertos → Hontanares → Valseca
+# The bus physically backtracks through Hontanares after Los Huertos to reach Valseca.
+save_polyline "M2-circularA" \
+    "$M2_SEGOVIA_ROUTING;$M2_CASINO_ROUTING;$M2_HONTANARES_ROUTING;$M2_LOS_HUERTOS_ROUTING;\
+$M2_HONTANARES_ROUTING;$M2_VALSECA_ROUTING"
+
+# circularB (return view): Los Huertos → Hontanares → Valseca → Casino → Segovia
+save_polyline "M2-circularB" \
+    "$M2_LOS_HUERTOS_ROUTING;$M2_HONTANARES_ROUTING;$M2_VALSECA_ROUTING;\
+$M2_CASINO_ROUTING;$M2_SEGOVIA_ROUTING"
+
 echo ""
 echo "Done. Files written to: $OUTPUT_DIR"
