@@ -86,6 +86,15 @@ internal fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfW
     else -> setOf(DayType.WEEKDAY)
 }
 
+/** Expand a DayType value to the full set used for timetable filtering. */
+internal fun dayTypesFor(dayType: DayType): Set<DayType> = when (dayType) {
+    DayType.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
+    DayType.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+    DayType.WEEKEND -> setOf(DayType.WEEKEND, DayType.SATURDAY, DayType.SUNDAY)
+    DayType.HOLIDAY -> setOf(DayType.HOLIDAY, DayType.SUNDAY, DayType.WEEKEND)
+    else -> setOf(DayType.WEEKDAY)
+}
+
 /**
  * Screen displaying next departure times for a specific bus stop.
  *

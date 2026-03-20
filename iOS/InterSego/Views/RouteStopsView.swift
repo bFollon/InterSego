@@ -20,10 +20,15 @@ import SwiftUI
 struct RouteStopsView: View {
     let route: BusRoute
     let views: [RouteView]
+    var initialViewId: String? = nil
+    var routeEntries: [RouteSelectorEntry]? = nil
+    var selectedEntryId: String? = nil
+    var onEntrySelected: (RouteSelectorEntry) -> Void = { _ in }
     let onStopSelected: (BusStop, String) -> Void
     let onMapSelected: (String) -> Void
 
     @State private var currentViewId: String = ""
+    @State private var showRoutesSheet = false
     @Environment(\.dismiss) private var dismiss
 
     private var currentView: RouteView? {
@@ -41,8 +46,8 @@ struct RouteStopsView: View {
 
     private func mainContent(currentView: RouteView) -> some View {
         VStack(spacing: 0) {
-            // Tab chips (if available)
-            if let tabs = currentView.tabs, !tabs.isEmpty {
+            // Tab chips (if available) — hidden when the Rutas picker handles all route selection
+            if routeEntries == nil, let tabs = currentView.tabs, !tabs.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(tabs, id: \.viewId) { tab in
@@ -106,6 +111,11 @@ struct RouteStopsView: View {
                         .foregroundColor(.secondary)
                 }
             }
+            if let entries = routeEntries, entries.count > 1 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Rutas") { showRoutesSheet = true }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     onMapSelected(currentView.id)
@@ -125,17 +135,61 @@ struct RouteStopsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showRoutesSheet) {
+            RouteSelectorSheet(
+                entries: routeEntries ?? [],
+                selectedEntryId: selectedEntryId,
+                onSelect: { entry in
+                    onEntrySelected(entry)
+                    showRoutesSheet = false
+                }
+            )
+        }
         .onAppear {
             if currentViewId.isEmpty {
-                currentViewId = views.first?.id ?? ""
+                currentViewId = initialViewId ?? views.first?.id ?? ""
             }
         }
+        .onChange(of: selectedEntryId) {
+            currentViewId = initialViewId ?? views.first?.id ?? ""
+        }
+    }
+}
+
+// MARK: - Route Selector Sheet
+
+struct RouteSelectorSheet: View {
+    let entries: [RouteSelectorEntry]
+    let selectedEntryId: String?
+    let onSelect: (RouteSelectorEntry) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List(entries, id: \.id) { entry in
+                Button {
+                    onSelect(entry)
+                } label: {
+                    HStack {
+                        Text(entry.label)
+                            .foregroundColor(.primary)
+                        Spacer()
+                        if entry.id == selectedEntryId {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Rutas")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 
 // MARK: - Tab Chip
 
-private struct TabChip: View {
+struct TabChip: View {
     let label: String
     let isSelected: Bool
     let action: () -> Void

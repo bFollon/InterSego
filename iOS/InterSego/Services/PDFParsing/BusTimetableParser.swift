@@ -75,4 +75,10 @@ extension RouteStopsProvider {
     }
 
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? { nil }
+
+    /// Get the flat list of selectable route entries for the "Rutas" picker.
+    ///
+    /// Each entry represents one distinct route experience (operating schedule + starting direction).
+    /// Returns nil by default — no picker is shown for routes with a single schedule.
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]? { nil }
 }

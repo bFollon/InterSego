@@ -74,6 +74,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.DayType
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteType
 import com.github.bfollon.intersego.repositories.PDFURLRepository
 import com.github.bfollon.intersego.services.CoordinateCache
@@ -552,8 +553,7 @@ fun AppNavigation() {
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            // Determine current day type for variant filtering
-            val currentDayType = remember {
+            val todayDayType = remember {
                 when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
                     java.util.Calendar.SATURDAY -> DayType.SATURDAY
                     java.util.Calendar.SUNDAY -> DayType.SUNDAY
@@ -561,20 +561,37 @@ fun AppNavigation() {
                 }
             }
 
-            // Get route views from parser dynamically
-            val views = pdfProcessingService.getRouteViews(routeId, currentDayType)
+            val routeEntries = remember(routeId) { pdfProcessingService.getRouteEntries(routeId) }
+            var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
+                mutableStateOf(routeEntries?.firstOrNull { it.isActiveToday }?.id ?: routeEntries?.firstOrNull()?.id)
+            }
+            val selectedEntry = routeEntries?.firstOrNull { it.id == selectedEntryId }
+
+            val views = remember(routeId, selectedEntryId) {
+                selectedEntry?.views ?: pdfProcessingService.getRouteViews(routeId, todayDayType)
+            }
 
             RouteStopsScreen(
                 route = route,
                 views = views,
-                onBack = {
-                    navController.popBackStack()
-                },
+                initialViewId = selectedEntry?.initialViewId,
+                routeEntries = routeEntries,
+                selectedEntryId = selectedEntryId,
+                onEntrySelected = { entry -> selectedEntryId = entry.id },
+                onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    val direction = views.find { it.id == viewId }?.direction ?: ""
+                    if (selectedEntry == null || selectedEntry.isActiveToday) {
+                        navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    } else {
+                        val dayTypeOverride = selectedEntry.timetableDayType.name
+                        val label = views.find { it.id == viewId }?.departureLabel ?: "all"
+                        navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/$dayTypeOverride")
+                    }
                 },
                 onMapSelected = { viewId ->
-                    navController.navigate("route_map/${route.id}/$viewId")
+                    val entryId = selectedEntryId ?: "none"
+                    navController.navigate("route_map/${route.id}/$viewId/$entryId")
                 }
             )
         }
@@ -611,34 +628,52 @@ fun AppNavigation() {
                 },
                 onDaySchedule = { direction, variantLabel ->
                     val label = variantLabel ?: "all"
-                    navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label")
+                    navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/none")
                 }
             )
         }
 
-        composable("route_map/{routeId}/{viewId}") { backStackEntry ->
+        composable("route_map/{routeId}/{viewId}/{groupId}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val initialViewId = backStackEntry.arguments?.getString("viewId") ?: return@composable
+            val initialGroupId = backStackEntry.arguments?.getString("groupId")?.takeIf { it != "none" }
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            val currentDayType = remember {
+            val todayDayType = remember {
                 when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
                     java.util.Calendar.SATURDAY -> DayType.SATURDAY
                     java.util.Calendar.SUNDAY -> DayType.SUNDAY
                     else -> DayType.WEEKDAY
                 }
             }
-            val views = remember(routeId, currentDayType) {
-                pdfProcessingService.getRouteViews(routeId, currentDayType)
+
+            val routeEntries = remember(routeId) { pdfProcessingService.getRouteEntries(routeId) }
+            var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
+                mutableStateOf(initialGroupId ?: routeEntries?.firstOrNull { it.isActiveToday }?.id ?: routeEntries?.firstOrNull()?.id)
+            }
+            val selectedEntry = routeEntries?.firstOrNull { it.id == selectedEntryId }
+
+            val views = remember(routeId, selectedEntryId) {
+                selectedEntry?.views ?: pdfProcessingService.getRouteViews(routeId, todayDayType)
             }
 
             RouteMapScreen(
                 route = route,
                 views = views,
-                initialViewId = initialViewId,
+                initialViewId = selectedEntry?.initialViewId ?: initialViewId,
+                routeEntries = routeEntries,
+                selectedEntryId = selectedEntryId,
+                onEntrySelected = { entry -> selectedEntryId = entry.id },
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    val direction = views.find { it.id == viewId }?.direction ?: ""
+                    if (selectedEntry == null || selectedEntry.isActiveToday) {
+                        navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    } else {
+                        val dayTypeOverride = selectedEntry.timetableDayType.name
+                        val label = views.find { it.id == viewId }?.departureLabel ?: "all"
+                        navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/$dayTypeOverride")
+                    }
                 }
             )
         }
@@ -655,11 +690,12 @@ fun AppNavigation() {
             )
         }
 
-        composable("day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}") { backStackEntry ->
+        composable("day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}/{dayTypeOverride}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
             val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
             val variantLabel = backStackEntry.arguments?.getString("variantLabel")
+            val dayTypeOverrideName = backStackEntry.arguments?.getString("dayTypeOverride")?.takeIf { it != "none" }
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
@@ -671,15 +707,17 @@ fun AppNavigation() {
                 } ?: return@composable
 
             val effectiveVariantLabel = if (variantLabel == "all") null else variantLabel
+            val overrideDayType = dayTypeOverrideName?.let {
+                runCatching { DayType.valueOf(it) }.getOrNull()
+            }
 
             DayScheduleScreen(
                 route = route,
                 stop = stop,
                 direction = direction,
                 selectedVariantLabel = effectiveVariantLabel,
-                onBack = {
-                    navController.popBackStack()
-                }
+                overrideDayType = overrideDayType,
+                onBack = { navController.popBackStack() }
             )
         }
     }

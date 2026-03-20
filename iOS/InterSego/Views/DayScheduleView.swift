@@ -24,6 +24,15 @@ struct DayScheduleSelection: Hashable {
     let stop: BusStop
     let direction: String
     let departureLabel: String?
+    let overrideDayType: DayType?
+
+    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil) {
+        self.route = route
+        self.stop = stop
+        self.direction = direction
+        self.departureLabel = departureLabel
+        self.overrideDayType = overrideDayType
+    }
 }
 
 // MARK: - Day Schedule View
@@ -33,6 +42,15 @@ struct DayScheduleView: View {
     let stop: BusStop
     let direction: String
     let selectedVariantLabel: String?
+    let overrideDayType: DayType?
+
+    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil) {
+        self.route = route
+        self.stop = stop
+        self.direction = direction
+        self.selectedVariantLabel = selectedVariantLabel
+        self.overrideDayType = overrideDayType
+    }
 
     @State private var timetables: [BusTimetable] = []
     @State private var isLoading = true
@@ -43,7 +61,10 @@ struct DayScheduleView: View {
 
     private var currentWeekday: Int { Calendar.current.component(.weekday, from: Date()) }
 
-    private var currentDayTypes: Set<DayType> { dayTypesForToday(currentWeekday) }
+    private var currentDayTypes: Set<DayType> {
+        if let override = overrideDayType { return dayTypesFor(override) }
+        return dayTypesForToday(currentWeekday)
+    }
 
     private var todayDepartures: [DepartureTime] {
         let matching = timetables.filter { timetable in
@@ -55,10 +76,9 @@ struct DayScheduleView: View {
     }
 
     private var dayTypeLabel: String {
-        let weekday = Calendar.current.component(.weekday, from: Date())
-        switch weekday {
-        case 7: return "Sábado"
-        case 1: return "Domingo"
+        switch overrideDayType ?? (currentWeekday == 7 ? .saturday : currentWeekday == 1 ? .sunday : .weekday) {
+        case .saturday, .weekend: return "Sábado"
+        case .sunday, .holiday: return "Domingo"
         default: return "Lunes a Viernes"
         }
     }
@@ -194,12 +214,22 @@ struct DayScheduleView: View {
     }
 }
 
-// MARK: - Day Type Helper
+// MARK: - Day Type Helpers
 
 private func dayTypesForToday(_ weekday: Int) -> Set<DayType> {
     switch weekday {
     case 7: return [.saturday, .weekend]
     case 1: return [.sunday, .weekend, .holiday]
+    default: return [.weekday]
+    }
+}
+
+private func dayTypesFor(_ dayType: DayType) -> Set<DayType> {
+    switch dayType {
+    case .saturday: return [.saturday, .weekend]
+    case .sunday: return [.sunday, .weekend, .holiday]
+    case .weekend: return [.weekend, .saturday, .sunday]
+    case .holiday: return [.holiday, .sunday, .weekend]
     default: return [.weekday]
     }
 }

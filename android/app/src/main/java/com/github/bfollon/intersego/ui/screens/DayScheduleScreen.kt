@@ -58,6 +58,7 @@ fun DayScheduleScreen(
     stop: BusStop,
     direction: String,
     selectedVariantLabel: String? = null,
+    overrideDayType: DayType? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -92,20 +93,31 @@ fun DayScheduleScreen(
     }
 
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
-    val currentDayTypes = remember { dayTypesForCalendarDay(currentDayOfWeek) }
+    // When an override is set, use the matching DayType set; otherwise derive from today's calendar day.
+    val currentDayTypes = remember(overrideDayType) {
+        if (overrideDayType != null) dayTypesFor(overrideDayType) else dayTypesForCalendarDay(currentDayOfWeek)
+    }
+    // Weekday used for seasonal filtering — use today's for "now" context even when overriding
+    val weekdayForSeasonal = remember { currentDayOfWeek }
 
     val todayDepartures = remember(timetables, currentDayTypes, stop, direction) {
         timetables.filter {
             it.dayType in currentDayTypes &&
             it.stopId == stop.id &&
             it.direction == direction
-        }.flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }.sortedBy { it.toMinutesSinceMidnight() }
+        }.flatMap { it.seasonalDepartures(weekday = weekdayForSeasonal) }.sortedBy { it.toMinutesSinceMidnight() }
     }
 
-    val dayTypeLabel = remember {
-        when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-            Calendar.SATURDAY -> "Sábado"
-            Calendar.SUNDAY -> "Domingo"
+    val dayTypeLabel = remember(overrideDayType) {
+        when (overrideDayType ?: run {
+            when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
+                Calendar.SATURDAY -> DayType.SATURDAY
+                Calendar.SUNDAY -> DayType.SUNDAY
+                else -> DayType.WEEKDAY
+            }
+        }) {
+            DayType.SATURDAY, DayType.WEEKEND -> "Sábado"
+            DayType.SUNDAY, DayType.HOLIDAY -> "Domingo"
             else -> "Lunes a Viernes"
         }
     }

@@ -32,6 +32,14 @@ struct MapSelection: Hashable {
     let route: BusRoute
     let routeViews: [RouteView]
     let initialViewId: String
+    let initialEntryId: String?
+
+    init(route: BusRoute, routeViews: [RouteView], initialViewId: String, initialEntryId: String? = nil) {
+        self.route = route
+        self.routeViews = routeViews
+        self.initialViewId = initialViewId
+        self.initialEntryId = initialEntryId
+    }
 }
 
 @main
@@ -106,22 +114,17 @@ struct ContentView: View {
                         route: selection.route,
                         stop: selection.stop,
                         direction: selection.direction,
-                        selectedVariantLabel: selection.departureLabel
+                        selectedVariantLabel: selection.departureLabel,
+                        overrideDayType: selection.overrideDayType
                     )
                 }
                 .navigationDestination(for: MapSelection.self) { selection in
-                    RouteMapView(
+                    RouteMapContainer(
                         route: selection.route,
-                        routeViews: selection.routeViews,
                         initialViewId: selection.initialViewId,
-                        onStopSelected: { stop, viewId in
-                            navigationPath.append(StopSelection(
-                                route: selection.route,
-                                stop: stop,
-                                routeViews: selection.routeViews,
-                                currentViewId: viewId
-                            ))
-                        }
+                        initialEntryId: selection.initialEntryId,
+                        fallbackViews: selection.routeViews,
+                        navigationPath: $navigationPath
                     )
                 }
             }
@@ -142,27 +145,58 @@ struct ContentView: View {
     private struct RouteStopsContainer: View {
         let route: BusRoute
         @Binding var navigationPath: NavigationPath
-        @State private var routeViews: [RouteView]?
+        @State private var routeEntries: [RouteSelectorEntry]?
+        @State private var selectedEntryId: String?
+        @State private var fallbackViews: [RouteView]?
+
+        private var todayDayType: DayType { TimetableService.shared.getCurrentDayType() }
+
+        private var selectedEntry: RouteSelectorEntry? {
+            routeEntries?.first { $0.id == selectedEntryId }
+        }
+
+        private var views: [RouteView] {
+            selectedEntry?.views ?? fallbackViews ?? []
+        }
 
         var body: some View {
             Group {
-                if let views = routeViews, !views.isEmpty {
+                if !views.isEmpty {
                     RouteStopsView(
                         route: route,
                         views: views,
+                        initialViewId: selectedEntry?.initialViewId,
+                        routeEntries: routeEntries,
+                        selectedEntryId: selectedEntryId,
+                        onEntrySelected: { entry in
+                            selectedEntryId = entry.id
+                        },
                         onStopSelected: { stop, viewId in
-                            navigationPath.append(StopSelection(
-                                route: route,
-                                stop: stop,
-                                routeViews: views,
-                                currentViewId: viewId
-                            ))
+                            let entry = selectedEntry
+                            if entry == nil || entry!.isActiveToday {
+                                navigationPath.append(StopSelection(
+                                    route: route,
+                                    stop: stop,
+                                    routeViews: views,
+                                    currentViewId: viewId
+                                ))
+                            } else {
+                                let direction = views.first { $0.id == viewId }?.direction ?? ""
+                                navigationPath.append(DayScheduleSelection(
+                                    route: route,
+                                    stop: stop,
+                                    direction: direction,
+                                    departureLabel: entry?.label,
+                                    overrideDayType: entry?.timetableDayType
+                                ))
+                            }
                         },
                         onMapSelected: { viewId in
                             navigationPath.append(MapSelection(
                                 route: route,
                                 routeViews: views,
-                                initialViewId: viewId
+                                initialViewId: viewId,
+                                initialEntryId: selectedEntryId
                             ))
                         }
                     )
@@ -171,11 +205,78 @@ struct ContentView: View {
                 }
             }
             .task {
-                let dayType = TimetableService.shared.getCurrentDayType()
-                let views = await PDFProcessingService.shared.getRouteViews(
-                    routeId: route.id, dayType: dayType
-                )
-                routeViews = views
+                let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
+                if let entries = entries, !entries.isEmpty {
+                    routeEntries = entries
+                    selectedEntryId = entries.first { $0.isActiveToday }?.id ?? entries.first?.id
+                } else {
+                    fallbackViews = await PDFProcessingService.shared.getRouteViews(
+                        routeId: route.id, dayType: todayDayType
+                    )
+                }
+            }
+        }
+    }
+
+    private struct RouteMapContainer: View {
+        let route: BusRoute
+        let initialViewId: String
+        let initialEntryId: String?
+        let fallbackViews: [RouteView]
+        @Binding var navigationPath: NavigationPath
+        @State private var routeEntries: [RouteSelectorEntry]?
+        @State private var selectedEntryId: String?
+
+        private var todayDayType: DayType { TimetableService.shared.getCurrentDayType() }
+
+        private var selectedEntry: RouteSelectorEntry? {
+            routeEntries?.first { $0.id == selectedEntryId }
+        }
+
+        private var views: [RouteView] {
+            selectedEntry?.views ?? fallbackViews
+        }
+
+        var body: some View {
+            RouteMapView(
+                route: route,
+                routeViews: views,
+                initialViewId: selectedEntry?.initialViewId ?? initialViewId,
+                routeEntries: routeEntries,
+                selectedEntryId: selectedEntryId,
+                onEntrySelected: { entry in
+                    selectedEntryId = entry.id
+                },
+                onStopSelected: { stop, viewId in
+                    let entry = selectedEntry
+                    if entry == nil || entry!.isActiveToday {
+                        navigationPath.append(StopSelection(
+                            route: route,
+                            stop: stop,
+                            routeViews: views,
+                            currentViewId: viewId
+                        ))
+                    } else {
+                        let direction = views.first { $0.id == viewId }?.direction ?? ""
+                        navigationPath.append(DayScheduleSelection(
+                            route: route,
+                            stop: stop,
+                            direction: direction,
+                            departureLabel: entry?.label,
+                            overrideDayType: entry?.timetableDayType
+                        ))
+                    }
+                }
+            )
+            .task {
+                let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
+                if let entries = entries, !entries.isEmpty {
+                    routeEntries = entries
+                    selectedEntryId = initialEntryId
+                        ?? entries.first { $0.isActiveToday }?.id
+                        ?? entries.first?.id
+                }
+                // If no entries, fallbackViews (from caller) are used directly
             }
         }
     }

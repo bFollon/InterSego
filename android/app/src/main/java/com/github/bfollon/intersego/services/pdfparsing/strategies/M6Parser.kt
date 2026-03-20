@@ -29,6 +29,7 @@ import com.github.bfollon.intersego.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.intersego.services.pdfparsing.ParserCapabilities
 import com.github.bfollon.intersego.services.pdfparsing.ParserMode
 import com.github.bfollon.intersego.services.pdfparsing.RouteStopsProvider
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteTab
 import com.github.bfollon.intersego.data.RouteVariant
 import com.github.bfollon.intersego.data.RouteView
@@ -890,6 +891,24 @@ class M6Parser : CapableParser, RouteStopsProvider {
 
             else -> getRouteViews(routeId, DayType.WEEKDAY)
         }
+    }
+
+    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry>? {
+        if (!routeId.equals("M6", ignoreCase = true)) return null
+        val cal = java.util.Calendar.getInstance().apply { time = today }
+        val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
+        val isWeekday  = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
+        val isSaturday = dow == java.util.Calendar.SATURDAY
+        val isSunday   = dow == java.util.Calendar.SUNDAY
+        val weekdayViews  = getRouteViews(routeId, DayType.WEEKDAY)!!
+        val saturdayViews = getRouteViews(routeId, DayType.SATURDAY)!!
+        val sundayViews   = getRouteViews(routeId, DayType.SUNDAY)!!
+        return listOf(
+            RouteSelectorEntry("entry-lv-regular",  "L-V - Regular",  weekdayViews,  "weekday-unified",  DayType.WEEKDAY,  isWeekday),
+            RouteSelectorEntry("entry-lv-circular", "L-V - Circular", weekdayViews,  "weekday-circular", DayType.WEEKDAY,  isWeekday),
+            RouteSelectorEntry("entry-sabado",       "Sábado",         saturdayViews, "saturday-regular", DayType.SATURDAY, isSaturday),
+            RouteSelectorEntry("entry-domingo",      "Domingo",        sundayViews,   "sunday-regular",   DayType.SUNDAY,   isSunday)
+        )
     }
 
     override fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {

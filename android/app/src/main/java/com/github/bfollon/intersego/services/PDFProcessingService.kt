@@ -21,6 +21,7 @@ import android.content.Context
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteVariant
 import com.github.bfollon.intersego.data.RouteView
 import com.github.bfollon.intersego.data.RouteViewStop
@@ -217,6 +218,15 @@ class PDFProcessingService(private val context: Context) {
      * Otherwise, converts RouteVariant objects into plain RouteView objects
      * with a swap action between the first two variants.
      */
+    /**
+     * Get the flat list of selectable entries for the "Rutas" picker.
+     * Returns null when the route has a single operating schedule (no picker shown).
+     */
+    fun getRouteEntries(routeId: String, today: java.util.Date = java.util.Date()): List<RouteSelectorEntry>? {
+        val parser = parsers[routeId]
+        return if (parser is RouteStopsProvider) parser.getRouteEntries(routeId, today) else null
+    }
+
     fun getRouteViews(routeId: String, dayType: DayType): List<RouteView> {
         val parser = parsers[routeId]
         if (parser is RouteStopsProvider) {

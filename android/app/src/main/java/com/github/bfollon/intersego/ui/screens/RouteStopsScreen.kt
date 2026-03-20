@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.*
@@ -44,13 +45,15 @@ import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteView
 
 /**
  * Screen displaying bus stops along a route with visual route line.
  *
  * Renders route views with support for:
- * - Tab/chip selector for route types (e.g., Regular vs Circular)
+ * - "Rutas" bottom sheet for selecting a different operating schedule or direction
+ * - Tab/chip selector for route types (only shown when no route entries exist)
  * - Direction swap button in the top bar
  * - Extended route section with outline and label
  */
@@ -59,13 +62,20 @@ import com.github.bfollon.intersego.data.RouteView
 fun RouteStopsScreen(
     route: BusRoute,
     views: List<RouteView>,
+    initialViewId: String? = null,
+    routeEntries: List<RouteSelectorEntry>? = null,
+    selectedEntryId: String? = null,
+    onEntrySelected: (RouteSelectorEntry) -> Unit = {},
     onBack: () -> Unit,
     onStopSelected: (BusStop, String) -> Unit,  // stop, viewId
     onMapSelected: (String) -> Unit             // viewId
 ) {
-    var currentViewId by rememberSaveable { mutableStateOf(views.first().id) }
+    var currentViewId by rememberSaveable(views, selectedEntryId) {
+        mutableStateOf(initialViewId ?: views.first().id)
+    }
     val viewById = remember(views) { views.associateBy { it.id } }
     val currentView = viewById[currentViewId] ?: views.first()
+    var showRoutesSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -89,6 +99,11 @@ fun RouteStopsScreen(
                     }
                 },
                 actions = {
+                    if (routeEntries != null && routeEntries.size > 1) {
+                        TextButton(onClick = { showRoutesSheet = true }) {
+                            Text("Rutas")
+                        }
+                    }
                     IconButton(onClick = { onMapSelected(currentViewId) }) {
                         Icon(
                             imageVector = Icons.Filled.Map,
@@ -118,8 +133,8 @@ fun RouteStopsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tab/chip row
-            currentView.tabs?.let { tabs ->
+            // Tab/chip row — hidden when the Rutas picker handles all route selection
+            if (routeEntries == null) currentView.tabs?.let { tabs ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -185,6 +200,31 @@ fun RouteStopsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
+        }
+    }
+
+    // "Rutas" bottom sheet
+    if (showRoutesSheet && routeEntries != null) {
+        ModalBottomSheet(onDismissRequest = { showRoutesSheet = false }) {
+            Text(
+                text = "Rutas",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+            routeEntries.forEach { entry ->
+                val isSelected = entry.id == selectedEntryId
+                ListItem(
+                    headlineContent = { Text(entry.label) },
+                    trailingContent = {
+                        if (isSelected) Icon(Icons.Filled.Check, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable {
+                        onEntrySelected(entry)
+                        showRoutesSheet = false
+                    }
+                )
+            }
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

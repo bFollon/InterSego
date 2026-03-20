@@ -367,6 +367,23 @@ class M6Parser: CapableParser, RouteStopsProvider {
         }
     }
 
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]? {
+        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return nil }
+        let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
+        let isWeekday  = dow != 7 && dow != 1
+        let isSaturday = dow == 7
+        let isSunday   = dow == 1
+        let weekdayViews  = getRouteViews(routeId, dayType: .weekday)!
+        let saturdayViews = getRouteViews(routeId, dayType: .saturday)!
+        let sundayViews   = getRouteViews(routeId, dayType: .sunday)!
+        return [
+            RouteSelectorEntry(id: "entry-lv-regular",  label: "L-V - Regular",  views: weekdayViews,  initialViewId: "weekday-unified",  timetableDayType: .weekday,  isActiveToday: isWeekday),
+            RouteSelectorEntry(id: "entry-lv-circular", label: "L-V - Circular", views: weekdayViews,  initialViewId: "weekday-circular", timetableDayType: .weekday,  isActiveToday: isWeekday),
+            RouteSelectorEntry(id: "entry-sabado",       label: "Sábado",         views: saturdayViews, initialViewId: "saturday-regular", timetableDayType: .saturday, isActiveToday: isSaturday),
+            RouteSelectorEntry(id: "entry-domingo",      label: "Domingo",        views: sundayViews,   initialViewId: "sunday-regular",   timetableDayType: .sunday,   isActiveToday: isSunday)
+        ]
+    }
+
     // MARK: - Line Preprocessing
 
     /// Fixes two PDFKit artifacts that affect the M6 circular route:

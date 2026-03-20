@@ -123,6 +123,38 @@ class M1Parser: CapableParser, RouteStopsProvider {
         }
     }
 
+    func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
+        guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return nil }
+        let variants = getRouteVariants(routeId, dayType: dayType)
+        guard !variants.isEmpty else { return nil }
+        return variants.enumerated().map { (index, variant) in
+            let swapTargetId = variants.count == 2 ? variants[1 - index].id : nil
+            return RouteView(
+                id: variant.id,
+                label: variant.label,
+                stops: variant.stops.map { RouteViewStop(stop: $0) },
+                direction: variant.direction,
+                departureLabel: variant.departureLabel,
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+            )
+        }
+    }
+
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]? {
+        guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return nil }
+        let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
+        let isWeekday  = dow != 7 && dow != 1
+        let isSaturday = dow == 7
+        guard let weekdayViews  = getRouteViews(routeId, dayType: .weekday),
+              let saturdayViews = getRouteViews(routeId, dayType: .saturday) else { return nil }
+        return [
+            RouteSelectorEntry(id: "entry-lv-a",  label: "L-V - \(Self.directionCircularA)",  views: weekdayViews,  initialViewId: "circularA", timetableDayType: .weekday,  isActiveToday: isWeekday),
+            RouteSelectorEntry(id: "entry-lv-b",  label: "L-V - \(Self.directionCircularB)",  views: weekdayViews,  initialViewId: "circularB", timetableDayType: .weekday,  isActiveToday: isWeekday),
+            RouteSelectorEntry(id: "entry-sab-a", label: "Sáb - \(Self.directionCircularA)", views: saturdayViews, initialViewId: "circularA", timetableDayType: .saturday, isActiveToday: isSaturday),
+            RouteSelectorEntry(id: "entry-sab-b", label: "Sáb - \(Self.directionCircularB)", views: saturdayViews, initialViewId: "circularB", timetableDayType: .saturday, isActiveToday: isSaturday)
+        ]
+    }
+
     func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M1Parser: returning hardcoded timetable (PDF parsing bypassed)")
         return buildStaticTimetables()

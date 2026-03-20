@@ -19,6 +19,7 @@ package com.github.bfollon.intersego.services.pdfparsing
 
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteVariant
 import com.github.bfollon.intersego.data.RouteView
 
@@ -43,15 +44,7 @@ interface RouteStopsProvider {
     /**
      * Get named route variants for a given route ID and day type.
      *
-     * Each variant includes a display label, stop list, and direction string.
-     * This allows the UI to present a route selector dropdown with correct
-     * stop sequences per variant.
-     *
      * Default implementation creates two variants from getRoutesForId().
-     *
-     * @param routeId Route ID (e.g., "M4", "M6")
-     * @param dayType Day type to filter variants for
-     * @return List of RouteVariant for display
      */
     fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
         val routes = getRoutesForId(routeId)
@@ -68,4 +61,15 @@ interface RouteStopsProvider {
      * getRouteVariants() into plain RouteView objects.
      */
     fun getRouteViews(routeId: String, dayType: DayType): List<RouteView>? = null
+
+    /**
+     * Get the flat list of selectable route entries for the "Rutas" picker.
+     *
+     * Each entry represents one distinct route experience (operating schedule + starting direction).
+     * Returns null when the route has only a single operating schedule — no picker is shown.
+     *
+     * @param routeId Route ID (e.g., "M6", "M1")
+     * @param today Date used to determine which entries are active today
+     */
+    fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry>? = null
 }

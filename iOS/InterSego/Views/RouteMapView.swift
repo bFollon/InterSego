@@ -27,11 +27,15 @@ struct RouteMapView: View {
     let route: BusRoute
     let routeViews: [RouteView]
     let initialViewId: String
+    var routeEntries: [RouteSelectorEntry]? = nil
+    var selectedEntryId: String? = nil
+    var onEntrySelected: (RouteSelectorEntry) -> Void = { _ in }
     let onStopSelected: (BusStop, String) -> Void
 
     @State private var currentViewId: String = ""
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var routePolyline: [CLLocationCoordinate2D] = []
+    @State private var showRoutesSheet = false
 
     private var currentView: RouteView? {
         routeViews.first { $0.id == currentViewId } ?? routeViews.first
@@ -51,24 +55,31 @@ struct RouteMapView: View {
     }
 
     var body: some View {
-        Map(position: $cameraPosition) {
-            // Polyline connecting stops in order
-            if polylineCoordinates.count >= 2 {
-                MapPolyline(coordinates: polylineCoordinates)
-                    .stroke(Color.accentColor, lineWidth: 4)
-            }
+        VStack(spacing: 0) {
+            Map(position: $cameraPosition) {
+                // Polyline connecting stops in order
+                if polylineCoordinates.count >= 2 {
+                    MapPolyline(coordinates: polylineCoordinates)
+                        .stroke(Color.accentColor, lineWidth: 4)
+                }
 
-            // Marker for each stop
-            ForEach(stopsWithCoords) { stop in
-                if let lat = stop.resolvedLatitude, let lon = stop.resolvedLongitude {
-                    Annotation(stop.name, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon)) {
-                        StopMapMarker {
-                            if let view = currentView {
-                                onStopSelected(stop, view.id)
+                // Marker for each stop
+                ForEach(stopsWithCoords) { stop in
+                    if let lat = stop.resolvedLatitude, let lon = stop.resolvedLongitude {
+                        Annotation(stop.name, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon)) {
+                            StopMapMarker {
+                                if let view = currentView {
+                                    onStopSelected(stop, view.id)
+                                }
                             }
                         }
                     }
                 }
+            }
+            .task(id: currentViewId) {
+                guard !currentViewId.isEmpty else { return }
+                routePolyline = loadBundledPolyline(routeId: route.id, viewId: currentViewId)
+                fitCamera()
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -84,6 +95,11 @@ struct RouteMapView: View {
                     }
                 }
             }
+            if let entries = routeEntries, entries.count > 1 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Rutas") { showRoutesSheet = true }
+                }
+            }
             if currentView?.swapAction != nil {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -96,15 +112,23 @@ struct RouteMapView: View {
                 }
             }
         }
+        .sheet(isPresented: $showRoutesSheet) {
+            RouteSelectorSheet(
+                entries: routeEntries ?? [],
+                selectedEntryId: selectedEntryId,
+                onSelect: { entry in
+                    onEntrySelected(entry)
+                    showRoutesSheet = false
+                }
+            )
+        }
         .onAppear {
             if currentViewId.isEmpty {
                 currentViewId = initialViewId
             }
         }
-        .task(id: currentViewId) {
-            guard !currentViewId.isEmpty else { return }
-            routePolyline = loadBundledPolyline(routeId: route.id, viewId: currentViewId)
-            fitCamera()
+        .onChange(of: selectedEntryId) {
+            currentViewId = initialViewId
         }
     }
 

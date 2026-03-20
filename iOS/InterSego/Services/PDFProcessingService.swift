@@ -102,6 +102,13 @@ actor PDFProcessingService {
         return parser.getRouteVariants(routeId, dayType: dayType)
     }
 
+    /// Get the flat list of selectable entries for the "Rutas" picker.
+    /// Returns nil when the route has a single operating schedule (no picker shown).
+    func getRouteEntries(routeId: String, today: Date = Date()) -> [RouteSelectorEntry]? {
+        guard let parser = parsers[routeId] as? RouteStopsProvider else { return nil }
+        return parser.getRouteEntries(routeId, today: today)
+    }
+
     func getRouteViews(routeId: String, dayType: DayType) -> [RouteView] {
         if let parser = parsers[routeId] as? RouteStopsProvider,
            let views = parser.getRouteViews(routeId, dayType: dayType) {
