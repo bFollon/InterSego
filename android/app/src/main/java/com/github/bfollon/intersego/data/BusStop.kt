@@ -18,14 +18,12 @@
 package com.github.bfollon.intersego.data
 
 import kotlinx.serialization.Serializable
-import java.util.UUID
-
 /**
  * Represents a bus stop in the Segovia transportation system
  */
 @Serializable
 data class BusStop(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val name: String,                   // "Plaza Mayor"
     val area: String? = null,           // San Cristóbal de Segovia
     val details: String? = null,        // Junto a C/X

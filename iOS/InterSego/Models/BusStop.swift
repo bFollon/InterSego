@@ -30,7 +30,7 @@ struct BusStop: Codable, Hashable, Identifiable {
     let routesServed: [String]
     let stopCode: String?
 
-    init(id: String = UUID().uuidString, name: String, area: String? = nil,
+    init(id: String, name: String, area: String? = nil,
          details: String? = nil, coordinates: String, routingCoordinates: String? = nil,
          routesServed: [String] = [], stopCode: String? = nil) {
         self.id = id
