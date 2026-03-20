@@ -183,11 +183,12 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M2",
                 number = "M2",
-                name = "Línea Metropolitana 2",
+                name = "Segovia - Valseca",
                 origin = "Segovia",
-                destination = "Área Metropolitana",
+                destination = "Valseca",
                 pdfURL = "",
-                routeType = RouteType.URBAN
+                routeType = RouteType.URBAN,
+                isCircular = true
             ),
             BusRoute(
                 id = "M3",
