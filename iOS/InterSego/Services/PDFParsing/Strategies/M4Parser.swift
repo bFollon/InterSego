@@ -225,6 +225,34 @@ class M4Parser: CapableParser, RouteStopsProvider {
         ]
     }
 
+    func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
+        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return nil }
+        let variants = getRouteVariants(routeId, dayType: dayType)
+        guard !variants.isEmpty else { return nil }
+        return variants.enumerated().map { index, variant in
+            let swapTargetId = variants.count == 2 ? variants[1 - index].id : nil
+            return RouteView(
+                id: variant.id, label: variant.label,
+                stops: variant.stops.map { RouteViewStop(stop: $0) },
+                direction: variant.direction, departureLabel: variant.departureLabel,
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+            )
+        }
+    }
+
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
+        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return [] }
+        let dow = Calendar.current.component(.weekday, from: today)
+        let isWeekday = dow != 7 && dow != 1
+        let isWeekend = !isWeekday
+        guard let weekdayViews = getRouteViews(routeId, dayType: .weekday),
+              let weekendViews = getRouteViews(routeId, dayType: .weekend) else { return [] }
+        return [
+            RouteSelectorEntry(id: "entry-lv", label: "Lunes a Viernes", views: weekdayViews, initialViewId: "regular", timetableDayType: .weekday, isActiveToday: isWeekday),
+            RouteSelectorEntry(id: "entry-fds", label: "Fin de semana", views: weekendViews, initialViewId: "regular", timetableDayType: .weekend, isActiveToday: isWeekend)
+        ]
+    }
+
     func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M4Parser: Starting PDF parsing for \(pdfPath)")
 

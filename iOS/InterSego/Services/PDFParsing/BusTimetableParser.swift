@@ -59,7 +59,7 @@ protocol RouteStopsProvider {
     func getRoutesForId(_ routeId: String) -> [[BusStop]]
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant]
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]?
-    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]?
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]
 }
 
 extension RouteStopsProvider {
@@ -80,6 +80,6 @@ extension RouteStopsProvider {
     /// Get the flat list of selectable route entries for the "Rutas" picker.
     ///
     /// Each entry represents one distinct route experience (operating schedule + starting direction).
-    /// Returns nil by default — no picker is shown for routes with a single schedule.
-    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]? { nil }
+    /// Returns empty list by default.
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] { [] }
 }

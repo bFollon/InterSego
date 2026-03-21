@@ -103,6 +103,31 @@ class M2Parser: CapableParser, RouteStopsProvider {
         }
     }
 
+    func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
+        guard routeId.caseInsensitiveCompare("M2") == .orderedSame else { return nil }
+        let variants = getRouteVariants(routeId, dayType: dayType)
+        guard !variants.isEmpty else { return nil }
+        return variants.enumerated().map { index, variant in
+            let swapTargetId = variants.count == 2 ? variants[1 - index].id : nil
+            return RouteView(
+                id: variant.id, label: variant.label,
+                stops: variant.stops.map { RouteViewStop(stop: $0) },
+                direction: variant.direction, departureLabel: variant.departureLabel,
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+            )
+        }
+    }
+
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
+        guard routeId.caseInsensitiveCompare("M2") == .orderedSame else { return [] }
+        guard let weekdayViews = getRouteViews(routeId, dayType: .weekday) else { return [] }
+        let dow = Calendar.current.component(.weekday, from: today)
+        let isWeekday = dow != 7 && dow != 1
+        return [
+            RouteSelectorEntry(id: "entry-lv", label: "Lunes a Viernes", views: weekdayViews, initialViewId: "circularA", timetableDayType: .weekday, isActiveToday: isWeekday)
+        ]
+    }
+
     func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M2Parser: returning hardcoded timetable (PDF parsing bypassed)")
         return buildStaticTimetables()

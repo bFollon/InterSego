@@ -367,8 +367,8 @@ class M6Parser: CapableParser, RouteStopsProvider {
         }
     }
 
-    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]? {
-        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return nil }
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
+        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return [] }
         let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
         let isWeekday  = dow != 7 && dow != 1
         let isSaturday = dow == 7

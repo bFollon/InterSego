@@ -219,12 +219,12 @@ class PDFProcessingService(private val context: Context) {
      * with a swap action between the first two variants.
      */
     /**
-     * Get the flat list of selectable entries for the "Rutas" picker.
-     * Returns null when the route has a single operating schedule (no picker shown).
+     * Get the flat list of selectable route entries.
+     * Every supported route returns at least one entry.
      */
-    fun getRouteEntries(routeId: String, today: java.util.Date = java.util.Date()): List<RouteSelectorEntry>? {
+    fun getRouteEntries(routeId: String, today: java.util.Date = java.util.Date()): List<RouteSelectorEntry> {
         val parser = parsers[routeId]
-        return if (parser is RouteStopsProvider) parser.getRouteEntries(routeId, today) else null
+        return if (parser is RouteStopsProvider) parser.getRouteEntries(routeId, today) else emptyList()
     }
 
     fun getRouteViews(routeId: String, dayType: DayType): List<RouteView> {

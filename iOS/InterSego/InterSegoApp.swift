@@ -202,7 +202,7 @@ struct ContentView: View {
             }
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
-                hasMultipleRoutes = (entries?.count ?? 0) > 1
+                hasMultipleRoutes = entries.count > 1
                 views = await PDFProcessingService.shared.getRouteViews(
                     routeId: route.id, dayType: todayDayType
                 )
@@ -236,11 +236,11 @@ struct ContentView: View {
     private struct AllRoutesContainer: View {
         let route: BusRoute
         @Binding var navigationPath: NavigationPath
-        @State private var routeEntries: [RouteSelectorEntry]?
+        @State private var routeEntries: [RouteSelectorEntry] = []
         @State private var selectedEntryId: String?
 
         private var selectedEntry: RouteSelectorEntry? {
-            routeEntries?.first { $0.id == selectedEntryId }
+            routeEntries.first { $0.id == selectedEntryId }
         }
 
         private var views: [RouteView] {
@@ -249,10 +249,10 @@ struct ContentView: View {
 
         var body: some View {
             Group {
-                if let entries = routeEntries, !entries.isEmpty {
+                if !routeEntries.isEmpty {
                     AllRoutesView(
                         route: route,
-                        routeEntries: entries,
+                        routeEntries: routeEntries,
                         selectedEntryId: selectedEntryId ?? "",
                         onEntrySelected: { entry in
                             selectedEntryId = entry.id
@@ -293,7 +293,7 @@ struct ContentView: View {
             }
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
-                if let entries = entries, !entries.isEmpty {
+                if !entries.isEmpty {
                     routeEntries = entries
                     selectedEntryId = entries.first { $0.isActiveToday }?.id ?? entries.first?.id
                 }
@@ -306,11 +306,11 @@ struct ContentView: View {
         let initialViewId: String
         let initialEntryId: String?
         @Binding var navigationPath: NavigationPath
-        @State private var routeEntries: [RouteSelectorEntry]?
+        @State private var routeEntries: [RouteSelectorEntry] = []
         @State private var selectedEntryId: String?
 
         private var selectedEntry: RouteSelectorEntry? {
-            routeEntries?.first { $0.id == selectedEntryId }
+            routeEntries.first { $0.id == selectedEntryId }
         }
 
         private var views: [RouteView] {
@@ -351,7 +351,7 @@ struct ContentView: View {
             )
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
-                if let entries = entries, !entries.isEmpty {
+                if !entries.isEmpty {
                     routeEntries = entries
                     selectedEntryId = initialEntryId
                         ?? entries.first { $0.isActiveToday }?.id

@@ -566,8 +566,7 @@ fun AppNavigation() {
             }
 
             val hasMultipleRoutes = remember(routeId) {
-                val entries = pdfProcessingService.getRouteEntries(routeId)
-                entries != null && entries.size > 1
+                pdfProcessingService.getRouteEntries(routeId).size > 1
             }
 
             RouteStopsScreen(
@@ -656,7 +655,7 @@ fun AppNavigation() {
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val routeEntries = remember(routeId) {
-                pdfProcessingService.getRouteEntries(routeId) ?: emptyList()
+                pdfProcessingService.getRouteEntries(routeId)
             }
             var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
                 mutableStateOf(routeEntries.firstOrNull { it.isActiveToday }?.id ?: routeEntries.firstOrNull()?.id ?: "")
@@ -696,7 +695,7 @@ fun AppNavigation() {
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val routeEntries = remember(routeId) {
-                pdfProcessingService.getRouteEntries(routeId) ?: emptyList()
+                pdfProcessingService.getRouteEntries(routeId)
             }
             var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
                 mutableStateOf(initialEntryId ?: routeEntries.firstOrNull { it.isActiveToday }?.id ?: routeEntries.firstOrNull()?.id ?: "")

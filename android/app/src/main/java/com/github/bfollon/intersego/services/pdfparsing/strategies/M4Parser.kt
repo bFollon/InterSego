@@ -22,7 +22,11 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteVariant
+import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.data.RouteViewStop
+import com.github.bfollon.intersego.data.SwapAction
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.pdfparsing.CapableParser
 import com.github.bfollon.intersego.services.pdfparsing.ParserCapabilities
@@ -248,6 +252,35 @@ class M4Parser : CapableParser, RouteStopsProvider {
                 stops = m4ReverseRoute.dropLast(1),
                 direction = DIRECTION_REVERSE
             ),
+        )
+    }
+
+    override fun getRouteViews(routeId: String, dayType: DayType): List<RouteView>? {
+        if (!routeId.equals("M4", ignoreCase = true)) return null
+        val variants = getRouteVariants(routeId, dayType)
+        if (variants.isEmpty()) return null
+        return variants.mapIndexed { index, variant ->
+            val swapTargetId = if (variants.size == 2) variants[1 - index].id else null
+            RouteView(
+                id = variant.id, label = variant.label,
+                stops = variant.stops.map { RouteViewStop(it) },
+                direction = variant.direction, departureLabel = variant.departureLabel,
+                swapAction = swapTargetId?.let { SwapAction(it) }
+            )
+        }
+    }
+
+    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry> {
+        if (!routeId.equals("M4", ignoreCase = true)) return emptyList()
+        val cal = java.util.Calendar.getInstance().apply { time = today }
+        val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
+        val isWeekday = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
+        val isWeekend = !isWeekday
+        val weekdayViews = getRouteViews(routeId, DayType.WEEKDAY) ?: return emptyList()
+        val weekendViews = getRouteViews(routeId, DayType.WEEKEND) ?: return emptyList()
+        return listOf(
+            RouteSelectorEntry("entry-lv", "Lunes a Viernes", weekdayViews, "regular", DayType.WEEKDAY, isWeekday),
+            RouteSelectorEntry("entry-fds", "Fin de semana", weekendViews, "regular", DayType.WEEKEND, isWeekend)
         )
     }
 

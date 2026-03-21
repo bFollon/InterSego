@@ -22,7 +22,11 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
+import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteVariant
+import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.data.RouteViewStop
+import com.github.bfollon.intersego.data.SwapAction
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.pdfparsing.CapableParser
 import com.github.bfollon.intersego.services.pdfparsing.ParserCapabilities
@@ -106,6 +110,32 @@ class M2Parser : CapableParser, RouteStopsProvider {
                 RouteVariant("circularB", DIRECTION_CIRCULAR_B, m2CircularB, DIRECTION_CIRCULAR_B)
             )
         }
+    }
+
+    override fun getRouteViews(routeId: String, dayType: DayType): List<RouteView>? {
+        if (!routeId.equals("M2", ignoreCase = true)) return null
+        val variants = getRouteVariants(routeId, dayType)
+        if (variants.isEmpty()) return null
+        return variants.mapIndexed { index, variant ->
+            val swapTargetId = if (variants.size == 2) variants[1 - index].id else null
+            RouteView(
+                id = variant.id, label = variant.label,
+                stops = variant.stops.map { RouteViewStop(it) },
+                direction = variant.direction, departureLabel = variant.departureLabel,
+                swapAction = swapTargetId?.let { SwapAction(it) }
+            )
+        }
+    }
+
+    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry> {
+        if (!routeId.equals("M2", ignoreCase = true)) return emptyList()
+        val weekdayViews = getRouteViews(routeId, DayType.WEEKDAY) ?: return emptyList()
+        val cal = java.util.Calendar.getInstance().apply { time = today }
+        val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
+        val isWeekday = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
+        return listOf(
+            RouteSelectorEntry("entry-lv", "Lunes a Viernes", weekdayViews, "circularA", DayType.WEEKDAY, isWeekday)
+        )
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {

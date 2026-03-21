@@ -893,8 +893,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
         }
     }
 
-    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry>? {
-        if (!routeId.equals("M6", ignoreCase = true)) return null
+    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry> {
+        if (!routeId.equals("M6", ignoreCase = true)) return emptyList()
         val cal = java.util.Calendar.getInstance().apply { time = today }
         val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
         val isWeekday  = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY

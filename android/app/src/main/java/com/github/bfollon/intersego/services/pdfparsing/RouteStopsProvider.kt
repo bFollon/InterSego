@@ -63,13 +63,13 @@ interface RouteStopsProvider {
     fun getRouteViews(routeId: String, dayType: DayType): List<RouteView>? = null
 
     /**
-     * Get the flat list of selectable route entries for the "Rutas" picker.
+     * Get the flat list of selectable route entries.
      *
-     * Each entry represents one distinct route experience (operating schedule + starting direction).
-     * Returns null when the route has only a single operating schedule — no picker is shown.
+     * Every parser should return at least one entry representing its operating schedules.
+     * The UI hides the route selector when there is only one entry.
      *
      * @param routeId Route ID (e.g., "M6", "M1")
      * @param today Date used to determine which entries are active today
      */
-    fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry>? = null
+    fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry> = emptyList()
 }

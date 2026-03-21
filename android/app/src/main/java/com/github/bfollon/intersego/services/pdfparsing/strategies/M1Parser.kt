@@ -146,14 +146,14 @@ class M1Parser : CapableParser, RouteStopsProvider {
         }
     }
 
-    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry>? {
-        if (!routeId.equals("M1", ignoreCase = true)) return null
+    override fun getRouteEntries(routeId: String, today: java.util.Date): List<RouteSelectorEntry> {
+        if (!routeId.equals("M1", ignoreCase = true)) return emptyList()
         val cal = java.util.Calendar.getInstance().apply { time = today }
         val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
         val isWeekday  = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
         val isSaturday = dow == java.util.Calendar.SATURDAY
-        val weekdayViews  = getRouteViews(routeId, DayType.WEEKDAY)  ?: return null
-        val saturdayViews = getRouteViews(routeId, DayType.SATURDAY) ?: return null
+        val weekdayViews  = getRouteViews(routeId, DayType.WEEKDAY)  ?: return emptyList()
+        val saturdayViews = getRouteViews(routeId, DayType.SATURDAY) ?: return emptyList()
         return listOf(
             RouteSelectorEntry("entry-lv-a",   "L-V - $DIRECTION_CIRCULAR_A",   weekdayViews,  "circularA", DayType.WEEKDAY,  isWeekday),
             RouteSelectorEntry("entry-lv-b",   "L-V - $DIRECTION_CIRCULAR_B",   weekdayViews,  "circularB", DayType.WEEKDAY,  isWeekday),

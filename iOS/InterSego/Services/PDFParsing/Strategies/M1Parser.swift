@@ -140,13 +140,13 @@ class M1Parser: CapableParser, RouteStopsProvider {
         }
     }
 
-    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]? {
-        guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return nil }
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
+        guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return [] }
         let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
         let isWeekday  = dow != 7 && dow != 1
         let isSaturday = dow == 7
         guard let weekdayViews  = getRouteViews(routeId, dayType: .weekday),
-              let saturdayViews = getRouteViews(routeId, dayType: .saturday) else { return nil }
+              let saturdayViews = getRouteViews(routeId, dayType: .saturday) else { return [] }
         return [
             RouteSelectorEntry(id: "entry-lv-a",  label: "L-V - \(Self.directionCircularA)",  views: weekdayViews,  initialViewId: "circularA", timetableDayType: .weekday,  isActiveToday: isWeekday),
             RouteSelectorEntry(id: "entry-lv-b",  label: "L-V - \(Self.directionCircularB)",  views: weekdayViews,  initialViewId: "circularB", timetableDayType: .weekday,  isActiveToday: isWeekday),
