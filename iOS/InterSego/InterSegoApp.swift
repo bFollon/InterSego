@@ -203,9 +203,15 @@ struct ContentView: View {
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
                 hasMultipleRoutes = entries.count > 1
-                views = await PDFProcessingService.shared.getRouteViews(
+                var todayViews = await PDFProcessingService.shared.getRouteViews(
                     routeId: route.id, dayType: todayDayType
                 )
+                if todayViews.isEmpty {
+                    // No service today (e.g. Sunday for M1/M2) — use first entry's views as fallback
+                    let activeEntry = entries.first { $0.isActiveToday } ?? entries.first
+                    todayViews = activeEntry?.views ?? []
+                }
+                views = todayViews
             }
         }
     }
