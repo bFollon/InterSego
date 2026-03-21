@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.BusRoute
@@ -66,11 +67,13 @@ fun RouteStopsScreen(
     onStopSelected: (BusStop, String) -> Unit,  // stop, viewId
     onMapSelected: (String) -> Unit             // viewId
 ) {
+    val noServiceToday = views.isEmpty()
+
     var currentViewId by rememberSaveable(views) {
-        mutableStateOf(initialViewId ?: views.first().id)
+        mutableStateOf(initialViewId ?: views.firstOrNull()?.id ?: "")
     }
     val viewById = remember(views) { views.associateBy { it.id } }
-    val currentView = viewById[currentViewId] ?: views.first()
+    val currentView = viewById[currentViewId] ?: views.firstOrNull()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -79,10 +82,12 @@ fun RouteStopsScreen(
                 title = {
                     Column {
                         Text("Linea ${route.number}")
-                        Text(
-                            text = currentView.label,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        if (currentView != null) {
+                            Text(
+                                text = currentView.label,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 },
                 navigationIcon = {
@@ -94,20 +99,22 @@ fun RouteStopsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onMapSelected(currentViewId) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Map,
-                            contentDescription = "Ver en mapa"
-                        )
-                    }
-                    currentView.swapAction?.let { swap ->
-                        IconButton(onClick = {
-                            currentViewId = swap.targetViewId
-                        }) {
+                    if (currentView != null) {
+                        IconButton(onClick = { onMapSelected(currentViewId) }) {
                             Icon(
-                                imageVector = Icons.Filled.SwapVert,
-                                contentDescription = "Cambiar dirección"
+                                imageVector = Icons.Filled.Map,
+                                contentDescription = "Ver en mapa"
                             )
+                        }
+                        currentView.swapAction?.let { swap ->
+                            IconButton(onClick = {
+                                currentViewId = swap.targetViewId
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.SwapVert,
+                                    contentDescription = "Cambiar dirección"
+                                )
+                            }
                         }
                     }
                 },
@@ -123,29 +130,28 @@ fun RouteStopsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tab/chip row
-            currentView.tabs?.let { tabs ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    tabs.forEach { tab ->
-                        // A tab is selected if the current view matches it,
-                        // or if the current view's swap target matches it
-                        // (e.g., reversed direction still highlights the "Regular" tab)
-                        val isSelected = currentViewId == tab.viewId ||
-                                currentView.swapAction?.targetViewId == tab.viewId
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = {
-                                if (!isSelected) {
-                                    currentViewId = tab.viewId
-                                }
-                            },
-                            label = { Text(tab.label) }
-                        )
+            if (!noServiceToday) {
+                // Tab/chip row
+                currentView?.tabs?.let { tabs ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        tabs.forEach { tab ->
+                            val isSelected = currentViewId == tab.viewId ||
+                                    currentView.swapAction?.targetViewId == tab.viewId
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    if (!isSelected) {
+                                        currentViewId = tab.viewId
+                                    }
+                                },
+                                label = { Text(tab.label) }
+                            )
+                        }
                     }
                 }
             }
@@ -164,66 +170,86 @@ fun RouteStopsScreen(
                 }
             }
 
-            // "Ruta de hoy" separator
-            if (onAllRoutesSelected != null) {
-                Row(
+            if (noServiceToday) {
+                // No service today message
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(top = 16.dp, bottom = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Ruta de hoy",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "Esta línea no ofrece servicio hoy",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
-                    HorizontalDivider(
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
+                }
+            } else {
+                // "Ruta de hoy" separator
+                if (onAllRoutesSelected != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .padding(top = 16.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Ruta de hoy",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    }
                 }
             }
 
             // Stop list
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                // Build items with extended section separator
-                val stops = currentView.stops
-                val extendedLabel = currentView.extendedSectionLabel
-                val hasExtendedStops = extendedLabel != null && stops.any { it.isExtendedOnly }
-
-                itemsIndexed(stops) { index, viewStop ->
-                    // Check if we need the extended section separator at the boundary
-                    if (hasExtendedStops && index > 0) {
-                        val prevIsExtended = stops[index - 1].isExtendedOnly
-                        val currIsExtended = viewStop.isExtendedOnly
-                        if (prevIsExtended != currIsExtended) {
-                            ExtendedSectionSeparator(label = extendedLabel!!)
-                        }
+            if (!noServiceToday && currentView != null) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
 
-                    StopRow(
-                        stop = viewStop.stop,
-                        isExtended = viewStop.isExtendedOnly,
-                        isFirst = index == 0,
-                        isLast = index == stops.lastIndex,
-                        onClick = {
-                            onStopSelected(viewStop.stop, currentView.id)
-                        }
-                    )
-                }
+                    // Build items with extended section separator
+                    val stops = currentView.stops
+                    val extendedLabel = currentView.extendedSectionLabel
+                    val hasExtendedStops = extendedLabel != null && stops.any { it.isExtendedOnly }
 
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    itemsIndexed(stops) { index, viewStop ->
+                        // Check if we need the extended section separator at the boundary
+                        if (hasExtendedStops && index > 0) {
+                            val prevIsExtended = stops[index - 1].isExtendedOnly
+                            val currIsExtended = viewStop.isExtendedOnly
+                            if (prevIsExtended != currIsExtended) {
+                                ExtendedSectionSeparator(label = extendedLabel!!)
+                            }
+                        }
+
+                        StopRow(
+                            stop = viewStop.stop,
+                            isExtended = viewStop.isExtendedOnly,
+                            isFirst = index == 0,
+                            isLast = index == stops.lastIndex,
+                            onClick = {
+                                onStopSelected(viewStop.stop, currentView.id)
+                            }
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
             }
         }

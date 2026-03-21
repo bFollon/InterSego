@@ -167,31 +167,33 @@ struct ContentView: View {
         let route: BusRoute
         @Binding var navigationPath: NavigationPath
         @State private var views: [RouteView]?
-        @State private var hasMultipleRoutes = false
+        @State private var showAllRoutes = false
+        @State private var loaded = false
 
         private var todayDayType: DayType { TimetableService.shared.getCurrentDayType() }
 
         var body: some View {
             Group {
-                if let views = views, !views.isEmpty {
+                if loaded {
+                    let resolvedViews = views ?? []
                     RouteStopsView(
                         route: route,
-                        views: views,
-                        onAllRoutesSelected: hasMultipleRoutes ? {
+                        views: resolvedViews,
+                        onAllRoutesSelected: showAllRoutes ? {
                             navigationPath.append(AllRoutesSelection(route: route))
                         } : nil,
                         onStopSelected: { stop, viewId in
                             navigationPath.append(StopSelection(
                                 route: route,
                                 stop: stop,
-                                routeViews: views,
+                                routeViews: resolvedViews,
                                 currentViewId: viewId
                             ))
                         },
                         onMapSelected: { viewId in
                             navigationPath.append(MapSelection(
                                 route: route,
-                                routeViews: views,
+                                routeViews: resolvedViews,
                                 initialViewId: viewId
                             ))
                         }
@@ -202,16 +204,12 @@ struct ContentView: View {
             }
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
-                hasMultipleRoutes = entries.count > 1
-                var todayViews = await PDFProcessingService.shared.getRouteViews(
+                let todayViews = await PDFProcessingService.shared.getRouteViews(
                     routeId: route.id, dayType: todayDayType
                 )
-                if todayViews.isEmpty {
-                    // No service today (e.g. Sunday for M1/M2) — use first entry's views as fallback
-                    let activeEntry = entries.first { $0.isActiveToday } ?? entries.first
-                    todayViews = activeEntry?.views ?? []
-                }
+                showAllRoutes = entries.count > 1 || todayViews.isEmpty
                 views = todayViews
+                loaded = true
             }
         }
     }

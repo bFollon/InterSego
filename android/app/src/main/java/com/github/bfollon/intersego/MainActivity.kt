@@ -553,12 +553,6 @@ fun AppNavigation() {
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
 
-            val entries = remember(routeId) {
-                pdfProcessingService.getRouteEntries(routeId)
-            }
-
-            val hasMultipleRoutes = entries.size > 1
-
             val todayDayType = remember {
                 when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
                     java.util.Calendar.SATURDAY -> DayType.SATURDAY
@@ -568,18 +562,18 @@ fun AppNavigation() {
             }
 
             val views = remember(routeId, todayDayType) {
-                val todayViews = pdfProcessingService.getRouteViews(routeId, todayDayType)
-                todayViews.ifEmpty {
-                    // No service today (e.g. Sunday for M1/M2) — use first entry's views as fallback
-                    val activeEntry = entries.firstOrNull { it.isActiveToday } ?: entries.firstOrNull()
-                    activeEntry?.views ?: emptyList()
-                }
+                pdfProcessingService.getRouteViews(routeId, todayDayType)
             }
+
+            val entries = remember(routeId) {
+                pdfProcessingService.getRouteEntries(routeId)
+            }
+            val showAllRoutes = entries.size > 1 || views.isEmpty()
 
             RouteStopsScreen(
                 route = route,
                 views = views,
-                onAllRoutesSelected = if (hasMultipleRoutes) {{
+                onAllRoutesSelected = if (showAllRoutes) {{
                     navController.navigate("all_routes/${route.id}")
                 }} else null,
                 onBack = { navController.popBackStack() },

@@ -37,7 +37,46 @@ struct RouteStopsView: View {
         if let currentView {
             mainContent(currentView: currentView)
         } else {
-            Text("No hay datos disponibles").foregroundColor(.secondary)
+            noServiceContent
+        }
+    }
+
+    private var noServiceContent: some View {
+        VStack(spacing: 0) {
+            // "Ver todas las rutas" button
+            if let onAllRoutes = onAllRoutesSelected {
+                Button(action: onAllRoutes) {
+                    HStack(spacing: 8) {
+                        Text("Ver todas las rutas")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+            }
+
+            Spacer()
+            Text("Esta línea no ofrece servicio hoy")
+                .font(.title3)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(32)
+            Spacer()
+        }
+        .navigationTitle("Línea \(route.number)")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                }
+            }
         }
     }
 
