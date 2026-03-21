@@ -164,6 +164,28 @@ fun RouteStopsScreen(
                 }
             }
 
+            // "Ruta de hoy" separator
+            if (onAllRoutesSelected != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Ruta de hoy",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
+            }
+
             // Stop list
             LazyColumn(
                 modifier = Modifier

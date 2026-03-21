@@ -83,6 +83,21 @@ struct RouteStopsView: View {
                 .padding(.top, 8)
             }
 
+            // "Ruta de hoy" separator
+            if onAllRoutesSelected != nil {
+                HStack(spacing: 8) {
+                    Text("Ruta de hoy")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(Color(.separator))
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 4)
+            }
+
             // Stop list
             ScrollView {
                 LazyVStack(spacing: 0) {
