@@ -74,13 +74,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.DayType
-import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteType
 import com.github.bfollon.intersego.repositories.PDFURLRepository
 import com.github.bfollon.intersego.services.CoordinateCache
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.NetworkMonitor
 import com.github.bfollon.intersego.services.PDFCacheManager
+import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
@@ -561,37 +561,27 @@ fun AppNavigation() {
                 }
             }
 
-            val routeEntries = remember(routeId) { pdfProcessingService.getRouteEntries(routeId) }
-            var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
-                mutableStateOf(routeEntries?.firstOrNull { it.isActiveToday }?.id ?: routeEntries?.firstOrNull()?.id)
+            val views = remember(routeId) {
+                pdfProcessingService.getRouteViews(routeId, todayDayType)
             }
-            val selectedEntry = routeEntries?.firstOrNull { it.id == selectedEntryId }
 
-            val views = remember(routeId, selectedEntryId) {
-                selectedEntry?.views ?: pdfProcessingService.getRouteViews(routeId, todayDayType)
+            val hasMultipleRoutes = remember(routeId) {
+                val entries = pdfProcessingService.getRouteEntries(routeId)
+                entries != null && entries.size > 1
             }
 
             RouteStopsScreen(
                 route = route,
                 views = views,
-                initialViewId = selectedEntry?.initialViewId,
-                routeEntries = routeEntries,
-                selectedEntryId = selectedEntryId,
-                onEntrySelected = { entry -> selectedEntryId = entry.id },
+                onAllRoutesSelected = if (hasMultipleRoutes) {{
+                    navController.navigate("all_routes/${route.id}")
+                }} else null,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    val direction = views.find { it.id == viewId }?.direction ?: ""
-                    if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
-                    } else {
-                        val dayTypeOverride = selectedEntry.timetableDayType.name
-                        val label = views.find { it.id == viewId }?.departureLabel ?: "all"
-                        navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/$dayTypeOverride")
-                    }
+                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
                 },
                 onMapSelected = { viewId ->
-                    val entryId = selectedEntryId ?: "none"
-                    navController.navigate("route_map/${route.id}/$viewId/$entryId")
+                    navController.navigate("route_map/${route.id}/$viewId/none")
                 }
             )
         }
@@ -636,7 +626,6 @@ fun AppNavigation() {
         composable("route_map/{routeId}/{viewId}/{groupId}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val initialViewId = backStackEntry.arguments?.getString("viewId") ?: return@composable
-            val initialGroupId = backStackEntry.arguments?.getString("groupId")?.takeIf { it != "none" }
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val todayDayType = remember {
@@ -647,15 +636,73 @@ fun AppNavigation() {
                 }
             }
 
-            val routeEntries = remember(routeId) { pdfProcessingService.getRouteEntries(routeId) }
-            var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
-                mutableStateOf(initialGroupId ?: routeEntries?.firstOrNull { it.isActiveToday }?.id ?: routeEntries?.firstOrNull()?.id)
+            val views = remember(routeId) {
+                pdfProcessingService.getRouteViews(routeId, todayDayType)
             }
-            val selectedEntry = routeEntries?.firstOrNull { it.id == selectedEntryId }
 
-            val views = remember(routeId, selectedEntryId) {
-                selectedEntry?.views ?: pdfProcessingService.getRouteViews(routeId, todayDayType)
+            RouteMapScreen(
+                route = route,
+                views = views,
+                initialViewId = initialViewId,
+                onBack = { navController.popBackStack() },
+                onStopSelected = { stop, viewId ->
+                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                }
+            )
+        }
+
+        composable("all_routes/{routeId}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            val routeEntries = remember(routeId) {
+                pdfProcessingService.getRouteEntries(routeId) ?: emptyList()
             }
+            var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
+                mutableStateOf(routeEntries.firstOrNull { it.isActiveToday }?.id ?: routeEntries.firstOrNull()?.id ?: "")
+            }
+            val selectedEntry = routeEntries.firstOrNull { it.id == selectedEntryId }
+
+            val views = selectedEntry?.views ?: emptyList()
+
+            AllRoutesScreen(
+                route = route,
+                routeEntries = routeEntries,
+                selectedEntryId = selectedEntryId,
+                onEntrySelected = { entry -> selectedEntryId = entry.id },
+                views = views,
+                initialViewId = selectedEntry?.initialViewId,
+                onBack = { navController.popBackStack() },
+                onStopSelected = { stop, viewId ->
+                    if (selectedEntry == null || selectedEntry.isActiveToday) {
+                        navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    } else {
+                        val direction = views.find { it.id == viewId }?.direction ?: ""
+                        val dayTypeOverride = selectedEntry.timetableDayType.name
+                        val label = views.find { it.id == viewId }?.departureLabel ?: "all"
+                        navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/$dayTypeOverride")
+                    }
+                },
+                onMapSelected = { viewId ->
+                    navController.navigate("all_routes_map/${route.id}/$viewId/$selectedEntryId")
+                }
+            )
+        }
+
+        composable("all_routes_map/{routeId}/{viewId}/{entryId}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val initialViewId = backStackEntry.arguments?.getString("viewId") ?: return@composable
+            val initialEntryId = backStackEntry.arguments?.getString("entryId")
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            val routeEntries = remember(routeId) {
+                pdfProcessingService.getRouteEntries(routeId) ?: emptyList()
+            }
+            var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
+                mutableStateOf(initialEntryId ?: routeEntries.firstOrNull { it.isActiveToday }?.id ?: routeEntries.firstOrNull()?.id ?: "")
+            }
+            val selectedEntry = routeEntries.firstOrNull { it.id == selectedEntryId }
+            val views = selectedEntry?.views ?: emptyList()
 
             RouteMapScreen(
                 route = route,
@@ -664,12 +711,13 @@ fun AppNavigation() {
                 routeEntries = routeEntries,
                 selectedEntryId = selectedEntryId,
                 onEntrySelected = { entry -> selectedEntryId = entry.id },
+                allRoutesMode = true,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    val direction = views.find { it.id == viewId }?.direction ?: ""
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
                         navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
                     } else {
+                        val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name
                         val label = views.find { it.id == viewId }?.departureLabel ?: "all"
                         navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/$dayTypeOverride")

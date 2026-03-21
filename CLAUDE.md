@@ -46,11 +46,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Closest stop button | ✅ | ✅ | Geolocates user, finds nearest stop across all supported routes, navigates to NextDeparture; ties broken by soonest departure; inline error on failure |
 | Route selection | ✅ | ✅ | |
 | Route stops (visual line display) | ✅ | ✅ | Direction toggle on both |
-| Route group switcher | ✅ | ✅ | Chip row above variant tabs; shown when route has multiple operating schedules (e.g. M6: Lunes a Viernes / Sábado / Domingo); tapping a non-today group goes to DaySchedule instead of NextDeparture |
+| All routes screen | ✅ | ✅ | "Ver todas las rutas" button on stop list → new screen with dropdown selector + stop list; header "Línea MX / Todas las rutas"; map button leads to map with same dropdown; tapping stop → NextDeparture (today) or DaySchedule (non-today). M6: 4 entries (L-V Regular/Circular, Sáb, Dom); M1: 4 entries (L-V/Sáb × circularA/B) |
 | Next departure (live countdown) | ✅ | ✅ | iOS uses MapKit, Android uses OSM tiles |
 | Next departure — direction indicator | ✅ | ✅ | Pill below stop name; circular routes show "A → B", others "Dirección X" |
 | Next departure — direction swap button | ✅ | ✅ | Toolbar button toggles direction in-place, mirrors stop list behaviour |
-| Route map screen | ✅ | ✅ | Interactive map with stop markers + polyline; accessible via map button in stop list toolbar; direction swap + route group switcher supported; tap marker → NextDeparture (today group) or DaySchedule (other group). Android uses OSMDroid, iOS uses MapKit |
+| Route map screen | ✅ | ✅ | Interactive map with stop markers + polyline; accessible via map button in stop list toolbar; direction swap supported; tap marker → NextDeparture. Android uses OSMDroid, iOS uses MapKit. All-routes mode adds dropdown above map |
 | Day schedule (full day view) | ✅ | ✅ | All today's departures with "Ahora" marker, auto-scrolls; accepts overrideDayType for non-today route groups |
 | Times disclaimer card | ✅ | ✅ | Expandable card on NextDeparture screen, explains approximate times |
 | Timetable (full schedule view) | ✅ (dead code) | ❌ | Android has it but no navigation to it |

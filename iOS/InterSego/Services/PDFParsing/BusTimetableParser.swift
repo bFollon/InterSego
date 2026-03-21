@@ -59,6 +59,7 @@ protocol RouteStopsProvider {
     func getRoutesForId(_ routeId: String) -> [[BusStop]]
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant]
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]?
+    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry]?
 }
 
 extension RouteStopsProvider {

@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.*
@@ -45,15 +44,14 @@ import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
-import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteView
 
 /**
  * Screen displaying bus stops along a route with visual route line.
  *
  * Renders route views with support for:
- * - "Rutas" bottom sheet for selecting a different operating schedule or direction
- * - Tab/chip selector for route types (only shown when no route entries exist)
+ * - "Ver todas las rutas" button for navigating to AllRoutesScreen
+ * - Tab/chip selector for route types
  * - Direction swap button in the top bar
  * - Extended route section with outline and label
  */
@@ -63,19 +61,16 @@ fun RouteStopsScreen(
     route: BusRoute,
     views: List<RouteView>,
     initialViewId: String? = null,
-    routeEntries: List<RouteSelectorEntry>? = null,
-    selectedEntryId: String? = null,
-    onEntrySelected: (RouteSelectorEntry) -> Unit = {},
+    onAllRoutesSelected: (() -> Unit)? = null,
     onBack: () -> Unit,
     onStopSelected: (BusStop, String) -> Unit,  // stop, viewId
     onMapSelected: (String) -> Unit             // viewId
 ) {
-    var currentViewId by rememberSaveable(views, selectedEntryId) {
+    var currentViewId by rememberSaveable(views) {
         mutableStateOf(initialViewId ?: views.first().id)
     }
     val viewById = remember(views) { views.associateBy { it.id } }
     val currentView = viewById[currentViewId] ?: views.first()
-    var showRoutesSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -99,11 +94,6 @@ fun RouteStopsScreen(
                     }
                 },
                 actions = {
-                    if (routeEntries != null && routeEntries.size > 1) {
-                        TextButton(onClick = { showRoutesSheet = true }) {
-                            Text("Rutas")
-                        }
-                    }
                     IconButton(onClick = { onMapSelected(currentViewId) }) {
                         Icon(
                             imageVector = Icons.Filled.Map,
@@ -133,8 +123,8 @@ fun RouteStopsScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Tab/chip row — hidden when the Rutas picker handles all route selection
-            if (routeEntries == null) currentView.tabs?.let { tabs ->
+            // Tab/chip row
+            currentView.tabs?.let { tabs ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -157,6 +147,20 @@ fun RouteStopsScreen(
                             label = { Text(tab.label) }
                         )
                     }
+                }
+            }
+
+            // "Ver todas las rutas" button
+            if (onAllRoutesSelected != null) {
+                OutlinedButton(
+                    onClick = onAllRoutesSelected,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 8.dp),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Ver todas las rutas")
                 }
             }
 
@@ -203,34 +207,10 @@ fun RouteStopsScreen(
         }
     }
 
-    // "Rutas" bottom sheet
-    if (showRoutesSheet && routeEntries != null) {
-        ModalBottomSheet(onDismissRequest = { showRoutesSheet = false }) {
-            Text(
-                text = "Rutas",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            routeEntries.forEach { entry ->
-                val isSelected = entry.id == selectedEntryId
-                ListItem(
-                    headlineContent = { Text(entry.label) },
-                    trailingContent = {
-                        if (isSelected) Icon(Icons.Filled.Check, contentDescription = null)
-                    },
-                    modifier = Modifier.clickable {
-                        onEntrySelected(entry)
-                        showRoutesSheet = false
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-    }
 }
 
 @Composable
-private fun StopRow(
+internal fun StopRow(
     stop: BusStop,
     isExtended: Boolean,
     isFirst: Boolean,
@@ -396,7 +376,7 @@ private fun StopRow(
 }
 
 @Composable
-private fun DashedVerticalLine(
+internal fun DashedVerticalLine(
     color: androidx.compose.ui.graphics.Color,
     modifier: Modifier = Modifier
 ) {
@@ -419,7 +399,7 @@ private fun DashedVerticalLine(
 }
 
 @Composable
-private fun ExtendedSectionSeparator(label: String) {
+internal fun ExtendedSectionSeparator(label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

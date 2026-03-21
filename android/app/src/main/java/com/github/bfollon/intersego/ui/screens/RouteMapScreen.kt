@@ -18,24 +18,19 @@
 
 package com.github.bfollon.intersego.ui.screens
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -82,21 +77,21 @@ fun RouteMapScreen(
     routeEntries: List<RouteSelectorEntry>? = null,
     selectedEntryId: String? = null,
     onEntrySelected: (RouteSelectorEntry) -> Unit = {},
+    allRoutesMode: Boolean = false,
     onBack: () -> Unit,
     onStopSelected: (BusStop, String) -> Unit
 ) {
     var currentViewId by remember(initialViewId) { mutableStateOf(initialViewId) }
     val currentView = views.find { it.id == currentViewId } ?: views.first()
-    var showRoutesSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    androidx.compose.foundation.layout.Column {
+                    Column {
                         Text("Línea ${route.number}")
                         Text(
-                            text = currentView.label,
+                            text = if (allRoutesMode) "Todas las rutas" else currentView.label,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -110,11 +105,6 @@ fun RouteMapScreen(
                     }
                 },
                 actions = {
-                    if (routeEntries != null && routeEntries.size > 1) {
-                        TextButton(onClick = { showRoutesSheet = true }) {
-                            Text("Rutas")
-                        }
-                    }
                     currentView.swapAction?.let { swap ->
                         IconButton(onClick = { currentViewId = swap.targetViewId }) {
                             Icon(
@@ -131,11 +121,23 @@ fun RouteMapScreen(
             )
         }
     ) { paddingValues ->
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Entry dropdown in all-routes mode
+            if (allRoutesMode && routeEntries != null && selectedEntryId != null) {
+                RouteEntryDropdown(
+                    entries = routeEntries,
+                    selectedEntryId = selectedEntryId,
+                    onEntrySelected = onEntrySelected,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
             val stopsWithCoords = remember(currentViewId) {
                 currentView.stops.map { it.stop }.filter { it.hasCoordinates }
             }
@@ -150,31 +152,6 @@ fun RouteMapScreen(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-        }
-    }
-
-    // "Rutas" bottom sheet
-    if (showRoutesSheet && routeEntries != null) {
-        ModalBottomSheet(onDismissRequest = { showRoutesSheet = false }) {
-            Text(
-                text = "Rutas",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-            routeEntries.forEach { entry ->
-                val isSelected = entry.id == selectedEntryId
-                ListItem(
-                    headlineContent = { Text(entry.label) },
-                    trailingContent = {
-                        if (isSelected) Icon(Icons.Filled.Check, contentDescription = null)
-                    },
-                    modifier = Modifier.clickable {
-                        onEntrySelected(entry)
-                        showRoutesSheet = false
-                    }
-                )
-            }
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

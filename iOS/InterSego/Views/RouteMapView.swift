@@ -30,12 +30,12 @@ struct RouteMapView: View {
     var routeEntries: [RouteSelectorEntry]? = nil
     var selectedEntryId: String? = nil
     var onEntrySelected: (RouteSelectorEntry) -> Void = { _ in }
+    var allRoutesMode: Bool = false
     let onStopSelected: (BusStop, String) -> Void
 
     @State private var currentViewId: String = ""
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var routePolyline: [CLLocationCoordinate2D] = []
-    @State private var showRoutesSheet = false
 
     private var currentView: RouteView? {
         routeViews.first { $0.id == currentViewId } ?? routeViews.first
@@ -56,6 +56,17 @@ struct RouteMapView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Entry dropdown in all-routes mode
+            if allRoutesMode, let entries = routeEntries, let entryId = selectedEntryId {
+                RouteEntryDropdown(
+                    entries: entries,
+                    selectedEntryId: entryId,
+                    onEntrySelected: onEntrySelected
+                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+
             Map(position: $cameraPosition) {
                 // Polyline connecting stops in order
                 if polylineCoordinates.count >= 2 {
@@ -88,16 +99,15 @@ struct RouteMapView: View {
                 VStack {
                     Text("Línea \(route.number)")
                         .font(.headline)
-                    if let view = currentView {
+                    if allRoutesMode {
+                        Text("Todas las rutas")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if let view = currentView {
                         Text(view.label)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                }
-            }
-            if let entries = routeEntries, entries.count > 1 {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Rutas") { showRoutesSheet = true }
                 }
             }
             if currentView?.swapAction != nil {
@@ -111,16 +121,6 @@ struct RouteMapView: View {
                     }
                 }
             }
-        }
-        .sheet(isPresented: $showRoutesSheet) {
-            RouteSelectorSheet(
-                entries: routeEntries ?? [],
-                selectedEntryId: selectedEntryId,
-                onSelect: { entry in
-                    onEntrySelected(entry)
-                    showRoutesSheet = false
-                }
-            )
         }
         .onAppear {
             if currentViewId.isEmpty {
