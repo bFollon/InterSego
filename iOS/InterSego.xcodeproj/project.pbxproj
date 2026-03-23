@@ -17,8 +17,6 @@
 		A10000010000000000000008 /* RouteType.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000008 /* RouteType.swift */; };
 		A10000010000000000000009 /* RouteVariant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000009 /* RouteVariant.swift */; };
 		A1000001000000000000000A /* RouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000A /* RouteView.swift */; };
-		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
-		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
 		A1000001000000000000000B /* SeasonalAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000B /* SeasonalAvailability.swift */; };
 		A1000001000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000C /* Assets.xcassets */; };
 		A1000001000000000000000D /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* DebugConfig.swift */; };
@@ -38,7 +36,6 @@
 		A1000001000000000000001B /* BusRouteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001B /* BusRouteRegistry.swift */; };
 		A1000001000000000000001C /* RouteSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001C /* RouteSelectionView.swift */; };
 		A1000001000000000000001D /* RouteStopsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001D /* RouteStopsView.swift */; };
-		A10000010000000000000042 /* AllRoutesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* AllRoutesView.swift */; };
 		A1000001000000000000001E /* NextDepartureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001E /* NextDepartureView.swift */; };
 		A1000001000000000000001F /* AppDirectories.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001F /* AppDirectories.swift */; };
 		A10000010000000000000020 /* SplashScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000020 /* SplashScreenView.swift */; };
@@ -49,6 +46,9 @@
 		A10000010000000000000031 /* M1Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* M1Parser.swift */; };
 		A10000010000000000000032 /* ClosestStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* ClosestStopService.swift */; };
 		A10000010000000000000033 /* M2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000033 /* M2Parser.swift */; };
+		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
+		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
+		A10000010000000000000042 /* AllRoutesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* AllRoutesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -62,8 +62,6 @@
 		A20000010000000000000008 /* RouteType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteType.swift; sourceTree = "<group>"; };
 		A20000010000000000000009 /* RouteVariant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteVariant.swift; sourceTree = "<group>"; };
 		A2000001000000000000000A /* RouteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteView.swift; sourceTree = "<group>"; };
-		A20000010000000000000040 /* RouteGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteGroup.swift; sourceTree = "<group>"; };
-		A20000010000000000000041 /* RouteSelectorEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectorEntry.swift; sourceTree = "<group>"; };
 		A2000001000000000000000B /* SeasonalAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeasonalAvailability.swift; sourceTree = "<group>"; };
 		A2000001000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000001000000000000000D /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = "<group>"; };
@@ -83,7 +81,6 @@
 		A2000001000000000000001B /* BusRouteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusRouteRegistry.swift; sourceTree = "<group>"; };
 		A2000001000000000000001C /* RouteSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectionView.swift; sourceTree = "<group>"; };
 		A2000001000000000000001D /* RouteStopsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteStopsView.swift; sourceTree = "<group>"; };
-		A20000010000000000000042 /* AllRoutesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllRoutesView.swift; sourceTree = "<group>"; };
 		A2000001000000000000001E /* NextDepartureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextDepartureView.swift; sourceTree = "<group>"; };
 		A2000001000000000000001F /* AppDirectories.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDirectories.swift; sourceTree = "<group>"; };
 		A20000010000000000000020 /* SplashScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashScreenView.swift; sourceTree = "<group>"; };
@@ -94,6 +91,9 @@
 		A20000010000000000000031 /* M1Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M1Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000032 /* ClosestStopService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosestStopService.swift; sourceTree = "<group>"; };
 		A20000010000000000000033 /* M2Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M2Parser.swift; sourceTree = "<group>"; };
+		A20000010000000000000040 /* RouteGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteGroup.swift; sourceTree = "<group>"; };
+		A20000010000000000000041 /* RouteSelectorEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectorEntry.swift; sourceTree = "<group>"; };
+		A20000010000000000000042 /* AllRoutesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllRoutesView.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -470,7 +470,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -505,7 +505,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
