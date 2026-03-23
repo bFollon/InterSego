@@ -34,6 +34,7 @@ import com.github.bfollon.intersego.services.pdfparsing.PDFParsingException
 import com.github.bfollon.intersego.services.pdfparsing.RouteStopsProvider
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M1Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M2Parser
+import com.github.bfollon.intersego.services.pdfparsing.strategies.M3Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M4Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M6Parser
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,7 @@ class PDFProcessingService(private val context: Context) {
         // Register all available parsers
         registerParser(M1Parser())
         registerParser(M2Parser())
+        registerParser(M3Parser())
         registerParser(M4Parser())
         registerParser(M6Parser())
 
