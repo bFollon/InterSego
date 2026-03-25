@@ -51,34 +51,34 @@ class M7Parser: CapableParser, RouteStopsProvider {
 
     private enum Stops {
         // Weekday circular stops
-        static let segoviaWk           = BusStop(id: "m7-segovia",             name: "Segovia",     coordinates: "40.944768, -4.121823")
-        static let tabaneraWk          = BusStop(id: "m7-tabanera",            name: "Tabanera",    coordinates: "40.934336, -4.067014")
+        static let segoviaWk           = BusStop(id: "m7-segovia",             name: "Segovia",     area: "Segovia",     coordinates: "40.944768, -4.121823")
+        static let tabaneraWk          = BusStop(id: "m7-tabanera",            name: "Tabanera",    area: "Tabanera",    coordinates: "40.934336, -4.067014")
         // Palazuelos cluster (weekday only — school stop likely skipped on weekends)
-        static let palazuelosWk        = BusStop(id: "m7-palazuelos",          name: "Palazuelos",  coordinates: "40.931068, -4.064340")
-        static let palazuelosColegioWk = BusStop(id: "m7-palazuelos-colegio",  name: "Colegio",     coordinates: "40.933921, -4.063495")
-        static let segoviaWkRet        = BusStop(id: "m7-segovia-ret",         name: "Segovia",     coordinates: "40.944768, -4.121823")
+        static let palazuelosWk        = BusStop(id: "m7-palazuelos",          name: "Palazuelos",  area: "Palazuelos",  coordinates: "40.931068, -4.064340")
+        static let palazuelosColegioWk = BusStop(id: "m7-palazuelos-colegio",  name: "Colegio",     area: "Palazuelos",  coordinates: "40.933921, -4.063495")
+        static let segoviaWkRet        = BusStop(id: "m7-segovia-ret",         name: "Segovia",     area: "Segovia",     coordinates: "40.944768, -4.121823")
 
         // Saturday/Sunday outbound Segovia cluster (5 sub-stops)
-        static let outEstacionBus  = BusStop(id: "m7-estacion-bus",      name: "Estación de Autobuses",  coordinates: "40.944768, -4.121823")
-        static let outHospital     = BusStop(id: "m7-hospital",          name: "Hospital",               coordinates: "0.0, 0.0")
-        static let outAndresLaguna = BusStop(id: "m7-andres-laguna",     name: "Andrés Laguna",          coordinates: "40.939106, -4.115582")
-        static let outLaPista      = BusStop(id: "m7-la-pista",          name: "La Pista",               coordinates: "40.937354, -4.111411")
-        static let outPlazaToros   = BusStop(id: "m7-plaza-toros",       name: "Plaza de Toros",         coordinates: "40.942093, -4.107603")
+        static let outEstacionBus  = BusStop(id: "m7-estacion-bus",      name: "Estación de Autobuses",  area: "Segovia",  coordinates: "40.944768, -4.121823")
+        static let outHospital     = BusStop(id: "m7-hospital",          name: "Hospital",               area: "Segovia",  coordinates: "0.0, 0.0")
+        static let outAndresLaguna = BusStop(id: "m7-andres-laguna",     name: "Andrés Laguna",          area: "Segovia",  coordinates: "40.939106, -4.115582")
+        static let outLaPista      = BusStop(id: "m7-la-pista",          name: "La Pista",               area: "Segovia",  coordinates: "40.937354, -4.111411")
+        static let outPlazaToros   = BusStop(id: "m7-plaza-toros",       name: "Plaza de Toros",         area: "Segovia",  coordinates: "40.942093, -4.107603")
 
         // Extended route stops
-        static let palazuelos  = BusStop(id: "m7-palazuelos-ext",    name: "Palazuelos",        coordinates: "40.931068, -4.064340")
-        static let tabanera    = BusStop(id: "m7-tabanera-ext",      name: "Tabanera",          coordinates: "40.934336, -4.067014")
-        static let sCristobal  = BusStop(id: "m7-s-cristobal",       name: "S. Cristóbal",      coordinates: "0.0, 0.0")
-        static let sonsoto     = BusStop(id: "m7-sonsoto",           name: "Sonsoto",           coordinates: "0.0, 0.0")
-        static let trescasas   = BusStop(id: "m7-trescasas",         name: "Trescasas",         coordinates: "0.0, 0.0")
-        static let cabanillas  = BusStop(id: "m7-cabanillas",        name: "Cabanillas",        coordinates: "0.0, 0.0")
-        static let torrecab    = BusStop(id: "m7-torrecaballeros",   name: "Torrecaballeros",   coordinates: "0.0, 0.0")
+        static let palazuelos  = BusStop(id: "m7-palazuelos-ext",    name: "Palazuelos",        area: "Palazuelos",              coordinates: "40.931068, -4.064340")
+        static let tabanera    = BusStop(id: "m7-tabanera-ext",      name: "Tabanera",          area: "Tabanera",                coordinates: "40.934336, -4.067014")
+        static let sCristobal  = BusStop(id: "m7-s-cristobal",       name: "S. Cristóbal",      area: "San Cristóbal de Segovia", coordinates: "0.0, 0.0")
+        static let sonsoto     = BusStop(id: "m7-sonsoto",           name: "Sonsoto",           area: "Sonsoto",                 coordinates: "0.0, 0.0")
+        static let trescasas   = BusStop(id: "m7-trescasas",         name: "Trescasas",         area: "Trescasas",               coordinates: "0.0, 0.0")
+        static let cabanillas  = BusStop(id: "m7-cabanillas",        name: "Cabanillas",        area: "Cabanillas",              coordinates: "0.0, 0.0")
+        static let torrecab    = BusStop(id: "m7-torrecaballeros",   name: "Torrecaballeros",   area: "Torrecaballeros",         coordinates: "0.0, 0.0")
 
         // Saturday/Sunday inbound Segovia cluster (4 sub-stops)
-        static let inPlazaToros    = BusStop(id: "m7-plaza-toros-in",     name: "Plaza de Toros",         coordinates: "40.942093, -4.107603")
-        static let inLaPista       = BusStop(id: "m7-la-pista-in",        name: "La Pista",               coordinates: "40.937354, -4.111411")
-        static let inAndresLaguna  = BusStop(id: "m7-andres-laguna-in",   name: "Andrés Laguna",          coordinates: "40.939106, -4.115582")
-        static let inJardinillos   = BusStop(id: "m7-jardinillos",        name: "Jardinillos y Hospital", coordinates: "40.944361, -4.120831")
+        static let inPlazaToros    = BusStop(id: "m7-plaza-toros-in",     name: "Plaza de Toros",         area: "Segovia",  coordinates: "40.942093, -4.107603")
+        static let inLaPista       = BusStop(id: "m7-la-pista-in",        name: "La Pista",               area: "Segovia",  coordinates: "40.937354, -4.111411")
+        static let inAndresLaguna  = BusStop(id: "m7-andres-laguna-in",   name: "Andrés Laguna",          area: "Segovia",  coordinates: "40.939106, -4.115582")
+        static let inJardinillos   = BusStop(id: "m7-jardinillos",        name: "Jardinillos y Hospital", area: "Segovia",  coordinates: "40.944361, -4.120831")
     }
 
     // Weekday circular

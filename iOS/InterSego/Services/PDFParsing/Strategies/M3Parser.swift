@@ -51,25 +51,25 @@ class M3Parser: CapableParser, RouteStopsProvider {
 
     private enum Stops {
         // Segovia cluster — outbound order
-        static let estacionBus     = BusStop(id: "m3-estacion-bus",      name: "Estación de Autobuses",      coordinates: "40.944768, -4.121823")
-        static let iglesiaStTomas  = BusStop(id: "m3-iglesia-sto-tomas", name: "Iglesia Santo Tomás",        coordinates: "0.0, 0.0")
-        static let frenteBarNorte  = BusStop(id: "m3-frente-bar-norte",  name: "Frente Bar Norte",           coordinates: "0.0, 0.0")
-        static let plazaToros      = BusStop(id: "m3-plaza-toros",       name: "Plaza de Toros",             coordinates: "40.942093, -4.107603")
+        static let estacionBus     = BusStop(id: "m3-estacion-bus",      name: "Estación de Autobuses",      area: "Segovia",      coordinates: "40.944768, -4.121823")
+        static let iglesiaStTomas  = BusStop(id: "m3-iglesia-sto-tomas", name: "Iglesia Santo Tomás",        area: "Segovia",      coordinates: "0.0, 0.0")
+        static let frenteBarNorte  = BusStop(id: "m3-frente-bar-norte",  name: "Frente Bar Norte",           area: "Segovia",      coordinates: "0.0, 0.0")
+        static let plazaToros      = BusStop(id: "m3-plaza-toros",       name: "Plaza de Toros",             area: "Segovia",      coordinates: "40.942093, -4.107603")
 
         // Route stops
-        static let urbCarrascalejo = BusStop(id: "m3-urb-carrascalejo",  name: "Urb. Carrascalejo",          coordinates: "0.0, 0.0")
-        static let parqueRobledo   = BusStop(id: "m3-parque-robledo",    name: "Parque Robledo",             coordinates: "0.0, 0.0")
-        static let laGranja        = BusStop(id: "m3-la-granja",         name: "La Granja (Pta de Segovia)", coordinates: "40.901389, -4.003333")
-        static let valsain         = BusStop(id: "m3-valsain",           name: "Valsain (La Pradera)",       coordinates: "40.877500, -4.019444")
-        static let bocaDelAsno     = BusStop(id: "m3-boca-del-asno",     name: "Boca del Asno",              coordinates: "0.0, 0.0")
-        static let puenteMosquitos = BusStop(id: "m3-puente-mosquitos",  name: "Puente de los Mosquitos",    coordinates: "0.0, 0.0")
-        static let navacerrada     = BusStop(id: "m3-navacerrada",       name: "Navacerrada",                coordinates: "40.780833, -4.008056")
+        static let urbCarrascalejo = BusStop(id: "m3-urb-carrascalejo",  name: "Urb. Carrascalejo",          area: "Carrascalejo", coordinates: "0.0, 0.0")
+        static let parqueRobledo   = BusStop(id: "m3-parque-robledo",    name: "Parque Robledo",             area: "Robledo",      coordinates: "0.0, 0.0")
+        static let laGranja        = BusStop(id: "m3-la-granja",         name: "La Granja (Pta de Segovia)", area: "La Granja",    coordinates: "40.901389, -4.003333")
+        static let valsain         = BusStop(id: "m3-valsain",           name: "Valsain (La Pradera)",       area: "Valsaín",      coordinates: "40.877500, -4.019444")
+        static let bocaDelAsno     = BusStop(id: "m3-boca-del-asno",     name: "Boca del Asno",              area: "Valsaín",      coordinates: "0.0, 0.0")
+        static let puenteMosquitos = BusStop(id: "m3-puente-mosquitos",  name: "Puente de los Mosquitos",    area: "Navacerrada",  coordinates: "0.0, 0.0")
+        static let navacerrada     = BusStop(id: "m3-navacerrada",       name: "Navacerrada",                area: "Navacerrada",  coordinates: "40.780833, -4.008056")
 
         // Segovia cluster — inbound (return) order: reversed cluster + distinct IDs
-        static let plazaTorosIn      = BusStop(id: "m3-plaza-toros-in",        name: "Plaza de Toros",         coordinates: "40.942093, -4.107603")
-        static let frenteBarNorteIn  = BusStop(id: "m3-frente-bar-norte-in",   name: "Frente Bar Norte",       coordinates: "0.0, 0.0")
-        static let iglesiaStTomasIn  = BusStop(id: "m3-iglesia-sto-tomas-in",  name: "Iglesia Santo Tomás",    coordinates: "0.0, 0.0")
-        static let estacionBusIn     = BusStop(id: "m3-estacion-bus-in",       name: "Estación de Autobuses",  coordinates: "40.944768, -4.121823")
+        static let plazaTorosIn      = BusStop(id: "m3-plaza-toros-in",        name: "Plaza de Toros",         area: "Segovia",  coordinates: "40.942093, -4.107603")
+        static let frenteBarNorteIn  = BusStop(id: "m3-frente-bar-norte-in",   name: "Frente Bar Norte",       area: "Segovia",  coordinates: "0.0, 0.0")
+        static let iglesiaStTomasIn  = BusStop(id: "m3-iglesia-sto-tomas-in",  name: "Iglesia Santo Tomás",    area: "Segovia",  coordinates: "0.0, 0.0")
+        static let estacionBusIn     = BusStop(id: "m3-estacion-bus-in",       name: "Estación de Autobuses",  area: "Segovia",  coordinates: "40.944768, -4.121823")
     }
 
     // Outbound: Segovia cluster → ... → Navacerrada

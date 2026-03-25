@@ -69,22 +69,22 @@ class M5Parser : CapableParser, RouteStopsProvider {
         private const val DIRECTION_INBOUND = "Sto. Domingo de Pirón → Segovia"
 
         private object Stops {
-            val SEGOVIA            = BusStop(id = "m5-segovia",            name = "Segovia",                coordinates = "40.944768, -4.121823")
-            val TIZNEROS           = BusStop(id = "m5-tizneros",           name = "Tizneros",               coordinates = "0.0, 0.0")
-            val ESPIRDO            = BusStop(id = "m5-espirdo",            name = "Espirdo",                coordinates = "0.0, 0.0")
-            val LA_HIGUERA         = BusStop(id = "m5-la-higuera",         name = "La Higuera",             coordinates = "0.0, 0.0")
-            val BRIEVA             = BusStop(id = "m5-brieva",             name = "Brieva",                 coordinates = "0.0, 0.0")
-            val BASARDILLA         = BusStop(id = "m5-basardilla",         name = "Basardilla",             coordinates = "0.0, 0.0")
-            val STO_DOMINGO_PIRON  = BusStop(id = "m5-sto-domingo-piron",  name = "Sto. Domingo de Pirón",  coordinates = "0.0, 0.0")
+            val SEGOVIA            = BusStop(id = "m5-segovia",            name = "Segovia",                area = "Segovia",                coordinates = "40.944768, -4.121823")
+            val TIZNEROS           = BusStop(id = "m5-tizneros",           name = "Tizneros",               area = "Tizneros",               coordinates = "0.0, 0.0")
+            val ESPIRDO            = BusStop(id = "m5-espirdo",            name = "Espirdo",                area = "Espirdo",                coordinates = "0.0, 0.0")
+            val LA_HIGUERA         = BusStop(id = "m5-la-higuera",         name = "La Higuera",             area = "La Higuera",             coordinates = "0.0, 0.0")
+            val BRIEVA             = BusStop(id = "m5-brieva",             name = "Brieva",                 area = "Brieva",                 coordinates = "0.0, 0.0")
+            val BASARDILLA         = BusStop(id = "m5-basardilla",         name = "Basardilla",             area = "Basardilla",             coordinates = "0.0, 0.0")
+            val STO_DOMINGO_PIRON  = BusStop(id = "m5-sto-domingo-piron",  name = "Sto. Domingo de Pirón",  area = "Sto. Domingo de Pirón",  coordinates = "0.0, 0.0")
 
             // Inbound copies with -in suffix
-            val SEGOVIA_IN            = BusStop(id = "m5-segovia-in",            name = "Segovia",                coordinates = "40.944768, -4.121823")
-            val TIZNEROS_IN           = BusStop(id = "m5-tizneros-in",           name = "Tizneros",               coordinates = "0.0, 0.0")
-            val ESPIRDO_IN            = BusStop(id = "m5-espirdo-in",            name = "Espirdo",                coordinates = "0.0, 0.0")
-            val LA_HIGUERA_IN         = BusStop(id = "m5-la-higuera-in",         name = "La Higuera",             coordinates = "0.0, 0.0")
-            val BRIEVA_IN             = BusStop(id = "m5-brieva-in",             name = "Brieva",                 coordinates = "0.0, 0.0")
-            val BASARDILLA_IN         = BusStop(id = "m5-basardilla-in",         name = "Basardilla",             coordinates = "0.0, 0.0")
-            val STO_DOMINGO_PIRON_IN  = BusStop(id = "m5-sto-domingo-piron-in",  name = "Sto. Domingo de Pirón",  coordinates = "0.0, 0.0")
+            val SEGOVIA_IN            = BusStop(id = "m5-segovia-in",            name = "Segovia",                area = "Segovia",                coordinates = "40.944768, -4.121823")
+            val TIZNEROS_IN           = BusStop(id = "m5-tizneros-in",           name = "Tizneros",               area = "Tizneros",               coordinates = "0.0, 0.0")
+            val ESPIRDO_IN            = BusStop(id = "m5-espirdo-in",            name = "Espirdo",                area = "Espirdo",                coordinates = "0.0, 0.0")
+            val LA_HIGUERA_IN         = BusStop(id = "m5-la-higuera-in",         name = "La Higuera",             area = "La Higuera",             coordinates = "0.0, 0.0")
+            val BRIEVA_IN             = BusStop(id = "m5-brieva-in",             name = "Brieva",                 area = "Brieva",                 coordinates = "0.0, 0.0")
+            val BASARDILLA_IN         = BusStop(id = "m5-basardilla-in",         name = "Basardilla",             area = "Basardilla",             coordinates = "0.0, 0.0")
+            val STO_DOMINGO_PIRON_IN  = BusStop(id = "m5-sto-domingo-piron-in",  name = "Sto. Domingo de Pirón",  area = "Sto. Domingo de Pirón",  coordinates = "0.0, 0.0")
         }
 
         // Outbound: Segovia → Sto. Domingo de Pirón
