@@ -27,7 +27,7 @@ struct AllRoutesView: View {
     let selectedEntryId: String
     let onEntrySelected: (RouteSelectorEntry) -> Void
     let views: [RouteView]
-    var initialViewId: String? = nil
+    var initialViewId: String?
     let onStopSelected: (BusStop, String) -> Void
     let onMapSelected: (String) -> Void
 
@@ -51,7 +51,7 @@ struct AllRoutesView: View {
             RouteEntryDropdown(
                 entries: routeEntries,
                 selectedEntryId: selectedEntryId,
-                onEntrySelected: onEntrySelected
+                onEntrySelected: onEntrySelected,
             )
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
@@ -64,7 +64,7 @@ struct AllRoutesView: View {
                     let hasExtendedStops = extendedLabel != nil && stops.contains { $0.isExtendedOnly }
 
                     ForEach(Array(stops.enumerated()), id: \.offset) { index, viewStop in
-                        if hasExtendedStops && index > 0 {
+                        if hasExtendedStops, index > 0 {
                             let prevIsExtended = stops[index - 1].isExtendedOnly
                             let currIsExtended = viewStop.isExtendedOnly
                             if prevIsExtended != currIsExtended {
@@ -76,7 +76,7 @@ struct AllRoutesView: View {
                             stop: viewStop.stop,
                             isExtended: viewStop.isExtendedOnly,
                             isFirst: index == 0,
-                            isLast: index == stops.count - 1
+                            isLast: index == stops.count - 1,
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {

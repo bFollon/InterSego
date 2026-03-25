@@ -94,7 +94,7 @@ actor TimetableCacheService {
             let cachedData = CachedTimetables(
                 routeId: routeId,
                 timetables: timetables,
-                cacheTimestamp: Date().timeIntervalSince1970
+                cacheTimestamp: Date().timeIntervalSince1970,
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
@@ -115,7 +115,7 @@ actor TimetableCacheService {
                 timetableCount: timetables.count,
                 cacheTimestamp: Date().timeIntervalSince1970,
                 pdfLastModified: pdfLastModified,
-                parserVersion: parserVersion
+                parserVersion: parserVersion,
             )
             let metaData = try encoder.encode(metadata)
             try metaData.write(to: getMetadataFile(routeId: routeId))

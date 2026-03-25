@@ -57,7 +57,7 @@ actor PDFURLScrapingService {
             var request = URLRequest(url: url)
             request.setValue(
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
-                forHTTPHeaderField: "User-Agent"
+                forHTTPHeaderField: "User-Agent",
             )
 
             let (data, response) = try await session.data(for: request)
@@ -100,7 +100,7 @@ actor PDFURLScrapingService {
 
         guard let pdfPattern = try? NSRegularExpression(
             pattern: #"href="([^"]*\.pdf)""#,
-            options: .caseInsensitive
+            options: .caseInsensitive,
         ) else { return [] }
 
         let range = NSRange(htmlContent.startIndex..., in: htmlContent)
@@ -117,13 +117,12 @@ actor PDFURLScrapingService {
         DebugConfig.debugPrint("\(tag): After removing duplicates: \(uniquePdfUrls.count) unique PDF URLs")
 
         for pdfUrl in uniquePdfUrls {
-            let absoluteUrl: String
-            if pdfUrl.hasPrefix("http") {
-                absoluteUrl = pdfUrl
+            let absoluteUrl: String = if pdfUrl.hasPrefix("http") {
+                pdfUrl
             } else if pdfUrl.hasPrefix("/") {
-                absoluteUrl = "https://www.linecar.es\(pdfUrl)"
+                "https://www.linecar.es\(pdfUrl)"
             } else {
-                absoluteUrl = "https://www.linecar.es/metropolitano/segovia/\(pdfUrl)"
+                "https://www.linecar.es/metropolitano/segovia/\(pdfUrl)"
             }
 
             let routeId = extractRouteIdFromLinecarURL(absoluteUrl)
@@ -132,7 +131,7 @@ actor PDFURLScrapingService {
                 scrapedData.append(ScrapedPDFData(
                     routeId: routeId,
                     pdfUrl: absoluteUrl,
-                    lastUpdated: extractLastUpdatedDateFromHTML(htmlContent)
+                    lastUpdated: extractLastUpdatedDateFromHTML(htmlContent),
                 ))
                 DebugConfig.debugPrint("\(tag): Extracted route \(routeId) from \(absoluteUrl)")
             } else {
@@ -178,7 +177,7 @@ actor PDFURLScrapingService {
         for pattern in patterns {
             let regex = try? NSRegularExpression(
                 pattern: "\(pattern)[^\\d]*(\\d{1,2}[^\\d]*\\d{4})",
-                options: .caseInsensitive
+                options: .caseInsensitive,
             )
             let range = NSRange(htmlContent.startIndex..., in: htmlContent)
             if let match = regex?.firstMatch(in: htmlContent, range: range),

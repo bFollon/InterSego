@@ -37,7 +37,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M7"]),
         mode: .production,
-        version: "1.2"
+        version: "1.2",
     )
 
     // MARK: - Directions
@@ -54,32 +54,32 @@ class M7Parser: CapableParser, RouteStopsProvider {
             id: "m7-segovia",
             name: "Segovia",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
         static let tabaneraWk = BusStop(
             id: "m7-tabanera",
             name: "Tabanera",
             area: "Tabanera",
-            coordinates: "40.934336, -4.067014"
+            coordinates: "40.934336, -4.067014",
         )
         /// Palazuelos cluster (weekday only — school stop likely skipped on weekends)
         static let palazuelosWk = BusStop(
             id: "m7-palazuelos",
             name: "Palazuelos",
             area: "Palazuelos",
-            coordinates: "40.931068, -4.064340"
+            coordinates: "40.931068, -4.064340",
         )
         static let palazuelosColegioWk = BusStop(
             id: "m7-palazuelos-colegio",
             name: "Colegio",
             area: "Palazuelos",
-            coordinates: "40.933921, -4.063495"
+            coordinates: "40.933921, -4.063495",
         )
         static let segoviaWkRet = BusStop(
             id: "m7-segovia-ret",
             name: "Segovia",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
 
         /// Saturday/Sunday outbound Segovia cluster (5 sub-stops)
@@ -87,31 +87,31 @@ class M7Parser: CapableParser, RouteStopsProvider {
             id: "m7-estacion-bus",
             name: "Estación de Autobuses",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
         static let outHospital = BusStop(
             id: "m7-hospital",
             name: "Hospital",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let outAndresLaguna = BusStop(
             id: "m7-andres-laguna",
             name: "Andrés Laguna",
             area: "Segovia capital",
-            coordinates: "40.939106, -4.115582"
+            coordinates: "40.939106, -4.115582",
         )
         static let outLaPista = BusStop(
             id: "m7-la-pista",
             name: "La Pista",
             area: "Segovia capital",
-            coordinates: "40.937354, -4.111411"
+            coordinates: "40.937354, -4.111411",
         )
         static let outPlazaToros = BusStop(
             id: "m7-plaza-toros",
             name: "Plaza de Toros",
             area: "Segovia capital",
-            coordinates: "40.942093, -4.107603"
+            coordinates: "40.942093, -4.107603",
         )
 
         /// Extended route stops
@@ -119,43 +119,43 @@ class M7Parser: CapableParser, RouteStopsProvider {
             id: "m7-palazuelos-ext",
             name: "Palazuelos",
             area: "Palazuelos",
-            coordinates: "40.931068, -4.064340"
+            coordinates: "40.931068, -4.064340",
         )
         static let tabanera = BusStop(
             id: "m7-tabanera-ext",
             name: "Tabanera",
             area: "Tabanera",
-            coordinates: "40.934336, -4.067014"
+            coordinates: "40.934336, -4.067014",
         )
         static let sCristobal = BusStop(
             id: "m7-s-cristobal",
             name: "S. Cristóbal",
             area: "San Cristóbal de Segovia",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let sonsoto = BusStop(
             id: "m7-sonsoto",
             name: "Sonsoto",
             area: "Sonsoto",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let trescasas = BusStop(
             id: "m7-trescasas",
             name: "Trescasas",
             area: "Trescasas",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let cabanillas = BusStop(
             id: "m7-cabanillas",
             name: "Cabanillas",
             area: "Cabanillas",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let torrecab = BusStop(
             id: "m7-torrecaballeros",
             name: "Torrecaballeros",
             area: "Torrecaballeros",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
 
         /// Saturday/Sunday inbound Segovia cluster (4 sub-stops)
@@ -163,25 +163,25 @@ class M7Parser: CapableParser, RouteStopsProvider {
             id: "m7-plaza-toros-in",
             name: "Plaza de Toros",
             area: "Segovia capital",
-            coordinates: "40.942093, -4.107603"
+            coordinates: "40.942093, -4.107603",
         )
         static let inLaPista = BusStop(
             id: "m7-la-pista-in",
             name: "La Pista",
             area: "Segovia capital",
-            coordinates: "40.937354, -4.111411"
+            coordinates: "40.937354, -4.111411",
         )
         static let inAndresLaguna = BusStop(
             id: "m7-andres-laguna-in",
             name: "Andrés Laguna",
             area: "Segovia capital",
-            coordinates: "40.939106, -4.115582"
+            coordinates: "40.939106, -4.115582",
         )
         static let inJardinillos = BusStop(
             id: "m7-jardinillos",
             name: "Jardinillos y Hospital",
             area: "Segovia capital",
-            coordinates: "40.944361, -4.120831"
+            coordinates: "40.944361, -4.120831",
         )
     }
 
@@ -234,7 +234,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
                     id: "weekday-circular",
                     label: Self.directionWeekdayCircular,
                     stops: Self.m7WeekdayCircular,
-                    direction: Self.directionWeekdayCircular
+                    direction: Self.directionWeekdayCircular,
                 ),
             ]
         case .saturday:
@@ -243,13 +243,13 @@ class M7Parser: CapableParser, RouteStopsProvider {
                     id: "saturday-outbound",
                     label: Self.directionSatSunOutbound,
                     stops: Self.m7ExtOutbound,
-                    direction: Self.directionSatSunOutbound
+                    direction: Self.directionSatSunOutbound,
                 ),
                 RouteVariant(
                     id: "saturday-inbound",
                     label: Self.directionSatSunInbound,
                     stops: Self.m7ExtInbound,
-                    direction: Self.directionSatSunInbound
+                    direction: Self.directionSatSunInbound,
                 ),
             ]
         case .sunday:
@@ -258,13 +258,13 @@ class M7Parser: CapableParser, RouteStopsProvider {
                     id: "sunday-outbound",
                     label: Self.directionSatSunOutbound,
                     stops: Self.m7ExtOutbound,
-                    direction: Self.directionSatSunOutbound
+                    direction: Self.directionSatSunOutbound,
                 ),
                 RouteVariant(
                     id: "sunday-inbound",
                     label: Self.directionSatSunInbound,
                     stops: Self.m7ExtInbound,
-                    direction: Self.directionSatSunInbound
+                    direction: Self.directionSatSunInbound,
                 ),
             ]
         @unknown default:
@@ -287,7 +287,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }
@@ -311,7 +311,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
                 views: weekdayViews,
                 initialViewId: "weekday-circular",
                 timetableDayType: .weekday,
-                isActiveToday: isWeekday
+                isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
                 id: "entry-sabado",
@@ -319,7 +319,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
                 views: saturdayViews,
                 initialViewId: "saturday-outbound",
                 timetableDayType: .saturday,
-                isActiveToday: isSaturday
+                isActiveToday: isSaturday,
             ),
             RouteSelectorEntry(
                 id: "entry-domingo",
@@ -327,14 +327,14 @@ class M7Parser: CapableParser, RouteStopsProvider {
                 views: sundayViews,
                 initialViewId: "sunday-outbound",
                 timetableDayType: .sunday,
-                isActiveToday: isSunday
+                isActiveToday: isSunday,
             ),
         ]
     }
 
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint(
-            "M7Parser: returning hardcoded timetable (PDF parsing bypassed)"
+            "M7Parser: returning hardcoded timetable (PDF parsing bypassed)",
         )
         return buildStaticTimetables()
     }
@@ -388,7 +388,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
                     t(17, 50), t(18, 55), t(20, 35), t(21, 35),
                 ],
                 stopCount: 2,
-                offsetMinutes: 2
+                offsetMinutes: 2,
             ) + [
                 // SEGOVIA_WK_RET (18 departures)
                 [
@@ -407,7 +407,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
         let satSegoviaOut = DepartureTime.clusterDepartures(
             [t(9, 20), t(13, 30), t(15, 15), t(19, 30), t(22, 30)],
             stopCount: 5,
-            offsetMinutes: 2
+            offsetMinutes: 2,
         )
         let satOutDeps: [[DepartureTime]] = [
             satSegoviaOut[0], // OUT_ESTACION_BUS (anchor)
@@ -441,7 +441,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
             + DepartureTime.clusterDepartures(
                 [t(10, 39), t(16, 24), t(18, 54), t(23, 24)],
                 stopCount: 4,
-                offsetMinutes: 2
+                offsetMinutes: 2,
             )
 
         // ══════════════════════════════════════════════════════════════════════════════════════
@@ -451,7 +451,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
         let sunSegoviaOut = DepartureTime.clusterDepartures(
             [t(11, 45), t(20, 30, sch), t(19, 30, sum), t(21, 45)],
             stopCount: 5,
-            offsetMinutes: 2
+            offsetMinutes: 2,
         )
         let sunOutDeps: [[DepartureTime]] = [
             sunSegoviaOut[0], // OUT_ESTACION_BUS (anchor)
@@ -485,38 +485,38 @@ class M7Parser: CapableParser, RouteStopsProvider {
             + DepartureTime.clusterDepartures(
                 [t(12, 39), t(16, 54), t(21, 24, sch), t(20, 24, sum)],
                 stopCount: 4,
-                offsetMinutes: 2
+                offsetMinutes: 2,
             )
 
         return buildTimetables(
             stops: Self.m7WeekdayCircular,
             dayType: .weekday,
             direction: Self.directionWeekdayCircular,
-            deps: wkDeps
+            deps: wkDeps,
         )
             + buildTimetables(
                 stops: Self.m7ExtOutbound,
                 dayType: .saturday,
                 direction: Self.directionSatSunOutbound,
-                deps: satOutDeps
+                deps: satOutDeps,
             )
             + buildTimetables(
                 stops: Self.m7ExtInbound,
                 dayType: .saturday,
                 direction: Self.directionSatSunInbound,
-                deps: satInDeps
+                deps: satInDeps,
             )
             + buildTimetables(
                 stops: Self.m7ExtOutbound,
                 dayType: .sunday,
                 direction: Self.directionSatSunOutbound,
-                deps: sunOutDeps
+                deps: sunOutDeps,
             )
             + buildTimetables(
                 stops: Self.m7ExtInbound,
                 dayType: .sunday,
                 direction: Self.directionSatSunInbound,
-                deps: sunInDeps
+                deps: sunInDeps,
             )
     }
 
@@ -530,7 +530,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
         stops: [BusStop],
         dayType: DayType,
         direction: String,
-        deps: [[DepartureTime]]
+        deps: [[DepartureTime]],
     ) -> [BusTimetable] {
         stops.enumerated().map { i, stop in
             BusTimetable(
@@ -538,7 +538,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
                 stopId: stop.id,
                 dayType: dayType,
                 departures: deps[i],
-                direction: direction
+                direction: direction,
             )
         }
     }

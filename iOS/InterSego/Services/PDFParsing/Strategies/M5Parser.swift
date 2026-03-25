@@ -42,7 +42,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M5"]),
         mode: .production,
-        version: "1.0"
+        version: "1.0",
     )
 
     // MARK: - Directions
@@ -57,43 +57,43 @@ class M5Parser: CapableParser, RouteStopsProvider {
             id: "m5-segovia",
             name: "Segovia",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
         static let tizneros = BusStop(
             id: "m5-tizneros",
             name: "Tizneros",
             area: "Tizneros",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let espirdo = BusStop(
             id: "m5-espirdo",
             name: "Espirdo",
             area: "Espirdo",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let laHiguera = BusStop(
             id: "m5-la-higuera",
             name: "La Higuera",
             area: "La Higuera",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let brieva = BusStop(
             id: "m5-brieva",
             name: "Brieva",
             area: "Brieva",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let basardilla = BusStop(
             id: "m5-basardilla",
             name: "Basardilla",
             area: "Basardilla",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let stoDomingoPiron = BusStop(
             id: "m5-sto-domingo-piron",
             name: "Sto. Domingo de Pirón",
             area: "Sto. Domingo de Pirón",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
 
         /// Inbound copies with -in suffix
@@ -101,43 +101,43 @@ class M5Parser: CapableParser, RouteStopsProvider {
             id: "m5-segovia-in",
             name: "Segovia",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
         static let tiznerosIn = BusStop(
             id: "m5-tizneros-in",
             name: "Tizneros",
             area: "Tizneros",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let espirdoIn = BusStop(
             id: "m5-espirdo-in",
             name: "Espirdo",
             area: "Espirdo",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let laHigueraIn = BusStop(
             id: "m5-la-higuera-in",
             name: "La Higuera",
             area: "La Higuera",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let brievaIn = BusStop(
             id: "m5-brieva-in",
             name: "Brieva",
             area: "Brieva",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let basardillaIn = BusStop(
             id: "m5-basardilla-in",
             name: "Basardilla",
             area: "Basardilla",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let stoDomingoPironIn = BusStop(
             id: "m5-sto-domingo-piron-in",
             name: "Sto. Domingo de Pirón",
             area: "Sto. Domingo de Pirón",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
     }
 
@@ -195,7 +195,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
                 id: variant.id, label: variant.label,
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction, departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }
@@ -218,7 +218,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
                 views: weekdayViews,
                 initialViewId: "regular",
                 timetableDayType: .weekday,
-                isActiveToday: isWeekday
+                isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
                 id: "entry-sabado",
@@ -226,7 +226,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
                 views: saturdayViews,
                 initialViewId: "regular",
                 timetableDayType: .saturday,
-                isActiveToday: isSaturday
+                isActiveToday: isSaturday,
             ),
         ]
     }
@@ -234,7 +234,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig
             .debugPrint(
-                "M5Parser: returning hardcoded timetable (PDF parsing bypassed)"
+                "M5Parser: returning hardcoded timetable (PDF parsing bypassed)",
             )
         return buildStaticTimetables()
     }
@@ -276,7 +276,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
         let wkInDeps: [[DepartureTime]] = [
             [t(
                 10,
-                0
+                0,
             )], // STO_DOMINGO_PIRON_IN (row 2 only)
             [t(10, 5)], // BASARDILLA_IN (row 2 only)
             [t(7, 25), t(10, 10)], // BRIEVA_IN (rows 1,2)
@@ -314,25 +314,25 @@ class M5Parser: CapableParser, RouteStopsProvider {
             stops: Self.m5Outbound,
             dayType: .weekday,
             direction: Self.directionOutbound,
-            deps: wkOutDeps
+            deps: wkOutDeps,
         )
             + buildTimetables(
                 stops: Self.m5Inbound,
                 dayType: .weekday,
                 direction: Self.directionInbound,
-                deps: wkInDeps
+                deps: wkInDeps,
             )
             + buildTimetables(
                 stops: Self.m5Outbound,
                 dayType: .saturday,
                 direction: Self.directionOutbound,
-                deps: satOutDeps
+                deps: satOutDeps,
             )
             + buildTimetables(
                 stops: Self.m5Inbound,
                 dayType: .saturday,
                 direction: Self.directionInbound,
-                deps: satInDeps
+                deps: satInDeps,
             )
     }
 
@@ -344,7 +344,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
         stops: [BusStop],
         dayType: DayType,
         direction: String,
-        deps: [[DepartureTime]]
+        deps: [[DepartureTime]],
     ) -> [BusTimetable] {
         stops.enumerated().map { i, stop in
             BusTimetable(
@@ -352,7 +352,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
                 stopId: stop.id,
                 dayType: dayType,
                 departures: deps[i],
-                direction: direction
+                direction: direction,
             )
         }
     }

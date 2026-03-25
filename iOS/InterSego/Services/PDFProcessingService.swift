@@ -125,7 +125,7 @@ actor PDFProcessingService {
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }

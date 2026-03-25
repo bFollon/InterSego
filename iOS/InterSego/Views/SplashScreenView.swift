@@ -43,8 +43,8 @@ struct SplashScreenView: View {
                             LinearGradient(
                                 colors: [.green, .blue],
                                 startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                                endPoint: .trailing,
+                            ),
                         )
 
                     Text("Interurbanos de Segovia")

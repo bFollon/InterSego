@@ -28,7 +28,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
-        version: "1.2"
+        version: "1.2",
     )
 
     // MARK: - Directions
@@ -37,7 +37,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     private static let directionReverse = "Sotillo → Lastrilla"
 
     private static let timeWithAsteriskPattern = try! NSRegularExpression(
-        pattern: #"\d{1,2}:\d{2}\s*\*"#
+        pattern: #"\d{1,2}:\d{2}\s*\*"#,
     )
 
     // MARK: - Stops
@@ -47,92 +47,92 @@ class M4Parser: CapableParser, RouteStopsProvider {
             id: "m4-azoguejo",
             name: "Azoguejo",
             area: "Segovia capital",
-            coordinates: "40.948406, -4.116411"
+            coordinates: "40.948406, -4.116411",
         )
         static let delicias = BusStop(
             id: "m4-delicias",
             name: "Delicias",
             area: "Segovia capital",
-            coordinates: "40.954500, -4.108889"
+            coordinates: "40.954500, -4.108889",
         )
         static let gasolinera = BusStop(
             id: "m4-gasolinera",
             name: "Gasolinera",
             area: "La Lastrilla",
             coordinates: "40.965944, -4.106072",
-            routingCoordinates: "40.965897, -4.106276"
+            routingCoordinates: "40.965897, -4.106276",
         )
         static let pension = BusStop(
             id: "m4-pension",
             name: "Pensión",
             area: "La Lastrilla",
-            coordinates: "40.969289, -4.107552"
+            coordinates: "40.969289, -4.107552",
         )
         static let poligono = BusStop(
             id: "m4-poligono",
             name: "Polígono",
             area: "La Lastrilla",
-            coordinates: "40.972010, -4.108356"
+            coordinates: "40.972010, -4.108356",
         )
         static let ctraValladolid33 = BusStop(
             id: "m4-ctra-valladolid-33",
             name: "Carretera de Valladolid",
             area: "La Lastrilla",
-            coordinates: "40.970464, -4.104010"
+            coordinates: "40.970464, -4.104010",
         )
         static let leopoldoMoreno = BusStop(
             id: "m4-leopoldo-moreno",
             name: "Leopoldo Moreno",
             area: "La Lastrilla",
-            coordinates: "40.967679, -4.102850"
+            coordinates: "40.967679, -4.102850",
         )
         static let colegio = BusStop(
             id: "m4-colegio",
             name: "Colegio",
             area: "La Lastrilla",
-            coordinates: "40.966693, -4.102033"
+            coordinates: "40.966693, -4.102033",
         )
         static let parroqSotillo = BusStop(
             id: "m4-parroq-sotillo",
             name: "Parroquia el Sotillo",
             area: "El Sotillo",
-            coordinates: "40.963449, -4.095073"
+            coordinates: "40.963449, -4.095073",
         )
         static let hotelAvSotillo = BusStop(
             id: "m4-hotel-av-sotillo",
             name: "Hotel Avenida del Sotillo",
             area: "El Sotillo",
-            coordinates: "40.965769, -4.097825"
+            coordinates: "40.965769, -4.097825",
         )
         static let maspalomas = BusStop(
             id: "m4-maspalomas",
             name: "Calle Maspalomas",
             area: "El Sotillo",
-            coordinates: "40.965714, -4.094892"
+            coordinates: "40.965714, -4.094892",
         )
         static let centroBoal = BusStop(
             id: "m4-centro-boal",
             name: "Centro Cultural Julio Boal",
             area: "El Sotillo",
-            coordinates: "40.967592, -4.091377"
+            coordinates: "40.967592, -4.091377",
         )
         static let paseoCabanillas = BusStop(
             id: "m4-paseo-cabanillas",
             name: "Colegio Madres Concepcionistas",
             area: "El Sotillo",
-            coordinates: "40.962806, -4.092689"
+            coordinates: "40.962806, -4.092689",
         )
         static let rafaelDeLasHeras = BusStop(
             id: "m4-rafael-de-las-heras",
             name: "Rafael de las Heras",
             area: "El Sotillo",
-            coordinates: "40.961939, -4.096711"
+            coordinates: "40.961939, -4.096711",
         )
         static let ventaMagullo = BusStop(
             id: "m4-venta-magullo",
             name: "Venta Magullo",
             area: "El Sotillo",
-            coordinates: "40.960876, -4.100906"
+            coordinates: "40.960876, -4.100906",
         )
     }
 
@@ -224,13 +224,13 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 id: "regular",
                 label: Self.directionRegular,
                 stops: Array(Self.m4RegularRoute.dropLast()),
-                direction: Self.directionRegular
+                direction: Self.directionRegular,
             ),
             RouteVariant(
                 id: "reverse",
                 label: Self.directionReverse,
                 stops: Array(Self.m4ReverseRoute.dropLast()),
-                direction: Self.directionReverse
+                direction: Self.directionReverse,
             ),
         ]
     }
@@ -250,7 +250,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }
@@ -272,7 +272,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 views: weekdayViews,
                 initialViewId: "regular",
                 timetableDayType: .weekday,
-                isActiveToday: isWeekday
+                isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
                 id: "entry-fds",
@@ -280,7 +280,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 views: weekendViews,
                 initialViewId: "regular",
                 timetableDayType: .weekend,
-                isActiveToday: isWeekend
+                isActiveToday: isWeekend,
             ),
         ]
     }
@@ -294,7 +294,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
         let extractedText = PDFTextExtractor.extractText(
             from: pdfPath,
-            tag: "M4Parser"
+            tag: "M4Parser",
         )
         let lines = extractedText.components(separatedBy: "\n")
 
@@ -315,7 +315,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
         let timetables = parseTimeTable(lines)
 
         DebugConfig.debugPrint(
-            "M4Parser: Finished parsing, created \(timetables.count) timetables"
+            "M4Parser: Finished parsing, created \(timetables.count) timetables",
         )
         return timetables
     }
@@ -337,7 +337,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     private func createInitialTimetables(
         stops: [BusStop],
         dayType: DayType,
-        direction: String
+        direction: String,
     ) -> [BusTimetable] {
         stops.map { stop in
             BusTimetable(
@@ -345,7 +345,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 stopId: stop.id,
                 dayType: dayType,
                 departures: [],
-                direction: direction
+                direction: direction,
             )
         }
     }
@@ -353,7 +353,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     private func updateTimetables(
         _ timetables: [BusTimetable],
         times: [(hour: Int, minute: Int)],
-        seasonal: SeasonalAvailability
+        seasonal: SeasonalAvailability,
     ) -> [BusTimetable] {
         zip(timetables, times).map { timetable, time in
             var updated = timetable
@@ -362,7 +362,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                     DepartureTime(
                         hour: time.hour,
                         minute: time.minute,
-                        seasonalAvailability: seasonal
+                        seasonalAvailability: seasonal,
                     ),
                 ]
             return updated
@@ -377,23 +377,23 @@ class M4Parser: CapableParser, RouteStopsProvider {
             regularRouteWeekdayTimetables: createInitialTimetables(
                 stops: Self.m4RegularRoute,
                 dayType: .weekday,
-                direction: Self.directionRegular
+                direction: Self.directionRegular,
             ),
             regularRouteWeekendTimetables: createInitialTimetables(
                 stops: Self.m4RegularRoute,
                 dayType: .weekend,
-                direction: Self.directionRegular
+                direction: Self.directionRegular,
             ),
             reverseRouteWeekdayTimetables: createInitialTimetables(
                 stops: Self.m4ReverseRoute,
                 dayType: .weekday,
-                direction: Self.directionReverse
+                direction: Self.directionReverse,
             ),
             reverseRouteWeekendTimetables: createInitialTimetables(
                 stops: Self.m4ReverseRoute,
                 dayType: .weekend,
-                direction: Self.directionReverse
-            )
+                direction: Self.directionReverse,
+            ),
         )
 
         for line in lines {
@@ -401,7 +401,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
             let isSummerMarker = line.uppercased().contains("JULIO Y AGOSTO")
             let hasTimes = TimetableParserUtils.hasTimes(line)
 
-            if let newDayType = newDayType {
+            if let newDayType {
                 state.currentDayType = newDayType
                 state.isSummerSection = false
             } else if isSummerMarker, !hasTimes {
@@ -416,7 +416,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 if hasAsteriskTimes(line) {
                     let times = TimetableParserUtils.sortTimes(
                         state.incompleteJourney
-                            + TimetableParserUtils.extractTimes(line)
+                            + TimetableParserUtils.extractTimes(line),
                     )
 
                     let isWeekday = state.currentDayType == .weekday
@@ -431,7 +431,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         let updated = updateTimetables(
                             currentTimetables,
                             times: times,
-                            seasonal: state.seasonal
+                            seasonal: state.seasonal,
                         )
                         if isWeekday {
                             state.reverseRouteWeekdayTimetables = updated
@@ -444,11 +444,11 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         let lastIndex = reverseCount - 1
                         let filtered = currentTimetables.enumerated().filter {
                             $0.offset != lastIndex
-                        }.map { $0.element }
+                        }.map(\.element)
                         let updated = updateTimetables(
                             filtered,
                             times: times,
-                            seasonal: state.seasonal
+                            seasonal: state.seasonal,
                         )
                         var merged = currentTimetables
                         for i in 0 ..< reverseCount {
@@ -468,18 +468,18 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         let lastIndex = reverseCount - 1
                         let schoolIndex =
                             Self.m4ReverseRoute.firstIndex(
-                                of: Stops.paseoCabanillas
+                                of: Stops.paseoCabanillas,
                             ) ?? -1
                         let filtered = currentTimetables.enumerated()
                             .filter {
                                 $0.offset != lastIndex
                                     && $0.offset != schoolIndex
                             }
-                            .map { $0.element }
+                            .map(\.element)
                         let updated = updateTimetables(
                             filtered,
                             times: times,
-                            seasonal: state.seasonal
+                            seasonal: state.seasonal,
                         )
                         var merged = currentTimetables
                         var srcIdx = 0
@@ -500,7 +500,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 } else {
                     let times = TimetableParserUtils.sortTimes(
                         state.incompleteJourney
-                            + TimetableParserUtils.extractTimes(line)
+                            + TimetableParserUtils.extractTimes(line),
                     )
 
                     let isWeekday = state.currentDayType == .weekday
@@ -515,7 +515,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         let updated = updateTimetables(
                             currentTimetables,
                             times: times,
-                            seasonal: state.seasonal
+                            seasonal: state.seasonal,
                         )
                         if isWeekday {
                             state.regularRouteWeekdayTimetables = updated
@@ -527,7 +527,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                     case regularCount - 1:
                         let schoolIndex =
                             Self.m4RegularRoute.firstIndex(
-                                of: Stops.paseoCabanillas
+                                of: Stops.paseoCabanillas,
                             ) ?? -1
                         let filtered = currentTimetables.filter {
                             $0.stopId != Stops.paseoCabanillas.id
@@ -535,7 +535,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         let updated = updateTimetables(
                             filtered,
                             times: times,
-                            seasonal: state.seasonal
+                            seasonal: state.seasonal,
                         )
                         var merged = currentTimetables
                         for i in 0 ..< regularCount {
@@ -556,7 +556,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
                     default:
                         DebugConfig.debugPrint(
-                            "Incomplete route, accumulating..."
+                            "Incomplete route, accumulating...",
                         )
                         state.incompleteJourney = times
                     }

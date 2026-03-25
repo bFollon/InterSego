@@ -20,8 +20,8 @@ import SwiftUI
 struct RouteStopsView: View {
     let route: BusRoute
     let views: [RouteView]
-    var initialViewId: String? = nil
-    var onAllRoutesSelected: (() -> Void)? = nil
+    var initialViewId: String?
+    var onAllRoutesSelected: (() -> Void)?
     let onStopSelected: (BusStop, String) -> Void
     let onMapSelected: (String) -> Void
 
@@ -145,7 +145,7 @@ struct RouteStopsView: View {
 
                     ForEach(Array(stops.enumerated()), id: \.offset) { index, viewStop in
                         // Extended section separator
-                        if hasExtendedStops && index > 0 {
+                        if hasExtendedStops, index > 0 {
                             let prevIsExtended = stops[index - 1].isExtendedOnly
                             let currIsExtended = viewStop.isExtendedOnly
                             if prevIsExtended != currIsExtended {
@@ -157,7 +157,7 @@ struct RouteStopsView: View {
                             stop: viewStop.stop,
                             isExtended: viewStop.isExtendedOnly,
                             isFirst: index == 0,
-                            isLast: index == stops.count - 1
+                            isLast: index == stops.count - 1,
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {
@@ -225,7 +225,7 @@ struct TabChip: View {
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1),
                 )
         }
         .buttonStyle(.plain)
@@ -251,7 +251,7 @@ struct StopRowView: View {
                 isFirst: isFirst,
                 isLast: isLast,
                 isExtended: isExtended,
-                lineColor: lineColor
+                lineColor: lineColor,
             )
             .frame(width: 40)
 
@@ -348,7 +348,7 @@ struct RouteLineIndicator: View {
         context.stroke(
             path,
             with: .color(color),
-            style: StrokeStyle(lineWidth: 4, dash: [6, 4])
+            style: StrokeStyle(lineWidth: 4, dash: [6, 4]),
         )
     }
 }

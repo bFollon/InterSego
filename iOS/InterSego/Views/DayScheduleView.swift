@@ -79,9 +79,9 @@ struct DayScheduleView: View {
 
     private var dayTypeLabel: String {
         switch overrideDayType ?? (currentWeekday == 7 ? .saturday : currentWeekday == 1 ? .sunday : .weekday) {
-        case .saturday, .weekend: return "Sábado"
-        case .sunday, .holiday: return "Domingo"
-        default: return "Lunes a Viernes"
+        case .saturday, .weekend: "Sábado"
+        case .sunday, .holiday: "Domingo"
+        default: "Lunes a Viernes"
         }
     }
 
@@ -179,7 +179,7 @@ struct DayScheduleView: View {
                             DayScheduleTimelineRow(
                                 departure: departure,
                                 selectedVariantLabel: selectedVariantLabel,
-                                isLast: index == departures.count - 1 && markerIndex <= departures.count - 1
+                                isLast: index == departures.count - 1 && markerIndex <= departures.count - 1,
                             )
                         }
 
@@ -220,19 +220,19 @@ struct DayScheduleView: View {
 
 private func dayTypesForToday(_ weekday: Int) -> Set<DayType> {
     switch weekday {
-    case 7: return [.saturday, .weekend]
-    case 1: return [.sunday, .weekend, .holiday]
-    default: return [.weekday]
+    case 7: [.saturday, .weekend]
+    case 1: [.sunday, .weekend, .holiday]
+    default: [.weekday]
     }
 }
 
 private func dayTypesFor(_ dayType: DayType) -> Set<DayType> {
     switch dayType {
-    case .saturday: return [.saturday, .weekend]
-    case .sunday: return [.sunday, .weekend, .holiday]
-    case .weekend: return [.weekend, .saturday, .sunday]
-    case .holiday: return [.holiday, .sunday, .weekend]
-    default: return [.weekday]
+    case .saturday: [.saturday, .weekend]
+    case .sunday: [.sunday, .weekend, .holiday]
+    case .weekend: [.weekend, .saturday, .sunday]
+    case .holiday: [.holiday, .sunday, .weekend]
+    default: [.weekday]
     }
 }
 
@@ -245,34 +245,34 @@ private enum DayScheduleTimeOfDay {
 
     var label: String {
         switch self {
-        case .morning: return "Mañana"
-        case .afternoon: return "Tarde"
-        case .evening: return "Noche"
+        case .morning: "Mañana"
+        case .afternoon: "Tarde"
+        case .evening: "Noche"
         }
     }
 
     var icon: String {
         switch self {
-        case .morning: return "sun.max.fill"
-        case .afternoon: return "sun.haze.fill"
-        case .evening: return "moon.fill"
+        case .morning: "sun.max.fill"
+        case .afternoon: "sun.haze.fill"
+        case .evening: "moon.fill"
         }
     }
 
     var color: Color {
         switch self {
-        case .morning: return .orange
-        case .afternoon: return .blue
-        case .evening: return .indigo
+        case .morning: .orange
+        case .afternoon: .blue
+        case .evening: .indigo
         }
     }
 }
 
 private func getDayScheduleTimeOfDay(_ hour: Int) -> DayScheduleTimeOfDay {
     switch hour {
-    case 6 ... 12: return .morning
-    case 13 ... 19: return .afternoon
-    default: return .evening
+    case 6 ... 12: .morning
+    case 13 ... 19: .afternoon
+    default: .evening
     }
 }
 

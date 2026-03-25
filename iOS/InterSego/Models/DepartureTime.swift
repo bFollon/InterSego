@@ -85,7 +85,7 @@ struct DepartureTime: Codable, Comparable, Hashable {
     static func clusterDepartures(
         _ anchorTimes: [DepartureTime],
         stopCount: Int,
-        offsetMinutes: Int = 2
+        offsetMinutes: Int = 2,
     ) -> [[DepartureTime]] {
         (0 ..< stopCount).map { index in
             anchorTimes.map { anchor in
@@ -93,7 +93,7 @@ struct DepartureTime: Codable, Comparable, Hashable {
                 return DepartureTime(
                     hour: (totalMinutes / 60) % 24,
                     minute: totalMinutes % 60,
-                    seasonalAvailability: anchor.seasonalAvailability
+                    seasonalAvailability: anchor.seasonalAvailability,
                 )
             }
         }

@@ -38,7 +38,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M3"]),
         mode: .production,
-        version: "1.0"
+        version: "1.0",
     )
 
     // MARK: - Directions
@@ -54,25 +54,25 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-estacion-bus",
             name: "Estación de Autobuses",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
         static let iglesiaStTomas = BusStop(
             id: "m3-iglesia-sto-tomas",
             name: "Iglesia Santo Tomás",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let frenteBarNorte = BusStop(
             id: "m3-frente-bar-norte",
             name: "Frente Bar Norte",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let plazaToros = BusStop(
             id: "m3-plaza-toros",
             name: "Plaza de Toros",
             area: "Segovia capital",
-            coordinates: "40.942093, -4.107603"
+            coordinates: "40.942093, -4.107603",
         )
 
         /// Route stops
@@ -80,43 +80,43 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-urb-carrascalejo",
             name: "Urb. Carrascalejo",
             area: "Carrascalejo",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let parqueRobledo = BusStop(
             id: "m3-parque-robledo",
             name: "Parque Robledo",
             area: "Robledo",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let laGranja = BusStop(
             id: "m3-la-granja",
             name: "La Granja (Pta de Segovia)",
             area: "La Granja",
-            coordinates: "40.901389, -4.003333"
+            coordinates: "40.901389, -4.003333",
         )
         static let valsain = BusStop(
             id: "m3-valsain",
             name: "Valsain (La Pradera)",
             area: "Valsaín",
-            coordinates: "40.877500, -4.019444"
+            coordinates: "40.877500, -4.019444",
         )
         static let bocaDelAsno = BusStop(
             id: "m3-boca-del-asno",
             name: "Boca del Asno",
             area: "Valsaín",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let puenteMosquitos = BusStop(
             id: "m3-puente-mosquitos",
             name: "Puente de los Mosquitos",
             area: "Navacerrada",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let navacerrada = BusStop(
             id: "m3-navacerrada",
             name: "Navacerrada",
             area: "Navacerrada",
-            coordinates: "40.780833, -4.008056"
+            coordinates: "40.780833, -4.008056",
         )
 
         /// Segovia cluster — inbound (return) order: reversed cluster + distinct IDs
@@ -124,25 +124,25 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-plaza-toros-in",
             name: "Plaza de Toros",
             area: "Segovia capital",
-            coordinates: "40.942093, -4.107603"
+            coordinates: "40.942093, -4.107603",
         )
         static let frenteBarNorteIn = BusStop(
             id: "m3-frente-bar-norte-in",
             name: "Frente Bar Norte",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let iglesiaStTomasIn = BusStop(
             id: "m3-iglesia-sto-tomas-in",
             name: "Iglesia Santo Tomás",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0"
+            coordinates: "0.0, 0.0",
         )
         static let estacionBusIn = BusStop(
             id: "m3-estacion-bus-in",
             name: "Estación de Autobuses",
             area: "Segovia capital",
-            coordinates: "40.944768, -4.121823"
+            coordinates: "40.944768, -4.121823",
         )
     }
 
@@ -190,13 +190,13 @@ class M3Parser: CapableParser, RouteStopsProvider {
                     id: "regular",
                     label: Self.directionOutbound,
                     stops: Self.m3Outbound,
-                    direction: Self.directionOutbound
+                    direction: Self.directionOutbound,
                 ),
                 RouteVariant(
                     id: "reverse",
                     label: Self.directionInbound,
                     stops: Self.m3Inbound,
-                    direction: Self.directionInbound
+                    direction: Self.directionInbound,
                 ),
             ]
         default:
@@ -219,7 +219,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }
@@ -239,14 +239,14 @@ class M3Parser: CapableParser, RouteStopsProvider {
                 views: saturdayViews,
                 initialViewId: "regular",
                 timetableDayType: .saturday,
-                isActiveToday: isSaturday
+                isActiveToday: isSaturday,
             ),
         ]
     }
 
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint(
-            "M3Parser: returning hardcoded timetable (PDF parsing bypassed)"
+            "M3Parser: returning hardcoded timetable (PDF parsing bypassed)",
         )
         return buildStaticTimetables()
     }
@@ -271,7 +271,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
         let segoviaOut = DepartureTime.clusterDepartures(
             [t(8, 30), t(16, 0)],
             stopCount: 4,
-            offsetMinutes: 2
+            offsetMinutes: 2,
         )
         let outDeps: [[DepartureTime]] = [
             segoviaOut[0], // ESTACION_BUS (anchor)
@@ -296,7 +296,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
         let segoviaIn = DepartureTime.clusterDepartures(
             [t(10, 14), t(17, 44)],
             stopCount: 4,
-            offsetMinutes: 2
+            offsetMinutes: 2,
         )
         let inDeps: [[DepartureTime]] = [
             [t(9, 30), t(17, 0)], // NAVACERRADA
@@ -316,13 +316,13 @@ class M3Parser: CapableParser, RouteStopsProvider {
             stops: Self.m3Outbound,
             dayType: .saturday,
             direction: Self.directionOutbound,
-            deps: outDeps
+            deps: outDeps,
         )
             + buildTimetables(
                 stops: Self.m3Inbound,
                 dayType: .saturday,
                 direction: Self.directionInbound,
-                deps: inDeps
+                deps: inDeps,
             )
     }
 
@@ -336,7 +336,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
         stops: [BusStop],
         dayType: DayType,
         direction: String,
-        deps: [[DepartureTime]]
+        deps: [[DepartureTime]],
     ) -> [BusTimetable] {
         stops.enumerated().map { i, stop in
             BusTimetable(
@@ -344,7 +344,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
                 stopId: stop.id,
                 dayType: dayType,
                 departures: deps[i],
-                direction: direction
+                direction: direction,
             )
         }
     }

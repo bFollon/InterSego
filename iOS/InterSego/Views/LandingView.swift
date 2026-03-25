@@ -35,8 +35,8 @@ struct LandingView: View {
                         LinearGradient(
                             colors: [.green, .blue],
                             startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                            endPoint: .trailing,
+                        ),
                     )
 
                 Text("Interurbanos de Segovia")
@@ -124,7 +124,7 @@ private struct BusLineIcon: View {
             context.stroke(
                 linePath,
                 with: .color(stopColor),
-                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round),
             )
 
             // 4 evenly distributed stops
@@ -135,7 +135,7 @@ private struct BusLineIcon: View {
                     x: center.x - stopRadius,
                     y: center.y - stopRadius,
                     width: stopRadius * 2,
-                    height: stopRadius * 2
+                    height: stopRadius * 2,
                 )
                 context.fill(Path(ellipseIn: rect), with: .color(stopColor))
             }

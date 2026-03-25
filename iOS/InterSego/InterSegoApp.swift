@@ -87,7 +87,7 @@ struct ContentView: View {
                                 }
                             },
                             isSearchingClosestStop: isSearchingClosestStop,
-                            closestStopError: closestStopError
+                            closestStopError: closestStopError,
                         )
                     }
                 }
@@ -97,7 +97,7 @@ struct ContentView: View {
                         supportedRoutes: supportedRoutes,
                         onRouteSelected: { route in
                             navigationPath.append(route)
-                        }
+                        },
                     )
                 }
                 .navigationDestination(for: BusRoute.self) { route in
@@ -108,7 +108,7 @@ struct ContentView: View {
                         route: selection.route,
                         stop: selection.stop,
                         routeViews: selection.routeViews,
-                        currentViewId: selection.currentViewId
+                        currentViewId: selection.currentViewId,
                     )
                 }
                 .navigationDestination(for: DayScheduleSelection.self) { selection in
@@ -117,7 +117,7 @@ struct ContentView: View {
                         stop: selection.stop,
                         direction: selection.direction,
                         selectedVariantLabel: selection.departureLabel,
-                        overrideDayType: selection.overrideDayType
+                        overrideDayType: selection.overrideDayType,
                     )
                 }
                 .navigationDestination(for: MapSelection.self) { selection in
@@ -125,13 +125,13 @@ struct ContentView: View {
                         route: selection.route,
                         initialViewId: selection.initialViewId,
                         fallbackViews: selection.routeViews,
-                        navigationPath: $navigationPath
+                        navigationPath: $navigationPath,
                     )
                 }
                 .navigationDestination(for: AllRoutesSelection.self) { selection in
                     AllRoutesContainer(
                         route: selection.route,
-                        navigationPath: $navigationPath
+                        navigationPath: $navigationPath,
                     )
                 }
                 .navigationDestination(for: AllRoutesMapSelection.self) { selection in
@@ -139,7 +139,7 @@ struct ContentView: View {
                         route: selection.route,
                         initialViewId: selection.initialViewId,
                         initialEntryId: selection.initialEntryId,
-                        navigationPath: $navigationPath
+                        navigationPath: $navigationPath,
                     )
                 }
             }
@@ -183,16 +183,16 @@ struct ContentView: View {
                                 route: route,
                                 stop: stop,
                                 routeViews: resolvedViews,
-                                currentViewId: viewId
+                                currentViewId: viewId,
                             ))
                         },
                         onMapSelected: { viewId in
                             navigationPath.append(MapSelection(
                                 route: route,
                                 routeViews: resolvedViews,
-                                initialViewId: viewId
+                                initialViewId: viewId,
                             ))
-                        }
+                        },
                     )
                 } else {
                     ProgressView("Cargando paradas...")
@@ -201,7 +201,7 @@ struct ContentView: View {
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
                 let todayViews = await PDFProcessingService.shared.getRouteViews(
-                    routeId: route.id, dayType: todayDayType
+                    routeId: route.id, dayType: todayDayType,
                 )
                 showAllRoutes = entries.count > 1 || todayViews.isEmpty
                 views = todayViews
@@ -226,9 +226,9 @@ struct ContentView: View {
                         route: route,
                         stop: stop,
                         routeViews: fallbackViews,
-                        currentViewId: viewId
+                        currentViewId: viewId,
                     ))
-                }
+                },
             )
         }
     }
@@ -266,7 +266,7 @@ struct ContentView: View {
                                     route: route,
                                     stop: stop,
                                     routeViews: views,
-                                    currentViewId: viewId
+                                    currentViewId: viewId,
                                 ))
                             } else {
                                 let direction = views.first { $0.id == viewId }?.direction ?? ""
@@ -275,7 +275,7 @@ struct ContentView: View {
                                     stop: stop,
                                     direction: direction,
                                     departureLabel: entry?.label,
-                                    overrideDayType: entry?.timetableDayType
+                                    overrideDayType: entry?.timetableDayType,
                                 ))
                             }
                         },
@@ -283,9 +283,9 @@ struct ContentView: View {
                             navigationPath.append(AllRoutesMapSelection(
                                 route: route,
                                 initialViewId: viewId,
-                                initialEntryId: selectedEntryId
+                                initialEntryId: selectedEntryId,
                             ))
-                        }
+                        },
                     )
                 } else {
                     ProgressView("Cargando rutas...")
@@ -335,7 +335,7 @@ struct ContentView: View {
                             route: route,
                             stop: stop,
                             routeViews: views,
-                            currentViewId: viewId
+                            currentViewId: viewId,
                         ))
                     } else {
                         let direction = views.first { $0.id == viewId }?.direction ?? ""
@@ -344,10 +344,10 @@ struct ContentView: View {
                             stop: stop,
                             direction: direction,
                             departureLabel: entry?.label,
-                            overrideDayType: entry?.timetableDayType
+                            overrideDayType: entry?.timetableDayType,
                         ))
                     }
-                }
+                },
             )
             .task {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)

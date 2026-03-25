@@ -76,7 +76,7 @@ enum PDFTextExtractor {
             let code = Int(scalar.value)
             if scalar == "\u{FFFD}" {
                 replacementChars += 1
-            } else if code < 0x20 && code != 0x0A && code != 0x0D {
+            } else if code < 0x20, code != 0x0A, code != 0x0D {
                 controlChars += 1
             }
         }

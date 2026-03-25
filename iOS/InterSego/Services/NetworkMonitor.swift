@@ -30,7 +30,7 @@ final class NetworkMonitor: @unchecked Sendable {
         _currentPath = monitor.currentPath
         monitor.pathUpdateHandler = { [weak self] path in
             guard let self else { return }
-            self.lock.withLock { self._currentPath = path }
+            lock.withLock { self._currentPath = path }
             DebugConfig.debugPrint("NetworkMonitor: Status changed - \(path.status)")
         }
         monitor.start(queue: queue)

@@ -27,8 +27,8 @@ struct RouteMapView: View {
     let route: BusRoute
     let routeViews: [RouteView]
     let initialViewId: String
-    var routeEntries: [RouteSelectorEntry]? = nil
-    var selectedEntryId: String? = nil
+    var routeEntries: [RouteSelectorEntry]?
+    var selectedEntryId: String?
     var onEntrySelected: (RouteSelectorEntry) -> Void = { _ in }
     var allRoutesMode: Bool = false
     let onStopSelected: (BusStop, String) -> Void
@@ -42,7 +42,7 @@ struct RouteMapView: View {
     }
 
     private var stopsWithCoords: [BusStop] {
-        currentView?.stops.map { $0.stop }.filter { $0.hasCoordinates } ?? []
+        currentView?.stops.map(\.stop).filter(\.hasCoordinates) ?? []
     }
 
     /// Road-following coordinates if loaded, otherwise straight lines between stops.
@@ -61,7 +61,7 @@ struct RouteMapView: View {
                 RouteEntryDropdown(
                     entries: entries,
                     selectedEntryId: entryId,
-                    onEntrySelected: onEntrySelected
+                    onEntrySelected: onEntrySelected,
                 )
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -138,7 +138,7 @@ struct RouteMapView: View {
         guard let url = Bundle.main.url(
             forResource: "\(routeId)-\(viewId)",
             withExtension: "json",
-            subdirectory: "RoutePolylines"
+            subdirectory: "RoutePolylines",
         ),
             let data = try? Data(contentsOf: url),
             let pairs = try? JSONDecoder().decode([[Double]].self, from: data)
@@ -161,13 +161,13 @@ struct RouteMapView: View {
         if coords.count == 1 {
             cameraPosition = .region(MKCoordinateRegion(
                 center: coords[0],
-                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01),
             ))
             return
         }
 
-        let lats = coords.map { $0.latitude }
-        let lons = coords.map { $0.longitude }
+        let lats = coords.map(\.latitude)
+        let lons = coords.map(\.longitude)
         let minLat = lats.min()!
         let maxLat = lats.max()!
         let minLon = lons.min()!
@@ -176,11 +176,11 @@ struct RouteMapView: View {
         let padding = 0.3
         let center = CLLocationCoordinate2D(
             latitude: (minLat + maxLat) / 2,
-            longitude: (minLon + maxLon) / 2
+            longitude: (minLon + maxLon) / 2,
         )
         let span = MKCoordinateSpan(
             latitudeDelta: (maxLat - minLat) * (1 + padding),
-            longitudeDelta: (maxLon - minLon) * (1 + padding)
+            longitudeDelta: (maxLon - minLon) * (1 + padding),
         )
         withAnimation(.easeInOut(duration: 0.4)) {
             cameraPosition = .region(MKCoordinateRegion(center: center, span: span))

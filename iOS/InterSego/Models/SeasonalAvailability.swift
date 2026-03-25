@@ -40,23 +40,23 @@ enum SeasonalAvailability: String, Codable {
     /// Short Spanish label shown in the UI alongside a departure time, or nil for year-round service.
     var displayLabel: String? {
         switch self {
-        case .yearRound: return nil
-        case .monFriOnly: return "Lun-Vie"
-        case .friOnly: return "Viernes"
-        case .juneToSeptOnly: return "Jun-Sep"
-        case .summerOnly: return "Jul-Ago"
-        case .schoolOnly: return "Escolar"
+        case .yearRound: nil
+        case .monFriOnly: "Lun-Vie"
+        case .friOnly: "Viernes"
+        case .juneToSeptOnly: "Jun-Sep"
+        case .summerOnly: "Jul-Ago"
+        case .schoolOnly: "Escolar"
         }
     }
 
     func runsIn(month: Int, weekday: Int? = nil, summerMonths: Set<Int> = defaultSummerMonths) -> Bool {
         switch self {
-        case .yearRound: return true
-        case .summerOnly: return summerMonths.contains(month)
-        case .juneToSeptOnly: return Self.juneToSeptMonths.contains(month)
-        case .schoolOnly: return !summerMonths.contains(month)
-        case .monFriOnly: return weekday == nil || weekday == 2 || weekday == 6 // Mon=2, Fri=6
-        case .friOnly: return weekday == nil || weekday == 6
+        case .yearRound: true
+        case .summerOnly: summerMonths.contains(month)
+        case .juneToSeptOnly: Self.juneToSeptMonths.contains(month)
+        case .schoolOnly: !summerMonths.contains(month)
+        case .monFriOnly: weekday == nil || weekday == 2 || weekday == 6 // Mon=2, Fri=6
+        case .friOnly: weekday == nil || weekday == 6
         }
     }
 }

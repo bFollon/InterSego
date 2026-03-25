@@ -22,9 +22,9 @@ import SwiftUI
 
 private func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
     switch weekday {
-    case 7: return [.saturday, .weekend] // Saturday
-    case 1: return [.sunday, .weekend, .holiday] // Sunday
-    default: return [.weekday]
+    case 7: [.saturday, .weekend] // Saturday
+    case 1: [.sunday, .weekend, .holiday] // Sunday
+    default: [.weekday]
     }
 }
 
@@ -37,34 +37,34 @@ private enum TimeOfDay {
 
     var label: String {
         switch self {
-        case .morning: return "Mañana"
-        case .afternoon: return "Tarde"
-        case .evening: return "Noche"
+        case .morning: "Mañana"
+        case .afternoon: "Tarde"
+        case .evening: "Noche"
         }
     }
 
     var icon: String {
         switch self {
-        case .morning: return "sun.max.fill"
-        case .afternoon: return "sun.haze.fill"
-        case .evening: return "moon.fill"
+        case .morning: "sun.max.fill"
+        case .afternoon: "sun.haze.fill"
+        case .evening: "moon.fill"
         }
     }
 
     var color: Color {
         switch self {
-        case .morning: return .orange
-        case .afternoon: return .blue
-        case .evening: return .indigo
+        case .morning: .orange
+        case .afternoon: .blue
+        case .evening: .indigo
         }
     }
 }
 
 private func getTimeOfDay(_ hour: Int) -> TimeOfDay {
     switch hour {
-    case 6 ... 12: return .morning
-    case 13 ... 19: return .afternoon
-    default: return .evening
+    case 6 ... 12: .morning
+    case 13 ... 19: .afternoon
+    default: .evening
     }
 }
 
@@ -144,7 +144,7 @@ struct NextDepartureView: View {
             return DepartureInfo(
                 departure: upcoming.first,
                 following: Array(upcoming.dropFirst().prefix(5)),
-                daysAhead: 0
+                daysAhead: 0,
             )
         }
 
@@ -163,7 +163,7 @@ struct NextDepartureView: View {
                 return DepartureInfo(
                     departure: departures.first,
                     following: Array(departures.dropFirst().prefix(5)),
-                    daysAhead: daysAhead
+                    daysAhead: daysAhead,
                 )
             }
         }
@@ -235,7 +235,7 @@ struct NextDepartureView: View {
                         departure: next,
                         currentTime: currentTime,
                         selectedVariantLabel: selectedVariantLabel,
-                        daysAhead: info.daysAhead
+                        daysAhead: info.daysAhead,
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -251,7 +251,7 @@ struct NextDepartureView: View {
                         route: route,
                         stop: stop,
                         direction: direction,
-                        departureLabel: selectedVariantLabel
+                        departureLabel: selectedVariantLabel,
                     )) {
                         HStack(spacing: 8) {
                             Image(systemName: "clock.arrow.2.circlepath")
@@ -279,7 +279,7 @@ struct NextDepartureView: View {
 
                         DepartureTimeline(
                             departures: info.following,
-                            selectedVariantLabel: selectedVariantLabel
+                            selectedVariantLabel: selectedVariantLabel,
                         )
                         .padding(.horizontal, 16)
                     }
@@ -390,7 +390,7 @@ private struct StopHeroHeader: View {
             if let lat = stop.resolvedLatitude, let lon = stop.resolvedLongitude {
                 Map(initialPosition: .region(MKCoordinateRegion(
                     center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-                    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                    span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005),
                 ))) {
                     Marker(stop.name, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
                 }
@@ -405,8 +405,8 @@ private struct StopHeroHeader: View {
             LinearGradient(
                 colors: [Color.accentColor.opacity(0.12), Color(.systemBackground)],
                 startPoint: .top,
-                endPoint: .bottom
-            )
+                endPoint: .bottom,
+            ),
         )
     }
 }
@@ -418,9 +418,9 @@ private struct FutureDayWarningCard: View {
 
     private var message: String {
         switch daysAhead {
-        case 1: return "No hay más autobuses hoy. Mostrando horario de mañana."
-        case 2: return "No hay más autobuses hoy ni mañana. Mostrando horario de pasado mañana."
-        default: return "No hay más autobuses en los próximos días. Mostrando próximo horario disponible."
+        case 1: "No hay más autobuses hoy. Mostrando horario de mañana."
+        case 2: "No hay más autobuses hoy ni mañana. Mostrando horario de pasado mañana."
+        default: "No hay más autobuses en los próximos días. Mostrando próximo horario disponible."
         }
     }
 

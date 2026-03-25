@@ -102,7 +102,7 @@ actor PDFCacheManager {
                 url: url,
                 lastModified: lastModified,
                 contentLength: contentLength,
-                etag: etag
+                etag: etag,
             )
         } catch {
             DebugConfig.debugError("Failed to check remote version for \(url)", error: error)

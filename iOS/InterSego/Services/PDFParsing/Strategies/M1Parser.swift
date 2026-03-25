@@ -40,7 +40,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
         mode: .production,
-        version: "1.6"
+        version: "1.6",
     )
 
     // MARK: - Directions
@@ -57,68 +57,68 @@ class M1Parser: CapableParser, RouteStopsProvider {
             id: "m1-segovia",
             name: "Estación de Autobuses",
             area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431"
+            coordinates: "40.944973, -4.122431",
         )
         static let poligono = BusStop(
             id: "m1-poligono",
             name: "Polígono Industrial",
             area: "Valverde del Majano",
-            coordinates: "40.957976, -4.198156"
+            coordinates: "40.957976, -4.198156",
         )
         static let poligono2 = BusStop(
             id: "m1-poligono-2",
             name: "Polígono Industrial 2",
             area: "Valverde del Majano",
-            coordinates: "40.957554, -4.206457"
+            coordinates: "40.957554, -4.206457",
         )
         static let casino = BusStop(
             id: "m1-casino",
             name: "Casino",
             area: "Casino de la unión",
-            coordinates: "40.965154, -4.209251"
+            coordinates: "40.965154, -4.209251",
         )
         static let valverde = BusStop(
             id: "m1-valverde",
             name: "Valverde de Majano",
             area: "Valverde del Majano",
-            coordinates: "40.956274, -4.235343"
+            coordinates: "40.956274, -4.235343",
         )
         static let abades = BusStop(
             id: "m1-abades",
             name: "Abades",
             area: "Abades",
-            coordinates: "40.915804, -4.267038"
+            coordinates: "40.915804, -4.267038",
         )
         static let martinMiguel = BusStop(
             id: "m1-martin-miguel",
             name: "Martín Miguel",
             area: "Martín Miguel",
-            coordinates: "40.951889, -4.268660"
+            coordinates: "40.951889, -4.268660",
         )
         static let garcillan = BusStop(
             id: "m1-garcillan",
             name: "Garcillán",
             area: "Garcillán",
-            coordinates: "40.976809, -4.264724"
+            coordinates: "40.976809, -4.264724",
         )
         /// Circular return stops — same physical locations, distinct IDs for route positioning
         static let segoviaReturn = BusStop(
             id: "m1-segovia-return",
             name: "Estación de Autobuses",
             area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431"
+            coordinates: "40.944973, -4.122431",
         )
         static let poligonoBIn = BusStop(
             id: "m1-poligono-b-in",
             name: "Polígono Industrial",
             area: "Valverde del Majano",
-            coordinates: "40.957976, -4.198156"
+            coordinates: "40.957976, -4.198156",
         )
         static let poligono2BIn = BusStop(
             id: "m1-poligono-2-b-in",
             name: "Polígono Industrial 2",
             area: "Valverde del Majano",
-            coordinates: "40.957554, -4.206457"
+            coordinates: "40.957554, -4.206457",
         )
     }
 
@@ -171,13 +171,13 @@ class M1Parser: CapableParser, RouteStopsProvider {
                     id: "circularA",
                     label: Self.directionCircularA,
                     stops: Self.m1SaturdayOutbound,
-                    direction: Self.directionCircularA
+                    direction: Self.directionCircularA,
                 ),
                 RouteVariant(
                     id: "circularB",
                     label: Self.directionCircularB,
                     stops: Self.m1SaturdayInbound,
-                    direction: Self.directionCircularB
+                    direction: Self.directionCircularB,
                 ),
             ]
         case .sunday:
@@ -188,13 +188,13 @@ class M1Parser: CapableParser, RouteStopsProvider {
                     id: "circularA",
                     label: Self.directionCircularA,
                     stops: Self.m1CircularAWeekday,
-                    direction: Self.directionCircularA
+                    direction: Self.directionCircularA,
                 ),
                 RouteVariant(
                     id: "circularB",
                     label: Self.directionCircularB,
                     stops: Self.m1CircularBWeekday,
-                    direction: Self.directionCircularB
+                    direction: Self.directionCircularB,
                 ),
             ]
         }
@@ -215,7 +215,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }
@@ -237,7 +237,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
                 views: weekdayViews,
                 initialViewId: "circularA",
                 timetableDayType: .weekday,
-                isActiveToday: isWeekday
+                isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
                 id: "entry-lv-b",
@@ -245,7 +245,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
                 views: weekdayViews,
                 initialViewId: "circularB",
                 timetableDayType: .weekday,
-                isActiveToday: isWeekday
+                isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
                 id: "entry-sab-a",
@@ -253,7 +253,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
                 views: saturdayViews,
                 initialViewId: "circularA",
                 timetableDayType: .saturday,
-                isActiveToday: isSaturday
+                isActiveToday: isSaturday,
             ),
             RouteSelectorEntry(
                 id: "entry-sab-b",
@@ -261,14 +261,14 @@ class M1Parser: CapableParser, RouteStopsProvider {
                 views: saturdayViews,
                 initialViewId: "circularB",
                 timetableDayType: .saturday,
-                isActiveToday: isSaturday
+                isActiveToday: isSaturday,
             ),
         ]
     }
 
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint(
-            "M1Parser: returning hardcoded timetable (PDF parsing bypassed)"
+            "M1Parser: returning hardcoded timetable (PDF parsing bypassed)",
         )
         return buildStaticTimetables()
     }
@@ -305,7 +305,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
                     t(14, 45), t(15, 20), t(18, 5), t(20, 55),
                 ],
                 stopCount: 2,
-                offsetMinutes: 2
+                offsetMinutes: 2,
             ) + [
                 // CASINO (6 — rows 1-3 and 8=15:15 are dashes; ★ = Jun–Sep only)
                 [
@@ -386,25 +386,25 @@ class M1Parser: CapableParser, RouteStopsProvider {
             stops: Self.m1CircularAWeekday,
             dayType: .weekday,
             direction: Self.directionCircularA,
-            deps: circADeps
+            deps: circADeps,
         )
             + buildTimetables(
                 stops: Self.m1CircularBWeekday,
                 dayType: .weekday,
                 direction: Self.directionCircularB,
-                deps: circBDeps
+                deps: circBDeps,
             )
             + buildTimetables(
                 stops: Self.m1SaturdayOutbound,
                 dayType: .saturday,
                 direction: Self.directionCircularA,
-                deps: satADeps
+                deps: satADeps,
             )
             + buildTimetables(
                 stops: Self.m1SaturdayInbound,
                 dayType: .saturday,
                 direction: Self.directionCircularB,
-                deps: satBDeps
+                deps: satBDeps,
             )
     }
 
@@ -418,7 +418,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
         stops: [BusStop],
         dayType: DayType,
         direction: String,
-        deps: [[DepartureTime]]
+        deps: [[DepartureTime]],
     ) -> [BusTimetable] {
         stops.enumerated().map { i, stop in
             BusTimetable(
@@ -426,7 +426,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
                 stopId: stop.id,
                 dayType: dayType,
                 departures: deps[i],
-                direction: direction
+                direction: direction,
             )
         }
     }

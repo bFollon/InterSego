@@ -26,11 +26,11 @@ enum ClosestStopError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .locationPermissionDenied:
-            return "Permiso de ubicación denegado. Actívalo en Ajustes → InterSego para usar esta función."
+            "Permiso de ubicación denegado. Actívalo en Ajustes → InterSego para usar esta función."
         case .locationUnavailable:
-            return "No se pudo obtener tu ubicación. Comprueba que el GPS esté activado e inténtalo de nuevo."
+            "No se pudo obtener tu ubicación. Comprueba que el GPS esté activado e inténtalo de nuevo."
         case .noStopsFound:
-            return "No se encontraron paradas disponibles en este momento."
+            "No se encontraron paradas disponibles en este momento."
         }
     }
 }
@@ -75,7 +75,7 @@ final class ClosestStopService {
                     candidates.append(StopCandidate(
                         route: route, stop: stop,
                         routeViews: views, viewId: view.id,
-                        distance: distance
+                        distance: distance,
                     ))
                 }
             }
@@ -103,7 +103,7 @@ final class ClosestStopService {
             route: winner.route,
             stop: winner.stop,
             routeViews: winner.routeViews,
-            currentViewId: winner.viewId
+            currentViewId: winner.viewId,
         )
     }
 
@@ -122,7 +122,7 @@ final class ClosestStopService {
 
             for timetable in stopTimetables {
                 guard let next = timetable.getNextDepartures(
-                    currentHour: hour, currentMinute: minute, limit: 1
+                    currentHour: hour, currentMinute: minute, limit: 1,
                 ).first else { continue }
 
                 let depTotalMinutes = next.hour * 60 + next.minute
@@ -165,7 +165,7 @@ private final class LocationCoordinator: NSObject, CLLocationManagerDelegate {
     }
 
     func requestLocation() async throws -> CLLocation {
-        return try await withCheckedThrowingContinuation { cont in
+        try await withCheckedThrowingContinuation { cont in
             self.continuation = cont
             switch manager.authorizationStatus {
             case .notDetermined:

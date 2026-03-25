@@ -42,7 +42,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M2"]),
         mode: .production,
-        version: "1.0"
+        version: "1.0",
     )
 
     // MARK: - Directions
@@ -58,50 +58,50 @@ class M2Parser: CapableParser, RouteStopsProvider {
             id: "m2-segovia",
             name: "Estación de Autobuses",
             area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431"
+            coordinates: "40.944973, -4.122431",
         )
         static let casino = BusStop(
             id: "m2-casino",
             name: "Casino",
             area: "Casino de la Unión",
-            coordinates: "40.965154, -4.209251"
+            coordinates: "40.965154, -4.209251",
         )
         static let hontanares = BusStop(
             id: "m2-hontanares",
             name: "Hontanares de Eresma",
             area: "Hontanares de Eresma",
-            coordinates: "40.983628, -4.204160"
+            coordinates: "40.983628, -4.204160",
         )
         static let losHuertos = BusStop(
             id: "m2-los-huertos",
             name: "Los Huertos",
             area: "Los Huertos",
-            coordinates: "41.009124, -4.219216"
+            coordinates: "41.009124, -4.219216",
         )
         static let valseca = BusStop(
             id: "m2-valseca",
             name: "Valseca",
             area: "Valseca",
-            coordinates: "40.999306, -4.174266"
+            coordinates: "40.999306, -4.174266",
         )
         /// Return-leg stops — same physical locations, distinct IDs for route positioning
         static let hontanaresToReturn = BusStop(
             id: "m2-hontanares-return",
             name: "Hontanares de Eresma",
             area: "Hontanares de Eresma",
-            coordinates: "40.983628, -4.204160"
+            coordinates: "40.983628, -4.204160",
         )
         static let casinoReturn = BusStop(
             id: "m2-casino-return",
             name: "Casino",
             area: "Casino de la Unión",
-            coordinates: "40.965154, -4.209251"
+            coordinates: "40.965154, -4.209251",
         )
         static let segoviaReturn = BusStop(
             id: "m2-segovia-return",
             name: "Estación de Autobuses",
             area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431"
+            coordinates: "40.944973, -4.122431",
         )
     }
 
@@ -146,13 +146,13 @@ class M2Parser: CapableParser, RouteStopsProvider {
                     id: "circularA",
                     label: Self.directionCircularA,
                     stops: Self.m2CircularA,
-                    direction: Self.directionCircularA
+                    direction: Self.directionCircularA,
                 ),
                 RouteVariant(
                     id: "circularB",
                     label: Self.directionCircularB,
                     stops: Self.m2CircularB,
-                    direction: Self.directionCircularB
+                    direction: Self.directionCircularB,
                 ),
             ]
         }
@@ -173,7 +173,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
+                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
             )
         }
     }
@@ -193,14 +193,14 @@ class M2Parser: CapableParser, RouteStopsProvider {
                 views: weekdayViews,
                 initialViewId: "circularA",
                 timetableDayType: .weekday,
-                isActiveToday: isWeekday
+                isActiveToday: isWeekday,
             ),
         ]
     }
 
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint(
-            "M2Parser: returning hardcoded timetable (PDF parsing bypassed)"
+            "M2Parser: returning hardcoded timetable (PDF parsing bypassed)",
         )
         return buildStaticTimetables()
     }
@@ -245,13 +245,13 @@ class M2Parser: CapableParser, RouteStopsProvider {
             stops: Self.m2CircularA,
             dayType: .weekday,
             direction: Self.directionCircularA,
-            deps: circADeps
+            deps: circADeps,
         )
             + buildTimetables(
                 stops: Self.m2CircularB,
                 dayType: .weekday,
                 direction: Self.directionCircularB,
-                deps: circBDeps
+                deps: circBDeps,
             )
     }
 
@@ -265,7 +265,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
         stops: [BusStop],
         dayType: DayType,
         direction: String,
-        deps: [[DepartureTime]]
+        deps: [[DepartureTime]],
     ) -> [BusTimetable] {
         stops.enumerated().map { i, stop in
             BusTimetable(
@@ -273,7 +273,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
                 stopId: stop.id,
                 dayType: dayType,
                 departures: deps[i],
-                direction: direction
+                direction: direction,
             )
         }
     }

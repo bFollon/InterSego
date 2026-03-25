@@ -58,7 +58,7 @@ struct BusTimetable: Codable, Identifiable {
             seasonalDepartures()
                 .filter { $0.isFuture(currentHour: currentHour, currentMinute: currentMinute) }
                 .sorted()
-                .prefix(limit)
+                .prefix(limit),
         )
     }
 
@@ -67,13 +67,12 @@ struct BusTimetable: Codable, Identifiable {
     }
 
     func displayDescription() -> String {
-        let dayTypeStr: String
-        switch dayType {
-        case .weekday: dayTypeStr = "Laborables"
-        case .weekend: dayTypeStr = "Fines de semana"
-        case .holiday: dayTypeStr = "Festivos"
-        case .saturday: dayTypeStr = "Sábado"
-        case .sunday: dayTypeStr = "Domingo"
+        let dayTypeStr = switch dayType {
+        case .weekday: "Laborables"
+        case .weekend: "Fines de semana"
+        case .holiday: "Festivos"
+        case .saturday: "Sábado"
+        case .sunday: "Domingo"
         }
 
         if let direction {

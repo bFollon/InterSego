@@ -89,7 +89,7 @@ actor TimetableService {
         dayType: DayType,
         currentHour: Int,
         currentMinute: Int,
-        limit: Int = 5
+        limit: Int = 5,
     ) -> [DepartureTime] {
         guard let timetable = findTimetableForDayType(timetables, dayType: dayType) else { return [] }
         return timetable.getNextDepartures(currentHour: currentHour, currentMinute: currentMinute, limit: limit)

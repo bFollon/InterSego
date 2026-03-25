@@ -99,7 +99,7 @@ private struct RouteCardView: View {
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemGroupedBackground))
-                .opacity(isAvailable ? 1.0 : 0.5)
+                .opacity(isAvailable ? 1.0 : 0.5),
         )
         .shadow(color: .black.opacity(isAvailable ? 0.1 : 0), radius: 4, y: 2)
         .opacity(isAvailable ? 1.0 : 0.6)
