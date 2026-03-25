@@ -256,7 +256,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 name = "Jardinillos de San Roque",
                 details = "Frente a Policía Nacional",
                 coordinates = "40.944361, -4.120831",
-                area = "Segovia"
+                area = "Segovia capital"
             )
         }
 

@@ -66,10 +66,10 @@ class M3Parser : CapableParser, RouteStopsProvider {
 
         private object Stops {
             // Segovia cluster — outbound order
-            val ESTACION_BUS      = BusStop(id = "m3-estacion-bus",      name = "Estación de Autobuses",   area = "Segovia",       coordinates = "40.944768, -4.121823")
-            val IGLESIA_STO_TOMAS = BusStop(id = "m3-iglesia-sto-tomas", name = "Iglesia Santo Tomás",     area = "Segovia",       coordinates = "0.0, 0.0")
-            val FRENTE_BAR_NORTE  = BusStop(id = "m3-frente-bar-norte",  name = "Frente Bar Norte",        area = "Segovia",       coordinates = "0.0, 0.0")
-            val PLAZA_TOROS       = BusStop(id = "m3-plaza-toros",        name = "Plaza de Toros",          area = "Segovia",       coordinates = "40.942093, -4.107603")
+            val ESTACION_BUS      = BusStop(id = "m3-estacion-bus",      name = "Estación de Autobuses",   area = "Segovia capital",       coordinates = "40.944768, -4.121823")
+            val IGLESIA_STO_TOMAS = BusStop(id = "m3-iglesia-sto-tomas", name = "Iglesia Santo Tomás",     area = "Segovia capital",       coordinates = "0.0, 0.0")
+            val FRENTE_BAR_NORTE  = BusStop(id = "m3-frente-bar-norte",  name = "Frente Bar Norte",        area = "Segovia capital",       coordinates = "0.0, 0.0")
+            val PLAZA_TOROS       = BusStop(id = "m3-plaza-toros",        name = "Plaza de Toros",          area = "Segovia capital",       coordinates = "40.942093, -4.107603")
 
             // Route stops
             val URB_CARRASCALEJO  = BusStop(id = "m3-urb-carrascalejo",  name = "Urb. Carrascalejo",       area = "Carrascalejo",  coordinates = "0.0, 0.0")
@@ -81,10 +81,10 @@ class M3Parser : CapableParser, RouteStopsProvider {
             val NAVACERRADA       = BusStop(id = "m3-navacerrada",       name = "Navacerrada",             area = "Navacerrada",   coordinates = "40.780833, -4.008056")
 
             // Segovia cluster — inbound (return) order: reversed cluster + distinct IDs
-            val PLAZA_TOROS_IN       = BusStop(id = "m3-plaza-toros-in",        name = "Plaza de Toros",          area = "Segovia",  coordinates = "40.942093, -4.107603")
-            val FRENTE_BAR_NORTE_IN  = BusStop(id = "m3-frente-bar-norte-in",  name = "Frente Bar Norte",        area = "Segovia",  coordinates = "0.0, 0.0")
-            val IGLESIA_STO_TOMAS_IN = BusStop(id = "m3-iglesia-sto-tomas-in", name = "Iglesia Santo Tomás",     area = "Segovia",  coordinates = "0.0, 0.0")
-            val ESTACION_BUS_IN      = BusStop(id = "m3-estacion-bus-in",      name = "Estación de Autobuses",   area = "Segovia",  coordinates = "40.944768, -4.121823")
+            val PLAZA_TOROS_IN       = BusStop(id = "m3-plaza-toros-in",        name = "Plaza de Toros",          area = "Segovia capital",  coordinates = "40.942093, -4.107603")
+            val FRENTE_BAR_NORTE_IN  = BusStop(id = "m3-frente-bar-norte-in",  name = "Frente Bar Norte",        area = "Segovia capital",  coordinates = "0.0, 0.0")
+            val IGLESIA_STO_TOMAS_IN = BusStop(id = "m3-iglesia-sto-tomas-in", name = "Iglesia Santo Tomás",     area = "Segovia capital",  coordinates = "0.0, 0.0")
+            val ESTACION_BUS_IN      = BusStop(id = "m3-estacion-bus-in",      name = "Estación de Autobuses",   area = "Segovia capital",  coordinates = "40.944768, -4.121823")
         }
 
         // Outbound: Segovia cluster → ... → Navacerrada

@@ -88,13 +88,13 @@ class M4Parser : CapableParser, RouteStopsProvider {
             val AZOGUEJO = BusStop(
                 id = "m4-azoguejo",
                 name = "Azoguejo",
-                area = "Segovia",
+                area = "Segovia capital",
                 coordinates = "40.948406, -4.116411",
             )
             val DELICIAS = BusStop(
                 id = "m4-delicias",
                 name = "Delicias",
-                area = "Segovia",
+                area = "Segovia capital",
                 coordinates = "40.954500, -4.108889",
             )
             val GASOLINERA = BusStop(

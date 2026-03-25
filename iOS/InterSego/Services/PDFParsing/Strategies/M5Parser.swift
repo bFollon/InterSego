@@ -54,7 +54,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let segovia           = BusStop(id: "m5-segovia",            name: "Segovia",               area: "Segovia",               coordinates: "40.944768, -4.121823")
+        static let segovia           = BusStop(id: "m5-segovia",            name: "Segovia",               area: "Segovia capital",               coordinates: "40.944768, -4.121823")
         static let tizneros          = BusStop(id: "m5-tizneros",           name: "Tizneros",              area: "Tizneros",              coordinates: "0.0, 0.0")
         static let espirdo           = BusStop(id: "m5-espirdo",            name: "Espirdo",               area: "Espirdo",               coordinates: "0.0, 0.0")
         static let laHiguera         = BusStop(id: "m5-la-higuera",         name: "La Higuera",            area: "La Higuera",            coordinates: "0.0, 0.0")
@@ -63,7 +63,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
         static let stoDomingoPiron   = BusStop(id: "m5-sto-domingo-piron",  name: "Sto. Domingo de Pirón", area: "Sto. Domingo de Pirón", coordinates: "0.0, 0.0")
 
         // Inbound copies with -in suffix
-        static let segoviaIn           = BusStop(id: "m5-segovia-in",            name: "Segovia",               area: "Segovia",               coordinates: "40.944768, -4.121823")
+        static let segoviaIn           = BusStop(id: "m5-segovia-in",            name: "Segovia",               area: "Segovia capital",               coordinates: "40.944768, -4.121823")
         static let tiznerosIn          = BusStop(id: "m5-tizneros-in",           name: "Tizneros",              area: "Tizneros",              coordinates: "0.0, 0.0")
         static let espirdoIn           = BusStop(id: "m5-espirdo-in",            name: "Espirdo",               area: "Espirdo",               coordinates: "0.0, 0.0")
         static let laHigueraIn         = BusStop(id: "m5-la-higuera-in",         name: "La Higuera",            area: "La Higuera",            coordinates: "0.0, 0.0")

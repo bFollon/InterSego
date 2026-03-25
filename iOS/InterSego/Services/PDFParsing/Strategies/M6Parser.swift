@@ -128,7 +128,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
         static let palazuelosColegio = BusStop(id: "m6-palazuelos-colegio", name: "Colegio", area: "Palazuelos", coordinates: "40.933921, -4.063495")
         static let tabanera = BusStop(id: "m6-tabanera", name: "Tabanera", area: "Tabanera", coordinates: "40.934336, -4.067014")
         static let tabanera2 = BusStop(id: "m6-tabanera-2", name: "Tabanera 2", area: "Tabanera", coordinates: "40.937491, -4.065818")
-        static let jardinillos = BusStop(id: "m6-jardinillos", name: "Jardinillos de San Roque", area: "Segovia", details: "Frente a Policía Nacional", coordinates: "40.944361, -4.120831")
+        static let jardinillos = BusStop(id: "m6-jardinillos", name: "Jardinillos de San Roque", area: "Segovia capital", details: "Frente a Policía Nacional", coordinates: "40.944361, -4.120831")
     }
 
     // MARK: - Routes
