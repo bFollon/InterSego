@@ -39,55 +39,55 @@ import Foundation
 ///
 /// Timetable data hardcoded from official Linecar M2 PDF screenshot (2026-03-20).
 class M2Parser: CapableParser, RouteStopsProvider {
-
+    
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M2"]),
         mode: .production,
         version: "1.0"
     )
-
+    
     // MARK: - Directions
-
+    
     private static let directionCircularA = "Segovia → Valseca"
     private static let directionCircularB = "Valseca → Segovia"
-
+    
     // MARK: - Stops
-
+    
     private enum Stops {
         // Outbound stops
-        static let segovia         = BusStop(id: "m2-segovia",          name: "Segovia",              coordinates: "40.944973, -4.122431")
-        static let casino          = BusStop(id: "m2-casino",           name: "Casino",                coordinates: "40.965154, -4.209251")
-        static let hontanares      = BusStop(id: "m2-hontanares",       name: "Hontanares de Eresma",  coordinates: "40.983628, -4.204160")
-        static let losHuertos      = BusStop(id: "m2-los-huertos",      name: "Los Huertos",           coordinates: "41.009124, -4.219216")
-        static let valseca         = BusStop(id: "m2-valseca",          name: "Valseca",               coordinates: "40.999306, -4.174266")
+        static let segovia         = BusStop(id: "m2-segovia",          name: "Estación de Autobuses", area: "Segovia Capital",              coordinates: "40.944973, -4.122431")
+        static let casino          = BusStop(id: "m2-casino",           name: "Casino", area: "Casino de la Unión",                coordinates: "40.965154, -4.209251")
+        static let hontanares      = BusStop(id: "m2-hontanares",       name: "Hontanares de Eresma", area: "Hontanares de Eresma",  coordinates: "40.983628, -4.204160")
+        static let losHuertos      = BusStop(id: "m2-los-huertos",      name: "Los Huertos", area: "Los Huertos",           coordinates: "41.009124, -4.219216")
+        static let valseca         = BusStop(id: "m2-valseca",          name: "Valseca", area: "Valseca",               coordinates: "40.999306, -4.174266")
         // Return-leg stops — same physical locations, distinct IDs for route positioning
-        static let hontanaresToReturn = BusStop(id: "m2-hontanares-return", name: "Hontanares de Eresma", coordinates: "40.983628, -4.204160")
-        static let casinoReturn    = BusStop(id: "m2-casino-return",     name: "Casino",               coordinates: "40.965154, -4.209251")
-        static let segoviaReturn   = BusStop(id: "m2-segovia-return",    name: "Segovia",              coordinates: "40.944973, -4.122431")
+        static let hontanaresToReturn = BusStop(id: "m2-hontanares-return", name: "Hontanares de Eresma", area: "Hontanares de Eresma", coordinates: "40.983628, -4.204160")
+        static let casinoReturn    = BusStop(id: "m2-casino-return",     name: "Casino", area: "Casino de la Unión",               coordinates: "40.965154, -4.209251")
+        static let segoviaReturn   = BusStop(id: "m2-segovia-return",    name: "Estación de Autobuses", area: "Segovia Capital",              coordinates: "40.944973, -4.122431")
     }
-
+    
     // circularA: outbound view — Segovia → Casino → Hontanares → Los Huertos → Valseca
     static let m2CircularA: [BusStop] = [
         Stops.segovia, Stops.casino, Stops.hontanares, Stops.losHuertos, Stops.valseca
     ]
-
+    
     // circularB: return view — Los Huertos → Hontanares → Valseca → Casino → Segovia
     // Note: losHuertos and valseca share stop IDs with circularA (same physical stops).
     static let m2CircularB: [BusStop] = [
         Stops.losHuertos, Stops.hontanaresToReturn, Stops.valseca, Stops.casinoReturn, Stops.segoviaReturn
     ]
-
+    
     // MARK: - Protocol Conformance
-
+    
     func canParse(routeId: String) -> Bool {
         capabilities.supportedRoutes.contains { $0.caseInsensitiveCompare(routeId) == .orderedSame }
     }
-
+    
     func getRoutesForId(_ routeId: String) -> [[BusStop]] {
         guard routeId.caseInsensitiveCompare("M2") == .orderedSame else { return [] }
         return [Self.m2CircularA, Self.m2CircularB]
     }
-
+    
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
         guard routeId.caseInsensitiveCompare("M2") == .orderedSame else { return [] }
         switch dayType {
@@ -102,7 +102,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
             ]
         }
     }
-
+    
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
         guard routeId.caseInsensitiveCompare("M2") == .orderedSame else { return nil }
         let variants = getRouteVariants(routeId, dayType: dayType)
@@ -117,7 +117,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
             )
         }
     }
-
+    
     func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
         guard routeId.caseInsensitiveCompare("M2") == .orderedSame else { return [] }
         guard let weekdayViews = getRouteViews(routeId, dayType: .weekday) else { return [] }
@@ -127,12 +127,12 @@ class M2Parser: CapableParser, RouteStopsProvider {
             RouteSelectorEntry(id: "entry-lv", label: "Lunes a Viernes", views: weekdayViews, initialViewId: "circularA", timetableDayType: .weekday, isActiveToday: isWeekday)
         ]
     }
-
+    
     func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M2Parser: returning hardcoded timetable (PDF parsing bypassed)")
         return buildStaticTimetables()
     }
-
+    
     // MARK: - Static Timetable
     //
     // Source: Linecar M2 PDF screenshot, 2026-03-20.
@@ -142,9 +142,9 @@ class M2Parser: CapableParser, RouteStopsProvider {
     // through Hontanares, continues to Valseca, then returns to Segovia.
     // The left (outbound) and right (inbound) tables in the PDF are complementary halves of
     // the same circular service.
-
+    
     private func buildStaticTimetables() -> [BusTimetable] {
-
+        
         // ── Weekday circularA: Segovia → Casino → Hontanares → Los Huertos → Valseca ──────────
         let circADeps: [[DepartureTime]] = [
             [t(9,0),  t(13,45), t(16,15), t(19,15)], // SEGOVIA
@@ -153,7 +153,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
             [t(9,15), t(14,0),  t(16,30), t(19,30)], // LOS_HUERTOS
             [t(9,30), t(14,15), t(16,40), t(19,40)], // VALSECA
         ]
-
+        
         // ── Weekday circularB: Los Huertos → Hontanares → Valseca → Casino → Segovia ──────────
         //
         // The 7:25 service originates from Valseca: its stop times are Valseca(7:25),
@@ -168,15 +168,15 @@ class M2Parser: CapableParser, RouteStopsProvider {
             [t(7,42), t(9,35), t(14,20), t(16,50), t(19,50)], // CASINO_RETURN
             [t(7,55), t(9,50), t(14,35), t(17,5),  t(20,5)],  // SEGOVIA_RETURN
         ]
-
+        
         return buildTimetables(stops: Self.m2CircularA, dayType: .weekday, direction: Self.directionCircularA, deps: circADeps)
-             + buildTimetables(stops: Self.m2CircularB, dayType: .weekday, direction: Self.directionCircularB, deps: circBDeps)
+        + buildTimetables(stops: Self.m2CircularB, dayType: .weekday, direction: Self.directionCircularB, deps: circBDeps)
     }
-
+    
     private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
         DepartureTime(hour: h, minute: m, seasonalAvailability: s)
     }
-
+    
     private func buildTimetables(
         stops: [BusStop],
         dayType: DayType,

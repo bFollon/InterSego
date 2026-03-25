@@ -65,22 +65,79 @@ class M1Parser : CapableParser, RouteStopsProvider {
     companion object {
         // Direction A: full outbound via villages + direct return to Segovia
         private const val DIRECTION_CIRCULAR_A = "Segovia → Garcillán"
+
         // Direction B: direct outbound to Garcillán + return via all villages
         private const val DIRECTION_CIRCULAR_B = "Garcillán → Segovia"
 
         private object Stops {
-            val SEGOVIA         = BusStop(id = "m1-segovia",         name = "Segovia",              area = "Segovia",           coordinates = "40.944973, -4.122431")
-            val POLIGONO        = BusStop(id = "m1-poligono",        name = "Polígono Industrial",   area = "Valverde del Majano",           coordinates = "40.957976, -4.198156")
-            val POLIGONO_2      = BusStop(id = "m1-poligono-2",      name = "Polígono Industrial 2", area = "Valverde del Majano",           coordinates = "40.957554, -4.206457")
-            val CASINO          = BusStop(id = "m1-casino",          name = "Casino",                area = "Casino de la Unión",          coordinates = "40.965154, -4.209251")
-            val VALVERDE        = BusStop(id = "m1-valverde",        name = "Valverde de Majano",    area = "Valverde del Majano", coordinates = "40.956274, -4.235343")
-            val ABADES          = BusStop(id = "m1-abades",          name = "Abades",                area = "Abades",            coordinates = "40.915804, -4.267038")
-            val MARTIN_MIGUEL   = BusStop(id = "m1-martin-miguel",   name = "Martín Miguel",         area = "Martín Miguel",     coordinates = "40.951889, -4.268660")
-            val GARCILLAN       = BusStop(id = "m1-garcillan",       name = "Garcillán",             area = "Garcillán",         coordinates = "40.976809, -4.264724")
+            val SEGOVIA = BusStop(
+                id = "m1-segovia",
+                name = "Estación de Autobuses",
+                area = "Segovia capital",
+                coordinates = "40.944973, -4.122431"
+            )
+            val POLIGONO = BusStop(
+                id = "m1-poligono",
+                name = "Polígono Industrial",
+                area = "Valverde del Majano",
+                coordinates = "40.957976, -4.198156"
+            )
+            val POLIGONO_2 = BusStop(
+                id = "m1-poligono-2",
+                name = "Polígono Industrial 2",
+                area = "Valverde del Majano",
+                coordinates = "40.957554, -4.206457"
+            )
+            val CASINO = BusStop(
+                id = "m1-casino",
+                name = "Casino",
+                area = "Casino de la Unión",
+                coordinates = "40.965154, -4.209251"
+            )
+            val VALVERDE = BusStop(
+                id = "m1-valverde",
+                name = "Valverde de Majano",
+                area = "Valverde del Majano",
+                coordinates = "40.956274, -4.235343"
+            )
+            val ABADES = BusStop(
+                id = "m1-abades",
+                name = "Abades",
+                area = "Abades",
+                coordinates = "40.915804, -4.267038"
+            )
+            val MARTIN_MIGUEL = BusStop(
+                id = "m1-martin-miguel",
+                name = "Martín Miguel",
+                area = "Martín Miguel",
+                coordinates = "40.951889, -4.268660"
+            )
+            val GARCILLAN = BusStop(
+                id = "m1-garcillan",
+                name = "Garcillán",
+                area = "Garcillán",
+                coordinates = "40.976809, -4.264724"
+            )
+
             // Circular return stops — same physical locations, distinct IDs for route positioning
-            val SEGOVIA_RETURN  = BusStop(id = "m1-segovia-return",  name = "Segovia",              area = "Segovia",           coordinates = "40.944973, -4.122431")
-            val POLIGONO_B_IN   = BusStop(id = "m1-poligono-b-in",   name = "Polígono Industrial",   area = "Valverde del Majano",           coordinates = "40.957976, -4.198156")
-            val POLIGONO_2_B_IN = BusStop(id = "m1-poligono-2-b-in", name = "Polígono Industrial 2", area = "Valverde del Majano",           coordinates = "40.957554, -4.206457")
+            val SEGOVIA_RETURN = BusStop(
+                id = "m1-segovia-return",
+                name = "Estación de Autobuses",
+                area = "Segovia capital",
+                coordinates = "40.944973, -4.122431"
+            )
+            val POLIGONO_B_IN = BusStop(
+                id = "m1-poligono-b-in",
+                name = "Polígono Industrial",
+                area = "Valverde del Majano",
+                coordinates = "40.957976, -4.198156"
+            )
+            val POLIGONO_2_B_IN = BusStop(
+                id = "m1-poligono-2-b-in",
+                name = "Polígono Industrial 2",
+                area = "Valverde del Majano",
+                coordinates = "40.957554, -4.206457"
+            )
         }
 
         // Direction A: Segovia → (all villages) → Garcillán → Segovia (return)
@@ -118,13 +175,34 @@ class M1Parser : CapableParser, RouteStopsProvider {
         if (!routeId.equals("M1", ignoreCase = true)) return emptyList()
         return when (dayType) {
             DayType.SATURDAY -> listOf(
-                RouteVariant("circularA", DIRECTION_CIRCULAR_A, m1SaturdayOutbound, DIRECTION_CIRCULAR_A),
-                RouteVariant("circularB", DIRECTION_CIRCULAR_B, m1SaturdayInbound,  DIRECTION_CIRCULAR_B)
+                RouteVariant(
+                    "circularA",
+                    DIRECTION_CIRCULAR_A,
+                    m1SaturdayOutbound,
+                    DIRECTION_CIRCULAR_A
+                ),
+                RouteVariant(
+                    "circularB",
+                    DIRECTION_CIRCULAR_B,
+                    m1SaturdayInbound,
+                    DIRECTION_CIRCULAR_B
+                )
             )
+
             DayType.SUNDAY -> emptyList()
             else -> listOf(
-                RouteVariant("circularA", DIRECTION_CIRCULAR_A, m1CircularAWeekday, DIRECTION_CIRCULAR_A),
-                RouteVariant("circularB", DIRECTION_CIRCULAR_B, m1CircularBWeekday, DIRECTION_CIRCULAR_B)
+                RouteVariant(
+                    "circularA",
+                    DIRECTION_CIRCULAR_A,
+                    m1CircularAWeekday,
+                    DIRECTION_CIRCULAR_A
+                ),
+                RouteVariant(
+                    "circularB",
+                    DIRECTION_CIRCULAR_B,
+                    m1CircularBWeekday,
+                    DIRECTION_CIRCULAR_B
+                )
             )
         }
     }
@@ -150,15 +228,43 @@ class M1Parser : CapableParser, RouteStopsProvider {
         if (!routeId.equals("M1", ignoreCase = true)) return emptyList()
         val cal = java.util.Calendar.getInstance().apply { time = today }
         val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
-        val isWeekday  = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
+        val isWeekday = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
         val isSaturday = dow == java.util.Calendar.SATURDAY
-        val weekdayViews  = getRouteViews(routeId, DayType.WEEKDAY)  ?: return emptyList()
+        val weekdayViews = getRouteViews(routeId, DayType.WEEKDAY) ?: return emptyList()
         val saturdayViews = getRouteViews(routeId, DayType.SATURDAY) ?: return emptyList()
         return listOf(
-            RouteSelectorEntry("entry-lv-a",   "L-V - $DIRECTION_CIRCULAR_A",   weekdayViews,  "circularA", DayType.WEEKDAY,  isWeekday),
-            RouteSelectorEntry("entry-lv-b",   "L-V - $DIRECTION_CIRCULAR_B",   weekdayViews,  "circularB", DayType.WEEKDAY,  isWeekday),
-            RouteSelectorEntry("entry-sab-a",  "Sáb - $DIRECTION_CIRCULAR_A",   saturdayViews, "circularA", DayType.SATURDAY, isSaturday),
-            RouteSelectorEntry("entry-sab-b",  "Sáb - $DIRECTION_CIRCULAR_B",   saturdayViews, "circularB", DayType.SATURDAY, isSaturday)
+            RouteSelectorEntry(
+                "entry-lv-a",
+                "L-V - $DIRECTION_CIRCULAR_A",
+                weekdayViews,
+                "circularA",
+                DayType.WEEKDAY,
+                isWeekday
+            ),
+            RouteSelectorEntry(
+                "entry-lv-b",
+                "L-V - $DIRECTION_CIRCULAR_B",
+                weekdayViews,
+                "circularB",
+                DayType.WEEKDAY,
+                isWeekday
+            ),
+            RouteSelectorEntry(
+                "entry-sab-a",
+                "Sáb - $DIRECTION_CIRCULAR_A",
+                saturdayViews,
+                "circularA",
+                DayType.SATURDAY,
+                isSaturday
+            ),
+            RouteSelectorEntry(
+                "entry-sab-b",
+                "Sáb - $DIRECTION_CIRCULAR_B",
+                saturdayViews,
+                "circularB",
+                DayType.SATURDAY,
+                isSaturday
+            )
         )
     }
 
@@ -174,7 +280,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
     // Polígono is a two-stop cluster; times are estimated +2 min between stops.
 
     private fun buildStaticTimetables(): List<BusTimetable> {
-        val yr  = SeasonalAvailability.YEAR_ROUND
+        val yr = SeasonalAvailability.YEAR_ROUND
         val jun = SeasonalAvailability.JUNE_TO_SEPT_ONLY
         val fri = SeasonalAvailability.FRI_ONLY
         val lyv = SeasonalAvailability.MON_FRI_ONLY
@@ -186,24 +292,71 @@ class M1Parser : CapableParser, RouteStopsProvider {
         // Note: 15:15 bus (row 8) skips Casino due to a PDF dash.
         val circADeps = arrayOf(
             // SEGOVIA (11 departures)
-            mutableListOf(t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)),
+            mutableListOf(
+                t(6, 40),
+                t(7, 25),
+                t(8, 25),
+                t(10, 0),
+                t(12, 0),
+                t(13, 0),
+                t(14, 40),
+                t(15, 15),
+                t(18, 0),
+                t(19, 30),
+                t(20, 50)
+            ),
             // POLIGONO cluster (2 stops, +2 min each)
             *DepartureTime.clusterDepartures(
-                mutableListOf(t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)),
+                mutableListOf(
+                    t(6, 50),
+                    t(7, 40),
+                    t(8, 35),
+                    t(10, 10),
+                    t(12, 5),
+                    t(14, 45),
+                    t(15, 20),
+                    t(18, 5),
+                    t(20, 55)
+                ),
                 stopCount = 2, offsetMinutes = 2
             ).toTypedArray(),
             // CASINO (6 — rows 1-3 and 8=15:15 are dashes; ★ = Jun–Sep only)
-            mutableListOf(t(10,15,jun), t(12,10,jun), t(13,7), t(14,50,jun), t(18,10,jun), t(21,0,jun)),
+            mutableListOf(
+                t(10, 15, jun),
+                t(12, 10, jun),
+                t(13, 7),
+                t(14, 50, jun),
+                t(18, 10, jun),
+                t(21, 0, jun)
+            ),
             // VALVERDE (8 — rows 1,2,4 dashes)
-            mutableListOf(t(8,40), t(12,15), t(13,10), t(14,55), t(15,25), t(18,15), t(19,40), t(21,5)),
+            mutableListOf(
+                t(8, 40),
+                t(12, 15),
+                t(13, 10),
+                t(14, 55),
+                t(15, 25),
+                t(18, 15),
+                t(19, 40),
+                t(21, 5)
+            ),
             // ABADES (8 — rows 1,2,4 dashes)
-            mutableListOf(t(8,45), t(12,20), t(13,15), t(15,0), t(15,30), t(18,20), t(19,45), t(21,10)),
+            mutableListOf(
+                t(8, 45),
+                t(12, 20),
+                t(13, 15),
+                t(15, 0),
+                t(15, 30),
+                t(18, 20),
+                t(19, 45),
+                t(21, 10)
+            ),
             // MARTIN_MIGUEL (3 — rows 5, 8, 11 only)
-            mutableListOf(t(12,25), t(15,35), t(21,15)),
+            mutableListOf(t(12, 25), t(15, 35), t(21, 15)),
             // GARCILLAN (4 — rows 5, 8, 10, 11; row 10 = # Fridays only)
-            mutableListOf(t(12,30), t(15,40), t(19,50,fri), t(21,20)),
+            mutableListOf(t(12, 30), t(15, 40), t(19, 50, fri), t(21, 20)),
             // SEGOVIA_RETURN — direct return from Garcillán (rows 5, 8, 11)
-            mutableListOf(t(12,45), t(16,0), t(21,35))
+            mutableListOf(t(12, 45), t(16, 0), t(21, 35))
         )
 
         // ── Weekday Direction B (circularB): direct outbound to Garcillán + return via villages ──
@@ -214,48 +367,81 @@ class M1Parser : CapableParser, RouteStopsProvider {
         // Backward pass times from Direction A outbound buses have been removed.
         val circBDeps = arrayOf(
             // SEGOVIA outbound — only the 6:40 direct bus is documented in the PDF
-            mutableListOf(t(6,40)),
+            mutableListOf(t(6, 40)),
             // POLIGONO first pass
-            mutableListOf(t(6,50)),
+            mutableListOf(t(6, 50)),
             // POLIGONO_2 first pass
-            mutableListOf(t(6,52)),
+            mutableListOf(t(6, 52)),
             // GARCILLAN turning point; 8:40 and 10:40 are (*) = gasolinera pickup = year-round
-            mutableListOf(t(6,55), t(8,40,yr), t(10,40,yr), t(16,25)),
+            mutableListOf(t(6, 55), t(8, 40, yr), t(10, 40, yr), t(16, 25)),
             // MARTIN_MIGUEL return leg (9:40 = L Y V Mondays & Fridays only)
-            mutableListOf(t(7,0), t(9,40,lyv)),
+            mutableListOf(t(7, 0), t(9, 40, lyv)),
             // ABADES return leg
-            mutableListOf(t(7,5), t(7,40), t(10,45), t(16,0), t(18,20)),
+            mutableListOf(t(7, 5), t(7, 40), t(10, 45), t(16, 0), t(18, 20)),
             // VALVERDE return leg (9:40 = L Y V Mondays & Fridays only)
-            mutableListOf(t(7,10), t(7,50), t(9,40,lyv), t(10,50), t(15,5), t(16,5), t(18,25)),
+            mutableListOf(
+                t(7, 10),
+                t(7, 50),
+                t(9, 40, lyv),
+                t(10, 50),
+                t(15, 5),
+                t(16, 5),
+                t(18, 25)
+            ),
             // CASINO return leg
-            mutableListOf(t(16,10)),
+            mutableListOf(t(16, 10)),
             // POLIGONO_2_B_IN return leg
-            mutableListOf(t(7,15), t(10,55), t(15,10)),
+            mutableListOf(t(7, 15), t(10, 55), t(15, 10)),
             // POLIGONO_B_IN return leg
-            mutableListOf(t(7,17), t(10,57), t(15,12)),
+            mutableListOf(t(7, 17), t(10, 57), t(15, 12)),
             // SEGOVIA_RETURN arrival
-            mutableListOf(t(7,25), t(8,0), t(8,55), t(10,0), t(11,0), t(15,15), t(16,20), t(16,50), t(18,35))
+            mutableListOf(
+                t(7, 25),
+                t(8, 0),
+                t(8, 55),
+                t(10, 0),
+                t(11, 0),
+                t(15, 15),
+                t(16, 20),
+                t(16, 50),
+                t(18, 35)
+            )
         )
 
         // ── Saturday Direction A: Segovia → Casino → Valverde → Abades ─────────────────────────
         val satADeps = arrayOf(
-            mutableListOf(t(13,30)), // SEGOVIA
-            mutableListOf(t(13,40)), // CASINO
-            mutableListOf(t(13,45)), // VALVERDE
-            mutableListOf(t(13,50))  // ABADES
+            mutableListOf(t(13, 30)), // SEGOVIA
+            mutableListOf(t(13, 40)), // CASINO
+            mutableListOf(t(13, 45)), // VALVERDE
+            mutableListOf(t(13, 50))  // ABADES
         )
 
         // ── Saturday Direction B: Abades → Valverde → Segovia ────────────────────────────────
         val satBDeps = arrayOf(
-            mutableListOf(t(10,45)), // ABADES
-            mutableListOf(t(10,50)), // VALVERDE
-            mutableListOf(t(11,0))   // SEGOVIA
+            mutableListOf(t(10, 45)), // ABADES
+            mutableListOf(t(10, 50)), // VALVERDE
+            mutableListOf(t(11, 0))   // SEGOVIA
         )
 
-        return buildTimetables(m1CircularAWeekday, DayType.WEEKDAY,  DIRECTION_CIRCULAR_A, circADeps) +
-               buildTimetables(m1CircularBWeekday, DayType.WEEKDAY,  DIRECTION_CIRCULAR_B, circBDeps) +
-               buildTimetables(m1SaturdayOutbound, DayType.SATURDAY, DIRECTION_CIRCULAR_A, satADeps) +
-               buildTimetables(m1SaturdayInbound,  DayType.SATURDAY, DIRECTION_CIRCULAR_B, satBDeps)
+        return buildTimetables(
+            m1CircularAWeekday,
+            DayType.WEEKDAY,
+            DIRECTION_CIRCULAR_A,
+            circADeps
+        ) +
+                buildTimetables(
+                    m1CircularBWeekday,
+                    DayType.WEEKDAY,
+                    DIRECTION_CIRCULAR_B,
+                    circBDeps
+                ) +
+                buildTimetables(
+                    m1SaturdayOutbound,
+                    DayType.SATURDAY,
+                    DIRECTION_CIRCULAR_A,
+                    satADeps
+                ) +
+                buildTimetables(m1SaturdayInbound, DayType.SATURDAY, DIRECTION_CIRCULAR_B, satBDeps)
     }
 
     private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
@@ -268,10 +454,10 @@ class M1Parser : CapableParser, RouteStopsProvider {
         deps: Array<MutableList<DepartureTime>>
     ): List<BusTimetable> = stops.mapIndexed { i, stop ->
         BusTimetable(
-            routeId    = "M1",
-            stopId     = stop.id,
-            dayType    = dayType,
-            direction  = direction,
+            routeId = "M1",
+            stopId = stop.id,
+            dayType = dayType,
+            direction = direction,
             departures = deps[i]
         )
     }

@@ -37,24 +37,24 @@ import Foundation
 ///
 /// No Sunday service. Saturday runs a shorter Segovia ↔ Abades variant.
 class M1Parser: CapableParser, RouteStopsProvider {
-
+    
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
         mode: .production,
         version: "1.6"
     )
-
+    
     // MARK: - Directions
-
+    
     // Direction A: full outbound via villages + direct return to Segovia
     private static let directionCircularA = "Segovia → Garcillán"
     // Direction B: direct outbound to Garcillán + return via all villages
     private static let directionCircularB = "Garcillán → Segovia"
-
+    
     // MARK: - Stops
-
+    
     private enum Stops {
-        static let segovia        = BusStop(id: "m1-segovia",         name: "Segovia",              area: "Segovia",           coordinates: "40.944973, -4.122431")
+        static let segovia        = BusStop(id: "m1-segovia",         name: "Estación de Autobuses",              area: "Segovia Capital",           coordinates: "40.944973, -4.122431")
         static let poligono       = BusStop(id: "m1-poligono",        name: "Polígono Industrial",   area: "Valverde del Majano",           coordinates: "40.957976, -4.198156")
         static let poligono2      = BusStop(id: "m1-poligono-2",      name: "Polígono Industrial 2", area: "Valverde del Majano",           coordinates: "40.957554, -4.206457")
         static let casino         = BusStop(id: "m1-casino",          name: "Casino",                area: "Casino de la unión",          coordinates: "40.965154, -4.209251")
@@ -63,25 +63,25 @@ class M1Parser: CapableParser, RouteStopsProvider {
         static let martinMiguel   = BusStop(id: "m1-martin-miguel",   name: "Martín Miguel",         area: "Martín Miguel",     coordinates: "40.951889, -4.268660")
         static let garcillan      = BusStop(id: "m1-garcillan",       name: "Garcillán",             area: "Garcillán",         coordinates: "40.976809, -4.264724")
         // Circular return stops — same physical locations, distinct IDs for route positioning
-        static let segoviaReturn  = BusStop(id: "m1-segovia-return",  name: "Segovia",              area: "Segovia",           coordinates: "40.944973, -4.122431")
+        static let segoviaReturn  = BusStop(id: "m1-segovia-return",  name: "Estación de Autobuses",              area: "Segovia Capital",           coordinates: "40.944973, -4.122431")
         static let poligonoBIn    = BusStop(id: "m1-poligono-b-in",   name: "Polígono Industrial",   area: "Valverde del Majano",           coordinates: "40.957976, -4.198156")
         static let poligono2BIn   = BusStop(id: "m1-poligono-2-b-in", name: "Polígono Industrial 2", area: "Valverde del Majano",           coordinates: "40.957554, -4.206457")
     }
-
+    
     // Direction A: Segovia → (all villages) → Garcillán → Segovia (return)
     static let m1CircularAWeekday: [BusStop] = [
         Stops.segovia, Stops.poligono, Stops.poligono2,
         Stops.casino, Stops.valverde, Stops.abades, Stops.martinMiguel,
         Stops.garcillan, Stops.segoviaReturn
     ]
-
+    
     // Direction B: Segovia → Polígono → Polígono2 → Garcillán → (all villages) → Segovia (return)
     static let m1CircularBWeekday: [BusStop] = [
         Stops.segovia, Stops.poligono, Stops.poligono2,
         Stops.garcillan, Stops.martinMiguel, Stops.abades, Stops.valverde,
         Stops.casino, Stops.poligono2BIn, Stops.poligonoBIn, Stops.segoviaReturn
     ]
-
+    
     // Saturday: shorter Segovia ↔ Abades route (SG-Labajos variant)
     static let m1SaturdayOutbound: [BusStop] = [
         Stops.segovia, Stops.casino, Stops.valverde, Stops.abades
@@ -89,18 +89,18 @@ class M1Parser: CapableParser, RouteStopsProvider {
     static let m1SaturdayInbound: [BusStop] = [
         Stops.abades, Stops.valverde, Stops.segovia
     ]
-
+    
     // MARK: - Protocol Conformance
-
+    
     func canParse(routeId: String) -> Bool {
         capabilities.supportedRoutes.contains { $0.caseInsensitiveCompare(routeId) == .orderedSame }
     }
-
+    
     func getRoutesForId(_ routeId: String) -> [[BusStop]] {
         guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return [] }
         return [Self.m1CircularAWeekday, Self.m1CircularBWeekday]
     }
-
+    
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
         guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return [] }
         switch dayType {
@@ -122,7 +122,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
             ]
         }
     }
-
+    
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
         guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return nil }
         let variants = getRouteVariants(routeId, dayType: dayType)
@@ -139,7 +139,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
             )
         }
     }
-
+    
     func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
         guard routeId.caseInsensitiveCompare("M1") == .orderedSame else { return [] }
         let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
@@ -154,23 +154,23 @@ class M1Parser: CapableParser, RouteStopsProvider {
             RouteSelectorEntry(id: "entry-sab-b", label: "Sáb - \(Self.directionCircularB)", views: saturdayViews, initialViewId: "circularB", timetableDayType: .saturday, isActiveToday: isSaturday)
         ]
     }
-
+    
     func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M1Parser: returning hardcoded timetable (PDF parsing bypassed)")
         return buildStaticTimetables()
     }
-
+    
     // MARK: - Static Timetable
     //
     // Source: Linecar M1 PDF screenshot, 2026-03-18.
     // Dashes in the PDF = stop omitted from that row's departure list.
     // Polígono is a two-stop cluster; times are estimated +2 min between stops.
-
+    
     private func buildStaticTimetables() -> [BusTimetable] {
         let jun = SeasonalAvailability.juneToSeptOnly
         let fri = SeasonalAvailability.friOnly
         let lyv = SeasonalAvailability.monFriOnly
-
+        
         // ── Weekday Direction A (circularA): full outbound via all villages + direct return ──────
         //
         // Buses that go Segovia → Casino → Valverde → Abades → Martín Miguel → Garcillán
@@ -180,7 +180,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
             // SEGOVIA (11 departures)
             [t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)],
             // POLIGONO cluster (2 stops, +2 min each)
-            ] + DepartureTime.clusterDepartures([t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)], stopCount: 2, offsetMinutes: 2) + [
+        ] + DepartureTime.clusterDepartures([t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)], stopCount: 2, offsetMinutes: 2) + [
             // CASINO (6 — rows 1-3 and 8=15:15 are dashes; ★ = Jun–Sep only)
             [t(10,15,jun), t(12,10,jun), t(13,7), t(14,50,jun), t(18,10,jun), t(21,0,jun)],
             // VALVERDE (8 — rows 1,2,4 dashes)
@@ -194,7 +194,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
             // SEGOVIA_RETURN — direct return from Garcillán (rows 5, 8, 11)
             [t(12,45), t(16,0), t(21,35)],
         ]
-
+        
         // ── Weekday Direction B (circularB): direct outbound to Garcillán + return via villages ──
         //
         // Outbound leg: Segovia → Polígono → Polígono2 → Garcillán (only 6:40 bus documented).
@@ -225,7 +225,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
             // SEGOVIA_RETURN arrival
             [t(7,25), t(8,0), t(8,55), t(10,0), t(11,0), t(15,15), t(16,20), t(16,50), t(18,35)],
         ]
-
+        
         // ── Saturday Direction A: Segovia → Casino → Valverde → Abades ───────────────────────
         let satADeps: [[DepartureTime]] = [
             [t(13,30)], // SEGOVIA
@@ -233,24 +233,24 @@ class M1Parser: CapableParser, RouteStopsProvider {
             [t(13,45)], // VALVERDE
             [t(13,50)], // ABADES
         ]
-
+        
         // ── Saturday Direction B: Abades → Valverde → Segovia ────────────────────────────────
         let satBDeps: [[DepartureTime]] = [
             [t(10,45)], // ABADES
             [t(10,50)], // VALVERDE
             [t(11,0)],  // SEGOVIA
         ]
-
+        
         return buildTimetables(stops: Self.m1CircularAWeekday, dayType: .weekday,  direction: Self.directionCircularA, deps: circADeps)
-             + buildTimetables(stops: Self.m1CircularBWeekday, dayType: .weekday,  direction: Self.directionCircularB, deps: circBDeps)
-             + buildTimetables(stops: Self.m1SaturdayOutbound, dayType: .saturday, direction: Self.directionCircularA, deps: satADeps)
-             + buildTimetables(stops: Self.m1SaturdayInbound,  dayType: .saturday, direction: Self.directionCircularB, deps: satBDeps)
+        + buildTimetables(stops: Self.m1CircularBWeekday, dayType: .weekday,  direction: Self.directionCircularB, deps: circBDeps)
+        + buildTimetables(stops: Self.m1SaturdayOutbound, dayType: .saturday, direction: Self.directionCircularA, deps: satADeps)
+        + buildTimetables(stops: Self.m1SaturdayInbound,  dayType: .saturday, direction: Self.directionCircularB, deps: satBDeps)
     }
-
+    
     private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
         DepartureTime(hour: h, minute: m, seasonalAvailability: s)
     }
-
+    
     private func buildTimetables(
         stops: [BusStop],
         dayType: DayType,

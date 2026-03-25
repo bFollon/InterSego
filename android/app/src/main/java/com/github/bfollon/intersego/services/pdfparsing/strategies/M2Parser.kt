@@ -70,15 +70,56 @@ class M2Parser : CapableParser, RouteStopsProvider {
 
         private object Stops {
             // Outbound stops
-            val SEGOVIA          = BusStop(id = "m2-segovia",          name = "Segovia",              coordinates = "40.944973, -4.122431")
-            val CASINO           = BusStop(id = "m2-casino",           name = "Casino",                coordinates = "40.965154, -4.209251")
-            val HONTANARES       = BusStop(id = "m2-hontanares",       name = "Hontanares de Eresma",  coordinates = "40.983628, -4.204160")
-            val LOS_HUERTOS      = BusStop(id = "m2-los-huertos",      name = "Los Huertos",           coordinates = "41.009124, -4.219216")
-            val VALSECA          = BusStop(id = "m2-valseca",          name = "Valseca",               coordinates = "40.999306, -4.174266")
+            val SEGOVIA = BusStop(
+                id = "m2-segovia",
+                name = "Estación de Autobuses",
+                area = "Segovia Capital",
+                coordinates = "40.944973, -4.122431"
+            )
+            val CASINO = BusStop(
+                id = "m2-casino",
+                name = "Casino",
+                area = "Casino de la Unión",
+                coordinates = "40.965154, -4.209251"
+            )
+            val HONTANARES = BusStop(
+                id = "m2-hontanares",
+                name = "Hontanares de Eresma",
+                area = "Hontanares de Eresma",
+                coordinates = "40.983628, -4.204160"
+            )
+            val LOS_HUERTOS = BusStop(
+                id = "m2-los-huertos",
+                name = "Los Huertos",
+                area = "Los Huertos",
+                coordinates = "41.009124, -4.219216"
+            )
+            val VALSECA = BusStop(
+                id = "m2-valseca",
+                name = "Valseca",
+                area = "Valseca",
+                coordinates = "40.999306, -4.174266"
+            )
+
             // Return-leg stops — same physical locations, distinct IDs for route positioning
-            val HONTANARES_RETURN = BusStop(id = "m2-hontanares-return", name = "Hontanares de Eresma", coordinates = "40.983628, -4.204160")
-            val CASINO_RETURN     = BusStop(id = "m2-casino-return",     name = "Casino",               coordinates = "40.965154, -4.209251")
-            val SEGOVIA_RETURN    = BusStop(id = "m2-segovia-return",    name = "Segovia",              coordinates = "40.944973, -4.122431")
+            val HONTANARES_RETURN = BusStop(
+                id = "m2-hontanares-return",
+                name = "Hontanares de Eresma",
+                area = "Hontanares de Eresma",
+                coordinates = "40.983628, -4.204160"
+            )
+            val CASINO_RETURN = BusStop(
+                id = "m2-casino-return",
+                name = "Casino",
+                area = "Casino de la Unión",
+                coordinates = "40.965154, -4.209251"
+            )
+            val SEGOVIA_RETURN = BusStop(
+                id = "m2-segovia-return",
+                name = "Estación de Autobuses",
+                area = "Segovia Capital",
+                coordinates = "40.944973, -4.122431"
+            )
         }
 
         // circularA: outbound view — Segovia → Casino → Hontanares → Los Huertos → Valseca
@@ -89,7 +130,11 @@ class M2Parser : CapableParser, RouteStopsProvider {
         // circularB: return view — Los Huertos → Hontanares → Valseca → Casino → Segovia
         // Note: LOS_HUERTOS and VALSECA share stop IDs with circularA (same physical stops).
         val m2CircularB: List<BusStop> = listOf(
-            Stops.LOS_HUERTOS, Stops.HONTANARES_RETURN, Stops.VALSECA, Stops.CASINO_RETURN, Stops.SEGOVIA_RETURN
+            Stops.LOS_HUERTOS,
+            Stops.HONTANARES_RETURN,
+            Stops.VALSECA,
+            Stops.CASINO_RETURN,
+            Stops.SEGOVIA_RETURN
         )
     }
 
@@ -134,7 +179,14 @@ class M2Parser : CapableParser, RouteStopsProvider {
         val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
         val isWeekday = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
         return listOf(
-            RouteSelectorEntry("entry-lv", "Lunes a Viernes", weekdayViews, "circularA", DayType.WEEKDAY, isWeekday)
+            RouteSelectorEntry(
+                "entry-lv",
+                "Lunes a Viernes",
+                weekdayViews,
+                "circularA",
+                DayType.WEEKDAY,
+                isWeekday
+            )
         )
     }
 
@@ -157,11 +209,11 @@ class M2Parser : CapableParser, RouteStopsProvider {
 
         // ── Weekday circularA: Segovia → Casino → Hontanares → Los Huertos → Valseca ──────────
         val circADeps = arrayOf(
-            mutableListOf(t(9,0),  t(13,45), t(16,15), t(19,15)), // SEGOVIA
-            mutableListOf(t(9,5),  t(13,50), t(16,20), t(19,20)), // CASINO
-            mutableListOf(t(9,10), t(13,55), t(16,25), t(19,25)), // HONTANARES
-            mutableListOf(t(9,15), t(14,0),  t(16,30), t(19,30)), // LOS_HUERTOS
-            mutableListOf(t(9,30), t(14,15), t(16,40), t(19,40))  // VALSECA
+            mutableListOf(t(9, 0), t(13, 45), t(16, 15), t(19, 15)), // SEGOVIA
+            mutableListOf(t(9, 5), t(13, 50), t(16, 20), t(19, 20)), // CASINO
+            mutableListOf(t(9, 10), t(13, 55), t(16, 25), t(19, 25)), // HONTANARES
+            mutableListOf(t(9, 15), t(14, 0), t(16, 30), t(19, 30)), // LOS_HUERTOS
+            mutableListOf(t(9, 30), t(14, 15), t(16, 40), t(19, 40))  // VALSECA
         )
 
         // ── Weekday circularB: Los Huertos → Hontanares → Valseca → Casino → Segovia ──────────
@@ -172,15 +224,21 @@ class M2Parser : CapableParser, RouteStopsProvider {
         // Valseca time is chronologically earlier than Los Huertos 7:35. All other runs
         // (9:15, 14:00, 16:30, 19:30) follow the expected stop order.
         val circBDeps = arrayOf(
-            mutableListOf(t(7,35), t(9,15), t(14,0),  t(16,30), t(19,30)), // LOS_HUERTOS
-            mutableListOf(t(7,40), t(9,20), t(14,5),  t(16,35), t(19,35)), // HONTANARES_RETURN
-            mutableListOf(t(7,25), t(9,30), t(14,15), t(16,45), t(19,45)), // VALSECA (7:25 = Valseca-originating run)
-            mutableListOf(t(7,42), t(9,35), t(14,20), t(16,50), t(19,50)), // CASINO_RETURN
-            mutableListOf(t(7,55), t(9,50), t(14,35), t(17,5),  t(20,5))   // SEGOVIA_RETURN
+            mutableListOf(t(7, 35), t(9, 15), t(14, 0), t(16, 30), t(19, 30)), // LOS_HUERTOS
+            mutableListOf(t(7, 40), t(9, 20), t(14, 5), t(16, 35), t(19, 35)), // HONTANARES_RETURN
+            mutableListOf(
+                t(7, 25),
+                t(9, 30),
+                t(14, 15),
+                t(16, 45),
+                t(19, 45)
+            ), // VALSECA (7:25 = Valseca-originating run)
+            mutableListOf(t(7, 42), t(9, 35), t(14, 20), t(16, 50), t(19, 50)), // CASINO_RETURN
+            mutableListOf(t(7, 55), t(9, 50), t(14, 35), t(17, 5), t(20, 5))   // SEGOVIA_RETURN
         )
 
         return buildTimetables(m2CircularA, DayType.WEEKDAY, DIRECTION_CIRCULAR_A, circADeps) +
-               buildTimetables(m2CircularB, DayType.WEEKDAY, DIRECTION_CIRCULAR_B, circBDeps)
+                buildTimetables(m2CircularB, DayType.WEEKDAY, DIRECTION_CIRCULAR_B, circBDeps)
     }
 
     private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
@@ -193,10 +251,10 @@ class M2Parser : CapableParser, RouteStopsProvider {
         deps: Array<MutableList<DepartureTime>>
     ): List<BusTimetable> = stops.mapIndexed { i, stop ->
         BusTimetable(
-            routeId    = "M2",
-            stopId     = stop.id,
-            dayType    = dayType,
-            direction  = direction,
+            routeId = "M2",
+            stopId = stop.id,
+            dayType = dayType,
+            direction = direction,
             departures = deps[i]
         )
     }
