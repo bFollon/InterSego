@@ -168,12 +168,15 @@ class M3Parser : CapableParser, RouteStopsProvider {
         // PDF times:  8:30  8:40  8:46  8:50  8:54  8:59  9:09  9:20
         //            16:00 16:10 16:16 16:20 16:24 16:29 16:39 16:50
         //
-        // Segovia cluster (Estación→Iglesia→BarNorte→PlazaToros): anchor + 2/4/6 min
+        // Segovia cluster (Estación→Iglesia→BarNorte→PlazaToros): 4 stops, +2 min each
+        val segoviaOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(8,30), t(16,0)), stopCount = 4, offsetMinutes = 2
+        )
         val outDeps = arrayOf(
-            mutableListOf(t(8,30),  t(16,0)),   // ESTACION_BUS (anchor)
-            mutableListOf(t(8,32),  t(16,2)),   // IGLESIA_STO_TOMAS (+2)
-            mutableListOf(t(8,34),  t(16,4)),   // FRENTE_BAR_NORTE (+4)
-            mutableListOf(t(8,36),  t(16,6)),   // PLAZA_TOROS (+6)
+            segoviaOut[0],  // ESTACION_BUS (anchor)
+            segoviaOut[1],  // IGLESIA_STO_TOMAS (+2)
+            segoviaOut[2],  // FRENTE_BAR_NORTE (+4)
+            segoviaOut[3],  // PLAZA_TOROS (+6)
             mutableListOf(t(8,40),  t(16,10)),  // URB_CARRASCALEJO
             mutableListOf(t(8,46),  t(16,16)),  // PARQUE_ROBLEDO
             mutableListOf(t(8,50),  t(16,20)),  // LA_GRANJA
@@ -187,7 +190,11 @@ class M3Parser : CapableParser, RouteStopsProvider {
         // PDF times:  9:30  9:42  9:52  9:56  9:59 10:03 10:09 10:20
         //            17:00 17:12 17:22 17:26 17:29 17:33 17:39 17:50
         //
-        // Segovia cluster inbound (PlazaToros→BarNorte→Iglesia→Estación): anchor + 2/4/6 min
+        // Segovia cluster inbound (PlazaToros→BarNorte→Iglesia→Estación): 4 stops, +2 min each
+        // Anchor = PDF "Segovia" arrival minus 6 min (e.g., 10:20 → 10:14)
+        val segoviaIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(10,14), t(17,44)), stopCount = 4, offsetMinutes = 2
+        )
         val inDeps = arrayOf(
             mutableListOf(t(9,30),  t(17,0)),   // NAVACERRADA
             mutableListOf(t(9,42),  t(17,12)),  // PUENTE_MOSQUITOS
@@ -196,10 +203,10 @@ class M3Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(9,59),  t(17,29)),  // LA_GRANJA
             mutableListOf(t(10,3),  t(17,33)),  // PARQUE_ROBLEDO
             mutableListOf(t(10,9),  t(17,39)),  // URB_CARRASCALEJO
-            mutableListOf(t(10,14), t(17,44)),  // PLAZA_TOROS_IN (anchor = PDF "Segovia" 10:20 minus 6)
-            mutableListOf(t(10,16), t(17,46)),  // FRENTE_BAR_NORTE_IN (+2)
-            mutableListOf(t(10,18), t(17,48)),  // IGLESIA_STO_TOMAS_IN (+4)
-            mutableListOf(t(10,20), t(17,50)),  // ESTACION_BUS_IN (+6 = PDF time)
+            segoviaIn[0],  // PLAZA_TOROS_IN (anchor)
+            segoviaIn[1],  // FRENTE_BAR_NORTE_IN (+2)
+            segoviaIn[2],  // IGLESIA_STO_TOMAS_IN (+4)
+            segoviaIn[3],  // ESTACION_BUS_IN (+6 = PDF time)
         )
 
         return buildTimetables(m3Outbound, DayType.SATURDAY, DIRECTION_OUTBOUND, outDeps) +

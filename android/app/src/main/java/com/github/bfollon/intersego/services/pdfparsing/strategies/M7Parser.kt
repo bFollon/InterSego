@@ -87,7 +87,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
             val TABANERA_WK           = BusStop(id = "m7-tabanera",            name = "Tabanera",    coordinates = "40.934336, -4.067014")
             // Palazuelos cluster (weekday only — school stop likely skipped on weekends)
             val PALAZUELOS_WK         = BusStop(id = "m7-palazuelos",          name = "Palazuelos",  coordinates = "40.931068, -4.064340")
-            val PALAZUELOS_COLEGIO_WK = BusStop(id = "m7-palazuelos-colegio",  name = "Colegio",     coordinates = "40.933921, -4.063495")
+            val PALAZUELOS_COLEGIO_WK = BusStop(id = "m7-palazuelos-colegio",  name = "Colegio",     coordinates = "40.933921, -4.063495", area = "Palazuelos")
             val SEGOVIA_WK_RET        = BusStop(id = "m7-segovia-ret",         name = "Segovia",     coordinates = "40.944768, -4.121823")
 
             // Saturday/Sunday outbound Segovia cluster (5 sub-stops, +2 min each from anchor)
@@ -235,18 +235,15 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 t(13,20), t(14,0), t(14,35), t(15,35), t(16,15), t(17,0),
                 t(17,45), t(18,50), t(20,30), t(21,37)
             ),
-            // PALAZUELOS_WK (18 departures — anchor for cluster)
-            mutableListOf(
-                t(7,20), t(8,5), t(8,50), t(9,35), t(10,20), t(11,5), t(11,50), t(12,35),
-                t(13,25), t(14,5), t(14,40), t(15,40), t(16,20), t(17,5),
-                t(17,50), t(18,55), t(20,35), t(21,35)
-            ),
-            // PALAZUELOS_COLEGIO_WK (18 departures — Palazuelos +2 min)
-            mutableListOf(
-                t(7,22), t(8,7), t(8,52), t(9,37), t(10,22), t(11,7), t(11,52), t(12,37),
-                t(13,27), t(14,7), t(14,42), t(15,42), t(16,22), t(17,7),
-                t(17,52), t(18,57), t(20,37), t(21,37)
-            ),
+            // PALAZUELOS cluster (2 stops, +2 min each)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(
+                    t(7,20), t(8,5), t(8,50), t(9,35), t(10,20), t(11,5), t(11,50), t(12,35),
+                    t(13,25), t(14,5), t(14,40), t(15,40), t(16,20), t(17,5),
+                    t(17,50), t(18,55), t(20,35), t(21,35)
+                ),
+                stopCount = 2, offsetMinutes = 2
+            ).toTypedArray(),
             // SEGOVIA_WK_RET (18 departures — all trips return to Segovia)
             mutableListOf(
                 t(7,30), t(8,15), t(9,0), t(9,45), t(10,30), t(11,15), t(12,0), t(12,45),
@@ -260,17 +257,17 @@ class M7Parser : CapableParser, RouteStopsProvider {
         // ══════════════════════════════════════════════════════════════════════════════════════
         // 5 trips. Trip 2 (13:30) is partial — ends at Trescasas.
         // Segovia cluster: anchor = PDF "Segovia" time; sub-stops at +2/+4/+6/+8 min.
+        // Segovia outbound cluster (5 stops, +2 min each)
+        val satSegoviaOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(9,20), t(13,30), t(15,15), t(19,30), t(22,30)),
+            stopCount = 5, offsetMinutes = 2
+        )
         val satOutDeps = arrayOf(
-            // OUT_ESTACION_BUS (anchor)
-            mutableListOf(t(9,20),  t(13,30), t(15,15), t(19,30), t(22,30)),
-            // OUT_HOSPITAL (+2)
-            mutableListOf(t(9,22),  t(13,32), t(15,17), t(19,32), t(22,32)),
-            // OUT_ANDRES_LAGUNA (+4)
-            mutableListOf(t(9,24),  t(13,34), t(15,19), t(19,34), t(22,34)),
-            // OUT_LA_PISTA (+6)
-            mutableListOf(t(9,26),  t(13,36), t(15,21), t(19,36), t(22,36)),
-            // OUT_PLAZA_TOROS (+8)
-            mutableListOf(t(9,28),  t(13,38), t(15,23), t(19,38), t(22,38)),
+            satSegoviaOut[0],  // OUT_ESTACION_BUS (anchor)
+            satSegoviaOut[1],  // OUT_HOSPITAL (+2)
+            satSegoviaOut[2],  // OUT_ANDRES_LAGUNA (+4)
+            satSegoviaOut[3],  // OUT_LA_PISTA (+6)
+            satSegoviaOut[4],  // OUT_PLAZA_TOROS (+8)
             // PALAZUELOS — PDF times
             mutableListOf(t(9,35),  t(13,45), t(15,30), t(19,45), t(22,45)),
             // TABANERA
@@ -310,14 +307,11 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(10,25), t(16,15), t(18,45), t(23,15)),
             // PALAZUELOS
             mutableListOf(t(10,28), t(16,18), t(18,48), t(23,18)),
-            // IN_PLAZA_TOROS (anchor: Segovia arrival − 6 min)
-            mutableListOf(t(10,39), t(16,24), t(18,54), t(23,24)),
-            // IN_LA_PISTA (+2)
-            mutableListOf(t(10,41), t(16,26), t(18,56), t(23,26)),
-            // IN_ANDRES_LAGUNA (+4)
-            mutableListOf(t(10,43), t(16,28), t(18,58), t(23,28)),
-            // IN_JARDINILLOS (+6 = PDF "Segovia" arrival)
-            mutableListOf(t(10,45), t(16,30), t(19,0),  t(23,30))
+            // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(10,39), t(16,24), t(18,54), t(23,24)),
+                stopCount = 4, offsetMinutes = 2
+            ).toTypedArray()
         )
 
         // ══════════════════════════════════════════════════════════════════════════════════════
@@ -325,17 +319,17 @@ class M7Parser : CapableParser, RouteStopsProvider {
         // ══════════════════════════════════════════════════════════════════════════════════════
         // 3 year-round trips + 1 school-only (20:30) + 1 summer-only (19:30) at same stops.
         // Trip 2 (20:30 school / 19:30 summer) is partial — ends at Trescasas.
-        val sunOutDeps = arrayOf(
-            // OUT_ESTACION_BUS (anchor)
+        // Segovia outbound cluster (5 stops, +2 min each; seasonal availability preserved)
+        val sunSegoviaOut = DepartureTime.clusterDepartures(
             mutableListOf(t(11,45), t(20,30,sch), t(19,30,sum), t(21,45)),
-            // OUT_HOSPITAL (+2)
-            mutableListOf(t(11,47), t(20,32,sch), t(19,32,sum), t(21,47)),
-            // OUT_ANDRES_LAGUNA (+4)
-            mutableListOf(t(11,49), t(20,34,sch), t(19,34,sum), t(21,49)),
-            // OUT_LA_PISTA (+6)
-            mutableListOf(t(11,51), t(20,36,sch), t(19,36,sum), t(21,51)),
-            // OUT_PLAZA_TOROS (+8)
-            mutableListOf(t(11,53), t(20,38,sch), t(19,38,sum), t(21,53)),
+            stopCount = 5, offsetMinutes = 2
+        )
+        val sunOutDeps = arrayOf(
+            sunSegoviaOut[0],  // OUT_ESTACION_BUS (anchor)
+            sunSegoviaOut[1],  // OUT_HOSPITAL (+2)
+            sunSegoviaOut[2],  // OUT_ANDRES_LAGUNA (+4)
+            sunSegoviaOut[3],  // OUT_LA_PISTA (+6)
+            sunSegoviaOut[4],  // OUT_PLAZA_TOROS (+8)
             // PALAZUELOS
             mutableListOf(t(12,0),  t(20,45,sch), t(19,45,sum), t(22,0)),
             // TABANERA
@@ -372,14 +366,11 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(12,28), t(16,43), t(21,5,sch),  t(20,5,sum)),
             // PALAZUELOS
             mutableListOf(t(12,33), t(16,45), t(21,8,sch),  t(20,8,sum)),
-            // IN_PLAZA_TOROS (anchor: Segovia arrival − 6 min)
-            mutableListOf(t(12,39), t(16,54), t(21,24,sch), t(20,24,sum)),
-            // IN_LA_PISTA (+2)
-            mutableListOf(t(12,41), t(16,56), t(21,26,sch), t(20,26,sum)),
-            // IN_ANDRES_LAGUNA (+4)
-            mutableListOf(t(12,43), t(16,58), t(21,28,sch), t(20,28,sum)),
-            // IN_JARDINILLOS (+6 = PDF "Segovia" arrival)
-            mutableListOf(t(12,45), t(17,0),  t(21,30,sch), t(20,30,sum))
+            // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(12,39), t(16,54), t(21,24,sch), t(20,24,sum)),
+                stopCount = 4, offsetMinutes = 2
+            ).toTypedArray()
         )
 
         return buildTimetables(m7WeekdayCircular, DayType.WEEKDAY, DIRECTION_WEEKDAY_CIRCULAR, wkDeps) +

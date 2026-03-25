@@ -187,10 +187,11 @@ class M1Parser : CapableParser, RouteStopsProvider {
         val circADeps = arrayOf(
             // SEGOVIA (11 departures)
             mutableListOf(t(6,40), t(7,25), t(8,25), t(10,0), t(12,0), t(13,0), t(14,40), t(15,15), t(18,0), t(19,30), t(20,50)),
-            // POLIGONO (9 — 13:00 and 19:30 rows are dashes)
-            mutableListOf(t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)),
-            // POLIGONO_2 — cluster, +2 min estimate from stop 1
-            mutableListOf(t(6,52), t(7,42), t(8,37), t(10,12), t(12,7), t(14,47), t(15,22), t(18,7), t(20,57)),
+            // POLIGONO cluster (2 stops, +2 min each)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(6,50), t(7,40), t(8,35), t(10,10), t(12,5), t(14,45), t(15,20), t(18,5), t(20,55)),
+                stopCount = 2, offsetMinutes = 2
+            ).toTypedArray(),
             // CASINO (6 — rows 1-3 and 8=15:15 are dashes; ★ = Jun–Sep only)
             mutableListOf(t(10,15,jun), t(12,10,jun), t(13,7), t(14,50,jun), t(18,10,jun), t(21,0,jun)),
             // VALVERDE (8 — rows 1,2,4 dashes)

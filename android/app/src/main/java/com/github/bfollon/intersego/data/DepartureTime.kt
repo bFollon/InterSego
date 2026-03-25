@@ -79,6 +79,36 @@ data class DepartureTime(
 
     companion object {
         /**
+         * Generate departure time lists for each stop in a cluster.
+         *
+         * Given anchor times (PDF times for the first stop) and a stop count,
+         * returns one departure list per cluster stop. Stop at index `i` gets
+         * each anchor time plus `i * offsetMinutes`.
+         *
+         * Example: `clusterDepartures(listOf(t(8,30), t(16,0)), 4, 2)` returns:
+         *   [0] = [8:30, 16:00]   (anchor + 0)
+         *   [1] = [8:32, 16:02]   (anchor + 2)
+         *   [2] = [8:34, 16:04]   (anchor + 4)
+         *   [3] = [8:36, 16:06]   (anchor + 6)
+         */
+        fun clusterDepartures(
+            anchorTimes: List<DepartureTime>,
+            stopCount: Int,
+            offsetMinutes: Int = 2
+        ): List<MutableList<DepartureTime>> {
+            return (0 until stopCount).map { index ->
+                anchorTimes.map { anchor ->
+                    val totalMinutes = anchor.hour * 60 + anchor.minute + index * offsetMinutes
+                    DepartureTime(
+                        hour = (totalMinutes / 60) % 24,
+                        minute = totalMinutes % 60,
+                        seasonalAvailability = anchor.seasonalAvailability
+                    )
+                }.toMutableList()
+            }
+        }
+
+        /**
          * Parse departure time from HH:MM string
          */
         fun fromString(timeString: String): DepartureTime? {

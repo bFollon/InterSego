@@ -70,6 +70,34 @@ struct DepartureTime: Codable, Comparable, Hashable {
         return label != "Regular"
     }
 
+    /// Generate departure time lists for each stop in a cluster.
+    ///
+    /// Given anchor times (PDF times for the first stop) and a stop count,
+    /// returns one departure list per cluster stop. Stop at index `i` gets
+    /// each anchor time plus `i * offsetMinutes`.
+    ///
+    /// Example: `clusterDepartures([t(8,30), t(16,0)], stopCount: 4, offsetMinutes: 2)` returns:
+    ///   [0] = [8:30, 16:00]   (anchor + 0)
+    ///   [1] = [8:32, 16:02]   (anchor + 2)
+    ///   [2] = [8:34, 16:04]   (anchor + 4)
+    ///   [3] = [8:36, 16:06]   (anchor + 6)
+    static func clusterDepartures(
+        _ anchorTimes: [DepartureTime],
+        stopCount: Int,
+        offsetMinutes: Int = 2
+    ) -> [[DepartureTime]] {
+        (0..<stopCount).map { index in
+            anchorTimes.map { anchor in
+                let totalMinutes = anchor.hour * 60 + anchor.minute + index * offsetMinutes
+                return DepartureTime(
+                    hour: (totalMinutes / 60) % 24,
+                    minute: totalMinutes % 60,
+                    seasonalAvailability: anchor.seasonalAvailability
+                )
+            }
+        }
+    }
+
     static func fromString(_ timeString: String) -> DepartureTime? {
         let parts = timeString.split(separator: ":")
         guard parts.count == 2,
