@@ -71,7 +71,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M7"),
         mode = ParserMode.PRODUCTION,
-        version = "1.1"
+        version = "1.2"
     )
 
     companion object {
@@ -82,11 +82,13 @@ class M7Parser : CapableParser, RouteStopsProvider {
         // ── Stops ───────────────────────────────────────────────────────────────────────────────
 
         private object Stops {
-            // Weekday circular stops (no cluster — single "Segovia" stop)
-            val SEGOVIA_WK       = BusStop(id = "m7-segovia",          name = "Segovia",           coordinates = "40.944768, -4.121823")
-            val TABANERA_WK      = BusStop(id = "m7-tabanera",         name = "Tabanera",          coordinates = "40.934336, -4.067014")
-            val PALAZUELOS_WK    = BusStop(id = "m7-palazuelos",       name = "Palazuelos",        coordinates = "40.931068, -4.064340")
-            val SEGOVIA_WK_RET   = BusStop(id = "m7-segovia-ret",      name = "Segovia",           coordinates = "40.944768, -4.121823")
+            // Weekday circular stops
+            val SEGOVIA_WK            = BusStop(id = "m7-segovia",             name = "Segovia",     coordinates = "40.944768, -4.121823")
+            val TABANERA_WK           = BusStop(id = "m7-tabanera",            name = "Tabanera",    coordinates = "40.934336, -4.067014")
+            // Palazuelos cluster (weekday only — school stop likely skipped on weekends)
+            val PALAZUELOS_WK         = BusStop(id = "m7-palazuelos",          name = "Palazuelos",  coordinates = "40.931068, -4.064340")
+            val PALAZUELOS_COLEGIO_WK = BusStop(id = "m7-palazuelos-colegio",  name = "Colegio",     coordinates = "40.933921, -4.063495")
+            val SEGOVIA_WK_RET        = BusStop(id = "m7-segovia-ret",         name = "Segovia",     coordinates = "40.944768, -4.121823")
 
             // Saturday/Sunday outbound Segovia cluster (5 sub-stops, +2 min each from anchor)
             // Recorrido urbano: Estación Bus → Hospital → Andrés Laguna → La Pista → Plaza de Toros
@@ -115,9 +117,9 @@ class M7Parser : CapableParser, RouteStopsProvider {
 
         // ── Stop lists ──────────────────────────────────────────────────────────────────────────
 
-        // Weekday circular: Segovia → Tabanera → Palazuelos → Segovia
+        // Weekday circular: Segovia → Tabanera → Palazuelos (cluster) → Segovia
         val m7WeekdayCircular: List<BusStop> = listOf(
-            Stops.SEGOVIA_WK, Stops.TABANERA_WK, Stops.PALAZUELOS_WK, Stops.SEGOVIA_WK_RET
+            Stops.SEGOVIA_WK, Stops.TABANERA_WK, Stops.PALAZUELOS_WK, Stops.PALAZUELOS_COLEGIO_WK, Stops.SEGOVIA_WK_RET
         )
 
         // Saturday/Sunday outbound: Segovia cluster → ... → Torrecaballeros
@@ -233,11 +235,17 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 t(13,20), t(14,0), t(14,35), t(15,35), t(16,15), t(17,0),
                 t(17,45), t(18,50), t(20,30), t(21,37)
             ),
-            // PALAZUELOS_WK (18 departures)
+            // PALAZUELOS_WK (18 departures — anchor for cluster)
             mutableListOf(
                 t(7,20), t(8,5), t(8,50), t(9,35), t(10,20), t(11,5), t(11,50), t(12,35),
                 t(13,25), t(14,5), t(14,40), t(15,40), t(16,20), t(17,5),
                 t(17,50), t(18,55), t(20,35), t(21,35)
+            ),
+            // PALAZUELOS_COLEGIO_WK (18 departures — Palazuelos +2 min)
+            mutableListOf(
+                t(7,22), t(8,7), t(8,52), t(9,37), t(10,22), t(11,7), t(11,52), t(12,37),
+                t(13,27), t(14,7), t(14,42), t(15,42), t(16,22), t(17,7),
+                t(17,52), t(18,57), t(20,37), t(21,37)
             ),
             // SEGOVIA_WK_RET (18 departures — all trips return to Segovia)
             mutableListOf(

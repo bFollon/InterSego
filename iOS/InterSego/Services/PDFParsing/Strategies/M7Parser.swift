@@ -38,7 +38,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M7"]),
         mode: .production,
-        version: "1.1"
+        version: "1.2"
     )
 
     // MARK: - Directions
@@ -51,10 +51,12 @@ class M7Parser: CapableParser, RouteStopsProvider {
 
     private enum Stops {
         // Weekday circular stops
-        static let segoviaWk      = BusStop(id: "m7-segovia",          name: "Segovia",           coordinates: "40.944768, -4.121823")
-        static let tabaneraWk     = BusStop(id: "m7-tabanera",         name: "Tabanera",          coordinates: "40.934336, -4.067014")
-        static let palazuelosWk   = BusStop(id: "m7-palazuelos",       name: "Palazuelos",        coordinates: "40.931068, -4.064340")
-        static let segoviaWkRet   = BusStop(id: "m7-segovia-ret",      name: "Segovia",           coordinates: "40.944768, -4.121823")
+        static let segoviaWk           = BusStop(id: "m7-segovia",             name: "Segovia",     coordinates: "40.944768, -4.121823")
+        static let tabaneraWk          = BusStop(id: "m7-tabanera",            name: "Tabanera",    coordinates: "40.934336, -4.067014")
+        // Palazuelos cluster (weekday only — school stop likely skipped on weekends)
+        static let palazuelosWk        = BusStop(id: "m7-palazuelos",          name: "Palazuelos",  coordinates: "40.931068, -4.064340")
+        static let palazuelosColegioWk = BusStop(id: "m7-palazuelos-colegio",  name: "Colegio",     coordinates: "40.933921, -4.063495")
+        static let segoviaWkRet        = BusStop(id: "m7-segovia-ret",         name: "Segovia",     coordinates: "40.944768, -4.121823")
 
         // Saturday/Sunday outbound Segovia cluster (5 sub-stops)
         static let outEstacionBus  = BusStop(id: "m7-estacion-bus",      name: "Estación de Autobuses",  coordinates: "40.944768, -4.121823")
@@ -80,8 +82,9 @@ class M7Parser: CapableParser, RouteStopsProvider {
     }
 
     // Weekday circular
+    // Weekday circular: Segovia → Tabanera → Palazuelos (cluster) → Segovia
     static let m7WeekdayCircular: [BusStop] = [
-        Stops.segoviaWk, Stops.tabaneraWk, Stops.palazuelosWk, Stops.segoviaWkRet
+        Stops.segoviaWk, Stops.tabaneraWk, Stops.palazuelosWk, Stops.palazuelosColegioWk, Stops.segoviaWkRet
     ]
 
     // Saturday/Sunday outbound
@@ -205,11 +208,17 @@ class M7Parser: CapableParser, RouteStopsProvider {
                 t(13,20), t(14,0), t(14,35), t(15,35), t(16,15), t(17,0),
                 t(17,45), t(18,50), t(20,30), t(21,37),
             ],
-            // PALAZUELOS_WK (18 departures)
+            // PALAZUELOS_WK (18 departures — anchor for cluster)
             [
                 t(7,20), t(8,5), t(8,50), t(9,35), t(10,20), t(11,5), t(11,50), t(12,35),
                 t(13,25), t(14,5), t(14,40), t(15,40), t(16,20), t(17,5),
                 t(17,50), t(18,55), t(20,35), t(21,35),
+            ],
+            // PALAZUELOS_COLEGIO_WK (18 departures — Palazuelos +2 min)
+            [
+                t(7,22), t(8,7), t(8,52), t(9,37), t(10,22), t(11,7), t(11,52), t(12,37),
+                t(13,27), t(14,7), t(14,42), t(15,42), t(16,22), t(17,7),
+                t(17,52), t(18,57), t(20,37), t(21,37),
             ],
             // SEGOVIA_WK_RET (18 departures)
             [
