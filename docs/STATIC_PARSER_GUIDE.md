@@ -35,6 +35,16 @@ If the PDF shows a single stop name (e.g., "Segovia") but a footnote lists multi
 - Estimate subsequent sub-stop times at **+2 minutes per position**
 - Example: PDF says "Segovia 8:30" with 4 sub-stops → 8:30, 8:32, 8:34, 8:36
 
+#### How to discover clusters
+
+Clusters are identified from **footnotes or annotations** in the PDF that describe the urban route ("recorrido urbano") through a city. Common patterns:
+
+- **Footnote listing sub-stops:** e.g., "RECORRIDO URBANO: ESTACION BUS-HOSPITAL-ANDRES LAGUNA-LA PISTA-PLAZA DE TOROS" — each dash-separated name becomes a sub-stop.
+- **Different cluster for each direction:** The outbound and inbound urban routes through a city may use different sub-stops. For example, M7 Saturday outbound goes Estación Bus → Hospital → Andrés Laguna → La Pista → Plaza de Toros (5 stops), but inbound goes Plaza de Toros → La Pista → Andrés Laguna → Jardinillos y Hospital (4 stops).
+- **Day-type-dependent clusters:** A route may have clusters on weekends but not weekdays. For example, M7 weekdays use a single "Segovia" stop, but Saturday/Sunday expand it into a 4-5 stop cluster.
+
+When the same physical stops appear in clusters across multiple routes (e.g., "Estación de Autobuses", "Plaza de Toros"), reuse the GPS coordinates but create route-specific stop IDs (e.g., `m7-estacion-bus` vs `m6-estacion-bus`).
+
 ### 3. Assign Stop IDs and Coordinates
 
 - Stop IDs follow the pattern: `m{route}-{stop-name-kebab}` (e.g., `m3-la-granja`)

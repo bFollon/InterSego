@@ -39,7 +39,22 @@ This document tracks incomplete items across all static data parsers (M1–M5 an
 - [ ] **Route polylines** — none created yet
 - [ ] **Version bump** — bump `capabilities.version` on both platforms after coordinate/data fixes
 
-## Common Items (all static parsers, including future M7/M8)
+### M7 (Segovia – Torrecaballeros)
+- [ ] **Coordinates** — 5 stops missing (both platforms):
+  - `m7-hospital` — Hospital
+  - `m7-s-cristobal` — S. Cristóbal
+  - `m7-sonsoto` — Sonsoto
+  - `m7-trescasas` — Trescasas
+  - `m7-cabanillas` — Cabanillas
+  - `m7-torrecaballeros` — Torrecaballeros
+  - Plus inbound copies where applicable
+- [ ] **Route polylines** — none created yet
+- [ ] **Version bump** — bump `capabilities.version` on both platforms after coordinate/data fixes
+- [ ] **Valsaín–La Granja feeder** — deferred to separate "M7-AVE" parser (weekday only, 1 trip at 6:00 AM, 11 stops from Valsaín to Ave Segovia)
+- [ ] **Weekday last trip anomaly** — PDF shows `*21:20` (Segovia), `*21:37` (Tabanera), but Palazuelos at `21:35` which is BEFORE Tabanera. The `*` is not explained in the weekday footnotes. Times included as-is — verify with Linecar if possible.
+- [ ] **Sunday seasonal refinement** — currently using SCHOOL_ONLY (Sep–Jun) and SUMMER_ONLY (Jul–Aug) as scaffolding. Actual school-term dates may differ ("periodo lectivo" vs "vacaciones escolares estivales").
+
+## Common Items (all static parsers, including future M8)
 
 ### Coordinates
 - Placeholder coordinates use `"0.0, 0.0"` — these must be replaced with real GPS coordinates

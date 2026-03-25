@@ -231,9 +231,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M7",
                 number = "M7",
-                name = "Línea Metropolitana 7",
+                name = "Segovia - Torrecaballeros",
                 origin = "Segovia",
-                destination = "Área Metropolitana",
+                destination = "Torrecaballeros",
                 pdfURL = "",
                 routeType = RouteType.URBAN
             ),
