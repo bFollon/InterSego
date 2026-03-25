@@ -22,7 +22,7 @@ struct BusStop: Codable, Hashable, Identifiable {
     let name: String
     let area: String?
     let details: String?
-    let coordinates: String    // "40.948406, -4.116411"
+    let coordinates: String // "40.948406, -4.116411"
     /// Optional coordinate used for route planning when the bus travels through a different
     /// point than the physical stop (e.g. stop is just after a turn the bus doesn't make).
     /// Falls back to `coordinates` when nil.
@@ -32,7 +32,8 @@ struct BusStop: Codable, Hashable, Identifiable {
 
     init(id: String, name: String, area: String? = nil,
          details: String? = nil, coordinates: String, routingCoordinates: String? = nil,
-         routesServed: [String] = [], stopCode: String? = nil) {
+         routesServed: [String] = [], stopCode: String? = nil)
+    {
         self.id = id
         self.name = name
         self.area = area
@@ -61,10 +62,17 @@ struct BusStop: Codable, Hashable, Identifiable {
         return (lat, lon)
     }
 
-    var resolvedLatitude: Double? { parsedCoordinates?.lat }
-    var resolvedLongitude: Double? { parsedCoordinates?.lon }
+    var resolvedLatitude: Double? {
+        parsedCoordinates?.lat
+    }
 
-    var hasCoordinates: Bool { parsedCoordinates != nil }
+    var resolvedLongitude: Double? {
+        parsedCoordinates?.lon
+    }
+
+    var hasCoordinates: Bool {
+        parsedCoordinates != nil
+    }
 
     /// Latitude used for route planning. Falls back to `resolvedLatitude` when no routing override is set.
     var routingLatitude: Double? {

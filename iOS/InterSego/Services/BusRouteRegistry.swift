@@ -18,7 +18,6 @@
 import Foundation
 
 enum BusRouteRegistry {
-
     static func knownRoutes() -> [BusRoute] {
         [
             BusRoute(id: "M1", number: "M1", name: "Línea Metropolitana 1",

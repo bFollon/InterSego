@@ -23,10 +23,12 @@ struct PDFParsingError: Error, LocalizedError {
 
     init(_ message: String, cause: Error? = nil) {
         self.message = message
-        self.underlying = cause
+        underlying = cause
     }
 
-    var errorDescription: String? { message }
+    var errorDescription: String? {
+        message
+    }
 }
 
 enum ParserMode {
@@ -63,7 +65,7 @@ protocol RouteStopsProvider {
 }
 
 extension RouteStopsProvider {
-    func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
+    func getRouteVariants(_ routeId: String, dayType _: DayType) -> [RouteVariant] {
         let routes = getRoutesForId(routeId)
         var variants: [RouteVariant] = []
         if let first = routes.first {
@@ -75,11 +77,15 @@ extension RouteStopsProvider {
         return variants
     }
 
-    func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? { nil }
+    func getRouteViews(_: String, dayType _: DayType) -> [RouteView]? {
+        nil
+    }
 
     /// Get the flat list of selectable route entries for the "Rutas" picker.
     ///
     /// Each entry represents one distinct route experience (operating schedule + starting direction).
     /// Returns empty list by default.
-    func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] { [] }
+    func getRouteEntries(_: String, today _: Date) -> [RouteSelectorEntry] {
+        []
+    }
 }

@@ -26,7 +26,8 @@ struct BusTimetable: Codable, Identifiable {
     let direction: String?
 
     init(id: String = UUID().uuidString, routeId: String, stopId: String,
-         dayType: DayType, departures: [DepartureTime], direction: String? = nil) {
+         dayType: DayType, departures: [DepartureTime], direction: String? = nil)
+    {
         self.id = id
         self.routeId = routeId
         self.stopId = stopId

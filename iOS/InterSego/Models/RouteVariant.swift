@@ -25,7 +25,8 @@ struct RouteVariant: Identifiable, Hashable {
     let departureLabel: String?
 
     init(id: String, label: String, stops: [BusStop], direction: String,
-         departureLabel: String? = nil) {
+         departureLabel: String? = nil)
+    {
         self.id = id
         self.label = label
         self.stops = stops

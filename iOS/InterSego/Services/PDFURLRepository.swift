@@ -43,7 +43,7 @@ actor PDFURLRepository {
         "M5": "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf",
         "M6": "https://www.linecar.es/wp-content/uploads/2025/12/M6.pdf",
         "M7": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf",
-        "M8": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf"
+        "M8": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf",
     ]
 
     private var validationCache: [String: URLValidationResult] = [:]
@@ -112,7 +112,7 @@ actor PDFURLRepository {
             }
 
             let result: URLValidationResult
-            if (200...299).contains(httpResponse.statusCode) {
+            if (200 ... 299).contains(httpResponse.statusCode) {
                 DebugConfig.debugPrint("PDFURLRepository: URL is valid (\(httpResponse.statusCode))")
                 result = .valid(url)
             } else {
@@ -171,9 +171,9 @@ actor PDFURLRepository {
             case .valid:
                 validURLs[routeId] = url
                 DebugConfig.debugPrint("\(routeId): Valid")
-            case .invalid(_, let statusCode):
+            case let .invalid(_, statusCode):
                 DebugConfig.debugWarn("\(routeId): Invalid (\(statusCode))")
-            case .error(_, let message):
+            case let .error(_, message):
                 DebugConfig.debugWarn("\(routeId): Error (\(message))")
             }
         }
@@ -215,7 +215,7 @@ actor PDFURLRepository {
         case .valid:
             DebugConfig.debugPrint("PDFURLRepository: Current URL is valid")
             return .success(currentURL)
-        case .invalid(_, let statusCode) where statusCode == 404:
+        case let .invalid(_, statusCode) where statusCode == 404:
             DebugConfig.debugWarn("PDFURLRepository: URL returned 404, attempting self-healing...")
             let freshURLs = await scrapeURLs()
             if let newURL = freshURLs[normalizedId], newURL != currentURL {
@@ -223,7 +223,7 @@ actor PDFURLRepository {
                 return .updated(oldUrl: currentURL, newUrl: newURL)
             }
             return .failed("No se puede acceder al horario en este momento. Inténtalo más tarde.")
-        case .invalid(_, let statusCode):
+        case let .invalid(_, statusCode):
             return .failed("No se puede acceder al horario (Error \(statusCode))")
         case .error:
             return .failed("Error de red. Inténtalo más tarde.")

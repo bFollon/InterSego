@@ -20,9 +20,9 @@ import os
 
 enum DebugConfig {
     #if DEBUG
-    static var isDebugEnabled = true
+        static var isDebugEnabled = true
     #else
-    static var isDebugEnabled = false
+        static var isDebugEnabled = false
     #endif
 
     static var isDetailedLoggingEnabled = false

@@ -48,7 +48,8 @@ struct RouteView: Identifiable, Hashable {
 
     init(id: String, label: String, stops: [RouteViewStop], direction: String,
          departureLabel: String? = nil, swapAction: SwapAction? = nil,
-         tabs: [RouteTab]? = nil, extendedSectionLabel: String? = nil) {
+         tabs: [RouteTab]? = nil, extendedSectionLabel: String? = nil)
+    {
         self.id = id
         self.label = label
         self.stops = stops

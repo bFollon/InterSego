@@ -32,12 +32,6 @@ struct MapSelection: Hashable {
     let route: BusRoute
     let routeViews: [RouteView]
     let initialViewId: String
-
-    init(route: BusRoute, routeViews: [RouteView], initialViewId: String) {
-        self.route = route
-        self.routeViews = routeViews
-        self.initialViewId = initialViewId
-    }
 }
 
 struct AllRoutesSelection: Hashable {
@@ -170,7 +164,9 @@ struct ContentView: View {
         @State private var showAllRoutes = false
         @State private var loaded = false
 
-        private var todayDayType: DayType { TimetableService.shared.getCurrentDayType() }
+        private var todayDayType: DayType {
+            TimetableService.shared.getCurrentDayType()
+        }
 
         var body: some View {
             Group {

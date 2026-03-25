@@ -59,7 +59,9 @@ struct DayScheduleView: View {
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
-    private var currentWeekday: Int { Calendar.current.component(.weekday, from: Date()) }
+    private var currentWeekday: Int {
+        Calendar.current.component(.weekday, from: Date())
+    }
 
     private var currentDayTypes: Set<DayType> {
         if let override = overrideDayType { return dayTypesFor(override) }
@@ -69,8 +71,8 @@ struct DayScheduleView: View {
     private var todayDepartures: [DepartureTime] {
         let matching = timetables.filter { timetable in
             currentDayTypes.contains(timetable.dayType)
-            && timetable.stopId == stop.id
-            && timetable.direction == direction
+                && timetable.stopId == stop.id
+                && timetable.direction == direction
         }
         return matching.flatMap { $0.seasonalDepartures(weekday: currentWeekday) }.sorted()
     }
@@ -268,8 +270,8 @@ private enum DayScheduleTimeOfDay {
 
 private func getDayScheduleTimeOfDay(_ hour: Int) -> DayScheduleTimeOfDay {
     switch hour {
-    case 6...12: return .morning
-    case 13...19: return .afternoon
+    case 6 ... 12: return .morning
+    case 13 ... 19: return .afternoon
     default: return .evening
     }
 }

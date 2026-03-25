@@ -86,7 +86,8 @@ actor PDFCacheManager {
             let (_, response) = try await session.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
+                  (200 ... 299).contains(httpResponse.statusCode)
+            else {
                 DebugConfig.debugError("Failed to get remote PDF info")
                 return nil
             }
@@ -111,7 +112,8 @@ actor PDFCacheManager {
 
     func isCacheUpToDate(routeId: String, pdfUrl: String) async -> Bool {
         guard cachedFileURL(routeId: routeId) != nil,
-              let cachedVersion = getStoredVersion(routeId: routeId) else {
+              let cachedVersion = getStoredVersion(routeId: routeId)
+        else {
             DebugConfig.debugPrint("PDFCacheManager: No cached file or version for \(routeId)")
             return false
         }
@@ -237,9 +239,9 @@ actor PDFCacheManager {
         formatter.timeZone = TimeZone(identifier: "GMT")
 
         let formats = [
-            "EEE, dd MMM yyyy HH:mm:ss 'GMT'",     // RFC 1123
-            "EEEE, dd-MMM-yy HH:mm:ss 'GMT'",      // RFC 850
-            "EEE MMM d HH:mm:ss yyyy"               // ANSI C asctime()
+            "EEE, dd MMM yyyy HH:mm:ss 'GMT'", // RFC 1123
+            "EEEE, dd-MMM-yy HH:mm:ss 'GMT'", // RFC 850
+            "EEE MMM d HH:mm:ss yyyy", // ANSI C asctime()
         ]
 
         for format in formats {

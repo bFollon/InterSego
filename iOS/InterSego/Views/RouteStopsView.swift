@@ -32,7 +32,6 @@ struct RouteStopsView: View {
         views.first { $0.id == currentViewId } ?? views.first
     }
 
-    @ViewBuilder
     var body: some View {
         if let currentView {
             mainContent(currentView: currentView)

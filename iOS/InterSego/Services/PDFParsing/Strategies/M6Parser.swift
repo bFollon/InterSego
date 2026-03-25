@@ -23,7 +23,6 @@ import Foundation
 /// (rows with fewer anchor times than the route has clusters) and mixed-direction
 /// lines (adjacent outbound/return times on the same PDF text line).
 class M6Parser: CapableParser, RouteStopsProvider {
-
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M6"]),
         mode: .production,
@@ -51,7 +50,11 @@ class M6Parser: CapableParser, RouteStopsProvider {
         let clusters: [StopCluster]
         let alignment: ClusterAlignment
 
-        init(id: UUID = UUID(), clusters: [StopCluster], alignment: ClusterAlignment = .fromStart) {
+        init(
+            id: UUID = UUID(),
+            clusters: [StopCluster],
+            alignment: ClusterAlignment = .fromStart
+        ) {
             self.id = id
             self.clusters = clusters
             self.alignment = alignment
@@ -63,12 +66,18 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
         func reversed() -> Route {
             Route(
-                clusters: clusters.reversed().map { StopCluster($0.stops.reversed()) },
+                clusters: clusters.reversed().map {
+                    StopCluster($0.stops.reversed())
+                },
                 alignment: alignment == .fromStart ? .fromEnd : .fromStart
             )
         }
 
-        func copy(id: UUID? = nil, clusters: [StopCluster]? = nil, alignment: ClusterAlignment? = nil) -> Route {
+        func copy(
+            id: UUID? = nil,
+            clusters: [StopCluster]? = nil,
+            alignment: ClusterAlignment? = nil
+        ) -> Route {
             Route(
                 id: id ?? self.id,
                 clusters: clusters ?? self.clusters,
@@ -105,30 +114,155 @@ class M6Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let azoguejo = BusStop(id: "m6-azoguejo", name: "Azoguejo", area: "Segovia capital", coordinates: "40.948502, -4.115979")
-        static let delicias = BusStop(id: "m6-delicias", name: "Delicias", area: "Segovia capital", coordinates: "40.954500, -4.108889")
-        static let montecorredores = BusStop(id: "m6-montecorredores", name: "Montecorredores", area: "Segovia capital", coordinates: "40.952000, -4.097278")
-        static let sanCris = BusStop(id: "m6-sancris", name: "San Cristóbal de Segovia", area: "San Cristóbal de segovia", coordinates: "40.952056, -4.081139")
-        static let sanCrisIglesia = BusStop(id: "m6-sancris-iglesia", name: "Iglesia", area: "San Cristóbal de segovia", coordinates: "40.951733, -4.077499")
-        static let sanCrisRotonda = BusStop(id: "m6-sancris-rotonda", name: "Rotonda", area: "San Cristóbal de segovia", coordinates: "40.951224, -4.073449")
-        static let sonsoto = BusStop(id: "m6-sonsoto", name: "Potro", area: "Sonsoto", coordinates: "40.954774, -4.040524")
-        static let sonsoto2 = BusStop(id: "m6-sonsoto-2", name: "Sonsoto 2", area: "Sonsoto", details: "Junto a C/ Peñas lisas", coordinates: "40.957470, -4.039154")
-        static let trescasas = BusStop(id: "m6-trescasas", name: "Plaza de la constitución", area: "Trescasas", coordinates: "40.961834, -4.037367")
-        static let trescasas2 = BusStop(id: "m6-trescasas-2", name: "Trescasas 2", area: "Trescasas", coordinates: "40.963899, -4.034776")
-        static let cabanillas = BusStop(id: "m6-cabanillas", name: "Cabanillas", area: "Cabanillas", coordinates: "40.974402, -4.028241")
-        static let torrecaballeros = BusStop(id: "m6-torrecaballeros", name: "Torrecaballeros", area: "Torrecaballeros", coordinates: "40.991880, -4.022848")
-        static let torrecaballeros2 = BusStop(id: "m6-torrecaballeros-2", name: "Torrecaballeros 2", area: "Torrecaballeros", details: "Junto a la taberna del Rancho", coordinates: "40.995364, -4.021688")
-        static let torrecaballeros3 = BusStop(id: "m6-torrecaballeros-3", name: "Torrecaballeros 3", area: "Torrecaballeros", details: "En carretera hacia Turégano", coordinates: "40.999144, -4.020855")
-        static let andresLaguna = BusStop(id: "m6-andres-laguna", name: "IES Andres Laguna", area: "Segovia capital", coordinates: "40.939106, -4.115582")
-        static let laPista = BusStop(id: "m6-la-pista", name: "Glorieta La Pista", area: "Segovia capital", details: "Glorieta del Ballenoil", coordinates: "40.937354, -4.111411")
-        static let hermanitas = BusStop(id: "m6-hermanitas", name: "Residencia Hermanitas de los pobres", area: "Segovia capital", coordinates: "40.944234, -4.110012")
-        static let estacionBus = BusStop(id: "m6-estacion-bus", name: "Estación de Autobuses de Segovia", area: "Segovia capital", coordinates: "40.944768, -4.121823")
-        static let plazaToros = BusStop(id: "m6-plaza-toros", name: "Plaza de Toros", area: "Segovia capital", coordinates: "40.942093, -4.107603")
-        static let palazuelos = BusStop(id: "m6-palazuelos", name: "Palazuelos", area: "Palazuelos", coordinates: "40.931068, -4.064340")
-        static let palazuelosColegio = BusStop(id: "m6-palazuelos-colegio", name: "Colegio", area: "Palazuelos", coordinates: "40.933921, -4.063495")
-        static let tabanera = BusStop(id: "m6-tabanera", name: "Tabanera", area: "Tabanera", coordinates: "40.934336, -4.067014")
-        static let tabanera2 = BusStop(id: "m6-tabanera-2", name: "Tabanera 2", area: "Tabanera", coordinates: "40.937491, -4.065818")
-        static let jardinillos = BusStop(id: "m6-jardinillos", name: "Jardinillos de San Roque", area: "Segovia capital", details: "Frente a Policía Nacional", coordinates: "40.944361, -4.120831")
+        static let azoguejo = BusStop(
+            id: "m6-azoguejo",
+            name: "Azoguejo",
+            area: "Segovia capital",
+            coordinates: "40.948502, -4.115979"
+        )
+        static let delicias = BusStop(
+            id: "m6-delicias",
+            name: "Delicias",
+            area: "Segovia capital",
+            coordinates: "40.954500, -4.108889"
+        )
+        static let montecorredores = BusStop(
+            id: "m6-montecorredores",
+            name: "Montecorredores",
+            area: "Segovia capital",
+            coordinates: "40.952000, -4.097278"
+        )
+        static let sanCris = BusStop(
+            id: "m6-sancris",
+            name: "San Cristóbal de Segovia",
+            area: "San Cristóbal de segovia",
+            coordinates: "40.952056, -4.081139"
+        )
+        static let sanCrisIglesia = BusStop(
+            id: "m6-sancris-iglesia",
+            name: "Iglesia",
+            area: "San Cristóbal de segovia",
+            coordinates: "40.951733, -4.077499"
+        )
+        static let sanCrisRotonda = BusStop(
+            id: "m6-sancris-rotonda",
+            name: "Rotonda",
+            area: "San Cristóbal de segovia",
+            coordinates: "40.951224, -4.073449"
+        )
+        static let sonsoto = BusStop(
+            id: "m6-sonsoto",
+            name: "Potro",
+            area: "Sonsoto",
+            coordinates: "40.954774, -4.040524"
+        )
+        static let sonsoto2 = BusStop(
+            id: "m6-sonsoto-2",
+            name: "Sonsoto 2",
+            area: "Sonsoto",
+            details: "Junto a C/ Peñas lisas",
+            coordinates: "40.957470, -4.039154"
+        )
+        static let trescasas = BusStop(
+            id: "m6-trescasas",
+            name: "Plaza de la constitución",
+            area: "Trescasas",
+            coordinates: "40.961834, -4.037367"
+        )
+        static let trescasas2 = BusStop(
+            id: "m6-trescasas-2",
+            name: "Trescasas 2",
+            area: "Trescasas",
+            coordinates: "40.963899, -4.034776"
+        )
+        static let cabanillas = BusStop(
+            id: "m6-cabanillas",
+            name: "Cabanillas",
+            area: "Cabanillas",
+            coordinates: "40.974402, -4.028241"
+        )
+        static let torrecaballeros = BusStop(
+            id: "m6-torrecaballeros",
+            name: "Torrecaballeros",
+            area: "Torrecaballeros",
+            coordinates: "40.991880, -4.022848"
+        )
+        static let torrecaballeros2 = BusStop(
+            id: "m6-torrecaballeros-2",
+            name: "Torrecaballeros 2",
+            area: "Torrecaballeros",
+            details: "Junto a la taberna del Rancho",
+            coordinates: "40.995364, -4.021688"
+        )
+        static let torrecaballeros3 = BusStop(
+            id: "m6-torrecaballeros-3",
+            name: "Torrecaballeros 3",
+            area: "Torrecaballeros",
+            details: "En carretera hacia Turégano",
+            coordinates: "40.999144, -4.020855"
+        )
+        static let andresLaguna = BusStop(
+            id: "m6-andres-laguna",
+            name: "IES Andres Laguna",
+            area: "Segovia capital",
+            coordinates: "40.939106, -4.115582"
+        )
+        static let laPista = BusStop(
+            id: "m6-la-pista",
+            name: "Glorieta La Pista",
+            area: "Segovia capital",
+            details: "Glorieta del Ballenoil",
+            coordinates: "40.937354, -4.111411"
+        )
+        static let hermanitas = BusStop(
+            id: "m6-hermanitas",
+            name: "Residencia Hermanitas de los pobres",
+            area: "Segovia capital",
+            coordinates: "40.944234, -4.110012"
+        )
+        static let estacionBus = BusStop(
+            id: "m6-estacion-bus",
+            name: "Estación de Autobuses de Segovia",
+            area: "Segovia capital",
+            coordinates: "40.944768, -4.121823"
+        )
+        static let plazaToros = BusStop(
+            id: "m6-plaza-toros",
+            name: "Plaza de Toros",
+            area: "Segovia capital",
+            coordinates: "40.942093, -4.107603"
+        )
+        static let palazuelos = BusStop(
+            id: "m6-palazuelos",
+            name: "Palazuelos",
+            area: "Palazuelos",
+            coordinates: "40.931068, -4.064340"
+        )
+        static let palazuelosColegio = BusStop(
+            id: "m6-palazuelos-colegio",
+            name: "Colegio",
+            area: "Palazuelos",
+            coordinates: "40.933921, -4.063495"
+        )
+        static let tabanera = BusStop(
+            id: "m6-tabanera",
+            name: "Tabanera",
+            area: "Tabanera",
+            coordinates: "40.934336, -4.067014"
+        )
+        static let tabanera2 = BusStop(
+            id: "m6-tabanera-2",
+            name: "Tabanera 2",
+            area: "Tabanera",
+            coordinates: "40.937491, -4.065818"
+        )
+        static let jardinillos = BusStop(
+            id: "m6-jardinillos",
+            name: "Jardinillos de San Roque",
+            area: "Segovia capital",
+            details: "Frente a Policía Nacional",
+            coordinates: "40.944361, -4.120831"
+        )
     }
 
     // MARK: - Routes
@@ -137,12 +271,20 @@ class M6Parser: CapableParser, RouteStopsProvider {
         enum Weekday {
             static let regular = Route(
                 clusters: [
-                    StopCluster([Stops.azoguejo, Stops.delicias, Stops.montecorredores]),
-                    StopCluster([Stops.sanCris, Stops.sanCrisIglesia, Stops.sanCrisRotonda]),
+                    StopCluster([
+                        Stops.azoguejo, Stops.delicias, Stops.montecorredores,
+                    ]),
+                    StopCluster([
+                        Stops.sanCris, Stops.sanCrisIglesia,
+                        Stops.sanCrisRotonda,
+                    ]),
                     StopCluster([Stops.sonsoto, Stops.sonsoto2]),
                     StopCluster([Stops.trescasas, Stops.trescasas2]),
                     StopCluster([Stops.cabanillas]),
-                    StopCluster([Stops.torrecaballeros, Stops.torrecaballeros2, Stops.torrecaballeros3]),
+                    StopCluster([
+                        Stops.torrecaballeros, Stops.torrecaballeros2,
+                        Stops.torrecaballeros3,
+                    ]),
                 ]
             )
             static let reversed = regular.reversed()
@@ -151,7 +293,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
                 clusters: [
                     StopCluster([
                         Stops.andresLaguna, Stops.laPista, Stops.hermanitas,
-                        Stops.azoguejo, Stops.delicias, Stops.montecorredores
+                        Stops.azoguejo, Stops.delicias, Stops.montecorredores,
                     ]),
                 ] + Array(regular.clusters.dropFirst())
             )
@@ -159,14 +301,20 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
             static let circular = Route(
                 clusters: [
-                    StopCluster([Stops.estacionBus, Stops.andresLaguna, Stops.laPista, Stops.plazaToros]),
+                    StopCluster([
+                        Stops.estacionBus, Stops.andresLaguna, Stops.laPista,
+                        Stops.plazaToros,
+                    ]),
                     StopCluster([Stops.palazuelos, Stops.palazuelosColegio]),
                     StopCluster([Stops.tabanera, Stops.tabanera2]),
                     StopCluster([Stops.sanCrisIglesia, Stops.sanCrisRotonda]),
                     StopCluster([Stops.sonsoto, Stops.sonsoto2]),
                     StopCluster([Stops.trescasas, Stops.trescasas2]),
                     StopCluster([Stops.cabanillas]),
-                    StopCluster([Stops.torrecaballeros, Stops.torrecaballeros2, Stops.torrecaballeros3]),
+                    StopCluster([
+                        Stops.torrecaballeros, Stops.torrecaballeros2,
+                        Stops.torrecaballeros3,
+                    ]),
                     StopCluster([Stops.delicias, Stops.azoguejo]),
                 ]
             )
@@ -180,7 +328,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
             static let reversed = Route(
                 clusters: Array(regular.clusters.dropLast()) + [
-                    StopCluster([Stops.azoguejo, Stops.jardinillos])
+                    StopCluster([Stops.azoguejo, Stops.jardinillos]),
                 ],
                 alignment: .fromEnd
             )
@@ -213,52 +361,65 @@ class M6Parser: CapableParser, RouteStopsProvider {
             Routes.Sunday.regular,
             Routes.Sunday.reversed,
         ]
-        routeById = Dictionary(uniqueKeysWithValues: allRoutes.map { ($0.id, $0) })
+        routeById = Dictionary(
+            uniqueKeysWithValues: allRoutes.map { ($0.id, $0) }
+        )
     }
 
     // MARK: - Protocol Conformance
 
     func canParse(routeId: String) -> Bool {
-        capabilities.supportedRoutes.contains { $0.caseInsensitiveCompare(routeId) == .orderedSame }
+        capabilities.supportedRoutes.contains {
+            $0.caseInsensitiveCompare(routeId) == .orderedSame
+        }
     }
 
-    func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
+    func parse(pdfPath: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M6Parser: Starting parsing for \(pdfPath)")
 
         guard FileManager.default.fileExists(atPath: pdfPath) else {
             throw PDFParsingError("PDF file not found: \(pdfPath)")
         }
 
-        let extractedText = PDFTextExtractor.extractText(from: pdfPath, tag: "M6Parser")
+        let extractedText = PDFTextExtractor.extractText(
+            from: pdfPath,
+            tag: "M6Parser"
+        )
         let lines = extractedText.components(separatedBy: "\n")
 
         DebugConfig.debugPrint("M6Parser: Extracted \(lines.count) lines")
 
         #if DEBUG
-        if DebugConfig.isDebugEnabled {
-            for (index, line) in lines.enumerated() {
-                if !line.isEmpty {
-                    DebugConfig.debugPrint("  Line \(index): \(line)")
+            if DebugConfig.isDebugEnabled {
+                for (index, line) in lines.enumerated() {
+                    if !line.isEmpty {
+                        DebugConfig.debugPrint("  Line \(index): \(line)")
+                    }
                 }
             }
-        }
         #endif
 
         let preprocessedLines = preprocessLines(lines)
         let reorderedLines = reorderSwappedLines(preprocessedLines)
         let timetables = parseTimeTable(reorderedLines)
 
-        DebugConfig.debugPrint("M6Parser: Parsed \(timetables.count) timetables")
+        DebugConfig.debugPrint(
+            "M6Parser: Parsed \(timetables.count) timetables"
+        )
         return timetables
     }
 
     func getRoutesForId(_ routeId: String) -> [[BusStop]] {
-        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return [] }
+        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else {
+            return []
+        }
         return getRouteVariants(routeId, dayType: .weekday).map { $0.stops }
     }
 
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
-        guard let views = getRouteViews(routeId, dayType: dayType) else { return [] }
+        guard let views = getRouteViews(routeId, dayType: dayType) else {
+            return []
+        }
         return views.map { view in
             RouteVariant(
                 id: view.id,
@@ -271,15 +432,20 @@ class M6Parser: CapableParser, RouteStopsProvider {
     }
 
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
-        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return nil }
+        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else {
+            return nil
+        }
 
         let extendedOnlyIds: Set<String> = [
-            Stops.andresLaguna.id, Stops.laPista.id, Stops.hermanitas.id
+            Stops.andresLaguna.id, Stops.laPista.id, Stops.hermanitas.id,
         ]
 
         func extendedStops(_ route: Route) -> [RouteViewStop] {
             route.stops.map { stop in
-                RouteViewStop(stop: stop, isExtendedOnly: extendedOnlyIds.contains(stop.id))
+                RouteViewStop(
+                    stop: stop,
+                    isExtendedOnly: extendedOnlyIds.contains(stop.id)
+                )
             }
         }
 
@@ -291,7 +457,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
         case .weekday:
             let tabs = [
                 RouteTab(label: "Regular", viewId: "weekday-unified"),
-                RouteTab(label: "Circular", viewId: "weekday-circular")
+                RouteTab(label: "Circular", viewId: "weekday-circular"),
             ]
             return [
                 RouteView(
@@ -299,7 +465,9 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     label: "Segovia → Torrecaballeros",
                     stops: extendedStops(Routes.Weekday.extended),
                     direction: Self.directionOutbound,
-                    swapAction: SwapAction(targetViewId: "weekday-unified-reversed"),
+                    swapAction: SwapAction(
+                        targetViewId: "weekday-unified-reversed"
+                    ),
                     tabs: tabs,
                     extendedSectionLabel: "Ruta extendida"
                 ),
@@ -319,7 +487,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     direction: Self.directionOutbound,
                     departureLabel: "Circular",
                     tabs: tabs
-                )
+                ),
             ]
 
         case .saturday:
@@ -339,7 +507,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     direction: Self.directionInbound,
                     departureLabel: "Sábado",
                     swapAction: SwapAction(targetViewId: "saturday-regular")
-                )
+                ),
             ]
 
         case .sunday:
@@ -359,7 +527,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     direction: Self.directionInbound,
                     departureLabel: "Domingo",
                     swapAction: SwapAction(targetViewId: "sunday-regular")
-                )
+                ),
             ]
 
         default:
@@ -368,19 +536,49 @@ class M6Parser: CapableParser, RouteStopsProvider {
     }
 
     func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
-        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else { return [] }
+        guard routeId.caseInsensitiveCompare("M6") == .orderedSame else {
+            return []
+        }
         let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
-        let isWeekday  = dow != 7 && dow != 1
+        let isWeekday = dow != 7 && dow != 1
         let isSaturday = dow == 7
-        let isSunday   = dow == 1
-        let weekdayViews  = getRouteViews(routeId, dayType: .weekday)!
+        let isSunday = dow == 1
+        let weekdayViews = getRouteViews(routeId, dayType: .weekday)!
         let saturdayViews = getRouteViews(routeId, dayType: .saturday)!
-        let sundayViews   = getRouteViews(routeId, dayType: .sunday)!
+        let sundayViews = getRouteViews(routeId, dayType: .sunday)!
         return [
-            RouteSelectorEntry(id: "entry-lv-regular",  label: "L-V - Regular",  views: weekdayViews,  initialViewId: "weekday-unified",  timetableDayType: .weekday,  isActiveToday: isWeekday),
-            RouteSelectorEntry(id: "entry-lv-circular", label: "L-V - Circular", views: weekdayViews,  initialViewId: "weekday-circular", timetableDayType: .weekday,  isActiveToday: isWeekday),
-            RouteSelectorEntry(id: "entry-sabado",       label: "Sábado",         views: saturdayViews, initialViewId: "saturday-regular", timetableDayType: .saturday, isActiveToday: isSaturday),
-            RouteSelectorEntry(id: "entry-domingo",      label: "Domingo",        views: sundayViews,   initialViewId: "sunday-regular",   timetableDayType: .sunday,   isActiveToday: isSunday)
+            RouteSelectorEntry(
+                id: "entry-lv-regular",
+                label: "L-V - Regular",
+                views: weekdayViews,
+                initialViewId: "weekday-unified",
+                timetableDayType: .weekday,
+                isActiveToday: isWeekday
+            ),
+            RouteSelectorEntry(
+                id: "entry-lv-circular",
+                label: "L-V - Circular",
+                views: weekdayViews,
+                initialViewId: "weekday-circular",
+                timetableDayType: .weekday,
+                isActiveToday: isWeekday
+            ),
+            RouteSelectorEntry(
+                id: "entry-sabado",
+                label: "Sábado",
+                views: saturdayViews,
+                initialViewId: "saturday-regular",
+                timetableDayType: .saturday,
+                isActiveToday: isSaturday
+            ),
+            RouteSelectorEntry(
+                id: "entry-domingo",
+                label: "Domingo",
+                views: sundayViews,
+                initialViewId: "sunday-regular",
+                timetableDayType: .sunday,
+                isActiveToday: isSunday
+            ),
         ]
     }
 
@@ -404,13 +602,22 @@ class M6Parser: CapableParser, RouteStopsProvider {
         var expanded: [String] = []
         for line in lines {
             if TimetableParserUtils.hasTimes(line),
-               TimetableParserUtils.detectDayType(line) != nil {
-                let keywords = ["LUNES A VIERNES", "SÁBADOS", "SABADOS", "DOMINGOS"]
+               TimetableParserUtils.detectDayType(line) != nil
+            {
+                let keywords = [
+                    "LUNES A VIERNES", "SÁBADOS", "SABADOS", "DOMINGOS",
+                ]
                 let upper = line.uppercased()
                 if let keyword = keywords.first(where: { upper.contains($0) }),
-                   let range = line.range(of: keyword, options: .caseInsensitive) {
-                    let timesPart = String(line[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-                    let keywordPart = String(line[range.lowerBound...]).trimmingCharacters(in: .whitespaces)
+                   let range = line.range(
+                       of: keyword,
+                       options: .caseInsensitive
+                   )
+                {
+                    let timesPart = String(line[..<range.lowerBound])
+                        .trimmingCharacters(in: .whitespaces)
+                    let keywordPart = String(line[range.lowerBound...])
+                        .trimmingCharacters(in: .whitespaces)
                     if !timesPart.isEmpty { expanded.append(timesPart) }
                     if !keywordPart.isEmpty { expanded.append(keywordPart) }
                     continue
@@ -425,19 +632,28 @@ class M6Parser: CapableParser, RouteStopsProvider {
         var i = 0
         while i < result.count {
             let line = result[i]
-            guard TimetableParserUtils.hasTimes(line) else { i += 1; continue }
+            guard TimetableParserUtils.hasTimes(line) else {
+                i += 1
+                continue
+            }
 
             let annotated = TimetableParserUtils.extractAnnotatedTimes(line)
-            let isOrphanedDoubleAsterisk = annotated.count == 1
-                && annotated[0].modifier == .doubleAsterisk
+            let isOrphanedDoubleAsterisk =
+                annotated.count == 1
+                    && annotated[0].modifier == .doubleAsterisk
 
             if isOrphanedDoubleAsterisk {
                 var j = i - 1
-                while j >= 0 && !TimetableParserUtils.hasTimes(result[j]) { j -= 1 }
+                while j >= 0, !TimetableParserUtils.hasTimes(result[j]) {
+                    j -= 1
+                }
                 if j >= 0 {
-                    let prevAnnotated = TimetableParserUtils.extractAnnotatedTimes(result[j])
+                    let prevAnnotated =
+                        TimetableParserUtils.extractAnnotatedTimes(result[j])
                     if prevAnnotated.contains(where: { $0.modifier == .pound }) {
-                        DebugConfig.debugPrint("M6Parser: Merging orphaned \(line) into preceding circular row")
+                        DebugConfig.debugPrint(
+                            "M6Parser: Merging orphaned \(line) into preceding circular row"
+                        )
                         result[j] = line + " " + result[j]
                         result.remove(at: i)
                         continue
@@ -461,9 +677,14 @@ class M6Parser: CapableParser, RouteStopsProvider {
                 if TimetableParserUtils.hasTimes(line) {
                     let pendingTimes = TimetableParserUtils.extractTimes(p)
                     let lineTimes = TimetableParserUtils.extractTimes(line)
-                    if let pFirst = pendingTimes.first, let lFirst = lineTimes.first,
-                       (pFirst.hour * 60 + pFirst.minute) > (lFirst.hour * 60 + lFirst.minute) {
-                        DebugConfig.debugPrint("M6Parser: Reordering swapped lines:\n  was: \(p)\n  now: \(line)")
+                    if let pFirst = pendingTimes.first,
+                       let lFirst = lineTimes.first,
+                       (pFirst.hour * 60 + pFirst.minute)
+                       > (lFirst.hour * 60 + lFirst.minute)
+                    {
+                        DebugConfig.debugPrint(
+                            "M6Parser: Reordering swapped lines:\n  was: \(p)\n  now: \(line)"
+                        )
                         result.append(line)
                         result.append(p)
                         pending = nil
@@ -492,7 +713,11 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
     // MARK: - Timetable Creation
 
-    private func createInitialTimetables(route: Route, dayType: DayType, direction: String) -> [BusTimetable] {
+    private func createInitialTimetables(
+        route: Route,
+        dayType: DayType,
+        direction: String
+    ) -> [BusTimetable] {
         route.stops.map { stop in
             BusTimetable(
                 routeId: "M6",
@@ -522,13 +747,17 @@ class M6Parser: CapableParser, RouteStopsProvider {
             }
 
         case .saturday:
-            return state.isReversed ? Routes.Saturday.reversed.id : Routes.Saturday.regular.id
+            return state.isReversed
+                ? Routes.Saturday.reversed.id : Routes.Saturday.regular.id
 
         case .sunday:
-            return state.isReversed ? Routes.Sunday.reversed.id : Routes.Sunday.regular.id
+            return state.isReversed
+                ? Routes.Sunday.reversed.id : Routes.Sunday.regular.id
 
         default:
-            DebugConfig.debugError("M6Parser: Unexpected DayType: \(state.section)")
+            DebugConfig.debugError(
+                "M6Parser: Unexpected DayType: \(state.section)"
+            )
             return Routes.Weekday.regular.id
         }
     }
@@ -544,8 +773,10 @@ class M6Parser: CapableParser, RouteStopsProvider {
     ) -> [BusTimetable] {
         let activeClusters: [StopCluster]
         switch route.alignment {
-        case .fromStart: activeClusters = Array(route.clusters.prefix(times.count))
-        case .fromEnd: activeClusters = Array(route.clusters.suffix(times.count))
+        case .fromStart:
+            activeClusters = Array(route.clusters.prefix(times.count))
+        case .fromEnd:
+            activeClusters = Array(route.clusters.suffix(times.count))
         }
 
         let activeStopCount = activeClusters.reduce(0) { $0 + $1.stops.count }
@@ -565,25 +796,28 @@ class M6Parser: CapableParser, RouteStopsProvider {
         var activeIndex = 0
         for (clusterIdx, cluster) in activeClusters.enumerated() {
             let anchorTime = times[clusterIdx]
-            for posInCluster in 0..<cluster.stops.count {
-                let totalMinutes = anchorTime.hour * 60 + anchorTime.minute
-                    + posInCluster * Self.estimatedMinutesPerClusterStop
+            for posInCluster in 0 ..< cluster.stops.count {
+                let totalMinutes =
+                    anchorTime.hour * 60 + anchorTime.minute
+                        + posInCluster * Self.estimatedMinutesPerClusterStop
                 var tt = active[activeIndex]
-                tt.departures = tt.departures + [
-                    DepartureTime(
-                        hour: (totalMinutes / 60) % 24,
-                        minute: totalMinutes % 60,
-                        seasonalAvailability: seasonalAvailability,
-                        variantLabel: variantLabel
-                    )
-                ]
+                tt.departures =
+                    tt.departures + [
+                        DepartureTime(
+                            hour: (totalMinutes / 60) % 24,
+                            minute: totalMinutes % 60,
+                            seasonalAvailability: seasonalAvailability,
+                            variantLabel: variantLabel
+                        ),
+                    ]
                 updated.append(tt)
                 activeIndex += 1
             }
         }
 
         switch route.alignment {
-        case .fromStart: return updated + Array(timetables.dropFirst(activeStopCount))
+        case .fromStart:
+            return updated + Array(timetables.dropFirst(activeStopCount))
         case .fromEnd: return inactive + updated
         }
     }
@@ -597,23 +831,29 @@ class M6Parser: CapableParser, RouteStopsProvider {
 
     private func routeLabel(_ id: UUID) -> String? {
         switch id {
-        case Routes.Weekday.regular.id, Routes.Weekday.reversed.id: return "Regular"
-        case Routes.Weekday.extended.id, Routes.Weekday.extendedReversed.id: return "Extendida"
+        case Routes.Weekday.regular.id, Routes.Weekday.reversed.id:
+            return "Regular"
+        case Routes.Weekday.extended.id, Routes.Weekday.extendedReversed.id:
+            return "Extendida"
         case Routes.Weekday.circular.id: return "Circular"
-        case Routes.Saturday.regular.id, Routes.Saturday.reversed.id: return "Sábado"
-        case Routes.Sunday.regular.id, Routes.Sunday.reversed.id: return "Domingo"
+        case Routes.Saturday.regular.id, Routes.Saturday.reversed.id:
+            return "Sábado"
+        case Routes.Sunday.regular.id, Routes.Sunday.reversed.id:
+            return "Domingo"
         default: return nil
         }
     }
 
-    private func preprocessCircularLine(_ annotatedTimes: [AnnotatedTime]) -> [AnnotatedTime] {
+    private func preprocessCircularLine(_ annotatedTimes: [AnnotatedTime])
+        -> [AnnotatedTime]
+    {
         let isCircularLine = annotatedTimes.contains {
             $0.modifier == .pound || $0.modifier == .doubleAsterisk
         }
         guard isCircularLine else { return annotatedTimes }
 
         var outboundEnd = annotatedTimes.count
-        for i in 1..<annotatedTimes.count {
+        for i in 1 ..< annotatedTimes.count {
             let prev = annotatedTimes[i - 1]
             let curr = annotatedTimes[i]
             if (curr.hour * 60 + curr.minute) <= (prev.hour * 60 + prev.minute) {
@@ -625,7 +865,9 @@ class M6Parser: CapableParser, RouteStopsProvider {
         let outbound = Array(annotatedTimes.prefix(outboundEnd))
         guard let last = outbound.last else { return annotatedTimes }
 
-        let totalMinutes = last.hour * 60 + last.minute + Self.estimatedTorrecabToDeliciasMinutes
+        let totalMinutes =
+            last.hour * 60 + last.minute
+                + Self.estimatedTorrecabToDeliciasMinutes
         let estimatedArrival = AnnotatedTime(
             hour: (totalMinutes / 60) % 24,
             minute: totalMinutes % 60,
@@ -641,31 +883,74 @@ class M6Parser: CapableParser, RouteStopsProvider {
         var state = ParsingState(
             journeyBuilder: [],
             routes: [
-                Routes.Weekday.regular.id: createInitialTimetables(route: Routes.Weekday.regular, dayType: .weekday, direction: Self.directionOutbound),
-                Routes.Weekday.reversed.id: createInitialTimetables(route: Routes.Weekday.reversed, dayType: .weekday, direction: Self.directionInbound),
-                Routes.Weekday.extended.id: createInitialTimetables(route: Routes.Weekday.extended, dayType: .weekday, direction: Self.directionOutbound),
-                Routes.Weekday.extendedReversed.id: createInitialTimetables(route: Routes.Weekday.extendedReversed, dayType: .weekday, direction: Self.directionInbound),
-                Routes.Weekday.circular.id: createInitialTimetables(route: Routes.Weekday.circular, dayType: .weekday, direction: Self.directionOutbound),
-                Routes.Saturday.regular.id: createInitialTimetables(route: Routes.Saturday.regular, dayType: .saturday, direction: Self.directionOutbound),
-                Routes.Saturday.reversed.id: createInitialTimetables(route: Routes.Saturday.reversed, dayType: .saturday, direction: Self.directionInbound),
-                Routes.Sunday.regular.id: createInitialTimetables(route: Routes.Sunday.regular, dayType: .sunday, direction: Self.directionOutbound),
-                Routes.Sunday.reversed.id: createInitialTimetables(route: Routes.Sunday.reversed, dayType: .sunday, direction: Self.directionInbound),
+                Routes.Weekday.regular.id: createInitialTimetables(
+                    route: Routes.Weekday.regular,
+                    dayType: .weekday,
+                    direction: Self.directionOutbound
+                ),
+                Routes.Weekday.reversed.id: createInitialTimetables(
+                    route: Routes.Weekday.reversed,
+                    dayType: .weekday,
+                    direction: Self.directionInbound
+                ),
+                Routes.Weekday.extended.id: createInitialTimetables(
+                    route: Routes.Weekday.extended,
+                    dayType: .weekday,
+                    direction: Self.directionOutbound
+                ),
+                Routes.Weekday.extendedReversed.id: createInitialTimetables(
+                    route: Routes.Weekday.extendedReversed,
+                    dayType: .weekday,
+                    direction: Self.directionInbound
+                ),
+                Routes.Weekday.circular.id: createInitialTimetables(
+                    route: Routes.Weekday.circular,
+                    dayType: .weekday,
+                    direction: Self.directionOutbound
+                ),
+                Routes.Saturday.regular.id: createInitialTimetables(
+                    route: Routes.Saturday.regular,
+                    dayType: .saturday,
+                    direction: Self.directionOutbound
+                ),
+                Routes.Saturday.reversed.id: createInitialTimetables(
+                    route: Routes.Saturday.reversed,
+                    dayType: .saturday,
+                    direction: Self.directionInbound
+                ),
+                Routes.Sunday.regular.id: createInitialTimetables(
+                    route: Routes.Sunday.regular,
+                    dayType: .sunday,
+                    direction: Self.directionOutbound
+                ),
+                Routes.Sunday.reversed.id: createInitialTimetables(
+                    route: Routes.Sunday.reversed,
+                    dayType: .sunday,
+                    direction: Self.directionInbound
+                ),
             ]
         )
 
-        func flush(_ flushState: inout ParsingState, times: [(hour: Int, minute: Int)]) {
+        func flush(
+            _ flushState: inout ParsingState,
+            times: [(hour: Int, minute: Int)]
+        ) {
             let target = determineParsingTarget(flushState)
             guard let route = routeById[target],
-                  let currentTimetables = flushState.routes[target] else { return }
+                  let currentTimetables = flushState.routes[target]
+            else { return }
 
             let label = routeLabel(target)
 
-            let isSundaySeasonal = flushState.section == .sunday
-                && flushState.currentAnnotation == .tripleAsterisk
+            let isSundaySeasonal =
+                flushState.section == .sunday
+                    && flushState.currentAnnotation == .tripleAsterisk
 
             let seasonal: SeasonalAvailability
             if isSundaySeasonal {
-                if !flushState.sundaySeasonalFirstSeen.contains(flushState.isReversed) {
+                if !flushState.sundaySeasonalFirstSeen.contains(
+                    flushState.isReversed
+                ) {
                     seasonal = .summerOnly
                 } else {
                     seasonal = .schoolOnly
@@ -697,7 +982,9 @@ class M6Parser: CapableParser, RouteStopsProvider {
             }
 
             if TimetableParserUtils.hasTimes(line) {
-                let annotatedTimes = TimetableParserUtils.extractAnnotatedTimes(line)
+                let annotatedTimes = TimetableParserUtils.extractAnnotatedTimes(
+                    line
+                )
                 let processedTimes = preprocessCircularLine(annotatedTimes)
 
                 var inlineBuilder: [(hour: Int, minute: Int)] = []
@@ -709,11 +996,16 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     }
 
                     let parsingTarget = determineParsingTarget(state)
-                    let time = (hour: annotatedTime.hour, minute: annotatedTime.minute)
+                    let time = (
+                        hour: annotatedTime.hour, minute: annotatedTime.minute
+                    )
 
-                    let isDirectionChange = !hasFlipped
-                        && !inlineBuilder.isEmpty
-                        && (time.hour * 60 + time.minute) <= (inlineBuilder.last!.hour * 60 + inlineBuilder.last!.minute)
+                    let isDirectionChange =
+                        !hasFlipped
+                            && !inlineBuilder.isEmpty
+                            && (time.hour * 60 + time.minute)
+                            <= (inlineBuilder.last!.hour * 60
+                                + inlineBuilder.last!.minute)
 
                     if isDirectionChange {
                         // Flush outbound times
@@ -727,7 +1019,8 @@ class M6Parser: CapableParser, RouteStopsProvider {
                         inlineBuilder = [time]
                         hasFlipped = true
                     } else if let route = routeById[parsingTarget],
-                              (inlineBuilder + [time]).count == route.clusters.count {
+                              (inlineBuilder + [time]).count == route.clusters.count
+                    {
                         // Buffer full — flush complete journey
                         let flushTimes = inlineBuilder + [time]
                         flush(&state, times: flushTimes)
@@ -743,7 +1036,8 @@ class M6Parser: CapableParser, RouteStopsProvider {
                 }
             } else {
                 if let dayType = TimetableParserUtils.detectDayType(line),
-                   (dayType == .saturday || dayType == .sunday) {
+                   dayType == .saturday || dayType == .sunday
+                {
                     state.section = dayType
                     state.isReversed = false
                 }

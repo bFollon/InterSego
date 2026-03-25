@@ -25,7 +25,6 @@ import Foundation
 /// - Times formatted as HH:MM (e.g., "7:10", "14:46")
 /// - Some rows marked with * for July/August only
 class M4Parser: CapableParser, RouteStopsProvider {
-
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
@@ -37,7 +36,9 @@ class M4Parser: CapableParser, RouteStopsProvider {
     private static let directionRegular = "Lastrilla → Sotillo"
     private static let directionReverse = "Sotillo → Lastrilla"
 
-    private static let timeWithAsteriskPattern = try! NSRegularExpression(pattern: #"\d{1,2}:\d{2}\s*\*"#)
+    private static let timeWithAsteriskPattern = try! NSRegularExpression(
+        pattern: #"\d{1,2}:\d{2}\s*\*"#
+    )
 
     // MARK: - Stops
 
@@ -153,7 +154,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
         Stops.rafaelDeLasHeras,
         Stops.ventaMagullo,
 
-        Stops.azoguejo
+        Stops.azoguejo,
     ]
 
     static let m4ReverseRoute: [BusStop] = [
@@ -176,7 +177,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
         Stops.colegio,
         Stops.parroqSotillo,
 
-        Stops.azoguejo
+        Stops.azoguejo,
     ]
 
     // MARK: - Parsing State
@@ -198,17 +199,26 @@ class M4Parser: CapableParser, RouteStopsProvider {
     // MARK: - Protocol Conformance
 
     func canParse(routeId: String) -> Bool {
-        capabilities.supportedRoutes.contains { $0.caseInsensitiveCompare(routeId) == .orderedSame }
+        capabilities.supportedRoutes.contains {
+            $0.caseInsensitiveCompare(routeId) == .orderedSame
+        }
     }
 
     func getRoutesForId(_ routeId: String) -> [[BusStop]] {
-        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return [] }
+        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else {
+            return []
+        }
         // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
-        return [Array(Self.m4RegularRoute.dropLast()), Array(Self.m4ReverseRoute.dropLast())]
+        return [
+            Array(Self.m4RegularRoute.dropLast()),
+            Array(Self.m4ReverseRoute.dropLast()),
+        ]
     }
 
-    func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
-        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return [] }
+    func getRouteVariants(_ routeId: String, dayType _: DayType) -> [RouteVariant] {
+        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else {
+            return []
+        }
         return [
             RouteVariant(
                 id: "regular",
@@ -226,67 +236,96 @@ class M4Parser: CapableParser, RouteStopsProvider {
     }
 
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
-        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return nil }
+        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else {
+            return nil
+        }
         let variants = getRouteVariants(routeId, dayType: dayType)
         guard !variants.isEmpty else { return nil }
         return variants.enumerated().map { index, variant in
-            let swapTargetId = variants.count == 2 ? variants[1 - index].id : nil
+            let swapTargetId =
+                variants.count == 2 ? variants[1 - index].id : nil
             return RouteView(
-                id: variant.id, label: variant.label,
+                id: variant.id,
+                label: variant.label,
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
-                direction: variant.direction, departureLabel: variant.departureLabel,
+                direction: variant.direction,
+                departureLabel: variant.departureLabel,
                 swapAction: swapTargetId.map { SwapAction(targetViewId: $0) }
             )
         }
     }
 
     func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
-        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else { return [] }
+        guard routeId.caseInsensitiveCompare("M4") == .orderedSame else {
+            return []
+        }
         let dow = Calendar.current.component(.weekday, from: today)
         let isWeekday = dow != 7 && dow != 1
         let isWeekend = !isWeekday
         guard let weekdayViews = getRouteViews(routeId, dayType: .weekday),
-              let weekendViews = getRouteViews(routeId, dayType: .weekend) else { return [] }
+              let weekendViews = getRouteViews(routeId, dayType: .weekend)
+        else { return [] }
         return [
-            RouteSelectorEntry(id: "entry-lv", label: "Lunes a Viernes", views: weekdayViews, initialViewId: "regular", timetableDayType: .weekday, isActiveToday: isWeekday),
-            RouteSelectorEntry(id: "entry-fds", label: "Fin de semana", views: weekendViews, initialViewId: "regular", timetableDayType: .weekend, isActiveToday: isWeekend)
+            RouteSelectorEntry(
+                id: "entry-lv",
+                label: "Lunes a Viernes",
+                views: weekdayViews,
+                initialViewId: "regular",
+                timetableDayType: .weekday,
+                isActiveToday: isWeekday
+            ),
+            RouteSelectorEntry(
+                id: "entry-fds",
+                label: "Fin de semana",
+                views: weekendViews,
+                initialViewId: "regular",
+                timetableDayType: .weekend,
+                isActiveToday: isWeekend
+            ),
         ]
     }
 
-    func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
+    func parse(pdfPath: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint("M4Parser: Starting PDF parsing for \(pdfPath)")
 
         guard FileManager.default.fileExists(atPath: pdfPath) else {
             throw PDFParsingError("PDF file not found: \(pdfPath)")
         }
 
-        let extractedText = PDFTextExtractor.extractText(from: pdfPath, tag: "M4Parser")
+        let extractedText = PDFTextExtractor.extractText(
+            from: pdfPath,
+            tag: "M4Parser"
+        )
         let lines = extractedText.components(separatedBy: "\n")
 
         DebugConfig.debugPrint("M4Parser: Extracted \(lines.count) lines")
 
         #if DEBUG
-        if DebugConfig.isDebugEnabled {
-            DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
-            for (index, line) in lines.enumerated() {
-                if !line.isEmpty {
-                    DebugConfig.debugPrint("  Line \(index): \(line)")
+            if DebugConfig.isDebugEnabled {
+                DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
+                for (index, line) in lines.enumerated() {
+                    if !line.isEmpty {
+                        DebugConfig.debugPrint("  Line \(index): \(line)")
+                    }
                 }
+                DebugConfig.debugPrint("M4Parser: ==========================")
             }
-            DebugConfig.debugPrint("M4Parser: ==========================")
-        }
         #endif
 
         let timetables = parseTimeTable(lines)
 
-        DebugConfig.debugPrint("M4Parser: Finished parsing, created \(timetables.count) timetables")
+        DebugConfig.debugPrint(
+            "M4Parser: Finished parsing, created \(timetables.count) timetables"
+        )
         return timetables
     }
 
     // MARK: - Internal Parsing
 
     private func detectDayType(_ line: String) -> DayType? {
-        guard let dayType = TimetableParserUtils.detectDayType(line) else { return nil }
+        guard let dayType = TimetableParserUtils.detectDayType(line) else {
+            return nil
+        }
         switch dayType {
         case .saturday, .sunday:
             return .weekend
@@ -295,7 +334,11 @@ class M4Parser: CapableParser, RouteStopsProvider {
         }
     }
 
-    private func createInitialTimetables(stops: [BusStop], dayType: DayType, direction: String) -> [BusTimetable] {
+    private func createInitialTimetables(
+        stops: [BusStop],
+        dayType: DayType,
+        direction: String
+    ) -> [BusTimetable] {
         stops.map { stop in
             BusTimetable(
                 routeId: "M4",
@@ -312,11 +355,16 @@ class M4Parser: CapableParser, RouteStopsProvider {
         times: [(hour: Int, minute: Int)],
         seasonal: SeasonalAvailability
     ) -> [BusTimetable] {
-        zip(timetables, times).map { (timetable, time) in
+        zip(timetables, times).map { timetable, time in
             var updated = timetable
-            updated.departures = timetable.departures + [
-                DepartureTime(hour: time.hour, minute: time.minute, seasonalAvailability: seasonal)
-            ]
+            updated.departures =
+                timetable.departures + [
+                    DepartureTime(
+                        hour: time.hour,
+                        minute: time.minute,
+                        seasonalAvailability: seasonal
+                    ),
+                ]
             return updated
         }
     }
@@ -326,10 +374,26 @@ class M4Parser: CapableParser, RouteStopsProvider {
             currentDayType: .weekday,
             incompleteJourney: [],
             isSummerSection: false,
-            regularRouteWeekdayTimetables: createInitialTimetables(stops: Self.m4RegularRoute, dayType: .weekday, direction: Self.directionRegular),
-            regularRouteWeekendTimetables: createInitialTimetables(stops: Self.m4RegularRoute, dayType: .weekend, direction: Self.directionRegular),
-            reverseRouteWeekdayTimetables: createInitialTimetables(stops: Self.m4ReverseRoute, dayType: .weekday, direction: Self.directionReverse),
-            reverseRouteWeekendTimetables: createInitialTimetables(stops: Self.m4ReverseRoute, dayType: .weekend, direction: Self.directionReverse)
+            regularRouteWeekdayTimetables: createInitialTimetables(
+                stops: Self.m4RegularRoute,
+                dayType: .weekday,
+                direction: Self.directionRegular
+            ),
+            regularRouteWeekendTimetables: createInitialTimetables(
+                stops: Self.m4RegularRoute,
+                dayType: .weekend,
+                direction: Self.directionRegular
+            ),
+            reverseRouteWeekdayTimetables: createInitialTimetables(
+                stops: Self.m4ReverseRoute,
+                dayType: .weekday,
+                direction: Self.directionReverse
+            ),
+            reverseRouteWeekendTimetables: createInitialTimetables(
+                stops: Self.m4ReverseRoute,
+                dayType: .weekend,
+                direction: Self.directionReverse
+            )
         )
 
         for line in lines {
@@ -340,7 +404,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
             if let newDayType = newDayType {
                 state.currentDayType = newDayType
                 state.isSummerSection = false
-            } else if isSummerMarker && !hasTimes {
+            } else if isSummerMarker, !hasTimes {
                 // iOS PDFKit sometimes puts "JULIO Y AGOSTO" on a separate line (like Android's iText7).
                 // When it does, just set the flag; times will be on the next line.
                 state.isSummerSection = true
@@ -350,15 +414,25 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 state.isSummerSection = isSummerMarker
 
                 if hasAsteriskTimes(line) {
-                    let times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
+                    let times = TimetableParserUtils.sortTimes(
+                        state.incompleteJourney
+                            + TimetableParserUtils.extractTimes(line)
+                    )
 
                     let isWeekday = state.currentDayType == .weekday
-                    let currentTimetables = isWeekday ? state.reverseRouteWeekdayTimetables : state.reverseRouteWeekendTimetables
+                    let currentTimetables =
+                        isWeekday
+                            ? state.reverseRouteWeekdayTimetables
+                            : state.reverseRouteWeekendTimetables
                     let reverseCount = Self.m4ReverseRoute.count
 
                     switch times.count {
                     case reverseCount:
-                        let updated = updateTimetables(currentTimetables, times: times, seasonal: state.seasonal)
+                        let updated = updateTimetables(
+                            currentTimetables,
+                            times: times,
+                            seasonal: state.seasonal
+                        )
                         if isWeekday {
                             state.reverseRouteWeekdayTimetables = updated
                         } else {
@@ -368,10 +442,16 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
                     case reverseCount - 1:
                         let lastIndex = reverseCount - 1
-                        let filtered = currentTimetables.enumerated().filter { $0.offset != lastIndex }.map { $0.element }
-                        let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
+                        let filtered = currentTimetables.enumerated().filter {
+                            $0.offset != lastIndex
+                        }.map { $0.element }
+                        let updated = updateTimetables(
+                            filtered,
+                            times: times,
+                            seasonal: state.seasonal
+                        )
                         var merged = currentTimetables
-                        for i in 0..<reverseCount {
+                        for i in 0 ..< reverseCount {
                             if i != lastIndex {
                                 let sourceIndex = i < lastIndex ? i : i - 1
                                 merged[i] = updated[sourceIndex]
@@ -386,15 +466,25 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
                     default:
                         let lastIndex = reverseCount - 1
-                        let schoolIndex = Self.m4ReverseRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
+                        let schoolIndex =
+                            Self.m4ReverseRoute.firstIndex(
+                                of: Stops.paseoCabanillas
+                            ) ?? -1
                         let filtered = currentTimetables.enumerated()
-                            .filter { $0.offset != lastIndex && $0.offset != schoolIndex }
+                            .filter {
+                                $0.offset != lastIndex
+                                    && $0.offset != schoolIndex
+                            }
                             .map { $0.element }
-                        let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
+                        let updated = updateTimetables(
+                            filtered,
+                            times: times,
+                            seasonal: state.seasonal
+                        )
                         var merged = currentTimetables
                         var srcIdx = 0
-                        for i in 0..<reverseCount {
-                            if i != lastIndex && i != schoolIndex {
+                        for i in 0 ..< reverseCount {
+                            if i != lastIndex, i != schoolIndex {
                                 merged[i] = updated[srcIdx]
                                 srcIdx += 1
                             }
@@ -408,15 +498,25 @@ class M4Parser: CapableParser, RouteStopsProvider {
                     }
 
                 } else {
-                    let times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
+                    let times = TimetableParserUtils.sortTimes(
+                        state.incompleteJourney
+                            + TimetableParserUtils.extractTimes(line)
+                    )
 
                     let isWeekday = state.currentDayType == .weekday
-                    let currentTimetables = isWeekday ? state.regularRouteWeekdayTimetables : state.regularRouteWeekendTimetables
+                    let currentTimetables =
+                        isWeekday
+                            ? state.regularRouteWeekdayTimetables
+                            : state.regularRouteWeekendTimetables
                     let regularCount = Self.m4RegularRoute.count
 
                     switch times.count {
                     case regularCount:
-                        let updated = updateTimetables(currentTimetables, times: times, seasonal: state.seasonal)
+                        let updated = updateTimetables(
+                            currentTimetables,
+                            times: times,
+                            seasonal: state.seasonal
+                        )
                         if isWeekday {
                             state.regularRouteWeekdayTimetables = updated
                         } else {
@@ -425,11 +525,20 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.incompleteJourney = []
 
                     case regularCount - 1:
-                        let schoolIndex = Self.m4RegularRoute.firstIndex(of: Stops.paseoCabanillas) ?? -1
-                        let filtered = currentTimetables.filter { $0.stopId != Stops.paseoCabanillas.id }
-                        let updated = updateTimetables(filtered, times: times, seasonal: state.seasonal)
+                        let schoolIndex =
+                            Self.m4RegularRoute.firstIndex(
+                                of: Stops.paseoCabanillas
+                            ) ?? -1
+                        let filtered = currentTimetables.filter {
+                            $0.stopId != Stops.paseoCabanillas.id
+                        }
+                        let updated = updateTimetables(
+                            filtered,
+                            times: times,
+                            seasonal: state.seasonal
+                        )
                         var merged = currentTimetables
-                        for i in 0..<regularCount {
+                        for i in 0 ..< regularCount {
                             if i == schoolIndex {
                                 continue
                             } else if i < schoolIndex {
@@ -446,7 +555,9 @@ class M4Parser: CapableParser, RouteStopsProvider {
                         state.incompleteJourney = []
 
                     default:
-                        DebugConfig.debugPrint("Incomplete route, accumulating...")
+                        DebugConfig.debugPrint(
+                            "Incomplete route, accumulating..."
+                        )
                         state.incompleteJourney = times
                     }
                 }
@@ -454,26 +565,33 @@ class M4Parser: CapableParser, RouteStopsProvider {
         }
 
         // Drop last stop from each group — it's the return to Azoguejo (arrival, not departure)
-        let allTimetables = state.regularRouteWeekdayTimetables.dropLast() +
-            state.regularRouteWeekendTimetables.dropLast() +
-            state.reverseRouteWeekdayTimetables.dropLast() +
-            state.reverseRouteWeekendTimetables.dropLast()
+        let allTimetables =
+            state.regularRouteWeekdayTimetables.dropLast()
+                + state.regularRouteWeekendTimetables.dropLast()
+                + state.reverseRouteWeekdayTimetables.dropLast()
+                + state.reverseRouteWeekendTimetables.dropLast()
 
         let sortedTimetables = allTimetables.map { timetable in
             var sorted = timetable
-            sorted.departures = timetable.departures.sorted { ($0.hour * 60 + $0.minute) < ($1.hour * 60 + $1.minute) }
+            sorted.departures = timetable.departures.sorted {
+                ($0.hour * 60 + $0.minute) < ($1.hour * 60 + $1.minute)
+            }
             return sorted
         }
 
         DebugConfig.debugPrint("Created \(sortedTimetables.count) timetables")
 
         #if DEBUG
-        if DebugConfig.isDebugEnabled {
-            sortedTimetables.prefix(5).forEach { DebugConfig.debugPrint("\($0)") }
-            sortedTimetables.filter { $0.direction == Self.directionReverse }.prefix(5).forEach {
-                DebugConfig.debugPrint("\($0)")
+            if DebugConfig.isDebugEnabled {
+                for item in sortedTimetables.prefix(5) {
+                    DebugConfig.debugPrint("\(item)")
+                }
+                sortedTimetables.filter {
+                    $0.direction == Self.directionReverse
+                }.prefix(5).forEach {
+                    DebugConfig.debugPrint("\($0)")
+                }
             }
-        }
         #endif
 
         return sortedTimetables
@@ -481,6 +599,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
     private func hasAsteriskTimes(_ line: String) -> Bool {
         let range = NSRange(line.startIndex..., in: line)
-        return Self.timeWithAsteriskPattern.firstMatch(in: line, range: range) != nil
+        return Self.timeWithAsteriskPattern.firstMatch(in: line, range: range)
+            != nil
     }
 }

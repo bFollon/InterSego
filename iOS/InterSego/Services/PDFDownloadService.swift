@@ -39,13 +39,13 @@ actor PDFDownloadService {
         try? FileManager.default.createDirectory(at: pdfDir, withIntermediateDirectories: true)
 
         // Skip download if file exists and not forced
-        if !forceDownload && FileManager.default.fileExists(atPath: outputFile.path) {
+        if !forceDownload, FileManager.default.fileExists(atPath: outputFile.path) {
             DebugConfig.debugPrint("PDFDownloadService: Using existing file \(outputFile.lastPathComponent)")
             return outputFile
         }
 
         // Retry logic (3 attempts)
-        for attempt in 0..<3 {
+        for attempt in 0 ..< 3 {
             do {
                 DebugConfig.debugPrint("PDFDownloadService: Starting download from \(url) (attempt \(attempt + 1))")
 
@@ -57,7 +57,8 @@ actor PDFDownloadService {
                 let (data, response) = try await session.data(for: request)
 
                 guard let httpResponse = response as? HTTPURLResponse,
-                      (200...299).contains(httpResponse.statusCode) else {
+                      (200 ... 299).contains(httpResponse.statusCode)
+                else {
                     let code = (response as? HTTPURLResponse)?.statusCode ?? -1
                     DebugConfig.debugError("PDFDownloadService: Download failed with code \(code)")
                     if attempt < 2 {
@@ -107,10 +108,12 @@ actor PDFDownloadService {
 private final class LenientSSLDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
     private let allowedHosts: Set<String> = ["linecar.es", "www.linecar.es", "avilabus.es", "www.avilabus.es"]
 
-    func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async
-        -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+    func urlSession(_: URLSession, didReceive challenge: URLAuthenticationChallenge) async
+        -> (URLSession.AuthChallengeDisposition, URLCredential?)
+    {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-              let serverTrust = challenge.protectionSpace.serverTrust else {
+              let serverTrust = challenge.protectionSpace.serverTrust
+        else {
             return (.performDefaultHandling, nil)
         }
 

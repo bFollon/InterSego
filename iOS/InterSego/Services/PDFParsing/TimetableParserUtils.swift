@@ -37,7 +37,6 @@ struct AnnotatedTime {
 }
 
 enum TimetableParserUtils {
-
     private static let timePattern = try! NSRegularExpression(pattern: #"\d{1,2}:\d{2}"#)
 
     private static var modifierAlternatives: String {

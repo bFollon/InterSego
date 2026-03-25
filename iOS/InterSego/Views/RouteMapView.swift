@@ -15,8 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import SwiftUI
 import MapKit
+import SwiftUI
 
 /// Displays all stops for a route direction on an interactive map.
 ///
@@ -140,8 +140,8 @@ struct RouteMapView: View {
             withExtension: "json",
             subdirectory: "RoutePolylines"
         ),
-        let data = try? Data(contentsOf: url),
-        let pairs = try? JSONDecoder().decode([[Double]].self, from: data)
+            let data = try? Data(contentsOf: url),
+            let pairs = try? JSONDecoder().decode([[Double]].self, from: data)
         else { return [] }
 
         return pairs.compactMap { pair in

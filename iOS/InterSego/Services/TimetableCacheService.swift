@@ -34,7 +34,8 @@ actor TimetableCacheService {
         let metadataFile = getMetadataFile(routeId: routeId)
 
         guard FileManager.default.fileExists(atPath: cacheFile.path),
-              FileManager.default.fileExists(atPath: metadataFile.path) else {
+              FileManager.default.fileExists(atPath: metadataFile.path)
+        else {
             return false
         }
 

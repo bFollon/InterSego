@@ -18,15 +18,16 @@
 import Foundation
 
 struct DepartureTime: Codable, Comparable, Hashable {
-    let hour: Int           // 0-23
-    let minute: Int         // 0-59
+    let hour: Int // 0-23
+    let minute: Int // 0-59
     let notes: String?
     let seasonalAvailability: SeasonalAvailability
     let variantLabel: String?
 
     init(hour: Int, minute: Int, notes: String? = nil,
          seasonalAvailability: SeasonalAvailability = .yearRound,
-         variantLabel: String? = nil) {
+         variantLabel: String? = nil)
+    {
         precondition(hour >= 0 && hour <= 23, "Hour must be between 0 and 23, got \(hour)")
         precondition(minute >= 0 && minute <= 59, "Minute must be between 0 and 59, got \(minute)")
         self.hour = hour
@@ -86,7 +87,7 @@ struct DepartureTime: Codable, Comparable, Hashable {
         stopCount: Int,
         offsetMinutes: Int = 2
     ) -> [[DepartureTime]] {
-        (0..<stopCount).map { index in
+        (0 ..< stopCount).map { index in
             anchorTimes.map { anchor in
                 let totalMinutes = anchor.hour * 60 + anchor.minute + index * offsetMinutes
                 return DepartureTime(
@@ -103,7 +104,8 @@ struct DepartureTime: Codable, Comparable, Hashable {
         guard parts.count == 2,
               let hour = Int(parts[0].trimmingCharacters(in: .whitespaces)),
               let minute = Int(parts[1].trimmingCharacters(in: .whitespaces)),
-              hour >= 0, hour <= 23, minute >= 0, minute <= 59 else {
+              hour >= 0, hour <= 23, minute >= 0, minute <= 59
+        else {
             return nil
         }
         return DepartureTime(hour: hour, minute: minute)

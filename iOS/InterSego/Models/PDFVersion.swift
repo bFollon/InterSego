@@ -25,7 +25,8 @@ struct PDFVersion: Codable {
     let downloadDate: TimeInterval
 
     init(url: String, lastModified: TimeInterval? = nil, contentLength: Int64? = nil,
-         etag: String? = nil, downloadDate: TimeInterval = Date().timeIntervalSince1970) {
+         etag: String? = nil, downloadDate: TimeInterval = Date().timeIntervalSince1970)
+    {
         self.url = url
         self.lastModified = lastModified
         self.contentLength = contentLength

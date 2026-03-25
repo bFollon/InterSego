@@ -19,7 +19,6 @@ import Foundation
 import PDFKit
 
 enum PDFTextExtractor {
-
     /// Extract text from a PDF file at the given path, handling broken font encodings.
     static func extractText(from pdfPath: String, tag: String = "PDFTextExtractor") -> String {
         guard let document = PDFDocument(url: URL(fileURLWithPath: pdfPath)) else {
@@ -28,7 +27,7 @@ enum PDFTextExtractor {
         }
 
         var allText = ""
-        for pageIndex in 0..<document.pageCount {
+        for pageIndex in 0 ..< document.pageCount {
             guard let page = document.page(at: pageIndex) else { continue }
             let pageText = page.string ?? ""
             DebugConfig.debugPrint("\(tag): Page \(pageIndex + 1) extracted \(pageText.count) chars")
@@ -56,7 +55,7 @@ enum PDFTextExtractor {
             if code == 0x00 { continue }
 
             let actualCode = code + offset
-            if (0x20...0x7E).contains(actualCode) || actualCode == 0x0A || actualCode == 0x0D {
+            if (0x20 ... 0x7E).contains(actualCode) || actualCode == 0x0A || actualCode == 0x0D {
                 decoded.append(Character(UnicodeScalar(actualCode)!))
             } else {
                 decoded.append("?")

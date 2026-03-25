@@ -19,8 +19,8 @@ import Foundation
 
 struct BusRoute: Codable, Identifiable, Hashable {
     let id: String
-    let number: String              // "1", "2", "40"
-    let name: String                // "Centro - San Lorenzo"
+    let number: String // "1", "2", "40"
+    let name: String // "Centro - San Lorenzo"
     let origin: String
     let destination: String
     let pdfURL: String
@@ -31,7 +31,8 @@ struct BusRoute: Codable, Identifiable, Hashable {
 
     init(id: String = UUID().uuidString, number: String, name: String,
          origin: String, destination: String, pdfURL: String,
-         routeType: RouteType, isCircular: Bool = false, color: String? = nil, active: Bool = true) {
+         routeType: RouteType, isCircular: Bool = false, color: String? = nil, active: Bool = true)
+    {
         self.id = id
         self.number = number
         self.name = name

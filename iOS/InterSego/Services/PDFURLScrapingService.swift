@@ -63,7 +63,8 @@ actor PDFURLScrapingService {
             let (data, response) = try await session.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse,
-                  httpResponse.statusCode == 200 else {
+                  httpResponse.statusCode == 200
+            else {
                 DebugConfig.debugError("\(tag): HTTP request failed")
                 return []
             }
@@ -171,7 +172,7 @@ actor PDFURLScrapingService {
     private func extractLastUpdatedDateFromHTML(_ htmlContent: String) -> String? {
         let patterns = [
             "actualización", "última actualización",
-            "fecha de actualización", "actualizado", "updated"
+            "fecha de actualización", "actualizado", "updated",
         ]
 
         for pattern in patterns {
@@ -181,7 +182,8 @@ actor PDFURLScrapingService {
             )
             let range = NSRange(htmlContent.startIndex..., in: htmlContent)
             if let match = regex?.firstMatch(in: htmlContent, range: range),
-               let dateRange = Range(match.range(at: 1), in: htmlContent) {
+               let dateRange = Range(match.range(at: 1), in: htmlContent)
+            {
                 return String(htmlContent[dateRange]).trimmingCharacters(in: .whitespaces)
             }
         }

@@ -111,12 +111,13 @@ actor PDFProcessingService {
 
     func getRouteViews(routeId: String, dayType: DayType) -> [RouteView] {
         if let parser = parsers[routeId] as? RouteStopsProvider,
-           let views = parser.getRouteViews(routeId, dayType: dayType) {
+           let views = parser.getRouteViews(routeId, dayType: dayType)
+        {
             return views
         }
 
         let variants = getRouteVariants(routeId: routeId, dayType: dayType)
-        return variants.enumerated().map { (index, variant) in
+        return variants.enumerated().map { index, variant in
             let swapTargetId = variants.count == 2 ? variants[1 - index].id : nil
             return RouteView(
                 id: variant.id,

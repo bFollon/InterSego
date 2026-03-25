@@ -39,7 +39,6 @@ import Foundation
 ///
 /// Timetable data hardcoded from official Linecar M5 PDF screenshot (2026-03-25).
 class M5Parser: CapableParser, RouteStopsProvider {
-
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M5"]),
         mode: .production,
@@ -54,56 +53,129 @@ class M5Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let segovia           = BusStop(id: "m5-segovia",            name: "Segovia",               area: "Segovia capital",               coordinates: "40.944768, -4.121823")
-        static let tizneros          = BusStop(id: "m5-tizneros",           name: "Tizneros",              area: "Tizneros",              coordinates: "0.0, 0.0")
-        static let espirdo           = BusStop(id: "m5-espirdo",            name: "Espirdo",               area: "Espirdo",               coordinates: "0.0, 0.0")
-        static let laHiguera         = BusStop(id: "m5-la-higuera",         name: "La Higuera",            area: "La Higuera",            coordinates: "0.0, 0.0")
-        static let brieva            = BusStop(id: "m5-brieva",             name: "Brieva",                area: "Brieva",                coordinates: "0.0, 0.0")
-        static let basardilla        = BusStop(id: "m5-basardilla",         name: "Basardilla",            area: "Basardilla",            coordinates: "0.0, 0.0")
-        static let stoDomingoPiron   = BusStop(id: "m5-sto-domingo-piron",  name: "Sto. Domingo de Pirón", area: "Sto. Domingo de Pirón", coordinates: "0.0, 0.0")
+        static let segovia = BusStop(
+            id: "m5-segovia",
+            name: "Segovia",
+            area: "Segovia capital",
+            coordinates: "40.944768, -4.121823"
+        )
+        static let tizneros = BusStop(
+            id: "m5-tizneros",
+            name: "Tizneros",
+            area: "Tizneros",
+            coordinates: "0.0, 0.0"
+        )
+        static let espirdo = BusStop(
+            id: "m5-espirdo",
+            name: "Espirdo",
+            area: "Espirdo",
+            coordinates: "0.0, 0.0"
+        )
+        static let laHiguera = BusStop(
+            id: "m5-la-higuera",
+            name: "La Higuera",
+            area: "La Higuera",
+            coordinates: "0.0, 0.0"
+        )
+        static let brieva = BusStop(
+            id: "m5-brieva",
+            name: "Brieva",
+            area: "Brieva",
+            coordinates: "0.0, 0.0"
+        )
+        static let basardilla = BusStop(
+            id: "m5-basardilla",
+            name: "Basardilla",
+            area: "Basardilla",
+            coordinates: "0.0, 0.0"
+        )
+        static let stoDomingoPiron = BusStop(
+            id: "m5-sto-domingo-piron",
+            name: "Sto. Domingo de Pirón",
+            area: "Sto. Domingo de Pirón",
+            coordinates: "0.0, 0.0"
+        )
 
-        // Inbound copies with -in suffix
-        static let segoviaIn           = BusStop(id: "m5-segovia-in",            name: "Segovia",               area: "Segovia capital",               coordinates: "40.944768, -4.121823")
-        static let tiznerosIn          = BusStop(id: "m5-tizneros-in",           name: "Tizneros",              area: "Tizneros",              coordinates: "0.0, 0.0")
-        static let espirdoIn           = BusStop(id: "m5-espirdo-in",            name: "Espirdo",               area: "Espirdo",               coordinates: "0.0, 0.0")
-        static let laHigueraIn         = BusStop(id: "m5-la-higuera-in",         name: "La Higuera",            area: "La Higuera",            coordinates: "0.0, 0.0")
-        static let brievaIn            = BusStop(id: "m5-brieva-in",             name: "Brieva",                area: "Brieva",                coordinates: "0.0, 0.0")
-        static let basardillaIn        = BusStop(id: "m5-basardilla-in",         name: "Basardilla",            area: "Basardilla",            coordinates: "0.0, 0.0")
-        static let stoDomingoPironIn   = BusStop(id: "m5-sto-domingo-piron-in",  name: "Sto. Domingo de Pirón", area: "Sto. Domingo de Pirón", coordinates: "0.0, 0.0")
+        /// Inbound copies with -in suffix
+        static let segoviaIn = BusStop(
+            id: "m5-segovia-in",
+            name: "Segovia",
+            area: "Segovia capital",
+            coordinates: "40.944768, -4.121823"
+        )
+        static let tiznerosIn = BusStop(
+            id: "m5-tizneros-in",
+            name: "Tizneros",
+            area: "Tizneros",
+            coordinates: "0.0, 0.0"
+        )
+        static let espirdoIn = BusStop(
+            id: "m5-espirdo-in",
+            name: "Espirdo",
+            area: "Espirdo",
+            coordinates: "0.0, 0.0"
+        )
+        static let laHigueraIn = BusStop(
+            id: "m5-la-higuera-in",
+            name: "La Higuera",
+            area: "La Higuera",
+            coordinates: "0.0, 0.0"
+        )
+        static let brievaIn = BusStop(
+            id: "m5-brieva-in",
+            name: "Brieva",
+            area: "Brieva",
+            coordinates: "0.0, 0.0"
+        )
+        static let basardillaIn = BusStop(
+            id: "m5-basardilla-in",
+            name: "Basardilla",
+            area: "Basardilla",
+            coordinates: "0.0, 0.0"
+        )
+        static let stoDomingoPironIn = BusStop(
+            id: "m5-sto-domingo-piron-in",
+            name: "Sto. Domingo de Pirón",
+            area: "Sto. Domingo de Pirón",
+            coordinates: "0.0, 0.0"
+        )
     }
 
     // Outbound: Segovia → Sto. Domingo de Pirón
     static let m5Outbound: [BusStop] = [
         Stops.segovia, Stops.tizneros, Stops.espirdo, Stops.laHiguera,
-        Stops.brieva, Stops.basardilla, Stops.stoDomingoPiron
+        Stops.brieva, Stops.basardilla, Stops.stoDomingoPiron,
     ]
 
     // Inbound: Sto. Domingo de Pirón → Segovia
     static let m5Inbound: [BusStop] = [
         Stops.stoDomingoPironIn, Stops.basardillaIn, Stops.brievaIn,
-        Stops.laHigueraIn, Stops.espirdoIn, Stops.tiznerosIn, Stops.segoviaIn
+        Stops.laHigueraIn, Stops.espirdoIn, Stops.tiznerosIn, Stops.segoviaIn,
     ]
 
     // MARK: - Protocol Conformance
 
     func canParse(routeId: String) -> Bool {
-        capabilities.supportedRoutes.contains { $0.caseInsensitiveCompare(routeId) == .orderedSame }
+        capabilities.supportedRoutes
+            .contains { $0.caseInsensitiveCompare(routeId) == .orderedSame }
     }
 
     func getRoutesForId(_ routeId: String) -> [[BusStop]] {
-        guard routeId.caseInsensitiveCompare("M5") == .orderedSame else { return [] }
+        guard routeId
+            .caseInsensitiveCompare("M5") == .orderedSame else { return [] }
         return [Self.m5Outbound, Self.m5Inbound]
     }
 
     func getRouteVariants(_ routeId: String, dayType: DayType) -> [RouteVariant] {
-        guard routeId.caseInsensitiveCompare("M5") == .orderedSame else { return [] }
+        guard routeId
+            .caseInsensitiveCompare("M5") == .orderedSame else { return [] }
         switch dayType {
         case .weekday, .saturday:
             return [
                 RouteVariant(id: "regular", label: Self.directionOutbound,
                              stops: Self.m5Outbound, direction: Self.directionOutbound),
                 RouteVariant(id: "reverse", label: Self.directionInbound,
-                             stops: Self.m5Inbound, direction: Self.directionInbound)
+                             stops: Self.m5Inbound, direction: Self.directionInbound),
             ]
         default:
             return []
@@ -111,10 +183,13 @@ class M5Parser: CapableParser, RouteStopsProvider {
     }
 
     func getRouteViews(_ routeId: String, dayType: DayType) -> [RouteView]? {
-        guard routeId.caseInsensitiveCompare("M5") == .orderedSame else { return nil }
+        guard routeId
+            .caseInsensitiveCompare("M5") == .orderedSame else { return nil }
         let variants = getRouteVariants(routeId, dayType: dayType)
         guard !variants.isEmpty else { return nil }
-        return variants.enumerated().map { index, variant in
+        return variants.enumerated().map {
+            index,
+            variant in
             let swapTargetId = variants.count == 2 ? variants[1 - index].id : nil
             return RouteView(
                 id: variant.id, label: variant.label,
@@ -126,24 +201,46 @@ class M5Parser: CapableParser, RouteStopsProvider {
     }
 
     func getRouteEntries(_ routeId: String, today: Date) -> [RouteSelectorEntry] {
-        guard routeId.caseInsensitiveCompare("M5") == .orderedSame else { return [] }
+        guard routeId
+            .caseInsensitiveCompare("M5") == .orderedSame else { return [] }
         let dow = Calendar.current.component(.weekday, from: today)
-        let isWeekday = dow != 1 && dow != 7  // not Sunday (1) and not Saturday (7)
+        let isWeekday = dow != 1 && dow != 7 // not Sunday (1) and not Saturday (7)
         let isSaturday = dow == 7
         guard let weekdayViews = getRouteViews(routeId, dayType: .weekday),
-              let saturdayViews = getRouteViews(routeId, dayType: .saturday) else { return [] }
+              let saturdayViews = getRouteViews(routeId, dayType: .saturday)
+        else {
+            return []
+        }
         return [
-            RouteSelectorEntry(id: "entry-lv", label: "Lunes a Viernes", views: weekdayViews, initialViewId: "regular", timetableDayType: .weekday, isActiveToday: isWeekday),
-            RouteSelectorEntry(id: "entry-sabado", label: "Sábados", views: saturdayViews, initialViewId: "regular", timetableDayType: .saturday, isActiveToday: isSaturday)
+            RouteSelectorEntry(
+                id: "entry-lv",
+                label: "Lunes a Viernes",
+                views: weekdayViews,
+                initialViewId: "regular",
+                timetableDayType: .weekday,
+                isActiveToday: isWeekday
+            ),
+            RouteSelectorEntry(
+                id: "entry-sabado",
+                label: "Sábados",
+                views: saturdayViews,
+                initialViewId: "regular",
+                timetableDayType: .saturday,
+                isActiveToday: isSaturday
+            ),
         ]
     }
 
-    func parse(pdfPath: String, routeId: String) throws -> [BusTimetable] {
-        DebugConfig.debugPrint("M5Parser: returning hardcoded timetable (PDF parsing bypassed)")
+    func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
+        DebugConfig
+            .debugPrint(
+                "M5Parser: returning hardcoded timetable (PDF parsing bypassed)"
+            )
         return buildStaticTimetables()
     }
 
     // MARK: - Static Timetable
+
     //
     // Source: Linecar M5 PDF screenshot, 2026-03-25.
     // Weekday + Saturday service. No Sunday service. No seasonal restrictions.
@@ -158,19 +255,18 @@ class M5Parser: CapableParser, RouteStopsProvider {
     //   *** Saturday outbound Segovia = departure from Estación de Autobuses
 
     private func buildStaticTimetables() -> [BusTimetable] {
-
         // ── Weekday outbound: Segovia → Sto. Domingo de Pirón ──────────────────────────────────
         // PDF row 1: 13:45  14:00  14:10  14:15  14:25  14:30  14:35  (full trip)
         // PDF row 2: 15:15  15:30  15:40  15:45   —      —      —    (partial: ends La Higuera)
         // PDF row 3: 20:30  20:45  20:55  21:00   —      —      —    (partial: ends La Higuera)
         let wkOutDeps: [[DepartureTime]] = [
-            [t(13,45), t(15,15), t(20,30)],  // SEGOVIA
-            [t(14,0),  t(15,30), t(20,45)],  // TIZNEROS
-            [t(14,10), t(15,40), t(20,55)],  // ESPIRDO
-            [t(14,15), t(15,45), t(21,0)],   // LA_HIGUERA
-            [t(14,25)],                       // BRIEVA (row 1 only)
-            [t(14,30)],                       // BASARDILLA (row 1 only)
-            [t(14,35)],                       // STO_DOMINGO_PIRON (row 1 only)
+            [t(13, 45), t(15, 15), t(20, 30)], // SEGOVIA
+            [t(14, 0), t(15, 30), t(20, 45)], // TIZNEROS
+            [t(14, 10), t(15, 40), t(20, 55)], // ESPIRDO
+            [t(14, 15), t(15, 45), t(21, 0)], // LA_HIGUERA
+            [t(14, 25)], // BRIEVA (row 1 only)
+            [t(14, 30)], // BASARDILLA (row 1 only)
+            [t(14, 35)], // STO_DOMINGO_PIRON (row 1 only)
         ]
 
         // ── Weekday inbound: Sto. Domingo de Pirón → Segovia ──────────────────────────────────
@@ -178,43 +274,66 @@ class M5Parser: CapableParser, RouteStopsProvider {
         // PDF row 2: 10:00  10:05  10:10  10:20  10:25  10:30  10:40  (full trip)
         // PDF row 3:  —      —      —     15:45  15:50  15:55  16:05  (partial: starts La Higuera)
         let wkInDeps: [[DepartureTime]] = [
-            [t(10,0)],                         // STO_DOMINGO_PIRON_IN (row 2 only)
-            [t(10,5)],                         // BASARDILLA_IN (row 2 only)
-            [t(7,25),  t(10,10)],              // BRIEVA_IN (rows 1,2)
-            [t(7,30),  t(10,20), t(15,45)],   // LA_HIGUERA_IN
-            [t(7,35),  t(10,25), t(15,50)],   // ESPIRDO_IN
-            [t(7,40),  t(10,30), t(15,55)],   // TIZNEROS_IN
-            [t(7,50),  t(10,40), t(16,5)],    // SEGOVIA_IN
+            [t(
+                10,
+                0
+            )], // STO_DOMINGO_PIRON_IN (row 2 only)
+            [t(10, 5)], // BASARDILLA_IN (row 2 only)
+            [t(7, 25), t(10, 10)], // BRIEVA_IN (rows 1,2)
+            [t(7, 30), t(10, 20), t(15, 45)], // LA_HIGUERA_IN
+            [t(7, 35), t(10, 25), t(15, 50)], // ESPIRDO_IN
+            [t(7, 40), t(10, 30), t(15, 55)], // TIZNEROS_IN
+            [t(7, 50), t(10, 40), t(16, 5)], // SEGOVIA_IN
         ]
 
         // ── Saturday outbound: Segovia → Sto. Domingo de Pirón ─────────────────────────────────
         // PDF row 1: 12:45  13:00  13:05  13:10  13:20  13:25  13:30  (full trip)
         let satOutDeps: [[DepartureTime]] = [
-            [t(12,45)],  // SEGOVIA
-            [t(13,0)],   // TIZNEROS
-            [t(13,5)],   // ESPIRDO
-            [t(13,10)],  // LA_HIGUERA
-            [t(13,20)],  // BRIEVA
-            [t(13,25)],  // BASARDILLA
-            [t(13,30)],  // STO_DOMINGO_PIRON
+            [t(12, 45)], // SEGOVIA
+            [t(13, 0)], // TIZNEROS
+            [t(13, 5)], // ESPIRDO
+            [t(13, 10)], // LA_HIGUERA
+            [t(13, 20)], // BRIEVA
+            [t(13, 25)], // BASARDILLA
+            [t(13, 30)], // STO_DOMINGO_PIRON
         ]
 
         // ── Saturday inbound: Sto. Domingo de Pirón → Segovia ──────────────────────────────────
         // PDF row 1: 10:00  10:05  10:10  10:20  10:25  10:30  10:40  (full trip)
         let satInDeps: [[DepartureTime]] = [
-            [t(10,0)],   // STO_DOMINGO_PIRON_IN
-            [t(10,5)],   // BASARDILLA_IN
-            [t(10,10)],  // BRIEVA_IN
-            [t(10,20)],  // LA_HIGUERA_IN
-            [t(10,25)],  // ESPIRDO_IN
-            [t(10,30)],  // TIZNEROS_IN
-            [t(10,40)],  // SEGOVIA_IN
+            [t(10, 0)], // STO_DOMINGO_PIRON_IN
+            [t(10, 5)], // BASARDILLA_IN
+            [t(10, 10)], // BRIEVA_IN
+            [t(10, 20)], // LA_HIGUERA_IN
+            [t(10, 25)], // ESPIRDO_IN
+            [t(10, 30)], // TIZNEROS_IN
+            [t(10, 40)], // SEGOVIA_IN
         ]
 
-        return buildTimetables(stops: Self.m5Outbound, dayType: .weekday, direction: Self.directionOutbound, deps: wkOutDeps)
-             + buildTimetables(stops: Self.m5Inbound, dayType: .weekday, direction: Self.directionInbound, deps: wkInDeps)
-             + buildTimetables(stops: Self.m5Outbound, dayType: .saturday, direction: Self.directionOutbound, deps: satOutDeps)
-             + buildTimetables(stops: Self.m5Inbound, dayType: .saturday, direction: Self.directionInbound, deps: satInDeps)
+        return buildTimetables(
+            stops: Self.m5Outbound,
+            dayType: .weekday,
+            direction: Self.directionOutbound,
+            deps: wkOutDeps
+        )
+            + buildTimetables(
+                stops: Self.m5Inbound,
+                dayType: .weekday,
+                direction: Self.directionInbound,
+                deps: wkInDeps
+            )
+            + buildTimetables(
+                stops: Self.m5Outbound,
+                dayType: .saturday,
+                direction: Self.directionOutbound,
+                deps: satOutDeps
+            )
+            + buildTimetables(
+                stops: Self.m5Inbound,
+                dayType: .saturday,
+                direction: Self.directionInbound,
+                deps: satInDeps
+            )
     }
 
     private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
@@ -227,7 +346,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
         direction: String,
         deps: [[DepartureTime]]
     ) -> [BusTimetable] {
-        stops.enumerated().map { (i, stop) in
+        stops.enumerated().map { i, stop in
             BusTimetable(
                 routeId: "M5",
                 stopId: stop.id,

@@ -170,7 +170,7 @@ private final class LocationCoordinator: NSObject, CLLocationManagerDelegate {
             switch manager.authorizationStatus {
             case .notDetermined:
                 manager.requestWhenInUseAuthorization()
-                // Continues in locationManagerDidChangeAuthorization
+            // Continues in locationManagerDidChangeAuthorization
             case .denied, .restricted:
                 self.continuation = nil
                 cont.resume(throwing: ClosestStopError.locationPermissionDenied)
@@ -196,13 +196,13 @@ private final class LocationCoordinator: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    func locationManager(_: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else { return }
         continuation?.resume(returning: location)
         continuation = nil
     }
 
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    func locationManager(_: CLLocationManager, didFailWithError error: Error) {
         if let clError = error as? CLError, clError.code == .denied {
             continuation?.resume(throwing: ClosestStopError.locationPermissionDenied)
         } else {

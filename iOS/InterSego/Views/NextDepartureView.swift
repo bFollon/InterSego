@@ -15,14 +15,14 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import SwiftUI
 import MapKit
+import SwiftUI
 
 // MARK: - Day Type Matching
 
 private func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
     switch weekday {
-    case 7: return [.saturday, .weekend]   // Saturday
+    case 7: return [.saturday, .weekend] // Saturday
     case 1: return [.sunday, .weekend, .holiday] // Sunday
     default: return [.weekday]
     }
@@ -31,9 +31,9 @@ private func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
 // MARK: - Time of Day
 
 private enum TimeOfDay {
-    case morning    // 6:00 - 12:59
-    case afternoon  // 13:00 - 19:59
-    case evening    // 20:00 - 5:59
+    case morning // 6:00 - 12:59
+    case afternoon // 13:00 - 19:59
+    case evening // 20:00 - 5:59
 
     var label: String {
         switch self {
@@ -62,8 +62,8 @@ private enum TimeOfDay {
 
 private func getTimeOfDay(_ hour: Int) -> TimeOfDay {
     switch hour {
-    case 6...12: return .morning
-    case 13...19: return .afternoon
+    case 6 ... 12: return .morning
+    case 13 ... 19: return .afternoon
     default: return .evening
     }
 }
@@ -73,7 +73,7 @@ private func getTimeOfDay(_ hour: Int) -> TimeOfDay {
 private struct DepartureInfo {
     let departure: DepartureTime?
     let following: [DepartureTime]
-    let daysAhead: Int  // 0 = today, 1 = tomorrow, 2+ = future
+    let daysAhead: Int // 0 = today, 1 = tomorrow, 2+ = future
 }
 
 // MARK: - Next Departure View
@@ -101,21 +101,33 @@ struct NextDepartureView: View {
         routeViews.first { $0.id == currentViewId } ?? routeViews.first
     }
 
-    private var direction: String { activeView?.direction ?? "" }
-    private var selectedVariantLabel: String? { activeView?.departureLabel }
-    private var swapViewId: String? { activeView?.swapAction?.targetViewId }
+    private var direction: String {
+        activeView?.direction ?? ""
+    }
+
+    private var selectedVariantLabel: String? {
+        activeView?.departureLabel
+    }
+
+    private var swapViewId: String? {
+        activeView?.swapAction?.targetViewId
+    }
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
-    private var currentWeekday: Int { Calendar.current.component(.weekday, from: Date()) }
+    private var currentWeekday: Int {
+        Calendar.current.component(.weekday, from: Date())
+    }
 
-    private var currentDayTypes: Set<DayType> { dayTypesForCalendarDay(currentWeekday) }
+    private var currentDayTypes: Set<DayType> {
+        dayTypesForCalendarDay(currentWeekday)
+    }
 
     private var todayDepartures: [DepartureTime] {
         let matching = timetables.filter { timetable in
             currentDayTypes.contains(timetable.dayType)
-            && timetable.stopId == stop.id
-            && timetable.direction == direction
+                && timetable.stopId == stop.id
+                && timetable.direction == direction
         }
         return matching.flatMap { $0.seasonalDepartures(weekday: currentWeekday) }.sorted()
     }
@@ -137,7 +149,7 @@ struct NextDepartureView: View {
         }
 
         // Search up to 7 days ahead
-        for daysAhead in 1...7 {
+        for daysAhead in 1 ... 7 {
             guard let futureDate = Calendar.current.date(byAdding: .day, value: daysAhead, to: Date()) else { continue }
             let futureWeekday = Calendar.current.component(.weekday, from: futureDate)
             let futureDayTypes = dayTypesForCalendarDay(futureWeekday)
@@ -530,7 +542,7 @@ private struct NextDepartureCard: View {
         switch mins {
         case ..<1: return "Saliendo ahora"
         case 1: return "Sale en 1 minuto"
-        case 2..<60: return "Sale en \(mins) minutos"
+        case 2 ..< 60: return "Sale en \(mins) minutos"
         default:
             let hours = mins / 60
             let remainder = mins % 60
