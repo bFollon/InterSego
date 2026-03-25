@@ -213,9 +213,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M5",
                 number = "M5",
-                name = "Línea Metropolitana 5",
+                name = "Segovia - Sto. Domingo de Pirón",
                 origin = "Segovia",
-                destination = "Área Metropolitana",
+                destination = "Sto. Domingo de Pirón",
                 pdfURL = "",
                 routeType = RouteType.URBAN
             ),

@@ -36,6 +36,7 @@ import com.github.bfollon.intersego.services.pdfparsing.strategies.M1Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M2Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M3Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M4Parser
+import com.github.bfollon.intersego.services.pdfparsing.strategies.M5Parser
 import com.github.bfollon.intersego.services.pdfparsing.strategies.M6Parser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -65,6 +66,7 @@ class PDFProcessingService(private val context: Context) {
         registerParser(M2Parser())
         registerParser(M3Parser())
         registerParser(M4Parser())
+        registerParser(M5Parser())
         registerParser(M6Parser())
 
         DebugConfig.debugPrint("PDFProcessingService: Initialized with ${parsers.size} parsers")
