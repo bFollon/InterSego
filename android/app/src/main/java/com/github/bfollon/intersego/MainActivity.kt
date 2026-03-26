@@ -240,9 +240,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M8",
                 number = "M8",
-                name = "Línea Metropolitana 8",
+                name = "Segovia - La Granja - Valsaín",
                 origin = "Segovia",
-                destination = "Área Metropolitana",
+                destination = "Valsaín",
                 pdfURL = "",
                 routeType = RouteType.URBAN
             )

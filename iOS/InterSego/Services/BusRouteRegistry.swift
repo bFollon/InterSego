@@ -41,8 +41,8 @@ enum BusRouteRegistry {
             BusRoute(id: "M7", number: "M7", name: "Segovia - Torrecaballeros",
                      origin: "Segovia", destination: "Torrecaballeros",
                      pdfURL: "", routeType: .urban),
-            BusRoute(id: "M8", number: "M8", name: "Línea Metropolitana 8",
-                     origin: "Segovia", destination: "Área Metropolitana",
+            BusRoute(id: "M8", number: "M8", name: "Segovia - La Granja - Valsaín",
+                     origin: "Segovia", destination: "Valsaín",
                      pdfURL: "", routeType: .urban),
         ]
     }

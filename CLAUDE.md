@@ -35,7 +35,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | M3 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-23); v1.0; Saturday only; linear (Segovia→Navacerrada); Segovia is a 4-stop cluster (Estación de Autobuses, Iglesia Santo Tomás, Frente Bar Norte, Plaza de Toros) with +2 min estimated times |
 | M5 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.0; linear (Segovia→Sto. Domingo de Pirón); weekday + Saturday; partial trips (some weekday services only Segovia–La Higuera); * = Via Roma, *** = Estación de Autobuses |
 | M7 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.0; weekday: 4-stop circular (Segovia→Tabanera→Palazuelos→Segovia); Sat/Sun: extended 8-stop (Segovia cluster→...→Torrecaballeros); Segovia cluster outbound: 5 sub-stops (Estación Bus→Hospital→Andrés Laguna→La Pista→Plaza de Toros); inbound: 4 sub-stops; Sunday has SCHOOL_ONLY/SUMMER_ONLY seasonal trips; Valsaín–La Granja feeder deferred to M7-AVE |
-| M8 | ❌ | ❌ | |
+| M8 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.0; linear (Segovia→Valsaín via La Granja); weekday + Saturday + Sunday/Festivos; Segovia cluster all day types: 4 stops (Estación Bus→Iglesia Santo Tomás→Enfrente Bar Norte→Plaza de Toros); C. La Fuencisla is optional (only subset of trips); Saturday has 2 partial trips (outbound 14:30 ends at Ptas. Segovia; inbound 14:50 starts at F. Cristal) |
 
 ### UI Screens
 

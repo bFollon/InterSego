@@ -54,7 +54,25 @@ This document tracks incomplete items across all static data parsers (M1–M5 an
 - [ ] **Weekday last trip anomaly** — PDF shows `*21:20` (Segovia), `*21:37` (Tabanera), but Palazuelos at `21:35` which is BEFORE Tabanera. The `*` is not explained in the weekday footnotes. Times included as-is — verify with Linecar if possible.
 - [ ] **Sunday seasonal refinement** — currently using SCHOOL_ONLY (Sep–Jun) and SUMMER_ONLY (Jul–Aug) as scaffolding. Actual school-term dates may differ ("periodo lectivo" vs "vacaciones escolares estivales").
 
-## Common Items (all static parsers, including future M8)
+### M8 (Segovia – La Granja – Valsaín)
+- [ ] **Coordinates** — 16 stops missing (both platforms):
+  - `m8-iglesia-sto-tomas` — Iglesia Santo Tomás
+  - `m8-frente-bar-norte` — Enfrente Bar Norte
+  - `m8-carras-calejo` — Carras-Calejo
+  - `m8-penas-del-erizo` — Peñas del Erizo
+  - `m8-c-la-fuencisla` — C. La Fuencisla
+  - `m8-parque-robledo` — Parque Robledo
+  - `m8-fabrica-cristal` — Fábrica Cristal
+  - `m8-piscinas` — Piscinas
+  - `m8-ptas-segovia` — Ptas. Segovia
+  - `m8-la-pradera` — La Pradera
+  - `m8-fronton` — Frontón
+  - `m8-plaza` — Plaza (Valsaín)
+  - Plus all inbound `-in` copies of the above (except Plaza de Toros and Estación Bus which already have real coordinates)
+- [ ] **Route polylines** — none created yet
+- [ ] **Version bump** — bump `capabilities.version` on both platforms after coordinate/data fixes
+
+## Common Items (all static parsers)
 
 ### Coordinates
 - Placeholder coordinates use `"0.0, 0.0"` — these must be replaced with real GPS coordinates

@@ -49,6 +49,7 @@
 		A10000010000000000000043 /* M3Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000043 /* M3Parser.swift */; };
 		A10000010000000000000044 /* M5Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000044 /* M5Parser.swift */; };
 		A10000010000000000000045 /* M7Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000045 /* M7Parser.swift */; };
+		A10000010000000000000046 /* M8Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000046 /* M8Parser.swift */; };
 		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
 		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
 		A10000010000000000000042 /* AllRoutesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* AllRoutesView.swift */; };
@@ -97,6 +98,7 @@
 		A20000010000000000000043 /* M3Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000044 /* M5Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M5Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000045 /* M7Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M7Parser.swift; sourceTree = "<group>"; };
+		A20000010000000000000046 /* M8Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M8Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000040 /* RouteGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteGroup.swift; sourceTree = "<group>"; };
 		A20000010000000000000041 /* RouteSelectorEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectorEntry.swift; sourceTree = "<group>"; };
 		A20000010000000000000042 /* AllRoutesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllRoutesView.swift; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				A20000010000000000000043 /* M3Parser.swift */,
 				A20000010000000000000044 /* M5Parser.swift */,
 				A20000010000000000000045 /* M7Parser.swift */,
+				A20000010000000000000046 /* M8Parser.swift */,
 				A20000010000000000000017 /* M4Parser.swift */,
 				A20000010000000000000018 /* M6Parser.swift */,
 			);
@@ -321,6 +324,7 @@
 				A10000010000000000000043 /* M3Parser.swift in Sources */,
 				A10000010000000000000044 /* M5Parser.swift in Sources */,
 				A10000010000000000000045 /* M7Parser.swift in Sources */,
+				A10000010000000000000046 /* M8Parser.swift in Sources */,
 				A10000010000000000000032 /* ClosestStopService.swift in Sources */,
 				A10000010000000000000017 /* M4Parser.swift in Sources */,
 				A10000010000000000000018 /* M6Parser.swift in Sources */,
