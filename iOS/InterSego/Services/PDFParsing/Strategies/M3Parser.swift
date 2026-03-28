@@ -60,13 +60,13 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-iglesia-sto-tomas",
             name: "Iglesia Santo Tomás",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.941935, -4.118070",
         )
         static let frenteBarNorte = BusStop(
             id: "m3-frente-bar-norte",
             name: "Frente Bar Norte",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.937206, -4.113999",
         )
         static let plazaToros = BusStop(
             id: "m3-plaza-toros",

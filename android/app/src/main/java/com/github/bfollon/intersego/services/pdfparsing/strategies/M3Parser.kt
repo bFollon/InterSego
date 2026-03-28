@@ -66,25 +66,100 @@ class M3Parser : CapableParser, RouteStopsProvider {
 
         private object Stops {
             // Segovia cluster — outbound order
-            val ESTACION_BUS      = BusStop(id = "m3-estacion-bus",      name = "Estación de Autobuses",   area = "Segovia capital",       coordinates = "40.944768, -4.121823")
-            val IGLESIA_STO_TOMAS = BusStop(id = "m3-iglesia-sto-tomas", name = "Iglesia Santo Tomás",     area = "Segovia capital",       coordinates = "0.0, 0.0")
-            val FRENTE_BAR_NORTE  = BusStop(id = "m3-frente-bar-norte",  name = "Frente Bar Norte",        area = "Segovia capital",       coordinates = "0.0, 0.0")
-            val PLAZA_TOROS       = BusStop(id = "m3-plaza-toros",        name = "Plaza de Toros",          area = "Segovia capital",       coordinates = "40.942093, -4.107603")
+            val ESTACION_BUS = BusStop(
+                id = "m3-estacion-bus",
+                name = "Estación de Autobuses",
+                area = "Segovia capital",
+                coordinates = "40.944768, -4.121823"
+            )
+            val IGLESIA_STO_TOMAS = BusStop(
+                id = "m3-iglesia-sto-tomas",
+                name = "Iglesia Santo Tomás",
+                area = "Segovia capital",
+                coordinates = "40.941935, -4.118070"
+            )
+            val FRENTE_BAR_NORTE = BusStop(
+                id = "m3-frente-bar-norte",
+                name = "Frente Bar Norte",
+                area = "Segovia capital",
+                coordinates = "40.937206, -4.113999"
+            )
+            val PLAZA_TOROS = BusStop(
+                id = "m3-plaza-toros",
+                name = "Plaza de Toros",
+                area = "Segovia capital",
+                coordinates = "40.942093, -4.107603"
+            )
 
             // Route stops
-            val URB_CARRASCALEJO  = BusStop(id = "m3-urb-carrascalejo",  name = "Urb. Carrascalejo",       area = "Carrascalejo",  coordinates = "0.0, 0.0")
-            val PARQUE_ROBLEDO    = BusStop(id = "m3-parque-robledo",    name = "Parque Robledo",          area = "Robledo",       coordinates = "0.0, 0.0")
-            val LA_GRANJA         = BusStop(id = "m3-la-granja",         name = "La Granja (Pta de Segovia)", area = "La Granja",  coordinates = "40.901389, -4.003333")
-            val VALSAIN           = BusStop(id = "m3-valsain",           name = "Valsain (La Pradera)",    area = "Valsaín",       coordinates = "40.877500, -4.019444")
-            val BOCA_DEL_ASNO     = BusStop(id = "m3-boca-del-asno",    name = "Boca del Asno",           area = "Valsaín",       coordinates = "0.0, 0.0")
-            val PUENTE_MOSQUITOS  = BusStop(id = "m3-puente-mosquitos",  name = "Puente de los Mosquitos", area = "Navacerrada",   coordinates = "0.0, 0.0")
-            val NAVACERRADA       = BusStop(id = "m3-navacerrada",       name = "Navacerrada",             area = "Navacerrada",   coordinates = "40.780833, -4.008056")
+            val URB_CARRASCALEJO = BusStop(
+                id = "m3-urb-carrascalejo",
+                name = "Urb. Carrascalejo",
+                area = "Carrascalejo",
+                coordinates = "40.922847, -4.078270"
+            )
+            val PARQUE_ROBLEDO = BusStop(
+                id = "m3-parque-robledo",
+                name = "Parque Robledo",
+                area = "Robledo",
+                coordinates = "40.910111, -4.058750"
+            )
+            val LA_GRANJA = BusStop(
+                id = "m3-la-granja",
+                name = "La Granja (Pta de Segovia)",
+                area = "La Granja",
+                coordinates = "40.900286, -4.009502"
+            )
+            val VALSAIN = BusStop(
+                id = "m3-valsain",
+                name = "Valsain (La Pradera)",
+                area = "Valsaín",
+                coordinates = "40.878114, -4.018356"
+            )
+            val BOCA_DEL_ASNO = BusStop(
+                id = "m3-boca-del-asno",
+                name = "Boca del Asno",
+                area = "Valsaín",
+                coordinates = "40.844128, -4.025668"
+            )
+            val PUENTE_MOSQUITOS = BusStop(
+                id = "m3-puente-mosquitos",
+                name = "Puente de los Mosquitos",
+                area = "Navacerrada",
+                coordinates = "40.823325, -4.017340"
+            )
+            val NAVACERRADA = BusStop(
+                id = "m3-navacerrada",
+                name = "Navacerrada",
+                area = "Navacerrada",
+                coordinates = "40.788863, -4.003666"
+            )
 
             // Segovia cluster — inbound (return) order: reversed cluster + distinct IDs
-            val PLAZA_TOROS_IN       = BusStop(id = "m3-plaza-toros-in",        name = "Plaza de Toros",          area = "Segovia capital",  coordinates = "40.942093, -4.107603")
-            val FRENTE_BAR_NORTE_IN  = BusStop(id = "m3-frente-bar-norte-in",  name = "Frente Bar Norte",        area = "Segovia capital",  coordinates = "0.0, 0.0")
-            val IGLESIA_STO_TOMAS_IN = BusStop(id = "m3-iglesia-sto-tomas-in", name = "Iglesia Santo Tomás",     area = "Segovia capital",  coordinates = "0.0, 0.0")
-            val ESTACION_BUS_IN      = BusStop(id = "m3-estacion-bus-in",      name = "Estación de Autobuses",   area = "Segovia capital",  coordinates = "40.944768, -4.121823")
+            val PLAZA_TOROS_IN = BusStop(
+                id = "m3-plaza-toros-in",
+                name = "Plaza de Toros",
+                area = "Segovia capital",
+                coordinates = "40.942093, -4.107603"
+            )
+            val FRENTE_BAR_NORTE_IN = BusStop(
+                id = "m3-frente-bar-norte-in",
+                name = "Frente Bar Norte",
+                area = "Segovia capital",
+                coordinates = "40.937206, -4.113999"
+            )
+            val IGLESIA_STO_TOMAS_IN = BusStop(
+                id = "m3-iglesia-sto-tomas-in",
+                name = "Iglesia Santo Tomás",
+                area = "Segovia capital",
+                coordinates = "40.941935, -4.118070"
+            )
+            val ESTACION_BUS_IN = BusStop(
+                id = "m3-estacion-bus-in",
+                name = "Estación de Autobuses",
+                area = "Segovia capital",
+                coordinates = "40.944768, -4.121823"
+            )
         }
 
         // Outbound: Segovia cluster → ... → Navacerrada
@@ -96,9 +171,17 @@ class M3Parser : CapableParser, RouteStopsProvider {
 
         // Inbound: Navacerrada → ... → Segovia cluster (reversed)
         val m3Inbound: List<BusStop> = listOf(
-            Stops.NAVACERRADA, Stops.PUENTE_MOSQUITOS, Stops.BOCA_DEL_ASNO,
-            Stops.VALSAIN, Stops.LA_GRANJA, Stops.PARQUE_ROBLEDO, Stops.URB_CARRASCALEJO,
-            Stops.PLAZA_TOROS_IN, Stops.FRENTE_BAR_NORTE_IN, Stops.IGLESIA_STO_TOMAS_IN, Stops.ESTACION_BUS_IN
+            Stops.NAVACERRADA,
+            Stops.PUENTE_MOSQUITOS,
+            Stops.BOCA_DEL_ASNO,
+            Stops.VALSAIN,
+            Stops.LA_GRANJA,
+            Stops.PARQUE_ROBLEDO,
+            Stops.URB_CARRASCALEJO,
+            Stops.PLAZA_TOROS_IN,
+            Stops.FRENTE_BAR_NORTE_IN,
+            Stops.IGLESIA_STO_TOMAS_IN,
+            Stops.ESTACION_BUS_IN
         )
     }
 
@@ -117,6 +200,7 @@ class M3Parser : CapableParser, RouteStopsProvider {
                 RouteVariant("regular", DIRECTION_OUTBOUND, m3Outbound, DIRECTION_OUTBOUND),
                 RouteVariant("reverse", DIRECTION_INBOUND, m3Inbound, DIRECTION_INBOUND)
             )
+
             else -> emptyList()
         }
     }
@@ -143,7 +227,14 @@ class M3Parser : CapableParser, RouteStopsProvider {
         val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
         val isSaturday = dow == java.util.Calendar.SATURDAY
         return listOf(
-            RouteSelectorEntry("entry-sabado", "Sábados", saturdayViews, "regular", DayType.SATURDAY, isSaturday)
+            RouteSelectorEntry(
+                "entry-sabado",
+                "Sábados",
+                saturdayViews,
+                "regular",
+                DayType.SATURDAY,
+                isSaturday
+            )
         )
     }
 
@@ -170,20 +261,20 @@ class M3Parser : CapableParser, RouteStopsProvider {
         //
         // Segovia cluster (Estación→Iglesia→BarNorte→PlazaToros): 4 stops, +2 min each
         val segoviaOut = DepartureTime.clusterDepartures(
-            mutableListOf(t(8,30), t(16,0)), stopCount = 4, offsetMinutes = 2
+            mutableListOf(t(8, 30), t(16, 0)), stopCount = 4, offsetMinutes = 2
         )
         val outDeps = arrayOf(
             segoviaOut[0],  // ESTACION_BUS (anchor)
             segoviaOut[1],  // IGLESIA_STO_TOMAS (+2)
             segoviaOut[2],  // FRENTE_BAR_NORTE (+4)
             segoviaOut[3],  // PLAZA_TOROS (+6)
-            mutableListOf(t(8,40),  t(16,10)),  // URB_CARRASCALEJO
-            mutableListOf(t(8,46),  t(16,16)),  // PARQUE_ROBLEDO
-            mutableListOf(t(8,50),  t(16,20)),  // LA_GRANJA
-            mutableListOf(t(8,54),  t(16,24)),  // VALSAIN
-            mutableListOf(t(8,59),  t(16,29)),  // BOCA_DEL_ASNO
-            mutableListOf(t(9,9),   t(16,39)),  // PUENTE_MOSQUITOS
-            mutableListOf(t(9,20),  t(16,50)),  // NAVACERRADA
+            mutableListOf(t(8, 40), t(16, 10)),  // URB_CARRASCALEJO
+            mutableListOf(t(8, 46), t(16, 16)),  // PARQUE_ROBLEDO
+            mutableListOf(t(8, 50), t(16, 20)),  // LA_GRANJA
+            mutableListOf(t(8, 54), t(16, 24)),  // VALSAIN
+            mutableListOf(t(8, 59), t(16, 29)),  // BOCA_DEL_ASNO
+            mutableListOf(t(9, 9), t(16, 39)),  // PUENTE_MOSQUITOS
+            mutableListOf(t(9, 20), t(16, 50)),  // NAVACERRADA
         )
 
         // ── Saturday inbound: Navacerrada → Segovia ──────────────────────────────────────────
@@ -193,16 +284,16 @@ class M3Parser : CapableParser, RouteStopsProvider {
         // Segovia cluster inbound (PlazaToros→BarNorte→Iglesia→Estación): 4 stops, +2 min each
         // Anchor = PDF "Segovia" arrival minus 6 min (e.g., 10:20 → 10:14)
         val segoviaIn = DepartureTime.clusterDepartures(
-            mutableListOf(t(10,14), t(17,44)), stopCount = 4, offsetMinutes = 2
+            mutableListOf(t(10, 14), t(17, 44)), stopCount = 4, offsetMinutes = 2
         )
         val inDeps = arrayOf(
-            mutableListOf(t(9,30),  t(17,0)),   // NAVACERRADA
-            mutableListOf(t(9,42),  t(17,12)),  // PUENTE_MOSQUITOS
-            mutableListOf(t(9,52),  t(17,22)),  // BOCA_DEL_ASNO
-            mutableListOf(t(9,56),  t(17,26)),  // VALSAIN
-            mutableListOf(t(9,59),  t(17,29)),  // LA_GRANJA
-            mutableListOf(t(10,3),  t(17,33)),  // PARQUE_ROBLEDO
-            mutableListOf(t(10,9),  t(17,39)),  // URB_CARRASCALEJO
+            mutableListOf(t(9, 30), t(17, 0)),   // NAVACERRADA
+            mutableListOf(t(9, 42), t(17, 12)),  // PUENTE_MOSQUITOS
+            mutableListOf(t(9, 52), t(17, 22)),  // BOCA_DEL_ASNO
+            mutableListOf(t(9, 56), t(17, 26)),  // VALSAIN
+            mutableListOf(t(9, 59), t(17, 29)),  // LA_GRANJA
+            mutableListOf(t(10, 3), t(17, 33)),  // PARQUE_ROBLEDO
+            mutableListOf(t(10, 9), t(17, 39)),  // URB_CARRASCALEJO
             segoviaIn[0],  // PLAZA_TOROS_IN (anchor)
             segoviaIn[1],  // FRENTE_BAR_NORTE_IN (+2)
             segoviaIn[2],  // IGLESIA_STO_TOMAS_IN (+4)
@@ -210,7 +301,7 @@ class M3Parser : CapableParser, RouteStopsProvider {
         )
 
         return buildTimetables(m3Outbound, DayType.SATURDAY, DIRECTION_OUTBOUND, outDeps) +
-               buildTimetables(m3Inbound, DayType.SATURDAY, DIRECTION_INBOUND, inDeps)
+                buildTimetables(m3Inbound, DayType.SATURDAY, DIRECTION_INBOUND, inDeps)
     }
 
     private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
@@ -223,10 +314,10 @@ class M3Parser : CapableParser, RouteStopsProvider {
         deps: Array<MutableList<DepartureTime>>
     ): List<BusTimetable> = stops.mapIndexed { i, stop ->
         BusTimetable(
-            routeId    = "M3",
-            stopId     = stop.id,
-            dayType    = dayType,
-            direction  = direction,
+            routeId = "M3",
+            stopId = stop.id,
+            dayType = dayType,
+            direction = direction,
             departures = deps[i]
         )
     }

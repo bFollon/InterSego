@@ -128,7 +128,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 id = "m7-hospital",
                 name = "Hospital",
                 area = "Segovia Capital",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.944055, -4.127405"
             )
             val OUT_ANDRES_LAGUNA = BusStop(
                 id = "m7-andres-laguna",
