@@ -80,6 +80,10 @@ import com.github.bfollon.intersego.services.CoordinateCache
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.NetworkMonitor
 import com.github.bfollon.intersego.services.PDFCacheManager
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.github.bfollon.intersego.ui.screens.AboutScreen
 import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
@@ -443,6 +447,7 @@ fun SplashScreen() {
 /**
  * App navigation structure.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
     com.github.bfollon.intersego.services.DebugConfig.debugPrint("🎯 AppNavigation composing...")
@@ -473,6 +478,10 @@ fun AppNavigation() {
 
     // Force service initialization and log available routes
     com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${pdfProcessingService.getSupportedRoutes()}")
+
+    // --- About modal state ---
+    var showAboutModal by remember { mutableStateOf(false) }
+    // --- End about modal state ---
 
     // --- Closest stop state ---
     val coroutineScope = rememberCoroutineScope()
@@ -526,6 +535,7 @@ fun AppNavigation() {
                 onNavigateToRouteList = {
                     navController.navigate("route_selection")
                 },
+                onShowAbout = { showAboutModal = true },
                 onFindClosestStop = {
                     closestStopError = null
                     if (locationMgr.hasLocationPermission()) {
@@ -767,6 +777,15 @@ fun AppNavigation() {
                 overrideDayType = overrideDayType,
                 onBack = { navController.popBackStack() }
             )
+        }
+    }
+
+    if (showAboutModal) {
+        ModalBottomSheet(
+            onDismissRequest = { showAboutModal = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            AboutScreen(onDismiss = { showAboutModal = false })
         }
     }
 }

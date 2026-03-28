@@ -28,9 +28,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +58,7 @@ import androidx.compose.ui.unit.sp
 fun LandingScreen(
     onNavigateToRouteList: () -> Unit,
     onFindClosestStop: () -> Unit = {},
+    onShowAbout: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
     closestStopError: String? = null
 ) {
@@ -142,6 +145,18 @@ fun LandingScreen(
         }
 
         Spacer(modifier = Modifier.weight(1f))
+
+        TextButton(
+            onClick = onShowAbout,
+            modifier = Modifier.navigationBarsPadding()
+        ) {
+            Text(
+                text = "Acerca de",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 

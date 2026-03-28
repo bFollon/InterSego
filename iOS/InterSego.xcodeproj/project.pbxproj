@@ -53,6 +53,7 @@
 		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
 		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
 		A10000010000000000000042 /* AllRoutesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* AllRoutesView.swift */; };
+		A10000010000000000000047 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000047 /* AboutView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +92,7 @@
 		A20000010000000000000021 /* DayScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayScheduleView.swift; sourceTree = "<group>"; };
 		A20000010000000000000022 /* LandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingView.swift; sourceTree = "<group>"; };
 		A20000010000000000000023 /* RouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapView.swift; sourceTree = "<group>"; };
+		A20000010000000000000047 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		A20000010000000000000030 /* RoutePolylines */ = {isa = PBXFileReference; lastKnownFileType = folder; path = RoutePolylines; sourceTree = "<group>"; };
 		A20000010000000000000031 /* M1Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M1Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000032 /* ClosestStopService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosestStopService.swift; sourceTree = "<group>"; };
@@ -195,6 +197,7 @@
 				A20000010000000000000021 /* DayScheduleView.swift */,
 				A20000010000000000000022 /* LandingView.swift */,
 				A20000010000000000000023 /* RouteMapView.swift */,
+				A20000010000000000000047 /* AboutView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -340,6 +343,7 @@
 				A10000010000000000000021 /* DayScheduleView.swift in Sources */,
 				A10000010000000000000022 /* LandingView.swift in Sources */,
 				A10000010000000000000023 /* RouteMapView.swift in Sources */,
+				A10000010000000000000047 /* AboutView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

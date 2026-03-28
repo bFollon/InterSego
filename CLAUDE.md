@@ -54,6 +54,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Day schedule (full day view) | ✅ | ✅ | All today's departures with "Ahora" marker, auto-scrolls; accepts overrideDayType for non-today route groups |
 | Times disclaimer card | ✅ | ✅ | Expandable card on NextDeparture screen, explains approximate times |
 | Timetable (full schedule view) | ✅ (dead code) | ❌ | Android has it but no navigation to it |
+| About screen | ✅ | ✅ | Sheet presented from "Acerca de" footer button on landing screen; shows app info, Ko-fi, GitHub, Linecar data source, contact links, legal notice |
 
 ### Location & Geolocation
 

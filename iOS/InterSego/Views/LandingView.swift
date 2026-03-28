@@ -20,6 +20,7 @@ import SwiftUI
 struct LandingView: View {
     let onShowRouteList: () -> Void
     let onFindClosestStop: () -> Void
+    let onShowAbout: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
 
@@ -98,6 +99,13 @@ struct LandingView: View {
             .padding(.horizontal, 24)
 
             Spacer()
+
+            Button(action: onShowAbout) {
+                Text("Acerca de")
+                    .font(.footnote)
+                    .foregroundColor(.accentColor)
+            }
+            .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
