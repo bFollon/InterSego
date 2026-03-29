@@ -84,13 +84,13 @@ class M8Parser : CapableParser, RouteStopsProvider {
                 id = "m8-iglesia-sto-tomas",
                 name = "Iglesia Santo Tomás",
                 area = "Segovia Capital",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.941935, -4.118070"
             )
             val OUT_FRENTE_BAR_NORTE = BusStop(
                 id = "m8-frente-bar-norte",
                 name = "Enfrente Bar Norte",
                 area = "Segovia Capital",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.937206, -4.113999"
             )
             val OUT_PLAZA_TOROS = BusStop(
                 id = "m8-plaza-de-toros",
@@ -100,65 +100,65 @@ class M8Parser : CapableParser, RouteStopsProvider {
             )
 
             // Main route stops (outbound)
-            val CARRAS_CALEJO = BusStop(
+            val CARRASCALEJO = BusStop(
                 id = "m8-carras-calejo",
                 name = "Carras-Calejo",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.922847, -4.078270"
             )
             val PENAS_DEL_ERIZO = BusStop(
                 id = "m8-penas-del-erizo",
                 name = "Peñas del Erizo",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.914155, -4.066063"
             )
             val C_LA_FUENCISLA = BusStop(
                 id = "m8-c-la-fuencisla",
                 name = "C. La Fuencisla",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.917151, -4.060857"
             )
             val PARQUE_ROBLEDO = BusStop(
                 id = "m8-parque-robledo",
                 name = "Parque Robledo",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.910103, -4.058763"
             )
             val FABRICA_CRISTAL = BusStop(
                 id = "m8-fabrica-cristal",
                 name = "Fábrica Cristal",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.902789, -4.006773"
             )
             val PISCINAS = BusStop(
                 id = "m8-piscinas",
                 name = "Piscinas",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.909126, -4.009200"
             )
             val PTAS_SEGOVIA = BusStop(
                 id = "m8-ptas-segovia",
                 name = "Ptas. Segovia",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.900325, -4.009467"
             )
             val LA_PRADERA = BusStop(
                 id = "m8-la-pradera",
                 name = "La Pradera",
                 area = "Valsaín",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.878114, -4.018356"
             )
             val FRONTON = BusStop(
                 id = "m8-fronton",
                 name = "Frontón",
                 area = "Valsaín",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.875741, -4.021955"
             )
             val PLAZA = BusStop(
                 id = "m8-plaza",
                 name = "Plaza",
                 area = "Valsaín",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.878374, -4.027028"
             )
 
             // Inbound stops (with -in suffix)
@@ -166,61 +166,61 @@ class M8Parser : CapableParser, RouteStopsProvider {
                 id = "m8-plaza-in",
                 name = "Plaza",
                 area = "Valsaín",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.878374, -4.027028"
             )
             val FRONTON_IN = BusStop(
                 id = "m8-fronton-in",
                 name = "Frontón",
                 area = "Valsaín",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.875741, -4.021955"
             )
             val LA_PRADERA_IN = BusStop(
                 id = "m8-la-pradera-in",
                 name = "La Pradera",
                 area = "Valsaín",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.878114, -4.018356"
             )
             val FABRICA_CRISTAL_IN = BusStop(
                 id = "m8-fabrica-cristal-in",
                 name = "Fábrica Cristal",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.902789, -4.006773"
             )
             val PISCINAS_IN = BusStop(
                 id = "m8-piscinas-in",
                 name = "Piscinas",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.909126, -4.009200"
             )
             val PTAS_SEGOVIA_IN = BusStop(
                 id = "m8-ptas-segovia-in",
                 name = "Ptas. Segovia",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.900325, -4.009467"
             )
             val PARQUE_ROBLEDO_IN = BusStop(
                 id = "m8-parque-robledo-in",
                 name = "Parque Robledo",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.910103, -4.058763"
             )
             val C_LA_FUENCISLA_IN = BusStop(
                 id = "m8-c-la-fuencisla-in",
                 name = "C. La Fuencisla",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.917151, -4.060857"
             )
             val PENAS_DEL_ERIZO_IN = BusStop(
                 id = "m8-penas-del-erizo-in",
                 name = "Peñas del Erizo",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.914155, -4.066063"
             )
-            val CARRAS_CALEJO_IN = BusStop(
+            val CARRASCALEJO_IN = BusStop(
                 id = "m8-carras-calejo-in",
                 name = "Carras-Calejo",
                 area = "La Granja",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.922847, -4.078270"
             )
 
             // Inbound Segovia cluster (4 sub-stops, +2 min each from anchor)
@@ -235,13 +235,13 @@ class M8Parser : CapableParser, RouteStopsProvider {
                 id = "m8-frente-bar-norte-in",
                 name = "Enfrente Bar Norte",
                 area = "Segovia Capital",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.937206, -4.113999"
             )
             val IN_IGLESIA_STO_TOMAS = BusStop(
                 id = "m8-iglesia-sto-tomas-in",
                 name = "Iglesia Santo Tomás",
                 area = "Segovia Capital",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.941935, -4.118070"
             )
             val IN_ESTACION_BUS = BusStop(
                 id = "m8-estacion-bus-in",
@@ -256,7 +256,7 @@ class M8Parser : CapableParser, RouteStopsProvider {
         val m8Outbound: List<BusStop> = listOf(
             Stops.OUT_ESTACION_BUS, Stops.OUT_IGLESIA_STO_TOMAS,
             Stops.OUT_FRENTE_BAR_NORTE, Stops.OUT_PLAZA_TOROS,
-            Stops.CARRAS_CALEJO, Stops.PENAS_DEL_ERIZO, Stops.C_LA_FUENCISLA,
+            Stops.CARRASCALEJO, Stops.PENAS_DEL_ERIZO, Stops.C_LA_FUENCISLA,
             Stops.PARQUE_ROBLEDO, Stops.FABRICA_CRISTAL, Stops.PISCINAS,
             Stops.PTAS_SEGOVIA, Stops.LA_PRADERA, Stops.FRONTON, Stops.PLAZA
         )
@@ -267,7 +267,7 @@ class M8Parser : CapableParser, RouteStopsProvider {
             Stops.PLAZA_IN, Stops.FRONTON_IN, Stops.LA_PRADERA_IN,
             Stops.FABRICA_CRISTAL_IN, Stops.PISCINAS_IN, Stops.PTAS_SEGOVIA_IN,
             Stops.PARQUE_ROBLEDO_IN, Stops.C_LA_FUENCISLA_IN,
-            Stops.PENAS_DEL_ERIZO_IN, Stops.CARRAS_CALEJO_IN,
+            Stops.PENAS_DEL_ERIZO_IN, Stops.CARRASCALEJO_IN,
             Stops.IN_PLAZA_TOROS, Stops.IN_FRENTE_BAR_NORTE,
             Stops.IN_IGLESIA_STO_TOMAS, Stops.IN_ESTACION_BUS
         )
