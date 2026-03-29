@@ -71,7 +71,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M7"),
         mode = ParserMode.PRODUCTION,
-        version = "1.2"
+        version = "1.3"
     )
 
     companion object {
@@ -164,33 +164,69 @@ class M7Parser : CapableParser, RouteStopsProvider {
             )
             val S_CRISTOBAL = BusStop(
                 id = "m7-s-cristobal",
-                name = "S. Cristóbal",
+                name = "San Cristóbal de Segovia",
                 area = "San Cristóbal de Segovia",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.952056, -4.081139"
+            )
+            val S_CRISTOBAL_IGLESIA = BusStop(
+                id = "m7-s-cristobal-iglesia",
+                name = "Iglesia",
+                area = "San Cristóbal de Segovia",
+                coordinates = "40.951733, -4.077499"
+            )
+            val S_CRISTOBAL_ROTONDA = BusStop(
+                id = "m7-s-cristobal-rotonda",
+                name = "Rotonda",
+                area = "San Cristóbal de Segovia",
+                coordinates = "40.951224, -4.073449"
             )
             val SONSOTO = BusStop(
                 id = "m7-sonsoto",
-                name = "Sonsoto",
+                name = "Potro",
                 area = "Sonsoto",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.954774, -4.040524"
+            )
+            val SONSOTO_2 = BusStop(
+                id = "m7-sonsoto-2",
+                name = "Sonsoto 2",
+                area = "Sonsoto",
+                coordinates = "40.957470, -4.039154"
             )
             val TRESCASAS = BusStop(
                 id = "m7-trescasas",
-                name = "Trescasas",
+                name = "Plaza de la constitución",
                 area = "Trescasas",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.961834, -4.037367"
+            )
+            val TRESCASAS_2 = BusStop(
+                id = "m7-trescasas-2",
+                name = "Trescasas 2",
+                area = "Trescasas",
+                coordinates = "40.963899, -4.034776"
             )
             val CABANILLAS = BusStop(
                 id = "m7-cabanillas",
                 name = "Cabanillas",
                 area = "Cabanillas",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.974402, -4.028241"
             )
             val TORRECAB = BusStop(
                 id = "m7-torrecaballeros",
                 name = "Torrecaballeros",
                 area = "Torrecaballeros",
-                coordinates = "0.0, 0.0"
+                coordinates = "40.991880, -4.022848"
+            )
+            val TORRECAB_2 = BusStop(
+                id = "m7-torrecaballeros-2",
+                name = "Torrecaballeros 2",
+                area = "Torrecaballeros",
+                coordinates = "40.995364, -4.021688"
+            )
+            val TORRECAB_3 = BusStop(
+                id = "m7-torrecaballeros-3",
+                name = "Torrecaballeros 3",
+                area = "Torrecaballeros",
+                coordinates = "40.999144, -4.020855"
             )
 
             // Saturday/Sunday inbound Segovia cluster (4 sub-stops, +2 min each from anchor)
@@ -236,14 +272,22 @@ class M7Parser : CapableParser, RouteStopsProvider {
         val m7ExtOutbound: List<BusStop> = listOf(
             Stops.OUT_ESTACION_BUS, Stops.OUT_HOSPITAL, Stops.OUT_ANDRES_LAGUNA,
             Stops.OUT_LA_PISTA, Stops.OUT_PLAZA_TOROS,
-            Stops.PALAZUELOS, Stops.TABANERA, Stops.S_CRISTOBAL,
-            Stops.SONSOTO, Stops.TRESCASAS, Stops.CABANILLAS, Stops.TORRECAB
+            Stops.PALAZUELOS, Stops.TABANERA,
+            Stops.S_CRISTOBAL, Stops.S_CRISTOBAL_IGLESIA, Stops.S_CRISTOBAL_ROTONDA,
+            Stops.SONSOTO, Stops.SONSOTO_2,
+            Stops.TRESCASAS, Stops.TRESCASAS_2,
+            Stops.CABANILLAS,
+            Stops.TORRECAB, Stops.TORRECAB_2, Stops.TORRECAB_3
         )
 
         // Saturday/Sunday inbound: Torrecaballeros → ... → Segovia cluster
         val m7ExtInbound: List<BusStop> = listOf(
-            Stops.TORRECAB, Stops.CABANILLAS, Stops.TRESCASAS,
-            Stops.SONSOTO, Stops.S_CRISTOBAL, Stops.TABANERA, Stops.PALAZUELOS,
+            Stops.TORRECAB_3, Stops.TORRECAB_2, Stops.TORRECAB,
+            Stops.CABANILLAS,
+            Stops.TRESCASAS_2, Stops.TRESCASAS,
+            Stops.SONSOTO_2, Stops.SONSOTO,
+            Stops.S_CRISTOBAL_ROTONDA, Stops.S_CRISTOBAL_IGLESIA, Stops.S_CRISTOBAL,
+            Stops.TABANERA, Stops.PALAZUELOS,
             Stops.IN_PLAZA_TOROS, Stops.IN_LA_PISTA, Stops.IN_ANDRES_LAGUNA, Stops.IN_JARDINILLOS
         )
     }
@@ -436,6 +480,18 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(9, 20), t(13, 30), t(15, 15), t(19, 30), t(22, 30)),
             stopCount = 5, offsetMinutes = 2
         )
+        val satSonsotoOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(9, 43), t(13, 51), t(15, 38), t(19, 53), t(22, 53)),
+            stopCount = 2, offsetMinutes = 1
+        )
+        val satTrescasasOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(9, 45), t(13, 53), t(15, 41), t(19, 56), t(22, 56)),
+            stopCount = 2, offsetMinutes = 1
+        )
+        val satTorrecabOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(9, 50), t(15, 45), t(20, 0), t(23, 0)),
+            stopCount = 3, offsetMinutes = 1
+        )
         val satOutDeps = arrayOf(
             satSegoviaOut[0],  // OUT_ESTACION_BUS (anchor)
             satSegoviaOut[1],  // OUT_HOSPITAL (+2)
@@ -446,16 +502,19 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(9, 35), t(13, 45), t(15, 30), t(19, 45), t(22, 45)),
             // TABANERA
             mutableListOf(t(9, 37), t(13, 47), t(15, 32), t(19, 47), t(22, 47)),
-            // S_CRISTOBAL
-            mutableListOf(t(9, 40), t(13, 49), t(15, 35), t(19, 50), t(22, 50)),
-            // SONSOTO
-            mutableListOf(t(9, 43), t(13, 51), t(15, 38), t(19, 53), t(22, 53)),
-            // TRESCASAS — trip 2 ends here
-            mutableListOf(t(9, 45), t(13, 53), t(15, 41), t(19, 56), t(22, 56)),
+            // S_CRISTOBAL cluster (3 stops, +1 min each)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(9, 40), t(13, 49), t(15, 35), t(19, 50), t(22, 50)),
+                stopCount = 3, offsetMinutes = 1
+            ).toTypedArray(),
+            // SONSOTO / Potro cluster (2 stops, +1 min each)
+            *satSonsotoOut.toTypedArray(),
+            // TRESCASAS / Plaza de la constitución cluster (2 stops, +1 min each; trip 2 ends here)
+            *satTrescasasOut.toTypedArray(),
             // CABANILLAS (4 trips — trip 2 is dash)
             mutableListOf(t(9, 47), t(15, 43), t(19, 58), t(22, 58)),
-            // TORRECAB (4 trips — trip 2 is dash)
-            mutableListOf(t(9, 50), t(15, 45), t(20, 0), t(23, 0))
+            // TORRECAB cluster (3 stops, +1 min each; 4 trips — trip 2 is dash)
+            *satTorrecabOut.toTypedArray()
         )
 
         // ══════════════════════════════════════════════════════════════════════════════════════
@@ -466,17 +525,32 @@ class M7Parser : CapableParser, RouteStopsProvider {
         // then +2/+4/+6 min for remaining sub-stops.
         // PDF gives Palazuelos and Segovia times; the gap from Palazuelos to Segovia (final) is
         // used to distribute across 4 cluster stops.
+        val satTorrecabIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(10, 8), t(15, 58), t(18, 28), t(22, 58)), // PDF torrecab − 2
+            stopCount = 3, offsetMinutes = 1
+        )
+        val satTrescasasIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(10, 15), t(16, 4), t(18, 34), t(23, 4)), // PDF trescasas − 1
+            stopCount = 2, offsetMinutes = 1
+        )
+        val satSonsotoIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(10, 18), t(16, 9), t(18, 39), t(23, 9)), // PDF sonsoto − 1
+            stopCount = 2, offsetMinutes = 1
+        )
         val satInDeps = arrayOf(
-            // TORRECAB
-            mutableListOf(t(10, 10), t(16, 0), t(18, 30), t(23, 0)),
+            // TORRECAB3 (anchor = PDF torrecab − 2), TORRECAB2 (+1), TORRECAB (+2 = PDF time)
+            *satTorrecabIn.toTypedArray(),
             // CABANILLAS
             mutableListOf(t(10, 13), t(16, 2), t(18, 32), t(23, 2)),
-            // TRESCASAS
-            mutableListOf(t(10, 16), t(16, 5), t(18, 35), t(23, 5)),
-            // SONSOTO
-            mutableListOf(t(10, 19), t(16, 10), t(18, 40), t(23, 10)),
-            // S_CRISTOBAL
-            mutableListOf(t(10, 22), t(16, 13), t(18, 43), t(23, 13)),
+            // TRESCASAS2 (anchor = PDF trescasas − 1), TRESCASAS (+1 = PDF time)
+            *satTrescasasIn.toTypedArray(),
+            // SONSOTO2 (anchor = PDF sonsoto − 1), SONSOTO (+1 = PDF time)
+            *satSonsotoIn.toTypedArray(),
+            // S_CRISTOBAL cluster inbound (Rotonda → Iglesia → S_CRISTOBAL, 3 stops, +1 min each)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(10, 22), t(16, 13), t(18, 43), t(23, 13)),
+                stopCount = 3, offsetMinutes = 1
+            ).toTypedArray(),
             // TABANERA
             mutableListOf(t(10, 25), t(16, 15), t(18, 45), t(23, 15)),
             // PALAZUELOS
@@ -498,6 +572,18 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(11, 45), t(20, 30, sch), t(19, 30, sum), t(21, 45)),
             stopCount = 5, offsetMinutes = 2
         )
+        val sunSonsotoOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(12, 9), t(20, 53, sch), t(19, 53, sum), t(22, 8)),
+            stopCount = 2, offsetMinutes = 1
+        )
+        val sunTrescasasOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(12, 10), t(20, 55, sch), t(19, 55, sum), t(22, 10)),
+            stopCount = 2, offsetMinutes = 1
+        )
+        val sunTorrecabOut = DepartureTime.clusterDepartures(
+            mutableListOf(t(12, 15), t(22, 15)),
+            stopCount = 3, offsetMinutes = 1
+        )
         val sunOutDeps = arrayOf(
             sunSegoviaOut[0],  // OUT_ESTACION_BUS (anchor)
             sunSegoviaOut[1],  // OUT_HOSPITAL (+2)
@@ -508,16 +594,19 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(12, 0), t(20, 45, sch), t(19, 45, sum), t(22, 0)),
             // TABANERA
             mutableListOf(t(12, 3), t(20, 47, sch), t(19, 47, sum), t(22, 2)),
-            // S_CRISTOBAL
-            mutableListOf(t(12, 6), t(20, 50, sch), t(19, 50, sum), t(22, 5)),
-            // SONSOTO
-            mutableListOf(t(12, 9), t(20, 53, sch), t(19, 53, sum), t(22, 8)),
-            // TRESCASAS — school/summer trips end here (partial)
-            mutableListOf(t(12, 10), t(20, 55, sch), t(19, 55, sum), t(22, 10)),
+            // S_CRISTOBAL cluster (3 stops, +1 min each)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(12, 6), t(20, 50, sch), t(19, 50, sum), t(22, 5)),
+                stopCount = 3, offsetMinutes = 1
+            ).toTypedArray(),
+            // SONSOTO / Potro cluster (2 stops, +1 min each)
+            *sunSonsotoOut.toTypedArray(),
+            // TRESCASAS / Plaza de la constitución cluster (2 stops; school/summer end here)
+            *sunTrescasasOut.toTypedArray(),
             // CABANILLAS (2 trips — school/summer trips are dash)
             mutableListOf(t(12, 13), t(22, 12)),
-            // TORRECAB (2 trips — school/summer trips are dash)
-            mutableListOf(t(12, 15), t(22, 15))
+            // TORRECAB cluster (3 stops, +1 min each; 2 trips)
+            *sunTorrecabOut.toTypedArray()
         )
 
         // ══════════════════════════════════════════════════════════════════════════════════════
@@ -525,17 +614,32 @@ class M7Parser : CapableParser, RouteStopsProvider {
         // ══════════════════════════════════════════════════════════════════════════════════════
         // 2 full year-round trips + 1 school-only partial (starts from Sonsoto) +
         // 1 summer-only partial (starts from Sonsoto).
+        val sunTorrecabIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(12, 13), t(16, 28)), // PDF torrecab − 2
+            stopCount = 3, offsetMinutes = 1
+        )
+        val sunTrescasasIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(12, 19), t(16, 34)), // PDF trescasas − 1
+            stopCount = 2, offsetMinutes = 1
+        )
+        val sunSonsotoIn = DepartureTime.clusterDepartures(
+            mutableListOf(t(12, 22), t(16, 37), t(20, 54, sch), t(19, 54, sum)), // PDF sonsoto − 1
+            stopCount = 2, offsetMinutes = 1
+        )
         val sunInDeps = arrayOf(
-            // TORRECAB (2 trips — school/summer trips are dash)
-            mutableListOf(t(12, 15), t(16, 30)),
+            // TORRECAB3 (anchor = PDF torrecab − 2), TORRECAB2 (+1), TORRECAB (+2 = PDF time)
+            *sunTorrecabIn.toTypedArray(),
             // CABANILLAS (2 trips)
             mutableListOf(t(12, 17), t(16, 32)),
-            // TRESCASAS (2 trips)
-            mutableListOf(t(12, 20), t(16, 35)),
-            // SONSOTO (4 trips — school/summer partials start here)
-            mutableListOf(t(12, 23), t(16, 38), t(20, 55, sch), t(19, 55, sum)),
-            // S_CRISTOBAL
-            mutableListOf(t(12, 25), t(16, 40), t(21, 0, sch), t(20, 0, sum)),
+            // TRESCASAS2 (anchor = PDF trescasas − 1), TRESCASAS (+1 = PDF time)
+            *sunTrescasasIn.toTypedArray(),
+            // SONSOTO2 (anchor = PDF sonsoto − 1), SONSOTO (+1 = PDF time; school/summer partials start here)
+            *sunSonsotoIn.toTypedArray(),
+            // S_CRISTOBAL cluster inbound (Rotonda → Iglesia → S_CRISTOBAL, 3 stops, +1 min each)
+            *DepartureTime.clusterDepartures(
+                mutableListOf(t(12, 25), t(16, 40), t(21, 0, sch), t(20, 0, sum)),
+                stopCount = 3, offsetMinutes = 1
+            ).toTypedArray(),
             // TABANERA
             mutableListOf(t(12, 28), t(16, 43), t(21, 5, sch), t(20, 5, sum)),
             // PALAZUELOS

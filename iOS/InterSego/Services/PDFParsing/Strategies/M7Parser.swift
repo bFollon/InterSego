@@ -37,7 +37,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M7"]),
         mode: .production,
-        version: "1.2",
+        version: "1.3",
     )
 
     // MARK: - Directions
@@ -129,33 +129,69 @@ class M7Parser: CapableParser, RouteStopsProvider {
         )
         static let sCristobal = BusStop(
             id: "m7-s-cristobal",
-            name: "S. Cristóbal",
+            name: "San Cristóbal de Segovia",
             area: "San Cristóbal de Segovia",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.952056, -4.081139",
+        )
+        static let sCristobalIglesia = BusStop(
+            id: "m7-s-cristobal-iglesia",
+            name: "Iglesia",
+            area: "San Cristóbal de Segovia",
+            coordinates: "40.951733, -4.077499",
+        )
+        static let sCristobalRotonda = BusStop(
+            id: "m7-s-cristobal-rotonda",
+            name: "Rotonda",
+            area: "San Cristóbal de Segovia",
+            coordinates: "40.951224, -4.073449",
         )
         static let sonsoto = BusStop(
             id: "m7-sonsoto",
-            name: "Sonsoto",
+            name: "Potro",
             area: "Sonsoto",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.954774, -4.040524",
+        )
+        static let sonsoto2 = BusStop(
+            id: "m7-sonsoto-2",
+            name: "Sonsoto 2",
+            area: "Sonsoto",
+            coordinates: "40.957470, -4.039154",
         )
         static let trescasas = BusStop(
             id: "m7-trescasas",
-            name: "Trescasas",
+            name: "Plaza de la constitución",
             area: "Trescasas",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.961834, -4.037367",
+        )
+        static let trescasas2 = BusStop(
+            id: "m7-trescasas-2",
+            name: "Trescasas 2",
+            area: "Trescasas",
+            coordinates: "40.963899, -4.034776",
         )
         static let cabanillas = BusStop(
             id: "m7-cabanillas",
             name: "Cabanillas",
             area: "Cabanillas",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.974402, -4.028241",
         )
         static let torrecab = BusStop(
             id: "m7-torrecaballeros",
             name: "Torrecaballeros",
             area: "Torrecaballeros",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.991880, -4.022848",
+        )
+        static let torrecab2 = BusStop(
+            id: "m7-torrecaballeros-2",
+            name: "Torrecaballeros 2",
+            area: "Torrecaballeros",
+            coordinates: "40.995364, -4.021688",
+        )
+        static let torrecab3 = BusStop(
+            id: "m7-torrecaballeros-3",
+            name: "Torrecaballeros 3",
+            area: "Torrecaballeros",
+            coordinates: "40.999144, -4.020855",
         )
 
         /// Saturday/Sunday inbound Segovia cluster (4 sub-stops)
@@ -196,14 +232,22 @@ class M7Parser: CapableParser, RouteStopsProvider {
     static let m7ExtOutbound: [BusStop] = [
         Stops.outEstacionBus, Stops.outHospital, Stops.outAndresLaguna,
         Stops.outLaPista, Stops.outPlazaToros,
-        Stops.palazuelos, Stops.tabanera, Stops.sCristobal,
-        Stops.sonsoto, Stops.trescasas, Stops.cabanillas, Stops.torrecab,
+        Stops.palazuelos, Stops.tabanera,
+        Stops.sCristobal, Stops.sCristobalIglesia, Stops.sCristobalRotonda,
+        Stops.sonsoto, Stops.sonsoto2,
+        Stops.trescasas, Stops.trescasas2,
+        Stops.cabanillas,
+        Stops.torrecab, Stops.torrecab2, Stops.torrecab3,
     ]
 
     /// Saturday/Sunday inbound
     static let m7ExtInbound: [BusStop] = [
-        Stops.torrecab, Stops.cabanillas, Stops.trescasas,
-        Stops.sonsoto, Stops.sCristobal, Stops.tabanera, Stops.palazuelos,
+        Stops.torrecab3, Stops.torrecab2, Stops.torrecab,
+        Stops.cabanillas,
+        Stops.trescasas2, Stops.trescasas,
+        Stops.sonsoto2, Stops.sonsoto,
+        Stops.sCristobalRotonda, Stops.sCristobalIglesia, Stops.sCristobal,
+        Stops.tabanera, Stops.palazuelos,
         Stops.inPlazaToros, Stops.inLaPista, Stops.inAndresLaguna,
         Stops.inJardinillos,
     ]
@@ -409,6 +453,26 @@ class M7Parser: CapableParser, RouteStopsProvider {
             stopCount: 5,
             offsetMinutes: 2,
         )
+        let satSanCrisOut = DepartureTime.clusterDepartures(
+            [t(9, 40), t(13, 49), t(15, 35), t(19, 50), t(22, 50)],
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
+        let satSonsotoOut = DepartureTime.clusterDepartures(
+            [t(9, 43), t(13, 51), t(15, 38), t(19, 53), t(22, 53)],
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let satTrescasasOut = DepartureTime.clusterDepartures(
+            [t(9, 45), t(13, 53), t(15, 41), t(19, 56), t(22, 56)],
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let satTorrecabOut = DepartureTime.clusterDepartures(
+            [t(9, 50), t(15, 45), t(20, 0), t(23, 0)],
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
         let satOutDeps: [[DepartureTime]] = [
             satSegoviaOut[0], // OUT_ESTACION_BUS (anchor)
             satSegoviaOut[1], // OUT_HOSPITAL (+2)
@@ -417,32 +481,62 @@ class M7Parser: CapableParser, RouteStopsProvider {
             satSegoviaOut[4], // OUT_PLAZA_TOROS (+8)
             [t(9, 35), t(13, 45), t(15, 30), t(19, 45), t(22, 45)], // PALAZUELOS
             [t(9, 37), t(13, 47), t(15, 32), t(19, 47), t(22, 47)], // TABANERA
-            [t(9, 40), t(13, 49), t(15, 35), t(19, 50), t(22, 50)], // S_CRISTOBAL
-            [t(9, 43), t(13, 51), t(15, 38), t(19, 53), t(22, 53)], // SONSOTO
-            [t(9, 45), t(13, 53), t(15, 41), t(19, 56), t(22, 56)], // TRESCASAS
+            satSanCrisOut[0], // S_CRISTOBAL (anchor)
+            satSanCrisOut[1], // IGLESIA (+1)
+            satSanCrisOut[2], // ROTONDA (+2)
+            satSonsotoOut[0], // SONSOTO / Potro (anchor)
+            satSonsotoOut[1], // SONSOTO2 (+1)
+            satTrescasasOut[0], // TRESCASAS / Plaza de la constitución (anchor)
+            satTrescasasOut[1], // TRESCASAS2 (+1)
             [t(9, 47), t(15, 43), t(19, 58), t(22, 58)], // CABANILLAS (no trip 2)
-            [t(9, 50), t(15, 45), t(20, 0), t(23, 0)], // TORRECAB (no trip 2)
+            satTorrecabOut[0], // TORRECAB (anchor)
+            satTorrecabOut[1], // TORRECAB2 (+1)
+            satTorrecabOut[2], // TORRECAB3 (+2)
         ]
 
         // ══════════════════════════════════════════════════════════════════════════════════════
         // SATURDAY INBOUND
         // ══════════════════════════════════════════════════════════════════════════════════════
-        let satInDeps: [[DepartureTime]] =
-            [
-                [t(10, 10), t(16, 0), t(18, 30), t(23, 0)], // TORRECAB
-                [t(10, 13), t(16, 2), t(18, 32), t(23, 2)], // CABANILLAS
-                [t(10, 16), t(16, 5), t(18, 35), t(23, 5)], // TRESCASAS
-                [t(10, 19), t(16, 10), t(18, 40), t(23, 10)], // SONSOTO
-                [t(10, 22), t(16, 13), t(18, 43), t(23, 13)], // S_CRISTOBAL
-                [t(10, 25), t(16, 15), t(18, 45), t(23, 15)], // TABANERA
-                [t(10, 28), t(16, 18), t(18, 48), t(23, 18)], // PALAZUELOS
-                // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
-            ]
-            + DepartureTime.clusterDepartures(
-                [t(10, 39), t(16, 24), t(18, 54), t(23, 24)],
-                stopCount: 4,
-                offsetMinutes: 2,
-            )
+        let satTorrecabIn = DepartureTime.clusterDepartures(
+            [t(10, 8), t(15, 58), t(18, 28), t(22, 58)], // PDF torrecab − 2
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
+        let satTrescasasIn = DepartureTime.clusterDepartures(
+            [t(10, 15), t(16, 4), t(18, 34), t(23, 4)], // PDF trescasas − 1
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let satSonsotoIn = DepartureTime.clusterDepartures(
+            [t(10, 18), t(16, 9), t(18, 39), t(23, 9)], // PDF sonsoto − 1
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let satSanCrisIn = DepartureTime.clusterDepartures(
+            [t(10, 22), t(16, 13), t(18, 43), t(23, 13)],
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
+        let satInDeps: [[DepartureTime]] = [
+            satTorrecabIn[0], // TORRECAB3 (anchor = PDF torrecab − 2)
+            satTorrecabIn[1], // TORRECAB2 (+1)
+            satTorrecabIn[2], // TORRECAB (+2 = original PDF time)
+            [t(10, 13), t(16, 2), t(18, 32), t(23, 2)], // CABANILLAS
+            satTrescasasIn[0], // TRESCASAS2 (anchor = PDF trescasas − 1)
+            satTrescasasIn[1], // TRESCASAS (+1 = original PDF time)
+            satSonsotoIn[0], // SONSOTO2 (anchor = PDF sonsoto − 1)
+            satSonsotoIn[1], // SONSOTO (+1 = original PDF time)
+            satSanCrisIn[0], // ROTONDA (anchor)
+            satSanCrisIn[1], // IGLESIA (+1)
+            satSanCrisIn[2], // S_CRISTOBAL (+2)
+            [t(10, 25), t(16, 15), t(18, 45), t(23, 15)], // TABANERA
+            [t(10, 28), t(16, 18), t(18, 48), t(23, 18)], // PALAZUELOS
+            // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
+        ] + DepartureTime.clusterDepartures(
+            [t(10, 39), t(16, 24), t(18, 54), t(23, 24)],
+            stopCount: 4,
+            offsetMinutes: 2,
+        )
 
         // ══════════════════════════════════════════════════════════════════════════════════════
         // SUNDAY OUTBOUND
@@ -453,6 +547,26 @@ class M7Parser: CapableParser, RouteStopsProvider {
             stopCount: 5,
             offsetMinutes: 2,
         )
+        let sunSanCrisOut = DepartureTime.clusterDepartures(
+            [t(12, 6), t(20, 50, sch), t(19, 50, sum), t(22, 5)],
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
+        let sunSonsotoOut = DepartureTime.clusterDepartures(
+            [t(12, 9), t(20, 53, sch), t(19, 53, sum), t(22, 8)],
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let sunTrescasasOut = DepartureTime.clusterDepartures(
+            [t(12, 10), t(20, 55, sch), t(19, 55, sum), t(22, 10)],
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let sunTorrecabOut = DepartureTime.clusterDepartures(
+            [t(12, 15), t(22, 15)],
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
         let sunOutDeps: [[DepartureTime]] = [
             sunSegoviaOut[0], // OUT_ESTACION_BUS (anchor)
             sunSegoviaOut[1], // OUT_HOSPITAL (+2)
@@ -461,32 +575,62 @@ class M7Parser: CapableParser, RouteStopsProvider {
             sunSegoviaOut[4], // OUT_PLAZA_TOROS (+8)
             [t(12, 0), t(20, 45, sch), t(19, 45, sum), t(22, 0)], // PALAZUELOS
             [t(12, 3), t(20, 47, sch), t(19, 47, sum), t(22, 2)], // TABANERA
-            [t(12, 6), t(20, 50, sch), t(19, 50, sum), t(22, 5)], // S_CRISTOBAL
-            [t(12, 9), t(20, 53, sch), t(19, 53, sum), t(22, 8)], // SONSOTO
-            [t(12, 10), t(20, 55, sch), t(19, 55, sum), t(22, 10)], // TRESCASAS
+            sunSanCrisOut[0], // S_CRISTOBAL (anchor)
+            sunSanCrisOut[1], // IGLESIA (+1)
+            sunSanCrisOut[2], // ROTONDA (+2)
+            sunSonsotoOut[0], // SONSOTO / Potro (anchor)
+            sunSonsotoOut[1], // SONSOTO2 (+1)
+            sunTrescasasOut[0], // TRESCASAS / Plaza de la constitución (anchor)
+            sunTrescasasOut[1], // TRESCASAS2 (+1)
             [t(12, 13), t(22, 12)], // CABANILLAS
-            [t(12, 15), t(22, 15)], // TORRECAB
+            sunTorrecabOut[0], // TORRECAB (anchor)
+            sunTorrecabOut[1], // TORRECAB2 (+1)
+            sunTorrecabOut[2], // TORRECAB3 (+2)
         ]
 
         // ══════════════════════════════════════════════════════════════════════════════════════
         // SUNDAY INBOUND
         // ══════════════════════════════════════════════════════════════════════════════════════
-        let sunInDeps: [[DepartureTime]] =
-            [
-                [t(12, 15), t(16, 30)], // TORRECAB
-                [t(12, 17), t(16, 32)], // CABANILLAS
-                [t(12, 20), t(16, 35)], // TRESCASAS
-                [t(12, 23), t(16, 38), t(20, 55, sch), t(19, 55, sum)], // SONSOTO
-                [t(12, 25), t(16, 40), t(21, 0, sch), t(20, 0, sum)], // S_CRISTOBAL
-                [t(12, 28), t(16, 43), t(21, 5, sch), t(20, 5, sum)], // TABANERA
-                [t(12, 33), t(16, 45), t(21, 8, sch), t(20, 8, sum)], // PALAZUELOS
-                // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
-            ]
-            + DepartureTime.clusterDepartures(
-                [t(12, 39), t(16, 54), t(21, 24, sch), t(20, 24, sum)],
-                stopCount: 4,
-                offsetMinutes: 2,
-            )
+        let sunTorrecabIn = DepartureTime.clusterDepartures(
+            [t(12, 13), t(16, 28)], // PDF torrecab − 2
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
+        let sunTrescasasIn = DepartureTime.clusterDepartures(
+            [t(12, 19), t(16, 34)], // PDF trescasas − 1
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let sunSonsotoIn = DepartureTime.clusterDepartures(
+            [t(12, 22), t(16, 37), t(20, 54, sch), t(19, 54, sum)], // PDF sonsoto − 1
+            stopCount: 2,
+            offsetMinutes: 1,
+        )
+        let sunSanCrisIn = DepartureTime.clusterDepartures(
+            [t(12, 25), t(16, 40), t(21, 0, sch), t(20, 0, sum)],
+            stopCount: 3,
+            offsetMinutes: 1,
+        )
+        let sunInDeps: [[DepartureTime]] = [
+            sunTorrecabIn[0], // TORRECAB3 (anchor = PDF torrecab − 2)
+            sunTorrecabIn[1], // TORRECAB2 (+1)
+            sunTorrecabIn[2], // TORRECAB (+2 = original PDF time)
+            [t(12, 17), t(16, 32)], // CABANILLAS
+            sunTrescasasIn[0], // TRESCASAS2 (anchor = PDF trescasas − 1)
+            sunTrescasasIn[1], // TRESCASAS (+1 = original PDF time)
+            sunSonsotoIn[0], // SONSOTO2 (anchor = PDF sonsoto − 1)
+            sunSonsotoIn[1], // SONSOTO (+1 = original PDF time)
+            sunSanCrisIn[0], // ROTONDA (anchor)
+            sunSanCrisIn[1], // IGLESIA (+1)
+            sunSanCrisIn[2], // S_CRISTOBAL (+2)
+            [t(12, 28), t(16, 43), t(21, 5, sch), t(20, 5, sum)], // TABANERA
+            [t(12, 33), t(16, 45), t(21, 8, sch), t(20, 8, sum)], // PALAZUELOS
+            // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
+        ] + DepartureTime.clusterDepartures(
+            [t(12, 39), t(16, 54), t(21, 24, sch), t(20, 24, sum)],
+            stopCount: 4,
+            offsetMinutes: 2,
+        )
 
         return buildTimetables(
             stops: Self.m7WeekdayCircular,
