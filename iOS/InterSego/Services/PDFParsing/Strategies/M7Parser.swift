@@ -37,7 +37,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M7"]),
         mode: .production,
-        version: "1.3",
+        version: "1.4",
     )
 
     // MARK: - Directions
@@ -61,6 +61,12 @@ class M7Parser: CapableParser, RouteStopsProvider {
             name: "Tabanera",
             area: "Tabanera",
             coordinates: "40.934336, -4.067014",
+        )
+        static let tabaneraWk2 = BusStop(
+            id: "m7-tabanera-2",
+            name: "Tabanera 2",
+            area: "Tabanera",
+            coordinates: "40.937491, -4.065818",
         )
         /// Palazuelos cluster (weekday only — school stop likely skipped on weekends)
         static let palazuelosWk = BusStop(
@@ -126,6 +132,12 @@ class M7Parser: CapableParser, RouteStopsProvider {
             name: "Tabanera",
             area: "Tabanera",
             coordinates: "40.934336, -4.067014",
+        )
+        static let tabanera2 = BusStop(
+            id: "m7-tabanera-ext-2",
+            name: "Tabanera 2",
+            area: "Tabanera",
+            coordinates: "40.937491, -4.065818",
         )
         static let sCristobal = BusStop(
             id: "m7-s-cristobal",
@@ -224,7 +236,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
     /// Weekday circular
     /// Weekday circular: Segovia → Tabanera → Palazuelos (cluster) → Segovia
     static let m7WeekdayCircular: [BusStop] = [
-        Stops.segoviaWk, Stops.tabaneraWk, Stops.palazuelosWk,
+        Stops.segoviaWk, Stops.tabaneraWk, Stops.tabaneraWk2, Stops.palazuelosWk,
         Stops.palazuelosColegioWk, Stops.segoviaWkRet,
     ]
 
@@ -232,7 +244,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
     static let m7ExtOutbound: [BusStop] = [
         Stops.outEstacionBus, Stops.outHospital, Stops.outAndresLaguna,
         Stops.outLaPista, Stops.outPlazaToros,
-        Stops.palazuelos, Stops.tabanera,
+        Stops.palazuelos, Stops.tabanera, Stops.tabanera2,
         Stops.sCristobal, Stops.sCristobalIglesia, Stops.sCristobalRotonda,
         Stops.sonsoto, Stops.sonsoto2,
         Stops.trescasas, Stops.trescasas2,
@@ -247,7 +259,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
         Stops.trescasas2, Stops.trescasas,
         Stops.sonsoto2, Stops.sonsoto,
         Stops.sCristobalRotonda, Stops.sCristobalIglesia, Stops.sCristobal,
-        Stops.tabanera, Stops.palazuelos,
+        Stops.tabanera2, Stops.tabanera, Stops.palazuelos,
         Stops.inPlazaToros, Stops.inLaPista, Stops.inAndresLaguna,
         Stops.inJardinillos,
     ]
@@ -421,6 +433,14 @@ class M7Parser: CapableParser, RouteStopsProvider {
                     t(17, 0),
                     t(17, 45), t(18, 50), t(20, 30), t(21, 37),
                 ],
+                // TABANERA_WK_2 (+1 min from anchor)
+                [
+                    t(7, 16), t(8, 1), t(8, 46), t(9, 31), t(10, 16), t(11, 1),
+                    t(11, 46), t(12, 31),
+                    t(13, 21), t(14, 1), t(14, 36), t(15, 36), t(16, 16),
+                    t(17, 1),
+                    t(17, 46), t(18, 51), t(20, 31), t(21, 38),
+                ],
                 // PALAZUELOS cluster (2 stops, +2 min each)
             ]
             + DepartureTime.clusterDepartures(
@@ -481,6 +501,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
             satSegoviaOut[4], // OUT_PLAZA_TOROS (+8)
             [t(9, 35), t(13, 45), t(15, 30), t(19, 45), t(22, 45)], // PALAZUELOS
             [t(9, 37), t(13, 47), t(15, 32), t(19, 47), t(22, 47)], // TABANERA
+            [t(9, 38), t(13, 48), t(15, 33), t(19, 48), t(22, 48)], // TABANERA_2 (+1)
             satSanCrisOut[0], // S_CRISTOBAL (anchor)
             satSanCrisOut[1], // IGLESIA (+1)
             satSanCrisOut[2], // ROTONDA (+2)
@@ -529,7 +550,8 @@ class M7Parser: CapableParser, RouteStopsProvider {
             satSanCrisIn[0], // ROTONDA (anchor)
             satSanCrisIn[1], // IGLESIA (+1)
             satSanCrisIn[2], // S_CRISTOBAL (+2)
-            [t(10, 25), t(16, 15), t(18, 45), t(23, 15)], // TABANERA
+            [t(10, 24), t(16, 14), t(18, 44), t(23, 14)], // TABANERA_2 (inbound: −1 min before anchor)
+            [t(10, 25), t(16, 15), t(18, 45), t(23, 15)], // TABANERA (PDF time)
             [t(10, 28), t(16, 18), t(18, 48), t(23, 18)], // PALAZUELOS
             // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
         ] + DepartureTime.clusterDepartures(
@@ -575,6 +597,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
             sunSegoviaOut[4], // OUT_PLAZA_TOROS (+8)
             [t(12, 0), t(20, 45, sch), t(19, 45, sum), t(22, 0)], // PALAZUELOS
             [t(12, 3), t(20, 47, sch), t(19, 47, sum), t(22, 2)], // TABANERA
+            [t(12, 4), t(20, 48, sch), t(19, 48, sum), t(22, 3)], // TABANERA_2 (+1)
             sunSanCrisOut[0], // S_CRISTOBAL (anchor)
             sunSanCrisOut[1], // IGLESIA (+1)
             sunSanCrisOut[2], // ROTONDA (+2)
@@ -623,7 +646,8 @@ class M7Parser: CapableParser, RouteStopsProvider {
             sunSanCrisIn[0], // ROTONDA (anchor)
             sunSanCrisIn[1], // IGLESIA (+1)
             sunSanCrisIn[2], // S_CRISTOBAL (+2)
-            [t(12, 28), t(16, 43), t(21, 5, sch), t(20, 5, sum)], // TABANERA
+            [t(12, 27), t(16, 42), t(21, 4, sch), t(20, 4, sum)], // TABANERA_2 (inbound: −1 min before anchor)
+            [t(12, 28), t(16, 43), t(21, 5, sch), t(20, 5, sum)], // TABANERA (PDF time)
             [t(12, 33), t(16, 45), t(21, 8, sch), t(20, 8, sum)], // PALAZUELOS
             // Segovia inbound cluster (4 stops, +2 min each; anchor = PDF "Segovia" arrival − 6 min)
         ] + DepartureTime.clusterDepartures(

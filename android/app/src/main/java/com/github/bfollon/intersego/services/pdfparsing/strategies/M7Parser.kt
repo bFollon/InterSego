@@ -71,7 +71,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M7"),
         mode = ParserMode.PRODUCTION,
-        version = "1.3"
+        version = "1.4"
     )
 
     companion object {
@@ -94,6 +94,12 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 name = "Tabanera",
                 area = "Tabanera",
                 coordinates = "40.934336, -4.067014"
+            )
+            val TABANERA_WK_2 = BusStop(
+                id = "m7-tabanera-2",
+                name = "Tabanera 2",
+                area = "Tabanera",
+                coordinates = "40.937491, -4.065818"
             )
 
             // Palazuelos cluster (weekday only — school stop likely skipped on weekends)
@@ -161,6 +167,12 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 name = "Tabanera",
                 area = "Tabanera",
                 coordinates = "40.934336, -4.067014"
+            )
+            val TABANERA_2 = BusStop(
+                id = "m7-tabanera-ext-2",
+                name = "Tabanera 2",
+                area = "Tabanera",
+                coordinates = "40.937491, -4.065818"
             )
             val S_CRISTOBAL = BusStop(
                 id = "m7-s-cristobal",
@@ -259,10 +271,11 @@ class M7Parser : CapableParser, RouteStopsProvider {
 
         // ── Stop lists ──────────────────────────────────────────────────────────────────────────
 
-        // Weekday circular: Segovia → Tabanera → Palazuelos (cluster) → Segovia
+        // Weekday circular: Segovia → Tabanera (cluster) → Palazuelos (cluster) → Segovia
         val m7WeekdayCircular: List<BusStop> = listOf(
             Stops.SEGOVIA_WK,
             Stops.TABANERA_WK,
+            Stops.TABANERA_WK_2,
             Stops.PALAZUELOS_WK,
             Stops.PALAZUELOS_COLEGIO_WK,
             Stops.SEGOVIA_WK_RET
@@ -272,7 +285,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
         val m7ExtOutbound: List<BusStop> = listOf(
             Stops.OUT_ESTACION_BUS, Stops.OUT_HOSPITAL, Stops.OUT_ANDRES_LAGUNA,
             Stops.OUT_LA_PISTA, Stops.OUT_PLAZA_TOROS,
-            Stops.PALAZUELOS, Stops.TABANERA,
+            Stops.PALAZUELOS, Stops.TABANERA, Stops.TABANERA_2,
             Stops.S_CRISTOBAL, Stops.S_CRISTOBAL_IGLESIA, Stops.S_CRISTOBAL_ROTONDA,
             Stops.SONSOTO, Stops.SONSOTO_2,
             Stops.TRESCASAS, Stops.TRESCASAS_2,
@@ -287,7 +300,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
             Stops.TRESCASAS_2, Stops.TRESCASAS,
             Stops.SONSOTO_2, Stops.SONSOTO,
             Stops.S_CRISTOBAL_ROTONDA, Stops.S_CRISTOBAL_IGLESIA, Stops.S_CRISTOBAL,
-            Stops.TABANERA, Stops.PALAZUELOS,
+            Stops.TABANERA_2, Stops.TABANERA, Stops.PALAZUELOS,
             Stops.IN_PLAZA_TOROS, Stops.IN_LA_PISTA, Stops.IN_ANDRES_LAGUNA, Stops.IN_JARDINILLOS
         )
     }
@@ -438,6 +451,12 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 t(13, 20), t(14, 0), t(14, 35), t(15, 35), t(16, 15), t(17, 0),
                 t(17, 45), t(18, 50), t(20, 30), t(21, 37)
             ),
+            // TABANERA_WK_2 (+1 min from anchor)
+            mutableListOf(
+                t(7, 16), t(8, 1), t(8, 46), t(9, 31), t(10, 16), t(11, 1), t(11, 46), t(12, 31),
+                t(13, 21), t(14, 1), t(14, 36), t(15, 36), t(16, 16), t(17, 1),
+                t(17, 46), t(18, 51), t(20, 31), t(21, 38)
+            ),
             // PALAZUELOS cluster (2 stops, +2 min each)
             *DepartureTime.clusterDepartures(
                 mutableListOf(
@@ -502,6 +521,8 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(9, 35), t(13, 45), t(15, 30), t(19, 45), t(22, 45)),
             // TABANERA
             mutableListOf(t(9, 37), t(13, 47), t(15, 32), t(19, 47), t(22, 47)),
+            // TABANERA_2 (+1 min from anchor)
+            mutableListOf(t(9, 38), t(13, 48), t(15, 33), t(19, 48), t(22, 48)),
             // S_CRISTOBAL cluster (3 stops, +1 min each)
             *DepartureTime.clusterDepartures(
                 mutableListOf(t(9, 40), t(13, 49), t(15, 35), t(19, 50), t(22, 50)),
@@ -551,7 +572,9 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 mutableListOf(t(10, 22), t(16, 13), t(18, 43), t(23, 13)),
                 stopCount = 3, offsetMinutes = 1
             ).toTypedArray(),
-            // TABANERA
+            // TABANERA_2 (inbound: arrives 1 min before anchor)
+            mutableListOf(t(10, 24), t(16, 14), t(18, 44), t(23, 14)),
+            // TABANERA (PDF time)
             mutableListOf(t(10, 25), t(16, 15), t(18, 45), t(23, 15)),
             // PALAZUELOS
             mutableListOf(t(10, 28), t(16, 18), t(18, 48), t(23, 18)),
@@ -594,6 +617,8 @@ class M7Parser : CapableParser, RouteStopsProvider {
             mutableListOf(t(12, 0), t(20, 45, sch), t(19, 45, sum), t(22, 0)),
             // TABANERA
             mutableListOf(t(12, 3), t(20, 47, sch), t(19, 47, sum), t(22, 2)),
+            // TABANERA_2 (+1 min from anchor)
+            mutableListOf(t(12, 4), t(20, 48, sch), t(19, 48, sum), t(22, 3)),
             // S_CRISTOBAL cluster (3 stops, +1 min each)
             *DepartureTime.clusterDepartures(
                 mutableListOf(t(12, 6), t(20, 50, sch), t(19, 50, sum), t(22, 5)),
@@ -640,7 +665,9 @@ class M7Parser : CapableParser, RouteStopsProvider {
                 mutableListOf(t(12, 25), t(16, 40), t(21, 0, sch), t(20, 0, sum)),
                 stopCount = 3, offsetMinutes = 1
             ).toTypedArray(),
-            // TABANERA
+            // TABANERA_2 (inbound: arrives 1 min before anchor)
+            mutableListOf(t(12, 27), t(16, 42), t(21, 4, sch), t(20, 4, sum)),
+            // TABANERA (PDF time)
             mutableListOf(t(12, 28), t(16, 43), t(21, 5, sch), t(20, 5, sum)),
             // PALAZUELOS
             mutableListOf(t(12, 33), t(16, 45), t(21, 8, sch), t(20, 8, sum)),
