@@ -55,6 +55,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Times disclaimer card | ✅ | ✅ | Expandable card on NextDeparture screen, explains approximate times |
 | Timetable (full schedule view) | ✅ (dead code) | ❌ | Android has it but no navigation to it |
 | About screen | ✅ | ✅ | Sheet presented from "Acerca de" footer button on landing screen; shows app info, Ko-fi, GitHub, Linecar data source, contact links, legal notice |
+| Reminders screen | ✅ | ✅ | "Mis recordatorios" card on Landing; today-only reminders via bell icon on NextDeparture + DaySchedule rows; bell fills/empties on toggle; configure default lead time (1–60 min, step 5, default 10 min); cancel individual reminders; auto-pruned on app launch. Android: nav route + AlarmManager + BroadcastReceiver; iOS: sheet + UNUserNotificationCenter |
 
 ### Location & Geolocation
 

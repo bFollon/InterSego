@@ -56,6 +56,9 @@ struct DayScheduleView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var currentTime = Date()
+    @State private var reminderKeys: Set<String> = []
+    @State private var reminderErrorMessage: String?
+    @State private var showReminderAlert = false
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
@@ -113,8 +116,16 @@ struct DayScheduleView: View {
             .task {
                 await loadTimetables()
             }
+            .task {
+                await refreshReminderKeys()
+            }
             .onReceive(timer) { time in
                 currentTime = time
+            }
+            .alert("Error al programar el recordatorio", isPresented: $showReminderAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(reminderErrorMessage ?? "")
             }
     }
 
@@ -180,6 +191,12 @@ struct DayScheduleView: View {
                                 departure: departure,
                                 selectedVariantLabel: selectedVariantLabel,
                                 isLast: index == departures.count - 1 && markerIndex <= departures.count - 1,
+                                isBellSet: reminderKeys.contains(BusReminder.matchKey(
+                                    routeId: route.id, stopId: stop.id, direction: direction,
+                                    hour: departure.hour, minute: departure.minute
+                                )),
+                                showBell: canSetReminder(for: departure),
+                                onBellTap: { handleBellTap(for: departure) },
                             )
                         }
 
@@ -213,6 +230,47 @@ struct DayScheduleView: View {
         }
         timetables = loaded
         isLoading = false
+    }
+
+    // MARK: - Reminder helpers
+
+    private func refreshReminderKeys() async {
+        reminderKeys = await ReminderService.shared.activeMatchKeys()
+    }
+
+    /// Bell is only shown for today's schedule and for departures still in the future.
+    private func canSetReminder(for departure: DepartureTime) -> Bool {
+        guard overrideDayType == nil else { return false }
+        let cal = Calendar.current
+        let currentHour = cal.component(.hour, from: currentTime)
+        let currentMinute = cal.component(.minute, from: currentTime)
+        return departure.isFuture(currentHour: currentHour, currentMinute: currentMinute)
+    }
+
+    private func handleBellTap(for departure: DepartureTime) {
+        reminderErrorMessage = nil
+        let key = BusReminder.matchKey(
+            routeId: route.id, stopId: stop.id, direction: direction,
+            hour: departure.hour, minute: departure.minute
+        )
+        Task {
+            if reminderKeys.contains(key) {
+                await ReminderService.shared.cancelReminder(
+                    routeId: route.id, stopId: stop.id, direction: direction,
+                    hour: departure.hour, minute: departure.minute
+                )
+            } else {
+                do {
+                    try await ReminderService.shared.scheduleReminder(
+                        departure: departure, stop: stop, route: route, direction: direction
+                    )
+                } catch {
+                    reminderErrorMessage = error.localizedDescription
+                    showReminderAlert = true
+                }
+            }
+            await refreshReminderKeys()
+        }
     }
 }
 
@@ -319,6 +377,9 @@ private struct DayScheduleTimelineRow: View {
     let departure: DepartureTime
     let selectedVariantLabel: String?
     let isLast: Bool
+    let isBellSet: Bool
+    let showBell: Bool
+    let onBellTap: () -> Void
 
     var body: some View {
         let timeOfDay = getDayScheduleTimeOfDay(departure.hour)
@@ -390,6 +451,15 @@ private struct DayScheduleTimelineRow: View {
                 .padding(.vertical, 4)
                 .background(timeOfDay.color.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+
+                if showBell {
+                    Button(action: onBellTap) {
+                        Image(systemName: isBellSet ? "bell.fill" : "bell")
+                            .font(.subheadline)
+                            .foregroundColor(isBellSet ? .accentColor : .secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
             .padding(16)
             .background(Color(.secondarySystemBackground).opacity(0.5))

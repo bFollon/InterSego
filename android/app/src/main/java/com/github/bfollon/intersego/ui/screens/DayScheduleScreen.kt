@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,11 +40,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.services.DebugConfig
+import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.TimetableService
 import kotlinx.coroutines.delay
 import java.time.LocalTime
@@ -59,6 +63,7 @@ fun DayScheduleScreen(
     direction: String,
     selectedVariantLabel: String? = null,
     overrideDayType: DayType? = null,
+    reminderService: ReminderService? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -69,6 +74,8 @@ fun DayScheduleScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
+    var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+    var reminderError by remember { mutableStateOf<String?>(null) }
 
     // Update time every minute
     LaunchedEffect(Unit) {
@@ -267,10 +274,29 @@ fun DayScheduleScreen(
                         }
 
                         item(key = "dep_$index") {
+                            val depTime = LocalTime.of(departure.hour, departure.minute)
+                            val canBell = overrideDayType == null && (depTime.isAfter(currentTime) || depTime == currentTime)
+                            val matchKey = BusReminder.matchKey(
+                                route.id, stop.id, direction, departure.hour, departure.minute
+                            )
                             DayScheduleTimelineRow(
                                 departure = departure,
                                 selectedVariantLabel = selectedVariantLabel,
                                 isLast = index == todayDepartures.size - 1 && markerIndex <= todayDepartures.size - 1,
+                                isBellSet = reminderKeys.contains(matchKey),
+                                showBell = canBell && reminderService != null,
+                                onBellTap = {
+                                    reminderError = null
+                                    if (reminderKeys.contains(matchKey)) {
+                                        reminderService?.cancelReminder(route.id, stop.id, direction, departure.hour, departure.minute)
+                                    } else {
+                                        val result = reminderService?.scheduleReminder(departure, stop, route, direction)
+                                        if (result is ReminderService.ScheduleResult.Failure) {
+                                            reminderError = result.message
+                                        }
+                                    }
+                                    reminderKeys = reminderService?.activeMatchKeys() ?: emptySet()
+                                },
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
@@ -367,6 +393,9 @@ private fun DayScheduleTimelineRow(
     departure: DepartureTime,
     selectedVariantLabel: String?,
     isLast: Boolean,
+    isBellSet: Boolean = false,
+    showBell: Boolean = false,
+    onBellTap: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val timeOfDay = getTimeOfDay(departure.hour)
@@ -472,6 +501,17 @@ private fun DayScheduleTimelineRow(
             }
 
             TimeOfDayIndicator(timeOfDay = timeOfDay)
+
+            if (showBell) {
+                IconButton(onClick = onBellTap, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                        contentDescription = if (isBellSet) "Cancelar recordatorio" else "Programar recordatorio",
+                        tint = if (isBellSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     }
 }

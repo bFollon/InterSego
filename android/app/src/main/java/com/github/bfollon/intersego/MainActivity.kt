@@ -100,6 +100,7 @@ import coil.disk.DiskCache
 import coil.request.CachePolicy
 import com.github.bfollon.intersego.services.OsmTileFetcher
 import com.github.bfollon.intersego.services.TileCacheService
+import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -282,6 +283,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         // Initialize PDF Cache Manager
         val pdfCacheManager = PDFCacheManager.getInstance(this)
         pdfCacheManager.initialize()
+
+        // Create notification channel for bus departure reminders
+        com.github.bfollon.intersego.services.ReminderService.createNotificationChannel(this)
 
         setContent {
             // State for tracking initialization - created in composition context
@@ -479,6 +483,15 @@ fun AppNavigation() {
     // Force service initialization and log available routes
     com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${pdfProcessingService.getSupportedRoutes()}")
 
+    // --- Reminder service ---
+    val reminderService = remember {
+        com.github.bfollon.intersego.services.ReminderService(activity).also {
+            it.initialize()
+            it.pruneExpired()
+        }
+    }
+    // --- End reminder service ---
+
     // --- About modal state ---
     var showAboutModal by remember { mutableStateOf(false) }
     // --- End about modal state ---
@@ -536,6 +549,7 @@ fun AppNavigation() {
                     navController.navigate("route_selection")
                 },
                 onShowAbout = { showAboutModal = true },
+                onShowReminders = { navController.navigate("reminders") },
                 onFindClosestStop = {
                     closestStopError = null
                     if (locationMgr.hasLocationPermission()) {
@@ -623,6 +637,7 @@ fun AppNavigation() {
                 stop = stop,
                 views = views,
                 initialViewId = initialViewId,
+                reminderService = reminderService,
                 onBack = {
                     navController.popBackStack()
                 },
@@ -736,6 +751,13 @@ fun AppNavigation() {
             )
         }
 
+        composable("reminders") {
+            RemindersScreen(
+                reminderService = reminderService,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         composable("timetable/{routeId}") { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val route = routes.find { it.id == routeId } ?: return@composable
@@ -775,6 +797,7 @@ fun AppNavigation() {
                 direction = direction,
                 selectedVariantLabel = effectiveVariantLabel,
                 overrideDayType = overrideDayType,
+                reminderService = reminderService,
                 onBack = { navController.popBackStack() }
             )
         }

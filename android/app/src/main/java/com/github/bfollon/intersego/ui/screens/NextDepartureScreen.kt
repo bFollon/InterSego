@@ -34,6 +34,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Brightness4
@@ -58,12 +60,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.RouteView
 import com.github.bfollon.intersego.services.DebugConfig
+import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TimetableService
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -108,6 +112,7 @@ fun NextDepartureScreen(
     stop: BusStop,
     views: List<RouteView>,
     initialViewId: String,
+    reminderService: ReminderService? = null,
     onBack: () -> Unit,
     onDaySchedule: (direction: String, variantLabel: String?) -> Unit = { _, _ -> }
 ) {
@@ -117,6 +122,8 @@ fun NextDepartureScreen(
     var currentViewId by remember { mutableStateOf(initialViewId) }
     val activeView = views.find { it.id == currentViewId } ?: views.first()
     val direction = activeView.direction
+    var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+    var reminderError by remember { mutableStateOf<String?>(null) }
     val selectedVariantLabel = activeView.departureLabel
     val swapViewId = activeView.swapAction?.targetViewId
 
@@ -363,11 +370,29 @@ fun NextDepartureScreen(
 
                     // Next departure with circular progress
                     item {
+                        val matchKey = BusReminder.matchKey(
+                            route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute
+                        )
                         NextDepartureWithProgress(
                             departure = nextDeparture,
                             currentTime = currentTime,
                             selectedVariantLabel = selectedVariantLabel,
                             daysAhead = daysAhead,
+                            isBellSet = reminderKeys.contains(matchKey),
+                            onBellTap = if (daysAhead == 0 && reminderService != null) {
+                                {
+                                    reminderError = null
+                                    if (reminderKeys.contains(matchKey)) {
+                                        reminderService.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
+                                    } else {
+                                        val result = reminderService.scheduleReminder(nextDeparture, stop, route, direction)
+                                        if (result is ReminderService.ScheduleResult.Failure) {
+                                            reminderError = result.message
+                                        }
+                                    }
+                                    reminderKeys = reminderService.activeMatchKeys()
+                                }
+                            } else null,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
@@ -428,6 +453,22 @@ fun NextDepartureScreen(
                             DepartureTimeline(
                                 departures = followingDepartures,
                                 selectedVariantLabel = selectedVariantLabel,
+                                isBellSetFor = if (daysAhead == 0 && reminderService != null) { dep ->
+                                    reminderKeys.contains(BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute))
+                                } else null,
+                                onBellTap = if (daysAhead == 0 && reminderService != null) { dep ->
+                                    reminderError = null
+                                    val key = BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute)
+                                    if (reminderKeys.contains(key)) {
+                                        reminderService.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
+                                    } else {
+                                        val result = reminderService.scheduleReminder(dep, stop, route, direction)
+                                        if (result is ReminderService.ScheduleResult.Failure) {
+                                            reminderError = result.message
+                                        }
+                                    }
+                                    reminderKeys = reminderService.activeMatchKeys()
+                                } else null,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
@@ -863,6 +904,8 @@ fun NextDepartureWithProgress(
     currentTime: LocalTime,
     selectedVariantLabel: String? = null,
     daysAhead: Int = 0,
+    isBellSet: Boolean = false,
+    onBellTap: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val departureTime = LocalTime.of(departure.hour, departure.minute)
@@ -937,6 +980,18 @@ fun NextDepartureWithProgress(
                         )
                     }
                 }
+
+                if (onBellTap != null) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    IconButton(onClick = onBellTap, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                            contentDescription = if (isBellSet) "Cancelar recordatorio" else "Programar recordatorio",
+                            tint = if (isBellSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
             }
 
             // Countdown text
@@ -975,6 +1030,8 @@ fun NextDepartureWithProgress(
 fun DepartureTimeline(
     departures: List<DepartureTime>,
     selectedVariantLabel: String? = null,
+    isBellSetFor: ((DepartureTime) -> Boolean)? = null,
+    onBellTap: ((DepartureTime) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1085,6 +1142,18 @@ fun DepartureTimeline(
                     }
 
                     TimeOfDayIndicator(timeOfDay = timeOfDay)
+
+                        if (isBellSetFor != null && onBellTap != null) {
+                            val bellSet = isBellSetFor(departure)
+                            IconButton(onClick = { onBellTap(departure) }, modifier = Modifier.size(32.dp)) {
+                                Icon(
+                                    imageVector = if (bellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                                    contentDescription = if (bellSet) "Cancelar recordatorio" else "Programar recordatorio",
+                                    tint = if (bellSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                 }
             }
         }

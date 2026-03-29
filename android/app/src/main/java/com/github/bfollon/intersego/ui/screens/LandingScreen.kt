@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +60,7 @@ fun LandingScreen(
     onNavigateToRouteList: () -> Unit,
     onFindClosestStop: () -> Unit = {},
     onShowAbout: () -> Unit = {},
+    onShowReminders: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
     closestStopError: String? = null
 ) {
@@ -129,6 +131,18 @@ fun LandingScreen(
                 onClick = onNavigateToRouteList
             ) {
                 BusLineIcon(size = 60)
+            }
+
+            LandingButton(
+                label = "Mis recordatorios",
+                onClick = onShowReminders
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Notifications,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(60.dp).padding(14.dp)
+                )
             }
 
             if (closestStopError != null) {

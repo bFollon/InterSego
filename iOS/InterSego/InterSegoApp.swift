@@ -57,6 +57,7 @@ struct ContentView: View {
     @State private var isInitialized = false
     @State private var showSplash = true
     @State private var showAbout = false
+    @State private var showReminders = false
     @State private var routes: [BusRoute] = []
     @State private var supportedRoutes: Set<String> = []
     @State private var navigationPath = NavigationPath()
@@ -89,6 +90,9 @@ struct ContentView: View {
                             },
                             onShowAbout: {
                                 showAbout = true
+                            },
+                            onShowReminders: {
+                                showReminders = true
                             },
                             isSearchingClosestStop: isSearchingClosestStop,
                             closestStopError: closestStopError,
@@ -148,6 +152,9 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showAbout) {
                     AboutView()
+                }
+                .sheet(isPresented: $showReminders) {
+                    RemindersView()
                 }
             }
 
@@ -370,6 +377,10 @@ struct ContentView: View {
 
     private func initialize() async {
         DebugConfig.debugPrint("InterSego: Starting initialization...")
+
+        // Prune expired reminders from previous day
+        await ReminderService.shared.initialize()
+        await ReminderService.shared.pruneExpired()
 
         // Ensure network monitor is alive (starts in init)
         _ = NetworkMonitor.shared

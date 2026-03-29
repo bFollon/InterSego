@@ -10,6 +10,14 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- Permissions for bus departure reminders -->
+    <!-- POST_NOTIFICATIONS: required on Android 13+ to display notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- USE_EXACT_ALARM: allows exact alarm scheduling without user prompt (time-sensitive reminders) -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- SCHEDULE_EXACT_ALARM: fallback for API 31-32 -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <!-- Device restrictions: Exclude watches and cars -->
     <!-- Require touchscreen (standard on phones and tablets, excludes automotive devices) -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="true" />
@@ -28,6 +36,10 @@
         <meta-data
             android:name="coil.factory"
             android:value="intersego.MainActivity" />
+        <receiver
+            android:name=".services.ReminderBroadcastReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -21,6 +21,7 @@ struct LandingView: View {
     let onShowRouteList: () -> Void
     let onFindClosestStop: () -> Void
     let onShowAbout: () -> Void
+    let onShowReminders: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
 
@@ -77,6 +78,24 @@ struct LandingView: View {
                     VStack(spacing: 14) {
                         BusLineIcon(size: 60)
                         Text("Líneas de bus")
+                            .font(.headline)
+                            .foregroundColor(.accentColor)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                }
+                .buttonStyle(.plain)
+
+                Button(action: onShowReminders) {
+                    VStack(spacing: 14) {
+                        Image(systemName: "bell.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.accentColor)
+                            .frame(width: 60, height: 60)
+                        Text("Mis recordatorios")
                             .font(.headline)
                             .foregroundColor(.accentColor)
                     }

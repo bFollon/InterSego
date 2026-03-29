@@ -88,6 +88,9 @@ struct NextDepartureView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var currentTime = Date()
+    @State private var reminderKeys: Set<String> = []
+    @State private var reminderErrorMessage: String?
+    @State private var showReminderAlert = false
     @Environment(\.dismiss) private var dismiss
 
     init(route: BusRoute, stop: BusStop, routeViews: [RouteView], currentViewId: String) {
@@ -189,8 +192,16 @@ struct NextDepartureView: View {
             .task {
                 await loadTimetables()
             }
+            .task {
+                await refreshReminderKeys()
+            }
             .onReceive(timer) { time in
                 currentTime = time
+            }
+            .alert("Error al programar el recordatorio", isPresented: $showReminderAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(reminderErrorMessage ?? "")
             }
     }
 
@@ -236,6 +247,8 @@ struct NextDepartureView: View {
                         currentTime: currentTime,
                         selectedVariantLabel: selectedVariantLabel,
                         daysAhead: info.daysAhead,
+                        isBellSet: isBellSet(for: next),
+                        onBellTap: info.daysAhead == 0 ? { handleBellTap(for: next) } : nil,
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -280,6 +293,8 @@ struct NextDepartureView: View {
                         DepartureTimeline(
                             departures: info.following,
                             selectedVariantLabel: selectedVariantLabel,
+                            isBellSetFor: info.daysAhead == 0 ? { d in isBellSet(for: d) } : nil,
+                            onBellTap: info.daysAhead == 0 ? { d in handleBellTap(for: d) } : nil,
                         )
                         .padding(.horizontal, 16)
                     }
@@ -300,6 +315,42 @@ struct NextDepartureView: View {
         }
         timetables = loaded
         isLoading = false
+    }
+
+    // MARK: - Reminder helpers
+
+    private func refreshReminderKeys() async {
+        reminderKeys = await ReminderService.shared.activeMatchKeys()
+    }
+
+    private func isBellSet(for departure: DepartureTime) -> Bool {
+        reminderKeys.contains(BusReminder.matchKey(
+            routeId: route.id, stopId: stop.id, direction: direction,
+            hour: departure.hour, minute: departure.minute
+        ))
+    }
+
+    private func handleBellTap(for departure: DepartureTime) {
+        reminderErrorMessage = nil
+        let isSet = isBellSet(for: departure)
+        Task {
+            if isSet {
+                await ReminderService.shared.cancelReminder(
+                    routeId: route.id, stopId: stop.id, direction: direction,
+                    hour: departure.hour, minute: departure.minute
+                )
+            } else {
+                do {
+                    try await ReminderService.shared.scheduleReminder(
+                        departure: departure, stop: stop, route: route, direction: direction
+                    )
+                } catch {
+                    reminderErrorMessage = error.localizedDescription
+                    showReminderAlert = true
+                }
+            }
+            await refreshReminderKeys()
+        }
     }
 }
 
@@ -521,6 +572,8 @@ private struct NextDepartureCard: View {
     let currentTime: Date
     let selectedVariantLabel: String?
     let daysAhead: Int
+    var isBellSet: Bool = false
+    var onBellTap: (() -> Void)? = nil
 
     private var minutesUntil: Int {
         let cal = Calendar.current
@@ -583,6 +636,16 @@ private struct NextDepartureCard: View {
                         .background(Color.accentColor.opacity(0.12))
                         .foregroundColor(.accentColor)
                         .clipShape(RoundedRectangle(cornerRadius: 4))
+                }
+
+                if let onTap = onBellTap {
+                    Spacer()
+                    Button(action: onTap) {
+                        Image(systemName: isBellSet ? "bell.fill" : "bell")
+                            .font(.headline)
+                            .foregroundColor(isBellSet ? .accentColor : .secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
@@ -648,6 +711,8 @@ private struct TimeOfDayIndicator: View {
 private struct DepartureTimeline: View {
     let departures: [DepartureTime]
     let selectedVariantLabel: String?
+    var isBellSetFor: ((DepartureTime) -> Bool)? = nil
+    var onBellTap: ((DepartureTime) -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -710,6 +775,15 @@ private struct DepartureTimeline: View {
                         Spacer()
 
                         TimeOfDayIndicator(timeOfDay: timeOfDay)
+
+                        if let bellCheck = isBellSetFor, let bellTap = onBellTap {
+                            Button { bellTap(departure) } label: {
+                                Image(systemName: bellCheck(departure) ? "bell.fill" : "bell")
+                                    .font(.subheadline)
+                                    .foregroundColor(bellCheck(departure) ? .accentColor : .secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(16)
                     .background(Color(.secondarySystemBackground).opacity(0.5))
