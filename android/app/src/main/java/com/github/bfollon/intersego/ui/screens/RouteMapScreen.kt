@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import android.content.Context
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import org.json.JSONArray
@@ -142,15 +143,19 @@ fun RouteMapScreen(
                 currentView.stops.map { it.stop }.filter { it.hasCoordinates }
             }
 
-            // key() forces a fresh MapView when the direction or entry changes
-            key(currentViewId, selectedEntryId) {
-                RouteOsmMapView(
-                    stops = stopsWithCoords,
-                    routeId = route.id,
-                    currentViewId = currentViewId,
-                    onStopSelected = onStopSelected,
-                    modifier = Modifier.fillMaxSize()
-                )
+            // Box with weight(1f) here because key{} doesn't propagate ColumnScope,
+            // so weight must be on a direct Column child.
+            Box(modifier = Modifier.weight(1f)) {
+                // key() forces a fresh MapView when the direction or entry changes
+                key(currentViewId, selectedEntryId) {
+                    RouteOsmMapView(
+                        stops = stopsWithCoords,
+                        routeId = route.id,
+                        currentViewId = currentViewId,
+                        onStopSelected = onStopSelected,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -197,6 +202,10 @@ private fun RouteOsmMapView(
 
             MapView(ctx).also { mapView ->
                 mapViewRef.value = mapView
+                // Clip tiles to the MapView's bounds so they don't bleed over
+                // Compose elements (e.g. the route dropdown) laid out above the map.
+                mapView.outlineProvider = android.view.ViewOutlineProvider.BOUNDS
+                mapView.clipToOutline = true
                 mapView.setTileSource(TileSourceFactory.MAPNIK)
                 mapView.setMultiTouchControls(true)
                 mapView.isTilesScaledToDpi = true
