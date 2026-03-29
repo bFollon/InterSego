@@ -59,7 +59,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
         mode = ParserMode.PRODUCTION,
-        version = "1.6"
+        version = "1.7"
     )
 
     companion object {
@@ -68,6 +68,10 @@ class M1Parser : CapableParser, RouteStopsProvider {
 
         // Direction B: direct outbound to Garcillán + return via all villages
         private const val DIRECTION_CIRCULAR_B = "Garcillán → Segovia"
+
+        // Saturday linear directions (SG-Labajos variant — not circular)
+        private const val DIRECTION_SAT_OUTBOUND = "Segovia → Abades"
+        private const val DIRECTION_SAT_INBOUND = "Abades → Segovia"
 
         private object Stops {
             val SEGOVIA = BusStop(
@@ -176,16 +180,16 @@ class M1Parser : CapableParser, RouteStopsProvider {
         return when (dayType) {
             DayType.SATURDAY -> listOf(
                 RouteVariant(
-                    "circularA",
-                    DIRECTION_CIRCULAR_A,
+                    "saturday-outbound",
+                    DIRECTION_SAT_OUTBOUND,
                     m1SaturdayOutbound,
-                    DIRECTION_CIRCULAR_A
+                    DIRECTION_SAT_OUTBOUND
                 ),
                 RouteVariant(
-                    "circularB",
-                    DIRECTION_CIRCULAR_B,
+                    "saturday-inbound",
+                    DIRECTION_SAT_INBOUND,
                     m1SaturdayInbound,
-                    DIRECTION_CIRCULAR_B
+                    DIRECTION_SAT_INBOUND
                 )
             )
 
@@ -251,17 +255,17 @@ class M1Parser : CapableParser, RouteStopsProvider {
             ),
             RouteSelectorEntry(
                 "entry-sab-a",
-                "Sáb - $DIRECTION_CIRCULAR_A",
+                "Sáb - $DIRECTION_SAT_OUTBOUND",
                 saturdayViews,
-                "circularA",
+                "saturday-outbound",
                 DayType.SATURDAY,
                 isSaturday
             ),
             RouteSelectorEntry(
                 "entry-sab-b",
-                "Sáb - $DIRECTION_CIRCULAR_B",
+                "Sáb - $DIRECTION_SAT_INBOUND",
                 saturdayViews,
-                "circularB",
+                "saturday-inbound",
                 DayType.SATURDAY,
                 isSaturday
             )
@@ -438,10 +442,10 @@ class M1Parser : CapableParser, RouteStopsProvider {
                 buildTimetables(
                     m1SaturdayOutbound,
                     DayType.SATURDAY,
-                    DIRECTION_CIRCULAR_A,
+                    DIRECTION_SAT_OUTBOUND,
                     satADeps
                 ) +
-                buildTimetables(m1SaturdayInbound, DayType.SATURDAY, DIRECTION_CIRCULAR_B, satBDeps)
+                buildTimetables(m1SaturdayInbound, DayType.SATURDAY, DIRECTION_SAT_INBOUND, satBDeps)
     }
 
     private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =

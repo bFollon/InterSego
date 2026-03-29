@@ -138,12 +138,12 @@ fun RouteMapScreen(
                 )
             }
 
-            val stopsWithCoords = remember(currentViewId) {
+            val stopsWithCoords = remember(currentViewId, selectedEntryId) {
                 currentView.stops.map { it.stop }.filter { it.hasCoordinates }
             }
 
-            // key() forces a fresh MapView when the direction changes
-            key(currentViewId) {
+            // key() forces a fresh MapView when the direction or entry changes
+            key(currentViewId, selectedEntryId) {
                 RouteOsmMapView(
                     stops = stopsWithCoords,
                     routeId = route.id,

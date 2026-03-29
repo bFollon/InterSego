@@ -40,7 +40,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
         mode: .production,
-        version: "1.6",
+        version: "1.7",
     )
 
     // MARK: - Directions
@@ -49,6 +49,9 @@ class M1Parser: CapableParser, RouteStopsProvider {
     private static let directionCircularA = "Segovia → Garcillán"
     /// Direction B: direct outbound to Garcillán + return via all villages
     private static let directionCircularB = "Garcillán → Segovia"
+    /// Saturday linear directions (SG-Labajos variant — not circular)
+    private static let directionSatOutbound = "Segovia → Abades"
+    private static let directionSatInbound = "Abades → Segovia"
 
     // MARK: - Stops
 
@@ -168,16 +171,16 @@ class M1Parser: CapableParser, RouteStopsProvider {
         case .saturday:
             return [
                 RouteVariant(
-                    id: "circularA",
-                    label: Self.directionCircularA,
+                    id: "saturday-outbound",
+                    label: Self.directionSatOutbound,
                     stops: Self.m1SaturdayOutbound,
-                    direction: Self.directionCircularA,
+                    direction: Self.directionSatOutbound,
                 ),
                 RouteVariant(
-                    id: "circularB",
-                    label: Self.directionCircularB,
+                    id: "saturday-inbound",
+                    label: Self.directionSatInbound,
                     stops: Self.m1SaturdayInbound,
-                    direction: Self.directionCircularB,
+                    direction: Self.directionSatInbound,
                 ),
             ]
         case .sunday:
@@ -249,17 +252,17 @@ class M1Parser: CapableParser, RouteStopsProvider {
             ),
             RouteSelectorEntry(
                 id: "entry-sab-a",
-                label: "Sáb - \(Self.directionCircularA)",
+                label: "Sáb - \(Self.directionSatOutbound)",
                 views: saturdayViews,
-                initialViewId: "circularA",
+                initialViewId: "saturday-outbound",
                 timetableDayType: .saturday,
                 isActiveToday: isSaturday,
             ),
             RouteSelectorEntry(
                 id: "entry-sab-b",
-                label: "Sáb - \(Self.directionCircularB)",
+                label: "Sáb - \(Self.directionSatInbound)",
                 views: saturdayViews,
-                initialViewId: "circularB",
+                initialViewId: "saturday-inbound",
                 timetableDayType: .saturday,
                 isActiveToday: isSaturday,
             ),
@@ -397,13 +400,13 @@ class M1Parser: CapableParser, RouteStopsProvider {
             + buildTimetables(
                 stops: Self.m1SaturdayOutbound,
                 dayType: .saturday,
-                direction: Self.directionCircularA,
+                direction: Self.directionSatOutbound,
                 deps: satADeps,
             )
             + buildTimetables(
                 stops: Self.m1SaturdayInbound,
                 dayType: .saturday,
-                direction: Self.directionCircularB,
+                direction: Self.directionSatInbound,
                 deps: satBDeps,
             )
     }

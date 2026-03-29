@@ -87,7 +87,7 @@ struct RouteMapView: View {
                     }
                 }
             }
-            .task(id: currentViewId) {
+            .task(id: "\(currentViewId)|\(selectedEntryId ?? "")") {
                 guard !currentViewId.isEmpty else { return }
                 routePolyline = loadBundledPolyline(routeId: route.id, viewId: currentViewId)
                 fitCamera()
