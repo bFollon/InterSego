@@ -80,13 +80,13 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-urb-carrascalejo",
             name: "Urb. Carrascalejo",
             area: "Carrascalejo",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.922847, -4.078270",
         )
         static let parqueRobledo = BusStop(
             id: "m3-parque-robledo",
             name: "Parque Robledo",
             area: "Robledo",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.910111, -4.058750",
         )
         static let laGranja = BusStop(
             id: "m3-la-granja",
@@ -104,13 +104,13 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-boca-del-asno",
             name: "Boca del Asno",
             area: "Valsaín",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.844128, -4.025668",
         )
         static let puenteMosquitos = BusStop(
             id: "m3-puente-mosquitos",
             name: "Puente de los Mosquitos",
             area: "Navacerrada",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.823325, -4.017340",
         )
         static let navacerrada = BusStop(
             id: "m3-navacerrada",
@@ -130,13 +130,13 @@ class M3Parser: CapableParser, RouteStopsProvider {
             id: "m3-frente-bar-norte-in",
             name: "Frente Bar Norte",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.937206, -4.113999",
         )
         static let iglesiaStTomasIn = BusStop(
             id: "m3-iglesia-sto-tomas-in",
             name: "Iglesia Santo Tomás",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.941935, -4.118070",
         )
         static let estacionBusIn = BusStop(
             id: "m3-estacion-bus-in",

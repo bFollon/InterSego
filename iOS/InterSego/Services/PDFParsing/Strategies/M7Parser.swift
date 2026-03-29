@@ -93,7 +93,7 @@ class M7Parser: CapableParser, RouteStopsProvider {
             id: "m7-hospital",
             name: "Hospital",
             area: "Segovia capital",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.944055, -4.127405",
         )
         static let outAndresLaguna = BusStop(
             id: "m7-andres-laguna",

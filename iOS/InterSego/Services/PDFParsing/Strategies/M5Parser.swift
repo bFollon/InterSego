@@ -63,37 +63,37 @@ class M5Parser: CapableParser, RouteStopsProvider {
             id: "m5-tizneros",
             name: "Tizneros",
             area: "Tizneros",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.991521, -4.055240",
         )
         static let espirdo = BusStop(
             id: "m5-espirdo",
             name: "Espirdo",
             area: "Espirdo",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.996957, -4.073623",
         )
         static let laHiguera = BusStop(
             id: "m5-la-higuera",
             name: "La Higuera",
             area: "La Higuera",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.016117, -4.080770",
         )
         static let brieva = BusStop(
             id: "m5-brieva",
             name: "Brieva",
             area: "Brieva",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.035677, -4.052387",
         )
         static let basardilla = BusStop(
             id: "m5-basardilla",
             name: "Basardilla",
             area: "Basardilla",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.027220, -4.025058",
         )
         static let stoDomingoPiron = BusStop(
             id: "m5-sto-domingo-piron",
             name: "Sto. Domingo de Pirón",
             area: "Sto. Domingo de Pirón",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.041438, -3.989562",
         )
 
         /// Inbound copies with -in suffix
@@ -107,37 +107,37 @@ class M5Parser: CapableParser, RouteStopsProvider {
             id: "m5-tizneros-in",
             name: "Tizneros",
             area: "Tizneros",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.991521, -4.055240",
         )
         static let espirdoIn = BusStop(
             id: "m5-espirdo-in",
             name: "Espirdo",
             area: "Espirdo",
-            coordinates: "0.0, 0.0",
+            coordinates: "40.996957, -4.073623",
         )
         static let laHigueraIn = BusStop(
             id: "m5-la-higuera-in",
             name: "La Higuera",
             area: "La Higuera",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.016117, -4.080770",
         )
         static let brievaIn = BusStop(
             id: "m5-brieva-in",
             name: "Brieva",
             area: "Brieva",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.035677, -4.052387",
         )
         static let basardillaIn = BusStop(
             id: "m5-basardilla-in",
             name: "Basardilla",
             area: "Basardilla",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.027220, -4.025058",
         )
         static let stoDomingoPironIn = BusStop(
             id: "m5-sto-domingo-piron-in",
             name: "Sto. Domingo de Pirón",
             area: "Sto. Domingo de Pirón",
-            coordinates: "0.0, 0.0",
+            coordinates: "41.041438, -3.989562",
         )
     }
 

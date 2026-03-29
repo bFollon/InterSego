@@ -101,8 +101,8 @@ class M8Parser : CapableParser, RouteStopsProvider {
 
             // Main route stops (outbound)
             val CARRASCALEJO = BusStop(
-                id = "m8-carras-calejo",
-                name = "Carras-Calejo",
+                id = "m8-carrascalejo",
+                name = "carrascalejo",
                 area = "La Granja",
                 coordinates = "40.922847, -4.078270"
             )
@@ -217,8 +217,8 @@ class M8Parser : CapableParser, RouteStopsProvider {
                 coordinates = "40.914155, -4.066063"
             )
             val CARRASCALEJO_IN = BusStop(
-                id = "m8-carras-calejo-in",
-                name = "Carras-Calejo",
+                id = "m8-carrascalejo-in",
+                name = "carrascalejo",
                 area = "La Granja",
                 coordinates = "40.922847, -4.078270"
             )
