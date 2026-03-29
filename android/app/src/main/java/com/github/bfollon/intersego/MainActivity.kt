@@ -178,7 +178,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M1",
                 number = "M1",
-                name = "Línea Metropolitana 1",
+                name = "Garcillán - Valverde del Manjano",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
                 pdfURL = "", // Will be resolved by PDFURLRepository
@@ -188,7 +188,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M2",
                 number = "M2",
-                name = "Segovia - Valseca",
+                name = "Hontanares - Valseca",
                 origin = "Segovia",
                 destination = "Valseca",
                 pdfURL = "",
@@ -198,7 +198,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M3",
                 number = "M3",
-                name = "Segovia - Navacerrada",
+                name = "La Granja - Navacerrada",
                 origin = "Segovia",
                 destination = "Navacerrada",
                 pdfURL = "",
@@ -217,7 +217,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M5",
                 number = "M5",
-                name = "Segovia - Sto. Domingo de Pirón",
+                name = "Espirdo - Sto. Domingo de Pirón",
                 origin = "Segovia",
                 destination = "Sto. Domingo de Pirón",
                 pdfURL = "",
@@ -226,16 +226,16 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M6",
                 number = "M6",
-                name = "Línea Metropolitana 6",
+                name = "San Cristóbal - Torrecaballeros",
                 origin = "Segovia",
-                destination = "Área Metropolitana",
+                destination = "Torrecaballeros",
                 pdfURL = "",
                 routeType = RouteType.URBAN
             ),
             BusRoute(
                 id = "M7",
                 number = "M7",
-                name = "Segovia - Torrecaballeros",
+                name = "Tabanera - Palazuelos",
                 origin = "Segovia",
                 destination = "Torrecaballeros",
                 pdfURL = "",
@@ -244,7 +244,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             BusRoute(
                 id = "M8",
                 number = "M8",
-                name = "Segovia - La Granja - Valsaín",
+                name = "La Granja - Valsaín",
                 origin = "Segovia",
                 destination = "Valsaín",
                 pdfURL = "",
