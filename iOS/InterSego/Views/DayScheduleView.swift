@@ -427,19 +427,20 @@ private struct DayScheduleBellButton: View {
     let onLongPress: () -> Void
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Image(systemName: bellState == .off ? "bell" : "bell.fill")
-                .foregroundColor(bellState == .off ? .secondary : .accentColor)
+        ZStack {
             if bellState == .daily {
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundColor(.white)
-                    .padding(1.5)
-                    .background(Color.accentColor)
-                    .clipShape(Circle())
-                    .offset(x: 5, y: -4)
+                Image(systemName: "arrow.2.circlepath")
+                    .font(.system(size: 26))
+                    .foregroundColor(.accentColor)
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.accentColor)
+            } else {
+                Image(systemName: bellState == .off ? "bell" : "bell.fill")
+                    .foregroundColor(bellState == .off ? .secondary : .accentColor)
             }
         }
+        .frame(width: 30, height: 30)
         .contentShape(Rectangle())
         .onTapGesture { onTap() }
         .onLongPressGesture {

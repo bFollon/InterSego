@@ -27,8 +27,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -952,42 +952,37 @@ fun BellIcon(
 ) {
     val primary = MaterialTheme.colorScheme.primary
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
-    val onPrimary = MaterialTheme.colorScheme.onPrimary
 
     Box(
         modifier = modifier
-            .size(32.dp)
+            .size(36.dp)
+            .clip(CircleShape)
             .combinedClickable(
                 onClick = { onTap?.invoke() },
                 onLongClick = { onLongPress?.invoke() }
             ),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-            contentDescription = when {
-                isDailyBell -> "Cancelar recordatorio diario"
-                isBellSet -> "Cancelar recordatorio"
-                else -> "Programar recordatorio"
-            },
-            tint = if (isBellSet) primary else onSurfaceVariant,
-            modifier = Modifier.size(22.dp)
-        )
         if (isDailyBell) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(primary, CircleShape)
-                    .align(Alignment.TopEnd),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    tint = onPrimary,
-                    modifier = Modifier.size(7.dp)
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Cancelar recordatorio diario",
+                tint = primary,
+                modifier = Modifier.size(32.dp)
+            )
+            Icon(
+                imageVector = Icons.Filled.Notifications,
+                contentDescription = null,
+                tint = primary,
+                modifier = Modifier.size(13.dp)
+            )
+        } else {
+            Icon(
+                imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                contentDescription = if (isBellSet) "Cancelar recordatorio" else "Programar recordatorio",
+                tint = if (isBellSet) primary else onSurfaceVariant,
+                modifier = Modifier.size(22.dp)
+            )
         }
     }
 }
@@ -1182,10 +1177,13 @@ fun DepartureTimeline(
                         .clip(MaterialTheme.shapes.medium)
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
