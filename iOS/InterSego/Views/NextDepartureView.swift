@@ -665,7 +665,10 @@ private struct BellButton: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { onTap?() }
-        .onLongPressGesture { onLongPress?() }
+        .onLongPressGesture {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            onLongPress?()
+        }
     }
 }
 
