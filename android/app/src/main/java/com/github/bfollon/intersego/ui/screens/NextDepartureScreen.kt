@@ -22,9 +22,12 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,6 +38,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.NightsStay
@@ -123,6 +127,7 @@ fun NextDepartureScreen(
     val activeView = views.find { it.id == currentViewId } ?: views.first()
     val direction = activeView.direction
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+    var dailyReminderKeys by remember { mutableStateOf(reminderService?.dailyMatchKeys() ?: emptySet()) }
     var reminderError by remember { mutableStateOf<String?>(null) }
     val selectedVariantLabel = activeView.departureLabel
     val swapViewId = activeView.swapAction?.targetViewId
@@ -373,24 +378,41 @@ fun NextDepartureScreen(
                         val matchKey = BusReminder.matchKey(
                             route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute
                         )
+                        val bellEnabled = daysAhead == 0 && reminderService != null
                         NextDepartureWithProgress(
                             departure = nextDeparture,
                             currentTime = currentTime,
                             selectedVariantLabel = selectedVariantLabel,
                             daysAhead = daysAhead,
                             isBellSet = reminderKeys.contains(matchKey),
-                            onBellTap = if (daysAhead == 0 && reminderService != null) {
+                            isDailyBell = dailyReminderKeys.contains(matchKey),
+                            onBellTap = if (bellEnabled) {
                                 {
                                     reminderError = null
                                     if (reminderKeys.contains(matchKey)) {
-                                        reminderService.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
+                                        reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
                                     } else {
-                                        val result = reminderService.scheduleReminder(nextDeparture, stop, route, direction)
-                                        if (result is ReminderService.ScheduleResult.Failure) {
-                                            reminderError = result.message
-                                        }
+                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction)
+                                        if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
-                                    reminderKeys = reminderService.activeMatchKeys()
+                                    reminderKeys = reminderService!!.activeMatchKeys()
+                                    dailyReminderKeys = reminderService.dailyMatchKeys()
+                                }
+                            } else null,
+                            onBellLongPress = if (bellEnabled) {
+                                {
+                                    reminderError = null
+                                    if (dailyReminderKeys.contains(matchKey)) {
+                                        reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
+                                    } else {
+                                        if (reminderKeys.contains(matchKey)) {
+                                            reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
+                                        }
+                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction, isDaily = true)
+                                        if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
+                                    }
+                                    reminderKeys = reminderService!!.activeMatchKeys()
+                                    dailyReminderKeys = reminderService.dailyMatchKeys()
                                 }
                             } else null,
                             modifier = Modifier.padding(horizontal = 16.dp)
@@ -450,24 +472,40 @@ fun NextDepartureScreen(
 
                         // Timeline-style following departures
                         item {
+                            val timelineBellEnabled = daysAhead == 0 && reminderService != null
                             DepartureTimeline(
                                 departures = followingDepartures,
                                 selectedVariantLabel = selectedVariantLabel,
-                                isBellSetFor = if (daysAhead == 0 && reminderService != null) { dep ->
+                                isBellSetFor = if (timelineBellEnabled) { dep ->
                                     reminderKeys.contains(BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute))
                                 } else null,
-                                onBellTap = if (daysAhead == 0 && reminderService != null) { dep ->
+                                isDailyBellFor = if (timelineBellEnabled) { dep ->
+                                    dailyReminderKeys.contains(BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute))
+                                } else null,
+                                onBellTap = if (timelineBellEnabled) { dep ->
                                     reminderError = null
                                     val key = BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute)
                                     if (reminderKeys.contains(key)) {
-                                        reminderService.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
+                                        reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
                                     } else {
-                                        val result = reminderService.scheduleReminder(dep, stop, route, direction)
-                                        if (result is ReminderService.ScheduleResult.Failure) {
-                                            reminderError = result.message
-                                        }
+                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction)
+                                        if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
-                                    reminderKeys = reminderService.activeMatchKeys()
+                                    reminderKeys = reminderService!!.activeMatchKeys()
+                                    dailyReminderKeys = reminderService.dailyMatchKeys()
+                                } else null,
+                                onBellLongPress = if (timelineBellEnabled) { dep ->
+                                    reminderError = null
+                                    val key = BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute)
+                                    if (dailyReminderKeys.contains(key)) {
+                                        reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
+                                    } else {
+                                        if (reminderKeys.contains(key)) reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
+                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction, isDaily = true)
+                                        if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
+                                    }
+                                    reminderKeys = reminderService!!.activeMatchKeys()
+                                    dailyReminderKeys = reminderService.dailyMatchKeys()
                                 } else null,
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
@@ -895,6 +933,65 @@ private fun StopMapTile(
     }
 }
 
+// ============================================================================
+// BELL ICON
+// ============================================================================
+
+/**
+ * Bell icon with tap (one-off reminder) and long-press (daily reminder) support.
+ * Shows a small repeat badge overlay when [isDailyBell] is true.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun BellIcon(
+    isBellSet: Boolean,
+    isDailyBell: Boolean = false,
+    onTap: (() -> Unit)? = null,
+    onLongPress: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val primary = MaterialTheme.colorScheme.primary
+    val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
+    val onPrimary = MaterialTheme.colorScheme.onPrimary
+
+    Box(
+        modifier = modifier
+            .size(32.dp)
+            .combinedClickable(
+                onClick = { onTap?.invoke() },
+                onLongClick = { onLongPress?.invoke() }
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+            contentDescription = when {
+                isDailyBell -> "Cancelar recordatorio diario"
+                isBellSet -> "Cancelar recordatorio"
+                else -> "Programar recordatorio"
+            },
+            tint = if (isBellSet) primary else onSurfaceVariant,
+            modifier = Modifier.size(22.dp)
+        )
+        if (isDailyBell) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .background(primary, CircleShape)
+                    .align(Alignment.TopEnd),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    tint = onPrimary,
+                    modifier = Modifier.size(7.dp)
+                )
+            }
+        }
+    }
+}
+
 /**
  * Compact next departure display with badge-styled time and countdown.
  */
@@ -905,7 +1002,9 @@ fun NextDepartureWithProgress(
     selectedVariantLabel: String? = null,
     daysAhead: Int = 0,
     isBellSet: Boolean = false,
+    isDailyBell: Boolean = false,
     onBellTap: (() -> Unit)? = null,
+    onBellLongPress: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val departureTime = LocalTime.of(departure.hour, departure.minute)
@@ -981,16 +1080,14 @@ fun NextDepartureWithProgress(
                     }
                 }
 
-                if (onBellTap != null) {
+                if (onBellTap != null || onBellLongPress != null) {
                     Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = onBellTap, modifier = Modifier.size(32.dp)) {
-                        Icon(
-                            imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-                            contentDescription = if (isBellSet) "Cancelar recordatorio" else "Programar recordatorio",
-                            tint = if (isBellSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    BellIcon(
+                        isBellSet = isBellSet,
+                        isDailyBell = isDailyBell,
+                        onTap = onBellTap,
+                        onLongPress = onBellLongPress
+                    )
                 }
             }
 
@@ -1031,7 +1128,9 @@ fun DepartureTimeline(
     departures: List<DepartureTime>,
     selectedVariantLabel: String? = null,
     isBellSetFor: ((DepartureTime) -> Boolean)? = null,
+    isDailyBellFor: ((DepartureTime) -> Boolean)? = null,
     onBellTap: ((DepartureTime) -> Unit)? = null,
+    onBellLongPress: ((DepartureTime) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1143,16 +1242,13 @@ fun DepartureTimeline(
 
                     TimeOfDayIndicator(timeOfDay = timeOfDay)
 
-                        if (isBellSetFor != null && onBellTap != null) {
-                            val bellSet = isBellSetFor(departure)
-                            IconButton(onClick = { onBellTap(departure) }, modifier = Modifier.size(32.dp)) {
-                                Icon(
-                                    imageVector = if (bellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-                                    contentDescription = if (bellSet) "Cancelar recordatorio" else "Programar recordatorio",
-                                    tint = if (bellSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                        if (isBellSetFor != null || onBellTap != null) {
+                            BellIcon(
+                                isBellSet = isBellSetFor?.invoke(departure) ?: false,
+                                isDailyBell = isDailyBellFor?.invoke(departure) ?: false,
+                                onTap = onBellTap?.let { { it(departure) } },
+                                onLongPress = onBellLongPress?.let { { it(departure) } }
+                            )
                         }
                 }
             }

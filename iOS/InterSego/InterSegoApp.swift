@@ -378,9 +378,10 @@ struct ContentView: View {
     private func initialize() async {
         DebugConfig.debugPrint("InterSego: Starting initialization...")
 
-        // Prune expired reminders from previous day
+        // Prune expired one-off reminders and replenish daily reminder batches
         await ReminderService.shared.initialize()
         await ReminderService.shared.pruneExpired()
+        await ReminderService.shared.replenishDailyReminders()
 
         // Ensure network monitor is alive (starts in init)
         _ = NetworkMonitor.shared

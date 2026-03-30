@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,6 +47,7 @@ fun RemindersScreen(
 ) {
     var reminders by remember { mutableStateOf(reminderService.getReminders()) }
     var leadMinutes by remember { mutableStateOf(reminderService.getDefaultLeadMinutes()) }
+    var dailyLeadMinutes by remember { mutableStateOf(reminderService.getDailyLeadMinutes()) }
 
     Scaffold(
         topBar = {
@@ -68,63 +70,36 @@ fun RemindersScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Lead time configuration card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Aviso por defecto",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "$leadMinutes min antes de la salida",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Row {
-                            IconButton(
-                                onClick = {
-                                    if (leadMinutes > 1) {
-                                        leadMinutes = maxOf(1, leadMinutes - 5)
-                                        reminderService.setDefaultLeadMinutes(leadMinutes)
-                                    }
-                                },
-                                enabled = leadMinutes > 1
-                            ) {
-                                Icon(Icons.Default.Remove, contentDescription = "Reducir")
-                            }
-                            IconButton(
-                                onClick = {
-                                    if (leadMinutes < 60) {
-                                        leadMinutes = minOf(60, leadMinutes + 5)
-                                        reminderService.setDefaultLeadMinutes(leadMinutes)
-                                    }
-                                },
-                                enabled = leadMinutes < 60
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = "Aumentar")
-                            }
-                        }
-                    }
-                    Text(
-                        text = "Tiempo antes del que recibirás el aviso.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+            // One-off lead time card
+            LeadTimeCard(
+                title = "Aviso puntual",
+                subtitle = "Antelación para recordatorios puntuales (campana rápida).",
+                minutes = leadMinutes,
+                onDecrease = {
+                    leadMinutes = maxOf(1, leadMinutes - 5)
+                    reminderService.setDefaultLeadMinutes(leadMinutes)
+                },
+                onIncrease = {
+                    leadMinutes = minOf(60, leadMinutes + 5)
+                    reminderService.setDefaultLeadMinutes(leadMinutes)
                 }
-            }
+            )
+
+            // Daily lead time card
+            LeadTimeCard(
+                title = "Aviso diario",
+                subtitle = "Antelación para recordatorios diarios (campana mantenida).",
+                minutes = dailyLeadMinutes,
+                isDaily = true,
+                onDecrease = {
+                    dailyLeadMinutes = maxOf(1, dailyLeadMinutes - 5)
+                    reminderService.setDailyLeadMinutes(dailyLeadMinutes)
+                },
+                onIncrease = {
+                    dailyLeadMinutes = minOf(60, dailyLeadMinutes + 5)
+                    reminderService.setDailyLeadMinutes(dailyLeadMinutes)
+                }
+            )
 
             if (reminders.isEmpty()) {
                 // Empty state
@@ -150,7 +125,7 @@ fun RemindersScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Pulsa el icono de campana en un horario para crear uno.",
+                            text = "Pulsa la campana para un aviso puntual o mantenla para un recordatorio diario.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -231,11 +206,25 @@ private fun ReminderCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(
-                    text = "Aviso a las $fireTimeFormatted",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (reminder.isDaily) "Cada día a las $fireTimeFormatted"
+                               else "Aviso a las $fireTimeFormatted",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (reminder.isDaily) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Diario",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
                 reminder.seasonalNote?.let {
                     Text(
                         text = it,
@@ -252,6 +241,71 @@ private fun ReminderCard(
                     tint = MaterialTheme.colorScheme.error
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun LeadTimeCard(
+    title: String,
+    subtitle: String,
+    minutes: Int,
+    isDaily: Boolean = false,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (isDaily) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$minutes min antes de la salida",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Row {
+                    IconButton(onClick = onDecrease, enabled = minutes > 1) {
+                        Icon(Icons.Default.Remove, contentDescription = "Reducir")
+                    }
+                    IconButton(onClick = onIncrease, enabled = minutes < 60) {
+                        Icon(Icons.Default.Add, contentDescription = "Aumentar")
+                    }
+                }
+            }
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

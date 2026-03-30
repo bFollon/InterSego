@@ -28,8 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -75,6 +73,7 @@ fun DayScheduleScreen(
 
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+    var dailyReminderKeys by remember { mutableStateOf(reminderService?.dailyMatchKeys() ?: emptySet()) }
     var reminderError by remember { mutableStateOf<String?>(null) }
 
     // Update time every minute
@@ -284,6 +283,7 @@ fun DayScheduleScreen(
                                 selectedVariantLabel = selectedVariantLabel,
                                 isLast = index == todayDepartures.size - 1 && markerIndex <= todayDepartures.size - 1,
                                 isBellSet = reminderKeys.contains(matchKey),
+                                isDailyBell = dailyReminderKeys.contains(matchKey),
                                 showBell = canBell && reminderService != null,
                                 onBellTap = {
                                     reminderError = null
@@ -296,6 +296,26 @@ fun DayScheduleScreen(
                                         }
                                     }
                                     reminderKeys = reminderService?.activeMatchKeys() ?: emptySet()
+                                    dailyReminderKeys = reminderService?.dailyMatchKeys() ?: emptySet()
+                                },
+                                onBellLongPress = {
+                                    reminderError = null
+                                    val isDaily = dailyReminderKeys.contains(matchKey)
+                                    val isOneOff = reminderKeys.contains(matchKey)
+                                    when {
+                                        isDaily -> reminderService?.cancelReminder(route.id, stop.id, direction, departure.hour, departure.minute)
+                                        isOneOff -> {
+                                            reminderService?.cancelReminder(route.id, stop.id, direction, departure.hour, departure.minute)
+                                            val result = reminderService?.scheduleReminder(departure, stop, route, direction, isDaily = true)
+                                            if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
+                                        }
+                                        else -> {
+                                            val result = reminderService?.scheduleReminder(departure, stop, route, direction, isDaily = true)
+                                            if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
+                                        }
+                                    }
+                                    reminderKeys = reminderService?.activeMatchKeys() ?: emptySet()
+                                    dailyReminderKeys = reminderService?.dailyMatchKeys() ?: emptySet()
                                 },
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
@@ -394,8 +414,10 @@ private fun DayScheduleTimelineRow(
     selectedVariantLabel: String?,
     isLast: Boolean,
     isBellSet: Boolean = false,
+    isDailyBell: Boolean = false,
     showBell: Boolean = false,
     onBellTap: () -> Unit = {},
+    onBellLongPress: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val timeOfDay = getTimeOfDay(departure.hour)
@@ -503,14 +525,12 @@ private fun DayScheduleTimelineRow(
             TimeOfDayIndicator(timeOfDay = timeOfDay)
 
             if (showBell) {
-                IconButton(onClick = onBellTap, modifier = Modifier.size(32.dp)) {
-                    Icon(
-                        imageVector = if (isBellSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-                        contentDescription = if (isBellSet) "Cancelar recordatorio" else "Programar recordatorio",
-                        tint = if (isBellSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+                BellIcon(
+                    isBellSet = isBellSet,
+                    isDailyBell = isDailyBell,
+                    onTap = onBellTap,
+                    onLongPress = onBellLongPress
+                )
             }
         }
     }

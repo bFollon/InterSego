@@ -22,7 +22,9 @@ import kotlinx.serialization.Serializable
 
 /**
  * A scheduled reminder for a specific bus departure.
- * Reminders are today-only: once [fireDateMillis] is in the past they are pruned.
+ *
+ * One-off reminders ([isDaily] = false) are pruned once [fireDateMillis] is in the past.
+ * Daily reminders ([isDaily] = true) persist until manually cancelled and re-schedule every day.
  */
 @Serializable
 data class BusReminder(
@@ -36,12 +38,16 @@ data class BusReminder(
     val departureMinute: Int,
     /** Lead time snapshot at scheduling time (minutes before departure). */
     val leadMinutes: Int,
-    /** Epoch millis when the notification should fire (departure time − lead minutes). */
+    /** Epoch millis of the next (or initial) alarm fire time. */
     val fireDateMillis: Long,
     /** Stable integer used as AlarmManager PendingIntent requestCode (avoids hashCode collisions). */
     val alarmRequestCode: Int,
     /** Non-null when the departure has a seasonal availability restriction. */
-    val seasonalNote: String? = null
+    val seasonalNote: String? = null,
+    /** True when this reminder fires every day (smart-skips days the bus doesn't run). */
+    val isDaily: Boolean = false,
+    /** Seasonal availability stored so the receiver can skip non-running days. */
+    val seasonalAvailability: SeasonalAvailability? = null
 ) {
     val departureDisplayString: String
         get() = "%02d:%02d".format(departureHour, departureMinute)

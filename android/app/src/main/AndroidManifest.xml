@@ -17,6 +17,8 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- SCHEDULE_EXACT_ALARM: fallback for API 31-32 -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- RECEIVE_BOOT_COMPLETED: allows BootReceiver to restore daily alarms after device reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Device restrictions: Exclude watches and cars -->
     <!-- Require touchscreen (standard on phones and tablets, excludes automotive devices) -->
@@ -39,6 +41,14 @@
         <receiver
             android:name=".services.ReminderBroadcastReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".services.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".MainActivity"

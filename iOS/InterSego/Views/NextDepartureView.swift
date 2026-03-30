@@ -89,8 +89,11 @@ struct NextDepartureView: View {
     @State private var errorMessage: String?
     @State private var currentTime = Date()
     @State private var reminderKeys: Set<String> = []
+    @State private var dailyReminderKeys: Set<String> = []
     @State private var reminderErrorMessage: String?
     @State private var showReminderAlert = false
+    @AppStorage("bellTutorialShown") private var bellTutorialShown = false
+    @State private var showBellTip = false
     @Environment(\.dismiss) private var dismiss
 
     init(route: BusRoute, stop: BusStop, routeViews: [RouteView], currentViewId: String) {
@@ -203,6 +206,17 @@ struct NextDepartureView: View {
             } message: {
                 Text(reminderErrorMessage ?? "")
             }
+            .onAppear {
+                if !bellTutorialShown {
+                    bellTutorialShown = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        withAnimation { showBellTip = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) {
+                            withAnimation { showBellTip = false }
+                        }
+                    }
+                }
+            }
     }
 
     @ViewBuilder
@@ -231,6 +245,7 @@ struct NextDepartureView: View {
 
     private var departureScrollView: some View {
         let info = departureInfo
+        let isToday = info.daysAhead == 0
         return ScrollView {
             VStack(spacing: 0) {
                 StopHeroHeader(route: route, stop: stop, direction: direction)
@@ -247,8 +262,9 @@ struct NextDepartureView: View {
                         currentTime: currentTime,
                         selectedVariantLabel: selectedVariantLabel,
                         daysAhead: info.daysAhead,
-                        isBellSet: isBellSet(for: next),
-                        onBellTap: info.daysAhead == 0 ? { handleBellTap(for: next) } : nil,
+                        bellState: isToday ? bellState(for: next) : .off,
+                        onBellTap: isToday ? { handleBellTap(for: next) } : nil,
+                        onBellLongPress: isToday ? { handleBellLongPress(for: next) } : nil,
                     )
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -293,8 +309,9 @@ struct NextDepartureView: View {
                         DepartureTimeline(
                             departures: info.following,
                             selectedVariantLabel: selectedVariantLabel,
-                            isBellSetFor: info.daysAhead == 0 ? { d in isBellSet(for: d) } : nil,
-                            onBellTap: info.daysAhead == 0 ? { d in handleBellTap(for: d) } : nil,
+                            bellStateFor: isToday ? { d in bellState(for: d) } : nil,
+                            onBellTap: isToday ? { d in handleBellTap(for: d) } : nil,
+                            onBellLongPress: isToday ? { d in handleBellLongPress(for: d) } : nil,
                         )
                         .padding(.horizontal, 16)
                     }
@@ -302,6 +319,22 @@ struct NextDepartureView: View {
                 }
 
                 Spacer(minLength: 32)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if showBellTip {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(.accentColor)
+                    Text("Pulsa la campana para aviso puntual · Mantén pulsado para recordatorio diario")
+                        .font(.caption)
+                }
+                .padding(12)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .onTapGesture { withAnimation { showBellTip = false } }
             }
         }
     }
@@ -320,21 +353,27 @@ struct NextDepartureView: View {
     // MARK: - Reminder helpers
 
     private func refreshReminderKeys() async {
-        reminderKeys = await ReminderService.shared.activeMatchKeys()
+        async let keys = ReminderService.shared.activeMatchKeys()
+        async let dailyKeys = ReminderService.shared.dailyMatchKeys()
+        reminderKeys = await keys
+        dailyReminderKeys = await dailyKeys
     }
 
-    private func isBellSet(for departure: DepartureTime) -> Bool {
-        reminderKeys.contains(BusReminder.matchKey(
+    private func bellState(for departure: DepartureTime) -> BellState {
+        let key = BusReminder.matchKey(
             routeId: route.id, stopId: stop.id, direction: direction,
             hour: departure.hour, minute: departure.minute
-        ))
+        )
+        if dailyReminderKeys.contains(key) { return .daily }
+        if reminderKeys.contains(key) { return .oneOff }
+        return .off
     }
 
     private func handleBellTap(for departure: DepartureTime) {
         reminderErrorMessage = nil
-        let isSet = isBellSet(for: departure)
+        let state = bellState(for: departure)
         Task {
-            if isSet {
+            if state != .off {
                 await ReminderService.shared.cancelReminder(
                     routeId: route.id, stopId: stop.id, direction: direction,
                     hour: departure.hour, minute: departure.minute
@@ -352,7 +391,43 @@ struct NextDepartureView: View {
             await refreshReminderKeys()
         }
     }
+
+    private func handleBellLongPress(for departure: DepartureTime) {
+        reminderErrorMessage = nil
+        let state = bellState(for: departure)
+        Task {
+            if state == .daily {
+                // Daily is set — long press cancels
+                await ReminderService.shared.cancelReminder(
+                    routeId: route.id, stopId: stop.id, direction: direction,
+                    hour: departure.hour, minute: departure.minute
+                )
+            } else {
+                // Cancel any one-off first, then schedule daily
+                if state == .oneOff {
+                    await ReminderService.shared.cancelReminder(
+                        routeId: route.id, stopId: stop.id, direction: direction,
+                        hour: departure.hour, minute: departure.minute
+                    )
+                }
+                do {
+                    try await ReminderService.shared.scheduleReminder(
+                        departure: departure, stop: stop, route: route, direction: direction,
+                        isDaily: true
+                    )
+                } catch {
+                    reminderErrorMessage = error.localizedDescription
+                    showReminderAlert = true
+                }
+            }
+            await refreshReminderKeys()
+        }
+    }
 }
+
+// MARK: - Bell State
+
+private enum BellState { case off, oneOff, daily }
 
 // MARK: - Stop Hero Header
 
@@ -565,6 +640,35 @@ private struct DisclaimerBulletPoint: View {
     }
 }
 
+// MARK: - Bell Button
+
+/// Bell icon with tap (one-off) and long-press (daily) gestures.
+/// Shows a repeat badge overlay when the reminder is daily.
+private struct BellButton: View {
+    let bellState: BellState
+    var onTap: (() -> Void)? = nil
+    var onLongPress: (() -> Void)? = nil
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Image(systemName: bellState == .off ? "bell" : "bell.fill")
+                .foregroundColor(bellState == .off ? .secondary : .accentColor)
+            if bellState == .daily {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(1.5)
+                    .background(Color.accentColor)
+                    .clipShape(Circle())
+                    .offset(x: 5, y: -4)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onTap?() }
+        .onLongPressGesture { onLongPress?() }
+    }
+}
+
 // MARK: - Next Departure Card
 
 private struct NextDepartureCard: View {
@@ -572,8 +676,9 @@ private struct NextDepartureCard: View {
     let currentTime: Date
     let selectedVariantLabel: String?
     let daysAhead: Int
-    var isBellSet: Bool = false
+    var bellState: BellState = .off
     var onBellTap: (() -> Void)? = nil
+    var onBellLongPress: (() -> Void)? = nil
 
     private var minutesUntil: Int {
         let cal = Calendar.current
@@ -638,14 +743,10 @@ private struct NextDepartureCard: View {
                         .clipShape(RoundedRectangle(cornerRadius: 4))
                 }
 
-                if let onTap = onBellTap {
+                if onBellTap != nil || onBellLongPress != nil {
                     Spacer()
-                    Button(action: onTap) {
-                        Image(systemName: isBellSet ? "bell.fill" : "bell")
-                            .font(.headline)
-                            .foregroundColor(isBellSet ? .accentColor : .secondary)
-                    }
-                    .buttonStyle(.plain)
+                    BellButton(bellState: bellState, onTap: onBellTap, onLongPress: onBellLongPress)
+                        .font(.headline)
                 }
             }
 
@@ -711,8 +812,9 @@ private struct TimeOfDayIndicator: View {
 private struct DepartureTimeline: View {
     let departures: [DepartureTime]
     let selectedVariantLabel: String?
-    var isBellSetFor: ((DepartureTime) -> Bool)? = nil
+    var bellStateFor: ((DepartureTime) -> BellState)? = nil
     var onBellTap: ((DepartureTime) -> Void)? = nil
+    var onBellLongPress: ((DepartureTime) -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -776,13 +878,14 @@ private struct DepartureTimeline: View {
 
                         TimeOfDayIndicator(timeOfDay: timeOfDay)
 
-                        if let bellCheck = isBellSetFor, let bellTap = onBellTap {
-                            Button { bellTap(departure) } label: {
-                                Image(systemName: bellCheck(departure) ? "bell.fill" : "bell")
-                                    .font(.subheadline)
-                                    .foregroundColor(bellCheck(departure) ? .accentColor : .secondary)
-                            }
-                            .buttonStyle(.plain)
+                        if bellStateFor != nil || onBellTap != nil {
+                            let state = bellStateFor?(departure) ?? .off
+                            BellButton(
+                                bellState: state,
+                                onTap: onBellTap.map { tap in { tap(departure) } },
+                                onLongPress: onBellLongPress.map { lp in { lp(departure) } }
+                            )
+                            .font(.subheadline)
                         }
                     }
                     .padding(16)

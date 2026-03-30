@@ -57,6 +57,7 @@ struct DayScheduleView: View {
     @State private var errorMessage: String?
     @State private var currentTime = Date()
     @State private var reminderKeys: Set<String> = []
+    @State private var dailyReminderKeys: Set<String> = []
     @State private var reminderErrorMessage: String?
     @State private var showReminderAlert = false
 
@@ -187,16 +188,23 @@ struct DayScheduleView: View {
                                     .id("now_marker")
                             }
 
+                            let key = BusReminder.matchKey(
+                                routeId: route.id, stopId: stop.id, direction: direction,
+                                hour: departure.hour, minute: departure.minute
+                            )
+                            let bellStateValue: DayScheduleBellState = {
+                                if dailyReminderKeys.contains(key) { return .daily }
+                                if reminderKeys.contains(key) { return .oneOff }
+                                return .off
+                            }()
                             DayScheduleTimelineRow(
                                 departure: departure,
                                 selectedVariantLabel: selectedVariantLabel,
                                 isLast: index == departures.count - 1 && markerIndex <= departures.count - 1,
-                                isBellSet: reminderKeys.contains(BusReminder.matchKey(
-                                    routeId: route.id, stopId: stop.id, direction: direction,
-                                    hour: departure.hour, minute: departure.minute
-                                )),
+                                bellState: bellStateValue,
                                 showBell: canSetReminder(for: departure),
                                 onBellTap: { handleBellTap(for: departure) },
+                                onBellLongPress: { handleBellLongPress(for: departure) },
                             )
                         }
 
@@ -235,7 +243,10 @@ struct DayScheduleView: View {
     // MARK: - Reminder helpers
 
     private func refreshReminderKeys() async {
-        reminderKeys = await ReminderService.shared.activeMatchKeys()
+        async let keys = ReminderService.shared.activeMatchKeys()
+        async let dailyKeys = ReminderService.shared.dailyMatchKeys()
+        reminderKeys = await keys
+        dailyReminderKeys = await dailyKeys
     }
 
     /// Bell is only shown for today's schedule and for departures still in the future.
@@ -263,6 +274,39 @@ struct DayScheduleView: View {
                 do {
                     try await ReminderService.shared.scheduleReminder(
                         departure: departure, stop: stop, route: route, direction: direction
+                    )
+                } catch {
+                    reminderErrorMessage = error.localizedDescription
+                    showReminderAlert = true
+                }
+            }
+            await refreshReminderKeys()
+        }
+    }
+
+    private func handleBellLongPress(for departure: DepartureTime) {
+        reminderErrorMessage = nil
+        let key = BusReminder.matchKey(
+            routeId: route.id, stopId: stop.id, direction: direction,
+            hour: departure.hour, minute: departure.minute
+        )
+        Task {
+            if dailyReminderKeys.contains(key) {
+                await ReminderService.shared.cancelReminder(
+                    routeId: route.id, stopId: stop.id, direction: direction,
+                    hour: departure.hour, minute: departure.minute
+                )
+            } else {
+                if reminderKeys.contains(key) {
+                    await ReminderService.shared.cancelReminder(
+                        routeId: route.id, stopId: stop.id, direction: direction,
+                        hour: departure.hour, minute: departure.minute
+                    )
+                }
+                do {
+                    try await ReminderService.shared.scheduleReminder(
+                        departure: departure, stop: stop, route: route, direction: direction,
+                        isDaily: true
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription
@@ -371,15 +415,47 @@ private struct NowMarkerRow: View {
     }
 }
 
+// MARK: - Bell State (local alias matching NextDepartureView)
+
+private enum DayScheduleBellState { case off, oneOff, daily }
+
+// MARK: - Bell Button
+
+private struct DayScheduleBellButton: View {
+    let bellState: DayScheduleBellState
+    let onTap: () -> Void
+    let onLongPress: () -> Void
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Image(systemName: bellState == .off ? "bell" : "bell.fill")
+                .foregroundColor(bellState == .off ? .secondary : .accentColor)
+            if bellState == .daily {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundColor(.white)
+                    .padding(1.5)
+                    .background(Color.accentColor)
+                    .clipShape(Circle())
+                    .offset(x: 5, y: -4)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
+        .onLongPressGesture { onLongPress() }
+    }
+}
+
 // MARK: - Day Schedule Timeline Row
 
 private struct DayScheduleTimelineRow: View {
     let departure: DepartureTime
     let selectedVariantLabel: String?
     let isLast: Bool
-    let isBellSet: Bool
+    let bellState: DayScheduleBellState
     let showBell: Bool
     let onBellTap: () -> Void
+    var onBellLongPress: () -> Void = {}
 
     var body: some View {
         let timeOfDay = getDayScheduleTimeOfDay(departure.hour)
@@ -453,12 +529,12 @@ private struct DayScheduleTimelineRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 if showBell {
-                    Button(action: onBellTap) {
-                        Image(systemName: isBellSet ? "bell.fill" : "bell")
-                            .font(.subheadline)
-                            .foregroundColor(isBellSet ? .accentColor : .secondary)
-                    }
-                    .buttonStyle(.plain)
+                    DayScheduleBellButton(
+                        bellState: bellState,
+                        onTap: onBellTap,
+                        onLongPress: onBellLongPress
+                    )
+                    .font(.subheadline)
                 }
             }
             .padding(16)

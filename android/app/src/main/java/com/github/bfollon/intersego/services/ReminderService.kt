@@ -53,6 +53,7 @@ class ReminderService(private val context: Context) {
         const val CHANNEL_ID = "bus_reminders"
         const val KEY_REMINDERS = "bus_reminders"
         const val KEY_LEAD_TIME = "reminder_lead_time_minutes"
+        const val KEY_DAILY_LEAD_TIME = "reminder_daily_lead_time_minutes"
         const val KEY_ALARM_COUNTER = "alarm_request_counter"
 
         /** Creates the notification channel. Call from MainActivity.onCreate(). */
@@ -95,11 +96,23 @@ class ReminderService(private val context: Context) {
         prefs.edit().putInt(KEY_LEAD_TIME, minutes).apply()
     }
 
+    fun getDailyLeadMinutes(): Int {
+        val v = prefs.getInt(KEY_DAILY_LEAD_TIME, 0)
+        return if (v == 0) 15 else v
+    }
+
+    fun setDailyLeadMinutes(minutes: Int) {
+        prefs.edit().putInt(KEY_DAILY_LEAD_TIME, minutes).apply()
+    }
+
     // MARK: - Reading
 
     fun getReminders(): List<BusReminder> = _reminders.sortedBy { it.fireDateMillis }
 
     fun activeMatchKeys(): Set<String> = _reminders.map { it.matchKey }.toSet()
+
+    /** Returns match keys for daily-only reminders (used to render the repeat badge on bell icons). */
+    fun dailyMatchKeys(): Set<String> = _reminders.filter { it.isDaily }.map { it.matchKey }.toSet()
 
     fun isSet(routeId: String, stopId: String, direction: String, hour: Int, minute: Int): Boolean {
         val key = BusReminder.matchKey(routeId, stopId, direction, hour, minute)
@@ -108,12 +121,12 @@ class ReminderService(private val context: Context) {
 
     // MARK: - Pruning
 
-    /** Removes reminders whose fire time has passed (day rollover cleanup). Call on app launch. */
+    /** Removes one-off reminders whose fire time has passed. Daily reminders are not pruned. */
     fun pruneExpired() {
         val now = System.currentTimeMillis()
-        val expired = _reminders.filter { it.fireDateMillis < now }
+        val expired = _reminders.filter { !it.isDaily && it.fireDateMillis < now }
         expired.forEach { cancelAlarm(it.id) }
-        _reminders.removeAll { it.fireDateMillis < now }
+        _reminders.removeAll { !it.isDaily && it.fireDateMillis < now }
         persist()
     }
 
@@ -128,7 +141,8 @@ class ReminderService(private val context: Context) {
         departure: DepartureTime,
         stop: BusStop,
         route: BusRoute,
-        direction: String
+        direction: String,
+        isDaily: Boolean = false
     ): ScheduleResult {
         // Check POST_NOTIFICATIONS runtime permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -139,7 +153,7 @@ class ReminderService(private val context: Context) {
             }
         }
 
-        val leadMins = getDefaultLeadMinutes()
+        val leadMins = if (isDaily) getDailyLeadMinutes() else getDefaultLeadMinutes()
 
         // Compute fire time: today at (departure time − lead minutes)
         val cal = Calendar.getInstance()
@@ -152,8 +166,17 @@ class ReminderService(private val context: Context) {
         cal.set(Calendar.MILLISECOND, 0)
         val fireMillis = cal.timeInMillis
 
-        if (fireMillis <= System.currentTimeMillis()) {
+        // For one-off the fire time must be in the future; daily can start tomorrow if today passed
+        if (!isDaily && fireMillis <= System.currentTimeMillis()) {
             return ScheduleResult.Failure("Este autobús ya ha salido.")
+        }
+
+        val actualFireMillis = if (isDaily && fireMillis <= System.currentTimeMillis()) {
+            // Today's window passed — schedule for tomorrow
+            cal.add(Calendar.DAY_OF_YEAR, 1)
+            cal.timeInMillis
+        } else {
+            fireMillis
         }
 
         val id = UUID.randomUUID().toString()
@@ -168,9 +191,11 @@ class ReminderService(private val context: Context) {
             departureHour = departure.hour,
             departureMinute = departure.minute,
             leadMinutes = leadMins,
-            fireDateMillis = fireMillis,
+            fireDateMillis = actualFireMillis,
             alarmRequestCode = requestCode,
-            seasonalNote = departure.seasonalAvailability.displayLabel
+            seasonalNote = departure.seasonalAvailability.displayLabel,
+            isDaily = isDaily,
+            seasonalAvailability = departure.seasonalAvailability
         )
 
         scheduleAlarm(reminder)
@@ -225,14 +250,7 @@ class ReminderService(private val context: Context) {
     }
 
     private fun buildPendingIntent(reminder: BusReminder, flags: Int): PendingIntent {
-        val intent = Intent(context, ReminderBroadcastReceiver::class.java).apply {
-            putExtra(ReminderBroadcastReceiver.EXTRA_REMINDER_ID, reminder.id)
-            putExtra(ReminderBroadcastReceiver.EXTRA_ROUTE_NUMBER, reminder.routeNumber)
-            putExtra(ReminderBroadcastReceiver.EXTRA_STOP_NAME, reminder.stopName)
-            putExtra(ReminderBroadcastReceiver.EXTRA_DEPARTURE_DISPLAY, reminder.departureDisplayString)
-            putExtra(ReminderBroadcastReceiver.EXTRA_LEAD_MINUTES, reminder.leadMinutes)
-            putExtra(ReminderBroadcastReceiver.EXTRA_SEASONAL_NOTE, reminder.seasonalNote)
-        }
+        val intent = ReminderBroadcastReceiver.buildIntent(context, reminder)
         return PendingIntent.getBroadcast(context, reminder.alarmRequestCode, intent, flags)
     }
 

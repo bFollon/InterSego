@@ -20,6 +20,7 @@ import SwiftUI
 struct RemindersView: View {
     @State private var reminders: [BusReminder] = []
     @State private var leadMinutes: Int = 10
+    @State private var dailyLeadMinutes: Int = 15
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -45,9 +46,10 @@ struct RemindersView: View {
 
     private var leadTimeSection: some View {
         Section {
+            // One-off lead time
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Avisar con antelación")
+                    Text("Aviso puntual")
                     Spacer()
                     Stepper("\(leadMinutes) min", value: $leadMinutes, in: 1 ... 60, step: 5)
                         .fixedSize()
@@ -55,7 +57,29 @@ struct RemindersView: View {
                             Task { await ReminderService.shared.setDefaultLeadMinutes(newValue) }
                         }
                 }
-                Text("Tiempo por defecto antes de la salida del autobús.")
+                Text("Antelación para recordatorios puntuales (campana rápida).")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 4)
+
+            // Daily lead time
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    HStack(spacing: 6) {
+                        Text("Aviso diario")
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption)
+                            .foregroundColor(.accentColor)
+                    }
+                    Spacer()
+                    Stepper("\(dailyLeadMinutes) min", value: $dailyLeadMinutes, in: 1 ... 60, step: 5)
+                        .fixedSize()
+                        .onChange(of: dailyLeadMinutes) { _, newValue in
+                            Task { await ReminderService.shared.setDailyLeadMinutes(newValue) }
+                        }
+                }
+                Text("Antelación para recordatorios diarios (campana mantenida).")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -78,6 +102,10 @@ struct RemindersView: View {
                         Text("Sin recordatorios activos")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Text("Pulsa la campana para un aviso puntual o mantenla para un recordatorio diario.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                     Spacer()
                 }
@@ -102,8 +130,10 @@ struct RemindersView: View {
     private func loadData() async {
         async let r = ReminderService.shared.getReminders()
         async let l = ReminderService.shared.getDefaultLeadMinutes()
+        async let dl = ReminderService.shared.getDailyLeadMinutes()
         reminders = await r
         leadMinutes = await l
+        dailyLeadMinutes = await dl
     }
 }
 
@@ -135,15 +165,22 @@ private struct ReminderRow: View {
                     Text(reminder.stopName)
                         .font(.subheadline)
                         .fontWeight(.semibold)
+                    if reminder.isDaily {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.caption2)
+                            .foregroundColor(.accentColor)
+                    }
                 }
                 Text("Sale a las \(reminder.departureDisplayString)")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 HStack(spacing: 4) {
-                    Image(systemName: "bell.fill")
+                    Image(systemName: reminder.isDaily ? "bell.fill" : "bell.fill")
                         .font(.caption2)
                         .foregroundColor(.accentColor)
-                    Text("Aviso a las \(fireTimeFormatted)")
+                    Text(reminder.isDaily
+                         ? "Cada día a las \(fireTimeFormatted)"
+                         : "Aviso a las \(fireTimeFormatted)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
