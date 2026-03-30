@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Refresh
@@ -32,8 +33,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
 import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.services.ReminderService
 import java.text.SimpleDateFormat
@@ -45,9 +48,32 @@ fun RemindersScreen(
     reminderService: ReminderService,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("reminder_tutorial", android.content.Context.MODE_PRIVATE) }
+
     var reminders by remember { mutableStateOf(reminderService.getReminders()) }
     var leadMinutes by remember { mutableStateOf(reminderService.getDefaultLeadMinutes()) }
     var dailyLeadMinutes by remember { mutableStateOf(reminderService.getDailyLeadMinutes()) }
+    var showTutorial by remember {
+        val shown = prefs.getBoolean("tutorial_shown", false)
+        mutableStateOf(!shown)
+    }
+
+    if (showTutorial) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = {
+                prefs.edit { putBoolean("tutorial_shown", true) }
+                showTutorial = false
+            },
+            sheetState = sheetState
+        ) {
+            ReminderTutorialSheet(onDismiss = {
+                prefs.edit { putBoolean("tutorial_shown", true) }
+                showTutorial = false
+            })
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -56,6 +82,15 @@ fun RemindersScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(
+                            imageVector = Icons.Default.HelpOutline,
+                            contentDescription = "Ayuda",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

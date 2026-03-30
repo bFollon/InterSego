@@ -21,6 +21,8 @@ struct RemindersView: View {
     @State private var reminders: [BusReminder] = []
     @State private var leadMinutes: Int = 10
     @State private var dailyLeadMinutes: Int = 15
+    @State private var showTutorial = false
+    @AppStorage("reminderTutorialShown") private var tutorialShown = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -32,12 +34,26 @@ struct RemindersView: View {
             .navigationTitle("Mis recordatorios")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showTutorial = true
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cerrar") { dismiss() }
                 }
             }
             .task {
                 await loadData()
+                if !tutorialShown {
+                    tutorialShown = true
+                    showTutorial = true
+                }
+            }
+            .sheet(isPresented: $showTutorial) {
+                ReminderTutorialView { showTutorial = false }
             }
         }
     }
