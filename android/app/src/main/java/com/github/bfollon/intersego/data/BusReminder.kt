@@ -47,7 +47,9 @@ data class BusReminder(
     /** True when this reminder fires every day (smart-skips days the bus doesn't run). */
     val isDaily: Boolean = false,
     /** Seasonal availability stored so the receiver can skip non-running days. */
-    val seasonalAvailability: SeasonalAvailability? = null
+    val seasonalAvailability: SeasonalAvailability? = null,
+    /** Day type this departure belongs to (used for smart-skip day-of-week check). */
+    val dayType: DayType? = null
 ) {
     val departureDisplayString: String
         get() = "%02d:%02d".format(departureHour, departureMinute)

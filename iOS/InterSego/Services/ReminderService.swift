@@ -20,11 +20,11 @@ import UserNotifications
 
 /// Manages bus departure reminders (one-off and daily).
 ///
-/// One-off reminders fire once and are pruned after their fire date.
+/// One-off reminders are scheduled for the next future occurrence of the departure,
+/// considering day type and seasonal availability — not just today.
 /// Daily reminders persist until cancelled and are backed by a rolling 7-day batch of
-/// individual UNNotificationRequests with deterministic IDs. The batch is replenished on
-/// each app launch via `replenishDailyReminders()`. Smart-skip: days where the departure
-/// doesn't run (per SeasonalAvailability) are simply not scheduled.
+/// individual UNNotificationRequests with deterministic IDs. Smart-skip: days where the
+/// departure doesn't run (wrong day type or seasonal) are simply not scheduled.
 actor ReminderService {
     static let shared = ReminderService()
 
@@ -78,13 +78,11 @@ actor ReminderService {
         return _reminders.sorted { $0.fireDate < $1.fireDate }
     }
 
-    /// Returns the set of match keys for all active reminders (fast bell-state lookup).
     func activeMatchKeys() -> Set<String> {
         ensureInitialized()
         return Set(_reminders.map { $0.matchKey })
     }
 
-    /// Returns the set of match keys for active DAILY reminders (for bell icon differentiation).
     func dailyMatchKeys() -> Set<String> {
         ensureInitialized()
         return Set(_reminders.filter { $0.isDaily }.map { $0.matchKey })
@@ -92,8 +90,6 @@ actor ReminderService {
 
     // MARK: - Pruning
 
-    /// Removes expired one-off reminders. Daily reminders are never pruned here.
-    /// Call on app launch before `replenishDailyReminders()`.
     func pruneExpired() {
         ensureInitialized()
         let now = Date()
@@ -104,8 +100,6 @@ actor ReminderService {
         persist()
     }
 
-    /// Replenishes daily reminder batches to cover the next 7 days.
-    /// Call on app launch after `pruneExpired()`.
     func replenishDailyReminders() async {
         ensureInitialized()
         let dailyReminders = _reminders.filter { $0.isDaily }
@@ -124,25 +118,18 @@ actor ReminderService {
 
     func scheduleReminder(
         departure: DepartureTime, stop: BusStop, route: BusRoute, direction: String,
-        isDaily: Bool = false
+        isDaily: Bool = false, dayType: DayType? = nil
     ) async throws {
         ensureInitialized()
         let leadMins = isDaily ? getDailyLeadMinutes() : getDefaultLeadMinutes()
 
-        // Compute fire date (time-of-day component used for display and one-off scheduling)
-        let cal = Calendar.current
-        let now = Date()
-        var components = cal.dateComponents([.year, .month, .day], from: now)
-        let totalMins = departure.hour * 60 + departure.minute - leadMins
-        guard totalMins >= 0 else { throw ReminderError.alreadyPassed }
-        components.hour = totalMins / 60
-        components.minute = totalMins % 60
-        components.second = 0
-        guard let fireDate = cal.date(from: components) else { throw ReminderError.invalidDate }
-
-        // For one-off, fire date must still be in the future
-        if !isDaily {
-            guard fireDate > now else { throw ReminderError.alreadyPassed }
+        // Find the next future occurrence of this departure (respects day type + seasonal)
+        guard let fireDate = nextOccurrence(
+            dayType: dayType,
+            seasonalAvailability: departure.seasonalAvailability,
+            hour: departure.hour, minute: departure.minute, leadMins: leadMins
+        ) else {
+            throw ReminderError.noUpcomingOccurrence
         }
 
         // Request notification permission if needed
@@ -171,13 +158,14 @@ actor ReminderService {
             fireDate: fireDate,
             seasonalNote: departure.seasonalAvailability.displayLabel,
             isDaily: isDaily,
-            seasonalAvailability: departure.seasonalAvailability
+            seasonalAvailability: departure.seasonalAvailability,
+            dayType: dayType
         )
 
         if isDaily {
             try await scheduleDailyBatch(for: reminder, center: center)
         } else {
-            // One-off: single UNCalendarNotificationTrigger
+            let cal = Calendar.current
             let content = buildNotificationContent(reminder: reminder)
             let triggerComponents = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
@@ -221,14 +209,12 @@ actor ReminderService {
 
     // MARK: - Daily batch helpers
 
-    /// Schedules one UNNotificationRequest per day in the next 7 days where the bus runs.
     private func scheduleDailyBatch(for reminder: BusReminder, center: UNUserNotificationCenter) async throws {
         let pendingRequests = await center.pendingNotificationRequests()
         let pendingIds = Set(pendingRequests.map { $0.identifier })
         try await scheduleMissingBatchDays(for: reminder, pendingIds: pendingIds, center: center, throwing: true)
     }
 
-    /// Fills in missing days (not yet scheduled) for a daily reminder up to 7 days from now.
     private func scheduleMissingBatchDays(
         for reminder: BusReminder,
         pendingIds: Set<String>,
@@ -243,14 +229,14 @@ actor ReminderService {
         for daysAhead in 0 ..< 7 {
             guard let targetDay = cal.date(byAdding: .day, value: daysAhead, to: now) else { continue }
 
-            // Smart-skip: check seasonal availability for this day
-            if let seasonal = reminder.seasonalAvailability {
-                let month = cal.component(.month, from: targetDay)
-                let weekday = cal.component(.weekday, from: targetDay)
-                guard seasonal.runsIn(month: month, weekday: weekday) else { continue }
-            }
+            let weekday = cal.component(.weekday, from: targetDay)
+            let month = cal.component(.month, from: targetDay)
 
-            // Compute fire date for this specific day
+            // Smart-skip: check day type and seasonal availability
+            if let dt = reminder.dayType, !dayTypeMatches(dt, weekday: weekday) { continue }
+            if let seasonal = reminder.seasonalAvailability,
+               !seasonal.runsIn(month: month, weekday: weekday) { continue }
+
             var comps = cal.dateComponents([.year, .month, .day], from: targetDay)
             comps.hour = totalMins / 60
             comps.minute = totalMins % 60
@@ -265,17 +251,10 @@ actor ReminderService {
             let triggerComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
             let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComps, repeats: false)
             let request = UNNotificationRequest(identifier: notifId, content: content, trigger: trigger)
-
-            if throwing {
-                try? await center.add(request)
-            } else {
-                try? await center.add(request)
-            }
+            try? await center.add(request)
         }
     }
 
-    /// Cancels all pending batch notifications for a daily reminder by generating their
-    /// deterministic IDs for a window around today (past 2 days + next 30 days).
     private func cancelDailyBatch(matchKey: String) {
         let cal = Calendar.current
         let now = Date()
@@ -286,6 +265,53 @@ actor ReminderService {
             ids.append("\(dailyPrefix)\(matchKey)|\(formatter.string(from: date))")
         }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
+
+    // MARK: - Next occurrence
+
+    /// Iterates forward up to 30 days to find the first future fire time where:
+    /// 1. The calendar weekday matches [dayType] (if provided)
+    /// 2. The seasonal availability applies
+    /// 3. The computed fire time (departure − lead) is still in the future
+    private func nextOccurrence(
+        dayType: DayType?,
+        seasonalAvailability: SeasonalAvailability?,
+        hour: Int, minute: Int, leadMins: Int
+    ) -> Date? {
+        let totalMins = hour * 60 + minute - leadMins
+        guard totalMins >= 0 else { return nil }
+
+        let cal = Calendar.current
+        let now = Date()
+
+        for daysAhead in 0 ..< 30 {
+            guard let targetDay = cal.date(byAdding: .day, value: daysAhead, to: now) else { continue }
+            let weekday = cal.component(.weekday, from: targetDay)
+            let month = cal.component(.month, from: targetDay)
+
+            if let dt = dayType, !dayTypeMatches(dt, weekday: weekday) { continue }
+            if let seasonal = seasonalAvailability, !seasonal.runsIn(month: month, weekday: weekday) { continue }
+
+            var comps = cal.dateComponents([.year, .month, .day], from: targetDay)
+            comps.hour = totalMins / 60
+            comps.minute = totalMins % 60
+            comps.second = 0
+            guard let fireDate = cal.date(from: comps), fireDate > now else { continue }
+
+            return fireDate
+        }
+        return nil
+    }
+
+    /// Returns true if the given DayType applies on the given Calendar weekday (1=Sun, 7=Sat).
+    private func dayTypeMatches(_ dayType: DayType, weekday: Int) -> Bool {
+        switch dayType {
+        case .weekday: return (2...6).contains(weekday)
+        case .saturday: return weekday == 7
+        case .sunday: return weekday == 1
+        case .weekend: return weekday == 1 || weekday == 7
+        case .holiday: return weekday == 1
+        }
     }
 
     // MARK: - Shared helpers
@@ -320,12 +346,14 @@ actor ReminderService {
         case invalidDate
         case alreadyPassed
         case permissionDenied
+        case noUpcomingOccurrence
 
         var errorDescription: String? {
             switch self {
             case .invalidDate: return "No se puede calcular la hora del recordatorio."
             case .alreadyPassed: return "Este autobús ya ha salido."
             case .permissionDenied: return "Activa las notificaciones en Ajustes para usar esta función."
+            case .noUpcomingOccurrence: return "No hay próxima salida disponible en los próximos 30 días."
             }
         }
     }

@@ -164,6 +164,13 @@ fun NextDepartureScreen(
     // Auto-detect current day types (supports both M4's WEEKEND and M6's SATURDAY/SUNDAY)
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
     val currentDayTypes = remember { dayTypesForCalendarDay(currentDayOfWeek) }
+    val currentDayType = remember {
+        when (currentDayOfWeek) {
+            Calendar.SATURDAY -> DayType.SATURDAY
+            Calendar.SUNDAY -> DayType.SUNDAY
+            else -> DayType.WEEKDAY
+        }
+    }
 
     // Filter and merge all timetables for current stop, day type, AND direction
     // Multiple timetables may exist for the same stop (e.g., Regular + Extended variants)
@@ -392,7 +399,7 @@ fun NextDepartureScreen(
                                     if (reminderKeys.contains(matchKey)) {
                                         reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
                                     } else {
-                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction)
+                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -408,7 +415,7 @@ fun NextDepartureScreen(
                                         if (reminderKeys.contains(matchKey)) {
                                             reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
                                         }
-                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction, isDaily = true)
+                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -488,7 +495,7 @@ fun NextDepartureScreen(
                                     if (reminderKeys.contains(key)) {
                                         reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
                                     } else {
-                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction)
+                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -501,7 +508,7 @@ fun NextDepartureScreen(
                                         reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
                                     } else {
                                         if (reminderKeys.contains(key)) reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
-                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction, isDaily = true)
+                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()

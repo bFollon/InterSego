@@ -17,6 +17,7 @@
 
 package com.github.bfollon.intersego.data
 
+import java.util.Calendar
 import kotlinx.serialization.Serializable
 
 /**
@@ -41,4 +42,16 @@ enum class DayType {
      * Public holidays (festivos)
      */
     HOLIDAY
+}
+
+/**
+ * Returns true if this day type applies on the given [Calendar.DAY_OF_WEEK] value.
+ * HOLIDAY is treated as Sunday for scheduling purposes.
+ */
+fun DayType.matchesCalendarDay(dayOfWeek: Int): Boolean = when (this) {
+    DayType.WEEKDAY -> dayOfWeek in Calendar.MONDAY..Calendar.FRIDAY
+    DayType.SATURDAY -> dayOfWeek == Calendar.SATURDAY
+    DayType.SUNDAY -> dayOfWeek == Calendar.SUNDAY
+    DayType.WEEKEND -> dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY
+    DayType.HOLIDAY -> dayOfWeek == Calendar.SUNDAY
 }

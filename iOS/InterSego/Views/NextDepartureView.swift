@@ -129,6 +129,14 @@ struct NextDepartureView: View {
         dayTypesForCalendarDay(currentWeekday)
     }
 
+    private var currentDayType: DayType {
+        switch currentWeekday {
+        case 7: return .saturday
+        case 1: return .sunday
+        default: return .weekday
+        }
+    }
+
     private var todayDepartures: [DepartureTime] {
         let matching = timetables.filter { timetable in
             currentDayTypes.contains(timetable.dayType)
@@ -381,7 +389,8 @@ struct NextDepartureView: View {
             } else {
                 do {
                     try await ReminderService.shared.scheduleReminder(
-                        departure: departure, stop: stop, route: route, direction: direction
+                        departure: departure, stop: stop, route: route, direction: direction,
+                        dayType: currentDayType
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription
@@ -413,7 +422,7 @@ struct NextDepartureView: View {
                 do {
                     try await ReminderService.shared.scheduleReminder(
                         departure: departure, stop: stop, route: route, direction: direction,
-                        isDaily: true
+                        isDaily: true, dayType: currentDayType
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription

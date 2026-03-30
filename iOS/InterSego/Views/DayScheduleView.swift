@@ -249,13 +249,17 @@ struct DayScheduleView: View {
         dailyReminderKeys = await dailyKeys
     }
 
-    /// Bell is only shown for today's schedule and for departures still in the future.
+    private var effectiveDayType: DayType {
+        if let override = overrideDayType { return override }
+        switch currentWeekday {
+        case 7: return .saturday
+        case 1: return .sunday
+        default: return .weekday
+        }
+    }
+
     private func canSetReminder(for departure: DepartureTime) -> Bool {
-        guard overrideDayType == nil else { return false }
-        let cal = Calendar.current
-        let currentHour = cal.component(.hour, from: currentTime)
-        let currentMinute = cal.component(.minute, from: currentTime)
-        return departure.isFuture(currentHour: currentHour, currentMinute: currentMinute)
+        return true
     }
 
     private func handleBellTap(for departure: DepartureTime) {
@@ -273,7 +277,8 @@ struct DayScheduleView: View {
             } else {
                 do {
                     try await ReminderService.shared.scheduleReminder(
-                        departure: departure, stop: stop, route: route, direction: direction
+                        departure: departure, stop: stop, route: route, direction: direction,
+                        dayType: effectiveDayType
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription
@@ -306,7 +311,7 @@ struct DayScheduleView: View {
                 do {
                     try await ReminderService.shared.scheduleReminder(
                         departure: departure, stop: stop, route: route, direction: direction,
-                        isDaily: true
+                        isDaily: true, dayType: effectiveDayType
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription

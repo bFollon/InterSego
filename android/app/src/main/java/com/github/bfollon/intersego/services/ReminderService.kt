@@ -30,17 +30,22 @@ import androidx.core.content.ContextCompat
 import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.data.SeasonalAvailability
+import com.github.bfollon.intersego.data.matchesCalendarDay
+import java.time.Month
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.Calendar
 import java.util.UUID
 
 /**
- * Manages today-only bus departure reminders.
+ * Manages bus departure reminders (one-off and daily).
  *
- * Reminders are persisted to SharedPreferences and backed by AlarmManager exact alarms.
- * On day rollover, expired entries are pruned on the next call to [pruneExpired].
+ * One-off reminders are scheduled for the next future occurrence of the departure
+ * (considering day type and seasonal availability). Daily reminders persist until
+ * cancelled and smart-skip days when the bus doesn't run.
  * Call [initialize] before any other method.
  */
 class ReminderService(private val context: Context) {
@@ -142,7 +147,8 @@ class ReminderService(private val context: Context) {
         stop: BusStop,
         route: BusRoute,
         direction: String,
-        isDaily: Boolean = false
+        isDaily: Boolean = false,
+        dayType: DayType? = null
     ): ScheduleResult {
         // Check POST_NOTIFICATIONS runtime permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -155,29 +161,14 @@ class ReminderService(private val context: Context) {
 
         val leadMins = if (isDaily) getDailyLeadMinutes() else getDefaultLeadMinutes()
 
-        // Compute fire time: today at (departure time − lead minutes)
-        val cal = Calendar.getInstance()
-        val totalMins = departure.hour * 60 + departure.minute - leadMins
-        if (totalMins < 0) return ScheduleResult.Failure("Este autobús ya ha salido.")
-
-        cal.set(Calendar.HOUR_OF_DAY, totalMins / 60)
-        cal.set(Calendar.MINUTE, totalMins % 60)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        val fireMillis = cal.timeInMillis
-
-        // For one-off the fire time must be in the future; daily can start tomorrow if today passed
-        if (!isDaily && fireMillis <= System.currentTimeMillis()) {
-            return ScheduleResult.Failure("Este autobús ya ha salido.")
-        }
-
-        val actualFireMillis = if (isDaily && fireMillis <= System.currentTimeMillis()) {
-            // Today's window passed — schedule for tomorrow
-            cal.add(Calendar.DAY_OF_YEAR, 1)
-            cal.timeInMillis
-        } else {
-            fireMillis
-        }
+        // Find the next future occurrence of this departure that matches day type and seasonal rules
+        val fireMillis = nextOccurrenceMillis(
+            dayType = dayType,
+            seasonal = departure.seasonalAvailability,
+            hour = departure.hour,
+            minute = departure.minute,
+            leadMins = leadMins
+        ) ?: return ScheduleResult.Failure("No hay próxima salida disponible en los próximos 30 días.")
 
         val id = UUID.randomUUID().toString()
         val requestCode = nextAlarmRequestCode()
@@ -191,17 +182,56 @@ class ReminderService(private val context: Context) {
             departureHour = departure.hour,
             departureMinute = departure.minute,
             leadMinutes = leadMins,
-            fireDateMillis = actualFireMillis,
+            fireDateMillis = fireMillis,
             alarmRequestCode = requestCode,
             seasonalNote = departure.seasonalAvailability.displayLabel,
             isDaily = isDaily,
-            seasonalAvailability = departure.seasonalAvailability
+            seasonalAvailability = departure.seasonalAvailability,
+            dayType = dayType
         )
 
         scheduleAlarm(reminder)
         _reminders.add(reminder)
         persist()
         return ScheduleResult.Success(reminder)
+    }
+
+    // MARK: - Next occurrence
+
+    /**
+     * Iterates forward up to 30 days to find the first future fire time where:
+     * 1. The calendar day matches [dayType] (if provided)
+     * 2. The [seasonal] availability applies
+     * 3. The computed fire time (departure − lead) is still in the future
+     */
+    fun nextOccurrenceMillis(
+        dayType: DayType?,
+        seasonal: SeasonalAvailability?,
+        hour: Int,
+        minute: Int,
+        leadMins: Int
+    ): Long? {
+        val totalMins = hour * 60 + minute - leadMins
+        if (totalMins < 0) return null
+        val now = System.currentTimeMillis()
+        val base = Calendar.getInstance()
+        for (daysAhead in 0..29) {
+            val cal = (base.clone() as Calendar).apply {
+                add(Calendar.DAY_OF_YEAR, daysAhead)
+                set(Calendar.HOUR_OF_DAY, totalMins / 60)
+                set(Calendar.MINUTE, totalMins % 60)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+            if (dayType != null && !dayType.matchesCalendarDay(dayOfWeek)) continue
+            if (seasonal != null) {
+                val month = Month.of(cal.get(Calendar.MONTH) + 1)
+                if (!seasonal.runsIn(month, dayOfWeek)) continue
+            }
+            if (cal.timeInMillis > now) return cal.timeInMillis
+        }
+        return null
     }
 
     // MARK: - Cancellation
@@ -229,7 +259,6 @@ class ReminderService(private val context: Context) {
             if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminder.fireDateMillis, pendingIntent)
             } else {
-                // Inexact fallback: fires within a few minutes of the target time
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminder.fireDateMillis, pendingIntent)
             }
         } else {

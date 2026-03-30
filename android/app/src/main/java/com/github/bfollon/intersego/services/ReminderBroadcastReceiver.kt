@@ -28,7 +28,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.BusReminder
+import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.SeasonalAvailability
+import com.github.bfollon.intersego.data.matchesCalendarDay
 import java.time.Month
 import java.util.Calendar
 
@@ -36,8 +38,8 @@ import java.util.Calendar
  * BroadcastReceiver that fires when an AlarmManager alarm goes off for a bus reminder.
  *
  * For one-off reminders: displays the notification and stops.
- * For daily reminders: checks SeasonalAvailability (smart-skip), optionally shows the
- * notification, then re-schedules for the same time tomorrow.
+ * For daily reminders: checks day type + SeasonalAvailability (smart-skip), optionally shows
+ * the notification, then re-schedules for the same time tomorrow.
  */
 class ReminderBroadcastReceiver : BroadcastReceiver() {
 
@@ -54,12 +56,17 @@ class ReminderBroadcastReceiver : BroadcastReceiver() {
         val requestCode = intent.getIntExtra(EXTRA_ALARM_REQUEST_CODE, -1)
         val seasonalAvailability = intent.getStringExtra(EXTRA_SEASONAL_AVAILABILITY)
             ?.let { runCatching { SeasonalAvailability.valueOf(it) }.getOrNull() }
+        val dayType = intent.getStringExtra(EXTRA_DAY_TYPE)
+            ?.let { runCatching { DayType.valueOf(it) }.getOrNull() }
 
         // Smart-skip: for daily reminders check if the bus runs today
         val today = Calendar.getInstance()
+        val todayDayOfWeek = today.get(Calendar.DAY_OF_WEEK)
         val todayMonth = Month.of(today.get(Calendar.MONTH) + 1)
-        val todayWeekday = today.get(Calendar.DAY_OF_WEEK)
-        val runsToday = seasonalAvailability?.runsIn(todayMonth, todayWeekday) != false
+
+        val dayTypeMatches = dayType == null || dayType.matchesCalendarDay(todayDayOfWeek)
+        val seasonalMatches = seasonalAvailability?.runsIn(todayMonth, todayDayOfWeek) != false
+        val runsToday = dayTypeMatches && seasonalMatches
 
         if (runsToday) {
             val title = "Línea $routeNumber · $stopName"
@@ -100,6 +107,7 @@ class ReminderBroadcastReceiver : BroadcastReceiver() {
                 putExtra(EXTRA_DEPARTURE_MINUTE, departureMinute)
                 putExtra(EXTRA_ALARM_REQUEST_CODE, requestCode)
                 putExtra(EXTRA_SEASONAL_AVAILABILITY, seasonalAvailability?.name)
+                putExtra(EXTRA_DAY_TYPE, dayType?.name)
             }
             val pi = PendingIntent.getBroadcast(
                 context, requestCode, nextIntent,
@@ -130,6 +138,7 @@ class ReminderBroadcastReceiver : BroadcastReceiver() {
         const val EXTRA_DEPARTURE_MINUTE = "departure_minute"
         const val EXTRA_ALARM_REQUEST_CODE = "alarm_request_code"
         const val EXTRA_SEASONAL_AVAILABILITY = "seasonal_availability"
+        const val EXTRA_DAY_TYPE = "day_type"
 
         /** Builds the broadcast intent for a BusReminder. Used by ReminderService and BootReceiver. */
         fun buildIntent(context: Context, reminder: BusReminder): Intent =
@@ -145,6 +154,7 @@ class ReminderBroadcastReceiver : BroadcastReceiver() {
                 putExtra(EXTRA_DEPARTURE_MINUTE, reminder.departureMinute)
                 putExtra(EXTRA_ALARM_REQUEST_CODE, reminder.alarmRequestCode)
                 putExtra(EXTRA_SEASONAL_AVAILABILITY, reminder.seasonalAvailability?.name)
+                putExtra(EXTRA_DAY_TYPE, reminder.dayType?.name)
             }
     }
 }

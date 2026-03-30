@@ -103,6 +103,14 @@ fun DayScheduleScreen(
     val currentDayTypes = remember(overrideDayType) {
         if (overrideDayType != null) dayTypesFor(overrideDayType) else dayTypesForCalendarDay(currentDayOfWeek)
     }
+    // Effective day type used when scheduling reminders from this screen.
+    val effectiveDayType = remember(overrideDayType, currentDayOfWeek) {
+        overrideDayType ?: when (currentDayOfWeek) {
+            Calendar.SATURDAY -> DayType.SATURDAY
+            Calendar.SUNDAY -> DayType.SUNDAY
+            else -> DayType.WEEKDAY
+        }
+    }
     // Weekday used for seasonal filtering — use today's for "now" context even when overriding
     val weekdayForSeasonal = remember { currentDayOfWeek }
 
@@ -273,8 +281,6 @@ fun DayScheduleScreen(
                         }
 
                         item(key = "dep_$index") {
-                            val depTime = LocalTime.of(departure.hour, departure.minute)
-                            val canBell = overrideDayType == null && (depTime.isAfter(currentTime) || depTime == currentTime)
                             val matchKey = BusReminder.matchKey(
                                 route.id, stop.id, direction, departure.hour, departure.minute
                             )
@@ -284,13 +290,13 @@ fun DayScheduleScreen(
                                 isLast = index == todayDepartures.size - 1 && markerIndex <= todayDepartures.size - 1,
                                 isBellSet = reminderKeys.contains(matchKey),
                                 isDailyBell = dailyReminderKeys.contains(matchKey),
-                                showBell = canBell && reminderService != null,
+                                showBell = reminderService != null,
                                 onBellTap = {
                                     reminderError = null
                                     if (reminderKeys.contains(matchKey)) {
                                         reminderService?.cancelReminder(route.id, stop.id, direction, departure.hour, departure.minute)
                                     } else {
-                                        val result = reminderService?.scheduleReminder(departure, stop, route, direction)
+                                        val result = reminderService?.scheduleReminder(departure, stop, route, direction, dayType = effectiveDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) {
                                             reminderError = result.message
                                         }
@@ -306,11 +312,11 @@ fun DayScheduleScreen(
                                         isDaily -> reminderService?.cancelReminder(route.id, stop.id, direction, departure.hour, departure.minute)
                                         isOneOff -> {
                                             reminderService?.cancelReminder(route.id, stop.id, direction, departure.hour, departure.minute)
-                                            val result = reminderService?.scheduleReminder(departure, stop, route, direction, isDaily = true)
+                                            val result = reminderService?.scheduleReminder(departure, stop, route, direction, isDaily = true, dayType = effectiveDayType)
                                             if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                         }
                                         else -> {
-                                            val result = reminderService?.scheduleReminder(departure, stop, route, direction, isDaily = true)
+                                            val result = reminderService?.scheduleReminder(departure, stop, route, direction, isDaily = true, dayType = effectiveDayType)
                                             if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                         }
                                     }
