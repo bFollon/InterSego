@@ -29,7 +29,7 @@ struct ReminderTutorialView: View {
     private let slides: [ReminderTutorialSlide] = [
         ReminderTutorialSlide(
             image: "tutorial_bell_intro",
-            title: "La campana",
+            title: "Recordatorios",
             body: "Junto a cada salida encontrarás una campana. Púlsala para configurar un aviso antes de que salga el autobús."
         ),
         ReminderTutorialSlide(
@@ -44,7 +44,7 @@ struct ReminderTutorialView: View {
         ),
         ReminderTutorialSlide(
             image: "tutorial_reminders_screen",
-            title: "Tus recordatorios",
+            title: "Gestiona tus recordatorios",
             body: "Aquí puedes ver y cancelar recordatorios activos, y ajustar la antelación con la que quieres recibir el aviso."
         ),
     ]
