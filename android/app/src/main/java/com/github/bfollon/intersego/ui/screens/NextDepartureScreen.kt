@@ -154,7 +154,7 @@ fun NextDepartureScreen(
     primaryViewId: String? = null,
     reminderService: ReminderService? = null,
     onBack: () -> Unit,
-    onDaySchedule: (routeId: String, direction: String, variantLabel: String?) -> Unit = { _, _, _ -> }
+    onDaySchedule: (routeId: String, direction: String, variantLabel: String?, overrideDayType: DayType?) -> Unit = { _, _, _, _ -> }
 ) {
     val context = LocalContext.current
     val pdfService = remember { PDFProcessingService(context) }
@@ -532,12 +532,22 @@ fun NextDepartureScreen(
                         )
                     }
 
-                    // "Ver horario completo" — only when there's a clear single route context
-                    if (hasTodayDepartures && activeSingleRoute != null) {
+                    // "Ver horario completo" — show whenever there's a clear single route context,
+                    // even when all of today's buses have passed or there's no service today.
+                    if (activeSingleRoute != null) {
                         item {
+                            // When showing a future day, link to that day's full schedule.
+                            val scheduleOverrideDayType = if (daysAhead > 0) {
+                                val cal = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, daysAhead) }
+                                when (cal.get(Calendar.DAY_OF_WEEK)) {
+                                    Calendar.SATURDAY -> DayType.SATURDAY
+                                    Calendar.SUNDAY -> DayType.SUNDAY
+                                    else -> DayType.WEEKDAY
+                                }
+                            } else null
                             OutlinedButton(
                                 onClick = {
-                                    onDaySchedule(activeSingleRoute.id, direction, selectedVariantLabel)
+                                    onDaySchedule(activeSingleRoute.id, direction, selectedVariantLabel, scheduleOverrideDayType)
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()

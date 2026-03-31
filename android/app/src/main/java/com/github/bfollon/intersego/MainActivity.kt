@@ -642,9 +642,10 @@ fun AppNavigation() {
                 primaryViewId = primaryViewId,
                 reminderService = reminderService,
                 onBack = { navController.popBackStack() },
-                onDaySchedule = { routeId, direction, variantLabel ->
+                onDaySchedule = { routeId, direction, variantLabel, overrideDayType ->
                     val label = variantLabel ?: "all"
-                    navController.navigate("day_schedule/$routeId/${stop.id}/$direction/$label/none")
+                    val dayTypeParam = overrideDayType?.name ?: "none"
+                    navController.navigate("day_schedule/$routeId/${stop.id}/$direction/$label/$dayTypeParam")
                 }
             )
         }

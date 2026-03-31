@@ -149,7 +149,7 @@ struct NextDepartureView: View {
         var result: [String] = []
         for routeData in activeRoutesData {
             for t in routeData.timetables {
-                guard let dir = t.direction else { continue }
+                guard let dir = t .direction else { continue }
                 if seen.insert(dir).inserted { result.append(dir) }
             }
         }
@@ -318,10 +318,18 @@ struct NextDepartureView: View {
                 TimesDisclaimerCard()
                     .padding(.horizontal, 16).padding(.top, 16)
 
-                if let activeRoute = singleActiveRoute, !todayDepartures.isEmpty {
+                if let activeRoute = singleActiveRoute {
+                    let scheduleOverrideDayType: DayType? = {
+                        guard info.daysAhead > 0,
+                              let futureDate = Calendar.current.date(byAdding: .day, value: info.daysAhead, to: Date())
+                        else { return nil }
+                        let weekday = Calendar.current.component(.weekday, from: futureDate)
+                        return weekday == 7 ? .saturday : (weekday == 1 ? .sunday : .weekday)
+                    }()
                     NavigationLink(value: DayScheduleSelection(
                         route: activeRoute, stop: stop, direction: direction,
                         departureLabel: viewDepartureLabel(for: activeRoute.id),
+                        overrideDayType: scheduleOverrideDayType
                     )) {
                         HStack(spacing: 8) {
                             Image(systemName: "clock.arrow.2.circlepath").font(.subheadline)
