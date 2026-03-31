@@ -230,13 +230,14 @@ fun NextDepartureScreen(
 
     val showMultiRoute = loadedRoutes.size > 1
 
-    // Available directions across selected/all routes
-    val availableDirections = remember(loadedRoutes, selectedRouteId) {
+    // Available directions: only from timetables that actually serve this stop
+    val availableDirections = remember(loadedRoutes, selectedRouteId, stop.id) {
         val routesToUse = if (selectedRouteId != null)
             loadedRoutes.filter { it.route.id == selectedRouteId }
         else loadedRoutes
         val seen = linkedSetOf<String>()
         routesToUse.flatMap { it.timetables }
+            .filter { it.stopId == stop.id }
             .forEach { t -> t.direction?.let { seen.add(it) } }
         seen.toList()
     }
