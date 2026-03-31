@@ -149,7 +149,7 @@ struct NextDepartureView: View {
         var result: [String] = []
         for routeData in activeRoutesData {
             for t in routeData.timetables {
-                guard let dir = t .direction else { continue }
+                guard let dir = t.direction, t.stopId == stop.id else { continue }
                 if seen.insert(dir).inserted { result.append(dir) }
             }
         }
@@ -157,8 +157,7 @@ struct NextDepartureView: View {
     }
 
     private var swapDirection: String? {
-        guard availableDirections.count == 2 else { return nil }
-        return availableDirections.first { $0 != direction }
+        availableDirections.first { $0 != direction }
     }
 
     private var isMultiRoute: Bool { activeRoutesData.count > 1 }
