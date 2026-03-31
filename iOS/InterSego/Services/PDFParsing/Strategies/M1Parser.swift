@@ -40,7 +40,7 @@ class M1Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M1"]),
         mode: .production,
-        version: "1.7",
+        version: "1.8",
     )
 
     // MARK: - Directions
@@ -56,73 +56,18 @@ class M1Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let segovia = BusStop(
-            id: "m1-segovia",
-            name: "Estación de Autobuses",
-            area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431",
-        )
-        static let poligono = BusStop(
-            id: "m1-poligono",
-            name: "Polígono Industrial",
-            area: "Valverde del Majano",
-            coordinates: "40.957976, -4.198156",
-        )
-        static let poligono2 = BusStop(
-            id: "m1-poligono-2",
-            name: "Polígono Industrial 2",
-            area: "Valverde del Majano",
-            coordinates: "40.957554, -4.206457",
-        )
-        static let casino = BusStop(
-            id: "m1-casino",
-            name: "Casino",
-            area: "Casino de la unión",
-            coordinates: "40.965154, -4.209251",
-        )
-        static let valverde = BusStop(
-            id: "m1-valverde",
-            name: "Valverde de Majano",
-            area: "Valverde del Majano",
-            coordinates: "40.956274, -4.235343",
-        )
-        static let abades = BusStop(
-            id: "m1-abades",
-            name: "Abades",
-            area: "Abades",
-            coordinates: "40.915804, -4.267038",
-        )
-        static let martinMiguel = BusStop(
-            id: "m1-martin-miguel",
-            name: "Martín Miguel",
-            area: "Martín Miguel",
-            coordinates: "40.951889, -4.268660",
-        )
-        static let garcillan = BusStop(
-            id: "m1-garcillan",
-            name: "Garcillán",
-            area: "Garcillán",
-            coordinates: "40.976809, -4.264724",
-        )
-        /// Circular return stops — same physical locations, distinct IDs for route positioning
-        static let segoviaReturn = BusStop(
-            id: "m1-segovia-return",
-            name: "Estación de Autobuses",
-            area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431",
-        )
-        static let poligonoBIn = BusStop(
-            id: "m1-poligono-b-in",
-            name: "Polígono Industrial",
-            area: "Valverde del Majano",
-            coordinates: "40.957976, -4.198156",
-        )
-        static let poligono2BIn = BusStop(
-            id: "m1-poligono-2-b-in",
-            name: "Polígono Industrial 2",
-            area: "Valverde del Majano",
-            coordinates: "40.957554, -4.206457",
-        )
+        static let segovia = BusStopRegistry.estacionAutobuses
+        static let poligono = BusStopRegistry.poligonoIndM1
+        static let poligono2 = BusStopRegistry.poligonoIndM1B
+        static let casino = BusStopRegistry.casinoUnion
+        static let valverde = BusStopRegistry.valverdeMajano
+        static let abades = BusStopRegistry.abades
+        static let martinMiguel = BusStopRegistry.martinMiguel
+        static let garcillan = BusStopRegistry.garcillan
+        /// Circular return stops — same canonical stops; direction string distinguishes timetable buckets
+        static let segoviaReturn = BusStopRegistry.estacionAutobuses
+        static let poligonoBIn = BusStopRegistry.poligonoIndM1
+        static let poligono2BIn = BusStopRegistry.poligonoIndM1B
     }
 
     /// Direction A: Segovia → (all villages) → Garcillán → Segovia (return)

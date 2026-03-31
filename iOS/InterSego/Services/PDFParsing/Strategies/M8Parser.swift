@@ -44,7 +44,7 @@ class M8Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M8"]),
         mode: .production,
-        version: "1.0",
+        version: "1.1",
     )
 
     // MARK: - Directions
@@ -55,181 +55,29 @@ class M8Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        /// Outbound Segovia cluster (4 sub-stops, +2 min each from anchor)
-        static let outEstacionBus = BusStop(
-            id: "m8-estacion-bus",
-            name: "Estación de Autobuses",
-            area: "Segovia capital",
-            coordinates: "40.944768, -4.121823",
-        )
-        static let outIglesiaStoTomas = BusStop(
-            id: "m8-iglesia-sto-tomas",
-            name: "Iglesia Santo Tomás",
-            area: "Segovia capital",
-            coordinates: "40.941935, -4.118070",
-        )
-        static let outFrenteBarNorte = BusStop(
-            id: "m8-frente-bar-norte",
-            name: "Enfrente Bar Norte",
-            area: "Segovia capital",
-            coordinates: "40.937206, -4.113999",
-        )
-        static let outPlazaToros = BusStop(
-            id: "m8-plaza-de-toros",
-            name: "Plaza de Toros",
-            area: "Segovia capital",
-            coordinates: "40.942093, -4.107603",
-        )
+        /// Segovia cluster (shared outbound/inbound)
+        static let outEstacionBus = BusStopRegistry.estacionAutobuses
+        static let outIglesiaStoTomas = BusStopRegistry.iglesiaStTomas
+        static let outFrenteBarNorte = BusStopRegistry.frenteBarNorte
+        static let outPlazaToros = BusStopRegistry.plazaDeToros
 
-        /// Main route stops (outbound)
-        static let carrascalejo = BusStop(
-            id: "m8-carrascalejo",
-            name: "Carrascalejo",
-            area: "La Granja",
-            coordinates: "40.922847, -4.078270",
-        )
-        static let penasDElErizo = BusStop(
-            id: "m8-penas-del-erizo",
-            name: "Peñas del Erizo",
-            area: "La Granja",
-            coordinates: "40.914155, -4.066063",
-        )
-        static let cLaFuencisla = BusStop(
-            id: "m8-c-la-fuencisla",
-            name: "C. La Fuencisla",
-            area: "La Granja",
-            coordinates: "40.917151, -4.060857",
-        )
-        static let parqueRobledo = BusStop(
-            id: "m8-parque-robledo",
-            name: "Parque Robledo",
-            area: "La Granja",
-            coordinates: "40.910103, -4.058763",
-        )
-        static let fabricaCristal = BusStop(
-            id: "m8-fabrica-cristal",
-            name: "Fábrica Cristal",
-            area: "La Granja",
-            coordinates: "40.902789, -4.006773",
-        )
-        static let piscinas = BusStop(
-            id: "m8-piscinas",
-            name: "Piscinas",
-            area: "La Granja",
-            coordinates: "40.909126, -4.009200",
-        )
-        static let ptasSegovia = BusStop(
-            id: "m8-ptas-segovia",
-            name: "Ptas. Segovia",
-            area: "La Granja",
-            coordinates: "40.900325, -4.009467",
-        )
-        static let laPradera = BusStop(
-            id: "m8-la-pradera",
-            name: "La Pradera",
-            area: "Valsaín",
-            coordinates: "40.878114, -4.018356",
-        )
-        static let fronton = BusStop(
-            id: "m8-fronton",
-            name: "Frontón",
-            area: "Valsaín",
-            coordinates: "40.875741, -4.021955",
-        )
-        static let plaza = BusStop(
-            id: "m8-plaza",
-            name: "Plaza",
-            area: "Valsaín",
-            coordinates: "40.878374, -4.027028",
-        )
+        /// Main route stops
+        static let carrascalejo = BusStopRegistry.urbCarrascalejo
+        static let penasDElErizo = BusStopRegistry.penasDelErizo
+        static let cLaFuencisla = BusStopRegistry.cLaFuencisla
+        static let parqueRobledo = BusStopRegistry.parqueRobledo
+        static let fabricaCristal = BusStopRegistry.fabricaCristal
+        static let piscinas = BusStopRegistry.piscinas
+        static let ptasSegovia = BusStopRegistry.ptasSegovia
+        static let laPradera = BusStopRegistry.laPradera
+        static let fronton = BusStopRegistry.fronton
+        static let plaza = BusStopRegistry.plazaValsain
 
-        /// Inbound stops (with -in suffix)
-        static let plazaIn = BusStop(
-            id: "m8-plaza-in",
-            name: "Plaza",
-            area: "Valsaín",
-            coordinates: "40.878374, -4.027028",
-        )
-        static let frontonIn = BusStop(
-            id: "m8-fronton-in",
-            name: "Frontón",
-            area: "Valsaín",
-            coordinates: "40.875741, -4.021955",
-        )
-        static let laPraderaIn = BusStop(
-            id: "m8-la-pradera-in",
-            name: "La Pradera",
-            area: "Valsaín",
-            coordinates: "40.878114, -4.018356",
-        )
-        static let fabricaCristalIn = BusStop(
-            id: "m8-fabrica-cristal-in",
-            name: "Fábrica Cristal",
-            area: "La Granja",
-            coordinates: "40.902789, -4.006773",
-        )
-        static let piscinasIn = BusStop(
-            id: "m8-piscinas-in",
-            name: "Piscinas",
-            area: "La Granja",
-            coordinates: "40.909126, -4.009200",
-        )
-        static let ptasSegoviaIn = BusStop(
-            id: "m8-ptas-segovia-in",
-            name: "Ptas. Segovia",
-            area: "La Granja",
-            coordinates: "40.900325, -4.009467",
-        )
-        static let parqueRobledoIn = BusStop(
-            id: "m8-parque-robledo-in",
-            name: "Parque Robledo",
-            area: "La Granja",
-            coordinates: "40.910103, -4.058763",
-        )
-        static let cLaFuencislaIn = BusStop(
-            id: "m8-c-la-fuencisla-in",
-            name: "C. La Fuencisla",
-            area: "La Granja",
-            coordinates: "40.917151, -4.060857",
-        )
-        static let penasDElErizoIn = BusStop(
-            id: "m8-penas-del-erizo-in",
-            name: "Peñas del Erizo",
-            area: "La Granja",
-            coordinates: "40.914155, -4.066063",
-        )
-        static let carrascalejoIn = BusStop(
-            id: "m8-carrascalejo-in",
-            name: "Carrascalejo",
-            area: "La Granja",
-            coordinates: "40.922847, -4.078270",
-        )
-
-        /// Inbound Segovia cluster (4 sub-stops, +2 min each from anchor)
-        static let inPlazaToros = BusStop(
-            id: "m8-plaza-de-toros-in",
-            name: "Plaza de Toros",
-            area: "Segovia capital",
-            coordinates: "40.942093, -4.107603",
-        )
-        static let inFrenteBarNorte = BusStop(
-            id: "m8-frente-bar-norte-in",
-            name: "Enfrente Bar Norte",
-            area: "Segovia capital",
-            coordinates: "40.937206, -4.113999",
-        )
-        static let inIglesiaStoTomas = BusStop(
-            id: "m8-iglesia-sto-tomas-in",
-            name: "Iglesia Santo Tomás",
-            area: "Segovia capital",
-            coordinates: "40.941935, -4.118070",
-        )
-        static let inEstacionBus = BusStop(
-            id: "m8-estacion-bus-in",
-            name: "Estación de Autobuses",
-            area: "Segovia capital",
-            coordinates: "40.944768, -4.121823",
-        )
+        // Inbound aliases (same canonical stops)
+        static let inPlazaToros = BusStopRegistry.plazaDeToros
+        static let inFrenteBarNorte = BusStopRegistry.frenteBarNorte
+        static let inIglesiaStoTomas = BusStopRegistry.iglesiaStTomas
+        static let inEstacionBus = BusStopRegistry.estacionAutobuses
     }
 
     // MARK: - Stop Lists
@@ -246,10 +94,10 @@ class M8Parser: CapableParser, RouteStopsProvider {
     /// Inbound: Valsaín → La Granja → Segovia cluster
     /// Note: F. Cristal appears before Piscinas in inbound (one-way routing through La Granja)
     static let m8Inbound: [BusStop] = [
-        Stops.plazaIn, Stops.frontonIn, Stops.laPraderaIn,
-        Stops.fabricaCristalIn, Stops.piscinasIn, Stops.ptasSegoviaIn,
-        Stops.parqueRobledoIn, Stops.cLaFuencislaIn,
-        Stops.penasDElErizoIn, Stops.carrascalejoIn,
+        Stops.plaza, Stops.fronton, Stops.laPradera,
+        Stops.fabricaCristal, Stops.piscinas, Stops.ptasSegovia,
+        Stops.parqueRobledo, Stops.cLaFuencisla,
+        Stops.penasDElErizo, Stops.carrascalejo,
         Stops.inPlazaToros, Stops.inFrenteBarNorte,
         Stops.inIglesiaStoTomas, Stops.inEstacionBus,
     ]

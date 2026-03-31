@@ -42,7 +42,7 @@ class M5Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M5"]),
         mode: .production,
-        version: "1.0",
+        version: "1.1",
     )
 
     // MARK: - Directions
@@ -53,92 +53,13 @@ class M5Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        static let segovia = BusStop(
-            id: "m5-segovia",
-            name: "Segovia",
-            area: "Segovia capital",
-            coordinates: "40.944768, -4.121823",
-        )
-        static let tizneros = BusStop(
-            id: "m5-tizneros",
-            name: "Tizneros",
-            area: "Tizneros",
-            coordinates: "40.991521, -4.055240",
-        )
-        static let espirdo = BusStop(
-            id: "m5-espirdo",
-            name: "Espirdo",
-            area: "Espirdo",
-            coordinates: "40.996957, -4.073623",
-        )
-        static let laHiguera = BusStop(
-            id: "m5-la-higuera",
-            name: "La Higuera",
-            area: "La Higuera",
-            coordinates: "41.016117, -4.080770",
-        )
-        static let brieva = BusStop(
-            id: "m5-brieva",
-            name: "Brieva",
-            area: "Brieva",
-            coordinates: "41.035677, -4.052387",
-        )
-        static let basardilla = BusStop(
-            id: "m5-basardilla",
-            name: "Basardilla",
-            area: "Basardilla",
-            coordinates: "41.027220, -4.025058",
-        )
-        static let stoDomingoPiron = BusStop(
-            id: "m5-sto-domingo-piron",
-            name: "Sto. Domingo de Pirón",
-            area: "Sto. Domingo de Pirón",
-            coordinates: "41.041438, -3.989562",
-        )
-
-        /// Inbound copies with -in suffix
-        static let segoviaIn = BusStop(
-            id: "m5-segovia-in",
-            name: "Segovia",
-            area: "Segovia capital",
-            coordinates: "40.944768, -4.121823",
-        )
-        static let tiznerosIn = BusStop(
-            id: "m5-tizneros-in",
-            name: "Tizneros",
-            area: "Tizneros",
-            coordinates: "40.991521, -4.055240",
-        )
-        static let espirdoIn = BusStop(
-            id: "m5-espirdo-in",
-            name: "Espirdo",
-            area: "Espirdo",
-            coordinates: "40.996957, -4.073623",
-        )
-        static let laHigueraIn = BusStop(
-            id: "m5-la-higuera-in",
-            name: "La Higuera",
-            area: "La Higuera",
-            coordinates: "41.016117, -4.080770",
-        )
-        static let brievaIn = BusStop(
-            id: "m5-brieva-in",
-            name: "Brieva",
-            area: "Brieva",
-            coordinates: "41.035677, -4.052387",
-        )
-        static let basardillaIn = BusStop(
-            id: "m5-basardilla-in",
-            name: "Basardilla",
-            area: "Basardilla",
-            coordinates: "41.027220, -4.025058",
-        )
-        static let stoDomingoPironIn = BusStop(
-            id: "m5-sto-domingo-piron-in",
-            name: "Sto. Domingo de Pirón",
-            area: "Sto. Domingo de Pirón",
-            coordinates: "41.041438, -3.989562",
-        )
+        static let segovia = BusStopRegistry.estacionAutobuses
+        static let tizneros = BusStopRegistry.tizneros
+        static let espirdo = BusStopRegistry.espirdo
+        static let laHiguera = BusStopRegistry.laHiguera
+        static let brieva = BusStopRegistry.brieva
+        static let basardilla = BusStopRegistry.basardilla
+        static let stoDomingoPiron = BusStopRegistry.stoDomingoPiron
     }
 
     // Outbound: Segovia → Sto. Domingo de Pirón
@@ -149,8 +70,8 @@ class M5Parser: CapableParser, RouteStopsProvider {
 
     // Inbound: Sto. Domingo de Pirón → Segovia
     static let m5Inbound: [BusStop] = [
-        Stops.stoDomingoPironIn, Stops.basardillaIn, Stops.brievaIn,
-        Stops.laHigueraIn, Stops.espirdoIn, Stops.tiznerosIn, Stops.segoviaIn,
+        Stops.stoDomingoPiron, Stops.basardilla, Stops.brieva,
+        Stops.laHiguera, Stops.espirdo, Stops.tizneros, Stops.segovia,
     ]
 
     // MARK: - Protocol Conformance

@@ -22,10 +22,9 @@ enum HomeDestination: Hashable {
 }
 
 struct StopSelection: Hashable {
-    let route: BusRoute
     let stop: BusStop
-    let routeViews: [RouteView]
-    let currentViewId: String
+    let primaryRouteId: String?
+    let primaryViewId: String?
 }
 
 struct MapSelection: Hashable {
@@ -113,10 +112,9 @@ struct ContentView: View {
                 }
                 .navigationDestination(for: StopSelection.self) { selection in
                     NextDepartureView(
-                        route: selection.route,
                         stop: selection.stop,
-                        routeViews: selection.routeViews,
-                        currentViewId: selection.currentViewId,
+                        primaryRouteId: selection.primaryRouteId,
+                        primaryViewId: selection.primaryViewId,
                     )
                 }
                 .navigationDestination(for: DayScheduleSelection.self) { selection in
@@ -194,10 +192,9 @@ struct ContentView: View {
                         } : nil,
                         onStopSelected: { stop, viewId in
                             navigationPath.append(StopSelection(
-                                route: route,
                                 stop: stop,
-                                routeViews: resolvedViews,
-                                currentViewId: viewId,
+                                primaryRouteId: route.id,
+                                primaryViewId: viewId,
                             ))
                         },
                         onMapSelected: { viewId in
@@ -237,10 +234,9 @@ struct ContentView: View {
                 initialViewId: initialViewId,
                 onStopSelected: { stop, viewId in
                     navigationPath.append(StopSelection(
-                        route: route,
                         stop: stop,
-                        routeViews: fallbackViews,
-                        currentViewId: viewId,
+                        primaryRouteId: route.id,
+                        primaryViewId: viewId,
                     ))
                 },
             )
@@ -277,10 +273,9 @@ struct ContentView: View {
                             let entry = selectedEntry
                             if entry == nil || entry!.isActiveToday {
                                 navigationPath.append(StopSelection(
-                                    route: route,
                                     stop: stop,
-                                    routeViews: views,
-                                    currentViewId: viewId,
+                                    primaryRouteId: route.id,
+                                    primaryViewId: viewId,
                                 ))
                             } else {
                                 let direction = views.first { $0.id == viewId }?.direction ?? ""
@@ -346,10 +341,9 @@ struct ContentView: View {
                     let entry = selectedEntry
                     if entry == nil || entry!.isActiveToday {
                         navigationPath.append(StopSelection(
-                            route: route,
                             stop: stop,
-                            routeViews: views,
-                            currentViewId: viewId,
+                            primaryRouteId: route.id,
+                            primaryViewId: viewId,
                         ))
                     } else {
                         let direction = views.first { $0.id == viewId }?.direction ?? ""

@@ -42,7 +42,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M2"]),
         mode: .production,
-        version: "1.0",
+        version: "1.1",
     )
 
     // MARK: - Directions
@@ -53,56 +53,15 @@ class M2Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        /// Outbound stops
-        static let segovia = BusStop(
-            id: "m2-segovia",
-            name: "Estación de Autobuses",
-            area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431",
-        )
-        static let casino = BusStop(
-            id: "m2-casino",
-            name: "Casino",
-            area: "Casino de la Unión",
-            coordinates: "40.965154, -4.209251",
-        )
-        static let hontanares = BusStop(
-            id: "m2-hontanares",
-            name: "Hontanares de Eresma",
-            area: "Hontanares de Eresma",
-            coordinates: "40.983628, -4.204160",
-        )
-        static let losHuertos = BusStop(
-            id: "m2-los-huertos",
-            name: "Los Huertos",
-            area: "Los Huertos",
-            coordinates: "41.009124, -4.219216",
-        )
-        static let valseca = BusStop(
-            id: "m2-valseca",
-            name: "Valseca",
-            area: "Valseca",
-            coordinates: "40.999306, -4.174266",
-        )
-        /// Return-leg stops — same physical locations, distinct IDs for route positioning
-        static let hontanaresToReturn = BusStop(
-            id: "m2-hontanares-return",
-            name: "Hontanares de Eresma",
-            area: "Hontanares de Eresma",
-            coordinates: "40.983628, -4.204160",
-        )
-        static let casinoReturn = BusStop(
-            id: "m2-casino-return",
-            name: "Casino",
-            area: "Casino de la Unión",
-            coordinates: "40.965154, -4.209251",
-        )
-        static let segoviaReturn = BusStop(
-            id: "m2-segovia-return",
-            name: "Estación de Autobuses",
-            area: "Segovia Capital",
-            coordinates: "40.944973, -4.122431",
-        )
+        static let segovia = BusStopRegistry.estacionAutobuses
+        static let casino = BusStopRegistry.casinoUnion
+        static let hontanares = BusStopRegistry.hontanares
+        static let losHuertos = BusStopRegistry.losHuertos
+        static let valseca = BusStopRegistry.valseca
+        /// Return-leg stops — same canonical stops; direction string distinguishes timetable buckets
+        static let hontanaresToReturn = BusStopRegistry.hontanares
+        static let casinoReturn = BusStopRegistry.casinoUnion
+        static let segoviaReturn = BusStopRegistry.estacionAutobuses
     }
 
     // circularA: outbound view — Segovia → Casino → Hontanares → Los Huertos → Valseca
@@ -112,7 +71,6 @@ class M2Parser: CapableParser, RouteStopsProvider {
     ]
 
     // circularB: return view — Los Huertos → Hontanares → Valseca → Casino → Segovia
-    // Note: losHuertos and valseca share stop IDs with circularA (same physical stops).
     static let m2CircularB: [BusStop] = [
         Stops.losHuertos, Stops.hontanaresToReturn, Stops.valseca,
         Stops.casinoReturn, Stops.segoviaReturn,

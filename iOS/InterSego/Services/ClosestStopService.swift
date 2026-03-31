@@ -49,19 +49,16 @@ final class ClosestStopService {
         let userLocation = try await locationCoordinator.requestLocation()
         DebugConfig.debugPrint("ClosestStopService: User location \(userLocation.coordinate.latitude), \(userLocation.coordinate.longitude)")
 
-        // 2. Collect all (route, stop, views) candidates from every supported route
+        // 2. Collect all unique stop candidates from every supported route
         let dayType = TimetableService.shared.getCurrentDayType()
         let supportedRouteIds = await PDFProcessingService.shared.getSupportedRoutes()
-        let allRoutes = BusRouteRegistry.knownRoutes()
 
         var candidates: [StopCandidate] = []
+        // Global dedup: each canonical stop ID appears at most once across all routes
+        var seenStopIds = Set<String>()
 
         for routeId in supportedRouteIds {
-            guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
             let views = await PDFProcessingService.shared.getRouteViews(routeId: routeId, dayType: dayType)
-            guard !views.isEmpty else { continue }
-
-            var seenStopIds = Set<String>()
 
             for view in views {
                 for viewStop in view.stops {
@@ -73,8 +70,7 @@ final class ClosestStopService {
                     let stopLocation = CLLocation(latitude: lat, longitude: lon)
                     let distance = userLocation.distance(from: stopLocation)
                     candidates.append(StopCandidate(
-                        route: route, stop: stop,
-                        routeViews: views, viewId: view.id,
+                        stop: stop,
                         distance: distance,
                     ))
                 }
@@ -98,12 +94,12 @@ final class ClosestStopService {
             winner = await pickBySoonestDeparture(from: tied, dayType: dayType)
         }
 
-        DebugConfig.debugPrint("ClosestStopService: Winner → \(winner.route.id) / \(winner.stop.name)")
+        DebugConfig.debugPrint("ClosestStopService: Winner → \(winner.stop.name)")
+        // No primaryRouteId: closest stop shows all lines
         return StopSelection(
-            route: winner.route,
             stop: winner.stop,
-            routeViews: winner.routeViews,
-            currentViewId: winner.viewId,
+            primaryRouteId: nil,
+            primaryViewId: nil,
         )
     }
 
@@ -117,22 +113,26 @@ final class ClosestStopService {
         var bestMinutesUntil = Int.max
 
         for candidate in candidates {
-            let timetables = await TimetableService.shared.loadTimetables(routeId: candidate.route.id)
-            let stopTimetables = timetables.filter { $0.stopId == candidate.stop.id && $0.dayType == dayType }
+            // Load timetables for all routes serving this stop
+            let routeIds = await PDFProcessingService.shared.getRoutesForStop(stopId: candidate.stop.id)
+            for routeId in routeIds {
+                let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
+                let stopTimetables = timetables.filter { $0.stopId == candidate.stop.id && $0.dayType == dayType }
 
-            for timetable in stopTimetables {
-                guard let next = timetable.getNextDepartures(
-                    currentHour: hour, currentMinute: minute, limit: 1,
-                ).first else { continue }
+                for timetable in stopTimetables {
+                    guard let next = timetable.getNextDepartures(
+                        currentHour: hour, currentMinute: minute, limit: 1,
+                    ).first else { continue }
 
-                let depTotalMinutes = next.hour * 60 + next.minute
-                let until = depTotalMinutes >= currentTotalMinutes
-                    ? depTotalMinutes - currentTotalMinutes
-                    : 1440 - currentTotalMinutes + depTotalMinutes
+                    let depTotalMinutes = next.hour * 60 + next.minute
+                    let until = depTotalMinutes >= currentTotalMinutes
+                        ? depTotalMinutes - currentTotalMinutes
+                        : 1440 - currentTotalMinutes + depTotalMinutes
 
-                if until < bestMinutesUntil {
-                    bestMinutesUntil = until
-                    bestCandidate = candidate
+                    if until < bestMinutesUntil {
+                        bestMinutesUntil = until
+                        bestCandidate = candidate
+                    }
                 }
             }
         }
@@ -142,10 +142,7 @@ final class ClosestStopService {
 }
 
 private struct StopCandidate {
-    let route: BusRoute
     let stop: BusStop
-    let routeViews: [RouteView]
-    let viewId: String
     let distance: Double
 }
 

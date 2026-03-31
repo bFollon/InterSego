@@ -38,7 +38,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M3"]),
         mode: .production,
-        version: "1.0",
+        version: "1.1",
     )
 
     // MARK: - Directions
@@ -49,101 +49,20 @@ class M3Parser: CapableParser, RouteStopsProvider {
     // MARK: - Stops
 
     private enum Stops {
-        /// Segovia cluster — outbound order
-        static let estacionBus = BusStop(
-            id: "m3-estacion-bus",
-            name: "Estación de Autobuses",
-            area: "Segovia capital",
-            coordinates: "40.944768, -4.121823",
-        )
-        static let iglesiaStTomas = BusStop(
-            id: "m3-iglesia-sto-tomas",
-            name: "Iglesia Santo Tomás",
-            area: "Segovia capital",
-            coordinates: "40.941935, -4.118070",
-        )
-        static let frenteBarNorte = BusStop(
-            id: "m3-frente-bar-norte",
-            name: "Frente Bar Norte",
-            area: "Segovia capital",
-            coordinates: "40.937206, -4.113999",
-        )
-        static let plazaToros = BusStop(
-            id: "m3-plaza-toros",
-            name: "Plaza de Toros",
-            area: "Segovia capital",
-            coordinates: "40.942093, -4.107603",
-        )
+        /// Segovia cluster
+        static let estacionBus = BusStopRegistry.estacionAutobuses
+        static let iglesiaStTomas = BusStopRegistry.iglesiaStTomas
+        static let frenteBarNorte = BusStopRegistry.frenteBarNorte
+        static let plazaToros = BusStopRegistry.plazaDeToros
 
         /// Route stops
-        static let urbCarrascalejo = BusStop(
-            id: "m3-urb-carrascalejo",
-            name: "Urb. Carrascalejo",
-            area: "Carrascalejo",
-            coordinates: "40.922847, -4.078270",
-        )
-        static let parqueRobledo = BusStop(
-            id: "m3-parque-robledo",
-            name: "Parque Robledo",
-            area: "Robledo",
-            coordinates: "40.910111, -4.058750",
-        )
-        static let laGranja = BusStop(
-            id: "m3-la-granja",
-            name: "La Granja (Pta de Segovia)",
-            area: "La Granja",
-            coordinates: "40.901389, -4.003333",
-        )
-        static let valsain = BusStop(
-            id: "m3-valsain",
-            name: "Valsain (La Pradera)",
-            area: "Valsaín",
-            coordinates: "40.877500, -4.019444",
-        )
-        static let bocaDelAsno = BusStop(
-            id: "m3-boca-del-asno",
-            name: "Boca del Asno",
-            area: "Valsaín",
-            coordinates: "40.844128, -4.025668",
-        )
-        static let puenteMosquitos = BusStop(
-            id: "m3-puente-mosquitos",
-            name: "Puente de los Mosquitos",
-            area: "Navacerrada",
-            coordinates: "40.823325, -4.017340",
-        )
-        static let navacerrada = BusStop(
-            id: "m3-navacerrada",
-            name: "Navacerrada",
-            area: "Navacerrada",
-            coordinates: "40.780833, -4.008056",
-        )
-
-        /// Segovia cluster — inbound (return) order: reversed cluster + distinct IDs
-        static let plazaTorosIn = BusStop(
-            id: "m3-plaza-toros-in",
-            name: "Plaza de Toros",
-            area: "Segovia capital",
-            coordinates: "40.942093, -4.107603",
-        )
-        static let frenteBarNorteIn = BusStop(
-            id: "m3-frente-bar-norte-in",
-            name: "Frente Bar Norte",
-            area: "Segovia capital",
-            coordinates: "40.937206, -4.113999",
-        )
-        static let iglesiaStTomasIn = BusStop(
-            id: "m3-iglesia-sto-tomas-in",
-            name: "Iglesia Santo Tomás",
-            area: "Segovia capital",
-            coordinates: "40.941935, -4.118070",
-        )
-        static let estacionBusIn = BusStop(
-            id: "m3-estacion-bus-in",
-            name: "Estación de Autobuses",
-            area: "Segovia capital",
-            coordinates: "40.944768, -4.121823",
-        )
+        static let urbCarrascalejo = BusStopRegistry.urbCarrascalejo
+        static let parqueRobledo = BusStopRegistry.parqueRobledo
+        static let laGranja = BusStopRegistry.laGranja
+        static let valsain = BusStopRegistry.valsainPradera
+        static let bocaDelAsno = BusStopRegistry.bocaDelAsno
+        static let puenteMosquitos = BusStopRegistry.puenteMosquitos
+        static let navacerrada = BusStopRegistry.navacerrada
     }
 
     // Outbound: Segovia cluster → ... → Navacerrada
@@ -160,8 +79,8 @@ class M3Parser: CapableParser, RouteStopsProvider {
         Stops.navacerrada, Stops.puenteMosquitos, Stops.bocaDelAsno,
         Stops.valsain, Stops.laGranja, Stops.parqueRobledo,
         Stops.urbCarrascalejo,
-        Stops.plazaTorosIn, Stops.frenteBarNorteIn, Stops.iglesiaStTomasIn,
-        Stops.estacionBusIn,
+        Stops.plazaToros, Stops.frenteBarNorte, Stops.iglesiaStTomas,
+        Stops.estacionBus,
     ]
 
     // MARK: - Protocol Conformance

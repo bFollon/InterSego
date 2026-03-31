@@ -30,6 +30,8 @@ actor PDFProcessingService {
     static let shared = PDFProcessingService()
 
     private var parsers: [String: BusTimetableParser] = [:]
+    /// Maps canonical stop ID → list of route IDs that serve it. Built once at init.
+    private var stopToRoutes: [String: [String]] = [:]
 
     private init() {
         let allParsers: [BusTimetableParser] = [M1Parser(), M2Parser(), M3Parser(), M4Parser(), M5Parser(), M6Parser(), M7Parser(), M8Parser()]
@@ -42,7 +44,16 @@ actor PDFProcessingService {
                 }
             }
         }
-        DebugConfig.debugPrint("PDFProcessingService: Initialized with \(parsers.count) parsers")
+        // Build stop → routes map from all RouteStopsProvider parsers
+        for (routeId, parser) in parsers {
+            guard let provider = parser as? RouteStopsProvider else { continue }
+            let allRouteStops = provider.getRoutesForId(routeId)
+            let uniqueStopIds = Set(allRouteStops.flatMap { $0 }.map(\.id))
+            for stopId in uniqueStopIds {
+                stopToRoutes[stopId, default: []].append(routeId)
+            }
+        }
+        DebugConfig.debugPrint("PDFProcessingService: Initialized with \(parsers.count) parsers, \(stopToRoutes.count) stops indexed")
     }
 
     func parseTimetables(routeId: String) async throws -> [BusTimetable] {
@@ -107,6 +118,11 @@ actor PDFProcessingService {
     func getRouteEntries(routeId: String, today: Date = Date()) -> [RouteSelectorEntry] {
         guard let parser = parsers[routeId] as? RouteStopsProvider else { return [] }
         return parser.getRouteEntries(routeId, today: today)
+    }
+
+    /// Returns all route IDs that serve the given canonical stop ID.
+    func getRoutesForStop(stopId: String) -> [String] {
+        stopToRoutes[stopId] ?? []
     }
 
     func getRouteViews(routeId: String, dayType: DayType) -> [RouteView] {

@@ -68,23 +68,41 @@ private func getTimeOfDay(_ hour: Int) -> TimeOfDay {
     }
 }
 
+// MARK: - Tagged Departure
+
+private struct TaggedDeparture: Identifiable {
+    let id = UUID()
+    let departure: DepartureTime
+    let routeId: String
+    let routeNumber: String
+}
+
+// MARK: - Route Loaded Data
+
+private struct RouteLoadedData {
+    let route: BusRoute
+    let views: [RouteView]
+    let timetables: [BusTimetable]
+}
+
 // MARK: - Departure Info
 
 private struct DepartureInfo {
-    let departure: DepartureTime?
-    let following: [DepartureTime]
+    let departure: TaggedDeparture?
+    let following: [TaggedDeparture]
     let daysAhead: Int // 0 = today, 1 = tomorrow, 2+ = future
 }
 
 // MARK: - Next Departure View
 
 struct NextDepartureView: View {
-    let route: BusRoute
     let stop: BusStop
-    let routeViews: [RouteView]
+    let primaryRouteId: String?
+    let primaryViewId: String?
 
-    @State private var currentViewId: String
-    @State private var timetables: [BusTimetable] = []
+    @State private var direction: String = ""
+    @State private var routesData: [RouteLoadedData] = []
+    @State private var selectedRouteId: String? = nil
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var currentTime = Date()
@@ -94,29 +112,11 @@ struct NextDepartureView: View {
     @State private var showReminderAlert = false
     @AppStorage("bellTutorialShown") private var bellTutorialShown = false
     @State private var showBellTip = false
-    @Environment(\.dismiss) private var dismiss
 
-    init(route: BusRoute, stop: BusStop, routeViews: [RouteView], currentViewId: String) {
-        self.route = route
+    init(stop: BusStop, primaryRouteId: String?, primaryViewId: String?) {
         self.stop = stop
-        self.routeViews = routeViews
-        _currentViewId = State(initialValue: currentViewId)
-    }
-
-    private var activeView: RouteView? {
-        routeViews.first { $0.id == currentViewId } ?? routeViews.first
-    }
-
-    private var direction: String {
-        activeView?.direction ?? ""
-    }
-
-    private var selectedVariantLabel: String? {
-        activeView?.departureLabel
-    }
-
-    private var swapViewId: String? {
-        activeView?.swapAction?.targetViewId
+        self.primaryRouteId = primaryRouteId
+        self.primaryViewId = primaryViewId
     }
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
@@ -137,22 +137,61 @@ struct NextDepartureView: View {
         }
     }
 
-    private var todayDepartures: [DepartureTime] {
-        let matching = timetables.filter { timetable in
-            currentDayTypes.contains(timetable.dayType)
-                && timetable.stopId == stop.id
-                && timetable.direction == direction
+    private var activeRoutesData: [RouteLoadedData] {
+        if let id = selectedRouteId {
+            return routesData.filter { $0.route.id == id }
         }
-        return matching.flatMap { $0.seasonalDepartures(weekday: currentWeekday) }.sorted()
+        return routesData
+    }
+
+    private var availableDirections: [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for routeData in activeRoutesData {
+            for t in routeData.timetables {
+                guard let dir = t.direction else { continue }
+                if seen.insert(dir).inserted { result.append(dir) }
+            }
+        }
+        return result
+    }
+
+    private var swapDirection: String? {
+        guard availableDirections.count == 2 else { return nil }
+        return availableDirections.first { $0 != direction }
+    }
+
+    private var isMultiRoute: Bool { activeRoutesData.count > 1 }
+
+    private var singleActiveRoute: BusRoute? {
+        activeRoutesData.count == 1 ? activeRoutesData.first?.route : nil
+    }
+
+    private var todayDepartures: [TaggedDeparture] {
+        var result: [TaggedDeparture] = []
+        for routeData in activeRoutesData {
+            let matching = routeData.timetables.filter { t in
+                currentDayTypes.contains(t.dayType)
+                    && t.stopId == stop.id
+                    && t.direction == direction
+            }
+            for dep in matching.flatMap({ $0.seasonalDepartures(weekday: currentWeekday) }).sorted() {
+                result.append(TaggedDeparture(
+                    departure: dep, routeId: routeData.route.id,
+                    routeNumber: routeData.route.number,
+                ))
+            }
+        }
+        return result.sorted { $0.departure < $1.departure }
     }
 
     private var departureInfo: DepartureInfo {
-        let now = Calendar.current
-        let currentHour = now.component(.hour, from: currentTime)
-        let currentMinute = now.component(.minute, from: currentTime)
+        let cal = Calendar.current
+        let currentHour = cal.component(.hour, from: currentTime)
+        let currentMinute = cal.component(.minute, from: currentTime)
 
         let today = todayDepartures
-        let upcoming = today.filter { $0.isFuture(currentHour: currentHour, currentMinute: currentMinute) }
+        let upcoming = today.filter { $0.departure.isFuture(currentHour: currentHour, currentMinute: currentMinute) }
 
         if !upcoming.isEmpty {
             return DepartureInfo(
@@ -162,21 +201,29 @@ struct NextDepartureView: View {
             )
         }
 
-        // Search up to 7 days ahead
         for daysAhead in 1 ... 7 {
             guard let futureDate = Calendar.current.date(byAdding: .day, value: daysAhead, to: Date()) else { continue }
             let futureWeekday = Calendar.current.component(.weekday, from: futureDate)
             let futureDayTypes = dayTypesForCalendarDay(futureWeekday)
 
-            let departures = timetables
-                .filter { futureDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
-                .flatMap { $0.seasonalDepartures(weekday: futureWeekday) }
-                .sorted()
-
-            if !departures.isEmpty {
+            var tagged: [TaggedDeparture] = []
+            for routeData in activeRoutesData {
+                let deps = routeData.timetables
+                    .filter { futureDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
+                    .flatMap { $0.seasonalDepartures(weekday: futureWeekday) }
+                    .sorted()
+                for dep in deps {
+                    tagged.append(TaggedDeparture(
+                        departure: dep, routeId: routeData.route.id,
+                        routeNumber: routeData.route.number,
+                    ))
+                }
+            }
+            let sorted = tagged.sorted { $0.departure < $1.departure }
+            if !sorted.isEmpty {
                 return DepartureInfo(
-                    departure: departures.first,
-                    following: Array(departures.dropFirst().prefix(5)),
+                    departure: sorted.first,
+                    following: Array(sorted.dropFirst().prefix(5)),
                     daysAhead: daysAhead,
                 )
             }
@@ -187,28 +234,20 @@ struct NextDepartureView: View {
 
     var body: some View {
         content
-            .navigationTitle("Línea \(route.number)")
+            .navigationTitle(stop.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if let targetId = swapViewId {
+                if let target = swapDirection {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            currentViewId = targetId
-                        } label: {
+                        Button { direction = target } label: {
                             Image(systemName: "arrow.up.arrow.down")
                         }
                     }
                 }
             }
-            .task {
-                await loadTimetables()
-            }
-            .task {
-                await refreshReminderKeys()
-            }
-            .onReceive(timer) { time in
-                currentTime = time
-            }
+            .task { await loadTimetables() }
+            .task { await refreshReminderKeys() }
+            .onReceive(timer) { time in currentTime = time }
             .alert("Error al programar el recordatorio", isPresented: $showReminderAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -231,21 +270,14 @@ struct NextDepartureView: View {
     private var content: some View {
         if isLoading {
             VStack(spacing: 16) {
-                ProgressView()
-                    .controlSize(.large)
-                Text("Cargando horarios...")
-                    .foregroundColor(.secondary)
+                ProgressView().controlSize(.large)
+                Text("Cargando horarios...").foregroundColor(.secondary)
             }
         } else if let error = errorMessage {
-            Text(error)
-                .foregroundColor(.red)
-                .multilineTextAlignment(.center)
-                .padding()
+            Text(error).foregroundColor(.red).multilineTextAlignment(.center).padding()
         } else if departureInfo.departure == nil {
             Text("No hay horarios disponibles para esta parada")
-                .font(.title3)
-                .multilineTextAlignment(.center)
-                .padding()
+                .font(.title3).multilineTextAlignment(.center).padding()
         } else {
             departureScrollView
         }
@@ -256,70 +288,64 @@ struct NextDepartureView: View {
         let isToday = info.daysAhead == 0
         return ScrollView {
             VStack(spacing: 0) {
-                StopHeroHeader(route: route, stop: stop, direction: direction)
+                StopHeroHeader(stop: stop, direction: direction)
+
+                if routesData.count > 1 {
+                    LineFilterChips(routes: routesData.map(\.route), selectedRouteId: $selectedRouteId)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                }
 
                 if info.daysAhead > 0 {
                     FutureDayWarningCard(daysAhead: info.daysAhead)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16).padding(.vertical, 12)
                 }
 
                 if let next = info.departure {
                     NextDepartureCard(
-                        departure: next,
+                        tagged: next,
                         currentTime: currentTime,
-                        selectedVariantLabel: selectedVariantLabel,
+                        selectedVariantLabel: variantLabel(for: next),
                         daysAhead: info.daysAhead,
+                        showRouteBadge: isMultiRoute,
                         bellState: isToday ? bellState(for: next) : .off,
                         onBellTap: isToday ? { handleBellTap(for: next) } : nil,
                         onBellLongPress: isToday ? { handleBellLongPress(for: next) } : nil,
                     )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.horizontal, 16).padding(.top, 8)
                 }
 
                 TimesDisclaimerCard()
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
+                    .padding(.horizontal, 16).padding(.top, 16)
 
-                // "Ver horario completo" button — only for today's schedule
-                if !todayDepartures.isEmpty {
+                if let activeRoute = singleActiveRoute, !todayDepartures.isEmpty {
                     NavigationLink(value: DayScheduleSelection(
-                        route: route,
-                        stop: stop,
-                        direction: direction,
-                        departureLabel: selectedVariantLabel,
+                        route: activeRoute, stop: stop, direction: direction,
+                        departureLabel: viewDepartureLabel(for: activeRoute.id),
                     )) {
                         HStack(spacing: 8) {
-                            Image(systemName: "clock.arrow.2.circlepath")
-                                .font(.subheadline)
-                            Text("Ver horario completo")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                            Image(systemName: "clock.arrow.2.circlepath").font(.subheadline)
+                            Text("Ver horario completo").font(.subheadline).fontWeight(.medium)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity).padding(.vertical, 12)
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
+                    .padding(.horizontal, 16).padding(.top, 12)
                 }
 
                 if !info.following.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Siguientes salidas")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .padding(.horizontal, 20)
-
+                            .font(.title2).fontWeight(.bold).padding(.horizontal, 20)
                         DepartureTimeline(
                             departures: info.following,
-                            selectedVariantLabel: selectedVariantLabel,
-                            bellStateFor: isToday ? { d in bellState(for: d) } : nil,
-                            onBellTap: isToday ? { d in handleBellTap(for: d) } : nil,
-                            onBellLongPress: isToday ? { d in handleBellLongPress(for: d) } : nil,
+                            showRouteBadge: isMultiRoute,
+                            selectedVariantLabelFor: { t in variantLabel(for: t) },
+                            bellStateFor: isToday ? { t in bellState(for: t) } : nil,
+                            onBellTap: isToday ? { t in handleBellTap(for: t) } : nil,
+                            onBellLongPress: isToday ? { t in handleBellLongPress(for: t) } : nil,
                         )
                         .padding(.horizontal, 16)
                     }
@@ -332,29 +358,60 @@ struct NextDepartureView: View {
         .overlay(alignment: .bottom) {
             if showBellTip {
                 HStack(spacing: 8) {
-                    Image(systemName: "info.circle.fill")
-                        .foregroundColor(.accentColor)
+                    Image(systemName: "info.circle.fill").foregroundColor(.accentColor)
                     Text("Pulsa la campana para aviso puntual · Mantén pulsado para recordatorio diario")
                         .font(.caption)
                 }
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
+                .padding(.horizontal, 16).padding(.bottom, 12)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .onTapGesture { withAnimation { showBellTip = false } }
             }
         }
     }
 
+    private func variantLabel(for tagged: TaggedDeparture) -> String? {
+        routesData.first { $0.route.id == tagged.routeId }?
+            .views.first { $0.direction == direction }?.departureLabel
+    }
+
+    private func viewDepartureLabel(for routeId: String) -> String? {
+        routesData.first { $0.route.id == routeId }?
+            .views.first { $0.direction == direction }?.departureLabel
+    }
+
     private func loadTimetables() async {
         isLoading = true
         errorMessage = nil
-        let loaded = await TimetableService.shared.loadTimetables(routeId: route.id)
-        if loaded.isEmpty {
-            errorMessage = "Error al cargar horarios"
+
+        let allRouteIds = await PDFProcessingService.shared.getRoutesForStop(stopId: stop.id)
+        let allBusRoutes = BusRouteRegistry.knownRoutes()
+        let dayType = TimetableService.shared.getCurrentDayType()
+
+        var loaded: [RouteLoadedData] = []
+        for routeId in allRouteIds.sorted() {
+            guard let busRoute = allBusRoutes.first(where: { $0.id == routeId }) else { continue }
+            let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
+            guard !timetables.isEmpty else { continue }
+            let views = await PDFProcessingService.shared.getRouteViews(routeId: routeId, dayType: dayType)
+            loaded.append(RouteLoadedData(route: busRoute, views: views, timetables: timetables))
         }
-        timetables = loaded
+
+        routesData = loaded
+
+        if let primaryId = primaryRouteId,
+           let primaryRoute = loaded.first(where: { $0.route.id == primaryId })
+        {
+            let targetView = primaryViewId.flatMap { vid in primaryRoute.views.first { $0.id == vid } }
+                ?? primaryRoute.views.first
+            direction = targetView?.direction ?? loaded.first?.views.first?.direction ?? ""
+            selectedRouteId = primaryId
+        } else {
+            direction = loaded.first?.views.first?.direction ?? ""
+        }
+
+        if loaded.isEmpty { errorMessage = "Error al cargar horarios" }
         isLoading = false
     }
 
@@ -367,30 +424,31 @@ struct NextDepartureView: View {
         dailyReminderKeys = await dailyKeys
     }
 
-    private func bellState(for departure: DepartureTime) -> BellState {
+    private func bellState(for tagged: TaggedDeparture) -> BellState {
         let key = BusReminder.matchKey(
-            routeId: route.id, stopId: stop.id, direction: direction,
-            hour: departure.hour, minute: departure.minute
+            routeId: tagged.routeId, stopId: stop.id, direction: direction,
+            hour: tagged.departure.hour, minute: tagged.departure.minute
         )
         if dailyReminderKeys.contains(key) { return .daily }
         if reminderKeys.contains(key) { return .oneOff }
         return .off
     }
 
-    private func handleBellTap(for departure: DepartureTime) {
+    private func handleBellTap(for tagged: TaggedDeparture) {
         reminderErrorMessage = nil
-        let state = bellState(for: departure)
+        let state = bellState(for: tagged)
+        guard let route = routesData.first(where: { $0.route.id == tagged.routeId })?.route else { return }
         Task {
             if state != .off {
                 await ReminderService.shared.cancelReminder(
-                    routeId: route.id, stopId: stop.id, direction: direction,
-                    hour: departure.hour, minute: departure.minute
+                    routeId: tagged.routeId, stopId: stop.id, direction: direction,
+                    hour: tagged.departure.hour, minute: tagged.departure.minute
                 )
             } else {
                 do {
                     try await ReminderService.shared.scheduleReminder(
-                        departure: departure, stop: stop, route: route, direction: direction,
-                        dayType: currentDayType
+                        departure: tagged.departure, stop: stop, route: route,
+                        direction: direction, dayType: currentDayType
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription
@@ -401,28 +459,27 @@ struct NextDepartureView: View {
         }
     }
 
-    private func handleBellLongPress(for departure: DepartureTime) {
+    private func handleBellLongPress(for tagged: TaggedDeparture) {
         reminderErrorMessage = nil
-        let state = bellState(for: departure)
+        let state = bellState(for: tagged)
+        guard let route = routesData.first(where: { $0.route.id == tagged.routeId })?.route else { return }
         Task {
             if state == .daily {
-                // Daily is set — long press cancels
                 await ReminderService.shared.cancelReminder(
-                    routeId: route.id, stopId: stop.id, direction: direction,
-                    hour: departure.hour, minute: departure.minute
+                    routeId: tagged.routeId, stopId: stop.id, direction: direction,
+                    hour: tagged.departure.hour, minute: tagged.departure.minute
                 )
             } else {
-                // Cancel any one-off first, then schedule daily
                 if state == .oneOff {
                     await ReminderService.shared.cancelReminder(
-                        routeId: route.id, stopId: stop.id, direction: direction,
-                        hour: departure.hour, minute: departure.minute
+                        routeId: tagged.routeId, stopId: stop.id, direction: direction,
+                        hour: tagged.departure.hour, minute: tagged.departure.minute
                     )
                 }
                 do {
                     try await ReminderService.shared.scheduleReminder(
-                        departure: departure, stop: stop, route: route, direction: direction,
-                        isDaily: true, dayType: currentDayType
+                        departure: tagged.departure, stop: stop, route: route,
+                        direction: direction, isDaily: true, dayType: currentDayType
                     )
                 } catch {
                     reminderErrorMessage = error.localizedDescription
@@ -438,33 +495,63 @@ struct NextDepartureView: View {
 
 private enum BellState { case off, oneOff, daily }
 
+// MARK: - Line Filter Chips
+
+private struct LineFilterChips: View {
+    let routes: [BusRoute]
+    @Binding var selectedRouteId: String?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                FilterChip(label: "Todas", isSelected: selectedRouteId == nil) {
+                    selectedRouteId = nil
+                }
+                ForEach(routes, id: \.id) { route in
+                    FilterChip(label: route.number, isSelected: selectedRouteId == route.id) {
+                        selectedRouteId = route.id
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct FilterChip: View {
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor : Color(.systemGray5))
+                .foregroundColor(isSelected ? .white : .primary)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: - Stop Hero Header
 
 private struct StopHeroHeader: View {
-    let route: BusRoute
     let stop: BusStop
     let direction: String
 
     private var directionLabel: String {
-        if route.isCircular {
-            return direction
-        }
-        let destination = direction.split(separator: "→").last?.trimmingCharacters(in: .whitespaces) ?? direction
+        let parts = direction.split(separator: "→")
+        guard parts.count >= 2 else { return direction }
+        let destination = parts.last?.trimmingCharacters(in: .whitespaces) ?? direction
         return "Dirección \(destination)"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Route badge
-            Text("Línea \(route.number)")
-                .font(.caption)
-                .fontWeight(.bold)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.accentColor)
-                .foregroundColor(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-
             // Stop name
             Text(stop.name)
                 .font(.title)
@@ -685,13 +772,16 @@ private struct BellButton: View {
 // MARK: - Next Departure Card
 
 private struct NextDepartureCard: View {
-    let departure: DepartureTime
+    let tagged: TaggedDeparture
     let currentTime: Date
     let selectedVariantLabel: String?
     let daysAhead: Int
+    let showRouteBadge: Bool
     var bellState: BellState = .off
     var onBellTap: (() -> Void)? = nil
     var onBellLongPress: (() -> Void)? = nil
+
+    private var departure: DepartureTime { tagged.departure }
 
     private var minutesUntil: Int {
         let cal = Calendar.current
@@ -736,6 +826,10 @@ private struct NextDepartureCard: View {
                     .font(.headline)
 
                 DepartureTimeBadge(time: departure.displayString)
+
+                if showRouteBadge {
+                    RouteBadge(number: tagged.routeNumber)
+                }
 
                 if showVariantLabel, let label = departure.variantLabel {
                     Text(label)
@@ -782,6 +876,23 @@ private struct NextDepartureCard: View {
     }
 }
 
+// MARK: - Route Badge
+
+private struct RouteBadge: View {
+    let number: String
+
+    var body: some View {
+        Text(number)
+            .font(.caption2)
+            .fontWeight(.bold)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.accentColor)
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+}
+
 // MARK: - Departure Time Badge
 
 private struct DepartureTimeBadge: View {
@@ -823,15 +934,17 @@ private struct TimeOfDayIndicator: View {
 // MARK: - Departure Timeline
 
 private struct DepartureTimeline: View {
-    let departures: [DepartureTime]
-    let selectedVariantLabel: String?
-    var bellStateFor: ((DepartureTime) -> BellState)? = nil
-    var onBellTap: ((DepartureTime) -> Void)? = nil
-    var onBellLongPress: ((DepartureTime) -> Void)? = nil
+    let departures: [TaggedDeparture]
+    let showRouteBadge: Bool
+    var selectedVariantLabelFor: ((TaggedDeparture) -> String?)? = nil
+    var bellStateFor: ((TaggedDeparture) -> BellState)? = nil
+    var onBellTap: ((TaggedDeparture) -> Void)? = nil
+    var onBellLongPress: ((TaggedDeparture) -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(Array(departures.enumerated()), id: \.offset) { index, departure in
+            ForEach(Array(departures.enumerated()), id: \.offset) { index, tagged in
+                let departure = tagged.departure
                 let timeOfDay = getTimeOfDay(departure.hour)
                 let isLast = index == departures.count - 1
 
@@ -858,7 +971,12 @@ private struct DepartureTimeline: View {
                                 Text(departure.displayString)
                                     .font(.headline)
 
-                                let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: selectedVariantLabel)
+                                if showRouteBadge {
+                                    RouteBadge(number: tagged.routeNumber)
+                                }
+
+                                let variantLabel = selectedVariantLabelFor?(tagged)
+                                let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: variantLabel)
 
                                 if showLabel, let label = departure.variantLabel {
                                     Text(label)
@@ -892,11 +1010,11 @@ private struct DepartureTimeline: View {
                         TimeOfDayIndicator(timeOfDay: timeOfDay)
 
                         if bellStateFor != nil || onBellTap != nil {
-                            let state = bellStateFor?(departure) ?? .off
+                            let state = bellStateFor?(tagged) ?? .off
                             BellButton(
                                 bellState: state,
-                                onTap: onBellTap.map { tap in { tap(departure) } },
-                                onLongPress: onBellLongPress.map { lp in { lp(departure) } }
+                                onTap: onBellTap.map { tap in { tap(tagged) } },
+                                onLongPress: onBellLongPress.map { lp in { lp(tagged) } }
                             )
                             .font(.subheadline)
                         }
