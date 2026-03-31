@@ -13,8 +13,8 @@ android {
         applicationId = "com.github.bfollon.intersego"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.7.0"
+        versionCode = 13
+        versionName = "1.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

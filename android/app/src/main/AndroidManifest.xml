@@ -13,10 +13,6 @@
     <!-- Permissions for bus departure reminders -->
     <!-- POST_NOTIFICATIONS: required on Android 13+ to display notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- USE_EXACT_ALARM: allows exact alarm scheduling without user prompt (time-sensitive reminders) -->
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <!-- SCHEDULE_EXACT_ALARM: fallback for API 31-32 -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- RECEIVE_BOOT_COMPLETED: allows BootReceiver to restore daily alarms after device reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
