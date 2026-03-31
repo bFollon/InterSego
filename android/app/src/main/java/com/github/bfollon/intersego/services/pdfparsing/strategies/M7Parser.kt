@@ -19,6 +19,7 @@ package com.github.bfollon.intersego.services.pdfparsing.strategies
 
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.BusStopRegistry
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
@@ -71,7 +72,7 @@ class M7Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M7"),
         mode = ParserMode.PRODUCTION,
-        version = "1.4"
+        version = "1.5"
     )
 
     companion object {
@@ -83,190 +84,42 @@ class M7Parser : CapableParser, RouteStopsProvider {
 
         private object Stops {
             // Weekday circular stops
-            val SEGOVIA_WK = BusStop(
-                id = "m7-segovia",
-                name = "Estación de Autobuses",
-                area = "Segovia Capital",
-                coordinates = "40.944768, -4.121823"
-            )
-            val TABANERA_WK = BusStop(
-                id = "m7-tabanera",
-                name = "Tabanera",
-                area = "Tabanera",
-                coordinates = "40.934336, -4.067014"
-            )
-            val TABANERA_WK_2 = BusStop(
-                id = "m7-tabanera-2",
-                name = "Tabanera 2",
-                area = "Tabanera",
-                coordinates = "40.937491, -4.065818"
-            )
+            val SEGOVIA_WK = BusStopRegistry.estacionAutobuses
+            val TABANERA_WK = BusStopRegistry.tabanera
+            val TABANERA_WK_2 = BusStopRegistry.tabanera2
+            val PALAZUELOS_WK = BusStopRegistry.palazuelos
+            val PALAZUELOS_COLEGIO_WK = BusStopRegistry.palazuelosColegio
+            // Circular return — same canonical stop; direction distinguishes timetable buckets
+            val SEGOVIA_WK_RET = BusStopRegistry.estacionAutobuses
 
-            // Palazuelos cluster (weekday only — school stop likely skipped on weekends)
-            val PALAZUELOS_WK = BusStop(
-                id = "m7-palazuelos",
-                name = "Palazuelos",
-                area = "Palazuelos",
-                coordinates = "40.931068, -4.064340"
-            )
-            val PALAZUELOS_COLEGIO_WK = BusStop(
-                id = "m7-palazuelos-colegio",
-                name = "Colegio",
-                area = "Palazuelos",
-                coordinates = "40.933921, -4.063495"
-            )
-            val SEGOVIA_WK_RET = BusStop(
-                id = "m7-segovia-ret",
-                name = "Estación de Autobuses",
-                area = "Segovia Capital",
-                coordinates = "40.944768, -4.121823"
-            )
-
-            // Saturday/Sunday outbound Segovia cluster (5 sub-stops, +2 min each from anchor)
-            // Recorrido urbano: Estación Bus → Hospital → Andrés Laguna → La Pista → Plaza de Toros
-            val OUT_ESTACION_BUS = BusStop(
-                id = "m7-estacion-bus",
-                name = "Estación de Autobuses",
-                area = "Segovia Capital",
-                coordinates = "40.944768, -4.121823"
-            )
-            val OUT_HOSPITAL = BusStop(
-                id = "m7-hospital",
-                name = "Hospital",
-                area = "Segovia Capital",
-                coordinates = "40.944055, -4.127405"
-            )
-            val OUT_ANDRES_LAGUNA = BusStop(
-                id = "m7-andres-laguna",
-                name = "Andrés Laguna",
-                area = "Segovia Capital",
-                coordinates = "40.939106, -4.115582"
-            )
-            val OUT_LA_PISTA = BusStop(
-                id = "m7-la-pista",
-                name = "La Pista",
-                area = "Segovia Capital",
-                coordinates = "40.937354, -4.111411"
-            )
-            val OUT_PLAZA_TOROS = BusStop(
-                id = "m7-plaza-toros",
-                name = "Plaza de Toros",
-                area = "Segovia capital",
-                coordinates = "40.942093, -4.107603"
-            )
+            // Saturday/Sunday outbound Segovia cluster
+            val OUT_ESTACION_BUS = BusStopRegistry.estacionAutobuses
+            val OUT_HOSPITAL = BusStopRegistry.hospitalSegovia
+            val OUT_ANDRES_LAGUNA = BusStopRegistry.andresLaguna
+            val OUT_LA_PISTA = BusStopRegistry.laPista
+            val OUT_PLAZA_TOROS = BusStopRegistry.plazaDeToros
 
             // Extended route stops (shared by Saturday and Sunday)
-            val PALAZUELOS = BusStop(
-                id = "m7-palazuelos-ext",
-                name = "Palazuelos",
-                area = "Palazuelos",
-                coordinates = "40.931068, -4.064340"
-            )
-            val TABANERA = BusStop(
-                id = "m7-tabanera-ext",
-                name = "Tabanera",
-                area = "Tabanera",
-                coordinates = "40.934336, -4.067014"
-            )
-            val TABANERA_2 = BusStop(
-                id = "m7-tabanera-ext-2",
-                name = "Tabanera 2",
-                area = "Tabanera",
-                coordinates = "40.937491, -4.065818"
-            )
-            val S_CRISTOBAL = BusStop(
-                id = "m7-s-cristobal",
-                name = "San Cristóbal de Segovia",
-                area = "San Cristóbal de Segovia",
-                coordinates = "40.952056, -4.081139"
-            )
-            val S_CRISTOBAL_IGLESIA = BusStop(
-                id = "m7-s-cristobal-iglesia",
-                name = "Iglesia",
-                area = "San Cristóbal de Segovia",
-                coordinates = "40.951733, -4.077499"
-            )
-            val S_CRISTOBAL_ROTONDA = BusStop(
-                id = "m7-s-cristobal-rotonda",
-                name = "Rotonda",
-                area = "San Cristóbal de Segovia",
-                coordinates = "40.951224, -4.073449"
-            )
-            val SONSOTO = BusStop(
-                id = "m7-sonsoto",
-                name = "Potro",
-                area = "Sonsoto",
-                coordinates = "40.954774, -4.040524"
-            )
-            val SONSOTO_2 = BusStop(
-                id = "m7-sonsoto-2",
-                name = "Sonsoto 2",
-                area = "Sonsoto",
-                coordinates = "40.957470, -4.039154"
-            )
-            val TRESCASAS = BusStop(
-                id = "m7-trescasas",
-                name = "Plaza de la constitución",
-                area = "Trescasas",
-                coordinates = "40.961834, -4.037367"
-            )
-            val TRESCASAS_2 = BusStop(
-                id = "m7-trescasas-2",
-                name = "Trescasas 2",
-                area = "Trescasas",
-                coordinates = "40.963899, -4.034776"
-            )
-            val CABANILLAS = BusStop(
-                id = "m7-cabanillas",
-                name = "Cabanillas",
-                area = "Cabanillas",
-                coordinates = "40.974402, -4.028241"
-            )
-            val TORRECAB = BusStop(
-                id = "m7-torrecaballeros",
-                name = "Torrecaballeros",
-                area = "Torrecaballeros",
-                coordinates = "40.991880, -4.022848"
-            )
-            val TORRECAB_2 = BusStop(
-                id = "m7-torrecaballeros-2",
-                name = "Torrecaballeros 2",
-                area = "Torrecaballeros",
-                coordinates = "40.995364, -4.021688"
-            )
-            val TORRECAB_3 = BusStop(
-                id = "m7-torrecaballeros-3",
-                name = "Torrecaballeros 3",
-                area = "Torrecaballeros",
-                coordinates = "40.999144, -4.020855"
-            )
+            val PALAZUELOS = BusStopRegistry.palazuelos
+            val TABANERA = BusStopRegistry.tabanera
+            val TABANERA_2 = BusStopRegistry.tabanera2
+            val S_CRISTOBAL = BusStopRegistry.sanCristobal
+            val S_CRISTOBAL_IGLESIA = BusStopRegistry.sanCristobalIglesia
+            val S_CRISTOBAL_ROTONDA = BusStopRegistry.sanCristobalRotonda
+            val SONSOTO = BusStopRegistry.sonsoto
+            val SONSOTO_2 = BusStopRegistry.sonsoto2
+            val TRESCASAS = BusStopRegistry.trescasas
+            val TRESCASAS_2 = BusStopRegistry.trescasas2
+            val CABANILLAS = BusStopRegistry.cabanillas
+            val TORRECAB = BusStopRegistry.torrecaballeros
+            val TORRECAB_2 = BusStopRegistry.torrecaballeros2
+            val TORRECAB_3 = BusStopRegistry.torrecaballeros3
 
-            // Saturday/Sunday inbound Segovia cluster (4 sub-stops, +2 min each from anchor)
-            // Recorrido urbano: Plaza de Toros → La Pista → Andrés Laguna → Jardinillos y Hospital
-            val IN_PLAZA_TOROS = BusStop(
-                id = "m7-plaza-toros-in",
-                name = "Plaza de Toros",
-                area = "Segovia capital",
-                coordinates = "40.942093, -4.107603"
-            )
-            val IN_LA_PISTA = BusStop(
-                id = "m7-la-pista-in",
-                name = "La Pista",
-                area = "Segovia capital",
-                coordinates = "40.937354, -4.111411"
-            )
-            val IN_ANDRES_LAGUNA = BusStop(
-                id = "m7-andres-laguna-in",
-                name = "Andrés Laguna",
-                area = "Segovia capital",
-                coordinates = "40.939106, -4.115582"
-            )
-            val IN_JARDINILLOS = BusStop(
-                id = "m7-jardinillos",
-                name = "Jardinillos y Hospital",
-                area = "Segovia capital",
-                coordinates = "40.944361, -4.120831"
-            )
+            // Saturday/Sunday inbound Segovia cluster
+            val IN_PLAZA_TOROS = BusStopRegistry.plazaDeToros
+            val IN_LA_PISTA = BusStopRegistry.laPista
+            val IN_ANDRES_LAGUNA = BusStopRegistry.andresLaguna
+            val IN_JARDINILLOS = BusStopRegistry.jardinillos
         }
 
         // ── Stop lists ──────────────────────────────────────────────────────────────────────────

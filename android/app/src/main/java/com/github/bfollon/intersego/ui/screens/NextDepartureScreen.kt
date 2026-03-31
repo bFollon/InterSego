@@ -26,8 +26,10 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -67,10 +69,12 @@ import androidx.compose.ui.unit.sp
 import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.RouteView
 import com.github.bfollon.intersego.services.DebugConfig
+import com.github.bfollon.intersego.services.PDFProcessingService
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TimetableService
@@ -83,6 +87,33 @@ import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
+
+// ============================================================================
+// DATA CLASSES
+// ============================================================================
+
+/**
+ * A departure time tagged with the route it belongs to.
+ * Used when displaying merged departures from multiple lines.
+ */
+data class TaggedDeparture(
+    val departure: DepartureTime,
+    val routeId: String,
+    val routeNumber: String
+)
+
+/**
+ * Loaded data for a single route: route metadata, route views, and timetables.
+ */
+data class RouteLoadedData(
+    val route: BusRoute,
+    val views: List<RouteView>,
+    val timetables: List<BusTimetable>
+)
+
+// ============================================================================
+// DAY TYPE HELPERS
+// ============================================================================
 
 /**
  * Map a Calendar day-of-week to the set of DayType values that might match.
@@ -103,65 +134,54 @@ internal fun dayTypesFor(dayType: DayType): Set<DayType> = when (dayType) {
     else -> setOf(DayType.WEEKDAY)
 }
 
+// ============================================================================
+// MAIN SCREEN
+// ============================================================================
+
 /**
  * Screen displaying next departure times for a specific bus stop.
  *
- * Shows the next bus departure prominently with countdown timer,
- * followed by upcoming departures in a list.
+ * Loads ALL lines serving the stop and shows merged departures with route badges.
+ * When [primaryRouteId] is set (e.g. navigation from a specific line), the filter
+ * chips pre-select that line. From closest-stop, all lines are shown by default.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NextDepartureScreen(
-    route: BusRoute,
     stop: BusStop,
-    views: List<RouteView>,
-    initialViewId: String,
+    allRoutes: List<BusRoute>,
+    primaryRouteId: String? = null,
+    primaryViewId: String? = null,
     reminderService: ReminderService? = null,
     onBack: () -> Unit,
-    onDaySchedule: (direction: String, variantLabel: String?) -> Unit = { _, _ -> }
+    onDaySchedule: (routeId: String, direction: String, variantLabel: String?) -> Unit = { _, _, _ -> }
 ) {
     val context = LocalContext.current
+    val pdfService = remember { PDFProcessingService(context) }
     val timetableService = remember { TimetableService(context) }
 
-    var currentViewId by remember { mutableStateOf(initialViewId) }
-    val activeView = views.find { it.id == currentViewId } ?: views.first()
-    val direction = activeView.direction
+    var loadedRoutes by remember { mutableStateOf<List<RouteLoadedData>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Line filter: null = all lines
+    var selectedRouteId by remember { mutableStateOf(primaryRouteId) }
+
+    // Unified direction string across all loaded routes
+    var currentDirection by remember { mutableStateOf<String?>(null) }
+
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
     var dailyReminderKeys by remember { mutableStateOf(reminderService?.dailyMatchKeys() ?: emptySet()) }
     var reminderError by remember { mutableStateOf<String?>(null) }
-    val selectedVariantLabel = activeView.departureLabel
-    val swapViewId = activeView.swapAction?.targetViewId
 
-    var timetables by remember { mutableStateOf<List<com.github.bfollon.intersego.data.BusTimetable>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // Current time updates every minute for countdown
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
-
-    // Update time every minute
     LaunchedEffect(Unit) {
         while (true) {
             currentTime = LocalTime.now()
-            delay(60000) // Update every minute
+            delay(60000)
         }
     }
 
-    // Load timetables on launch
-    LaunchedEffect(route.id) {
-        isLoading = true
-        errorMessage = null
-        try {
-            val loaded = timetableService.loadTimetables(route.id, forceRefresh = false)
-            timetables = loaded
-        } catch (e: Exception) {
-            errorMessage = "Error al cargar horarios: ${e.message}"
-        } finally {
-            isLoading = false
-        }
-    }
-
-    // Auto-detect current day types (supports both M4's WEEKEND and M6's SATURDAY/SUNDAY)
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
     val currentDayTypes = remember { dayTypesForCalendarDay(currentDayOfWeek) }
     val currentDayType = remember {
@@ -172,111 +192,173 @@ fun NextDepartureScreen(
         }
     }
 
-    // Filter and merge all timetables for current stop, day type, AND direction
-    // Multiple timetables may exist for the same stop (e.g., Regular + Extended variants)
-    val todayDepartures = remember(timetables, currentDayTypes, stop, direction) {
-        DebugConfig.debugPrint("Filtering timetables: dayTypes=$currentDayTypes, stop=${stop.name}, direction=$direction")
-        DebugConfig.debugPrint("Total timetables: ${timetables.size}")
+    // Load all routes serving this stop
+    LaunchedEffect(stop.id) {
+        isLoading = true
+        errorMessage = null
+        try {
+            val routeIds = pdfService.getRoutesForStop(stop.id)
+            DebugConfig.debugPrint("NextDepartureScreen: ${stop.name} served by routes: $routeIds")
+            val results = routeIds.mapNotNull { routeId ->
+                val route = allRoutes.find { it.id == routeId } ?: return@mapNotNull null
+                val timetables = try {
+                    timetableService.loadTimetables(routeId, forceRefresh = false)
+                } catch (e: Exception) {
+                    DebugConfig.debugWarn("NextDepartureScreen: failed to load $routeId: ${e.message}")
+                    emptyList()
+                }
+                val views = pdfService.getRouteViews(routeId, currentDayType)
+                RouteLoadedData(route, views, timetables)
+            }
+            loadedRoutes = results
 
-        val matching = timetables.filter {
-            it.dayType in currentDayTypes &&
-            it.stopId == stop.id &&
-            it.direction == direction
+            // Init direction from primaryViewId if available, otherwise first available
+            if (currentDirection == null) {
+                currentDirection = if (primaryRouteId != null && primaryViewId != null) {
+                    results.find { it.route.id == primaryRouteId }
+                        ?.views?.find { it.id == primaryViewId }?.direction
+                } else null
+                    ?: results.firstOrNull()?.views?.firstOrNull()?.direction
+                    ?: ""
+            }
+        } catch (e: Exception) {
+            errorMessage = "Error al cargar horarios: ${e.message}"
+        } finally {
+            isLoading = false
         }
-
-        val merged = matching.flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }.sortedBy { it.toMinutesSinceMidnight() }
-        DebugConfig.debugPrint("Found ${matching.size} matching timetables with ${merged.size} total departures")
-        merged
     }
 
-    val hasTodayDepartures = todayDepartures.isNotEmpty()
+    val showMultiRoute = loadedRoutes.size > 1
 
-    // Find next available departures (checking up to 7 days ahead)
-    data class NextDayDepartures(
-        val departures: List<DepartureTime>,
-        val daysAhead: Int
-    )
+    // Available directions across selected/all routes
+    val availableDirections = remember(loadedRoutes, selectedRouteId) {
+        val routesToUse = if (selectedRouteId != null)
+            loadedRoutes.filter { it.route.id == selectedRouteId }
+        else loadedRoutes
+        val seen = linkedSetOf<String>()
+        routesToUse.flatMap { it.timetables }
+            .forEach { t -> t.direction?.let { seen.add(it) } }
+        seen.toList()
+    }
 
-    val nextDayDepartures = remember(timetables, currentDayTypes, stop, direction) {
-        var result: NextDayDepartures? = null
+    val direction = currentDirection ?: availableDirections.firstOrNull() ?: ""
+    val swapDirection = availableDirections.firstOrNull { it != direction }
 
+    // Active view (for variant label) — from single-route context
+    val activeView = remember(loadedRoutes, selectedRouteId, direction) {
+        val routeId = selectedRouteId ?: if (loadedRoutes.size == 1) loadedRoutes.first().route.id else null
+        if (routeId != null) {
+            loadedRoutes.find { it.route.id == routeId }?.views?.find { it.direction == direction }
+        } else null
+    }
+    val selectedVariantLabel = activeView?.departureLabel
+
+    // Merged tagged departures for today
+    val todayTaggedDepartures = remember(loadedRoutes, selectedRouteId, currentDayTypes, direction, stop.id) {
+        val routesToUse = if (selectedRouteId != null)
+            loadedRoutes.filter { it.route.id == selectedRouteId }
+        else loadedRoutes
+        routesToUse.flatMap { routeData ->
+            routeData.timetables
+                .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == direction }
+                .flatMap { timetable ->
+                    timetable.seasonalDepartures(weekday = currentDayOfWeek)
+                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                }
+        }.sortedBy { it.departure.toMinutesSinceMidnight() }
+    }
+
+    val hasTodayDepartures = todayTaggedDepartures.isNotEmpty()
+
+    // Future tagged departures (up to 7 days ahead)
+    data class NextDayTaggedDepartures(val departures: List<TaggedDeparture>, val daysAhead: Int)
+
+    val nextDayTaggedDepartures = remember(loadedRoutes, selectedRouteId, direction, stop.id) {
+        var result: NextDayTaggedDepartures? = null
         for (daysAhead in 1..7) {
             val calendar = Calendar.getInstance()
             calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
             val futureDayTypes = dayTypesForCalendarDay(calendar.get(Calendar.DAY_OF_WEEK))
-
-            val departures = timetables
-                .filter {
-                    it.dayType in futureDayTypes &&
-                    it.stopId == stop.id &&
-                    it.direction == direction
-                }
-                .flatMap { it.seasonalDepartures(weekday = calendar.get(Calendar.DAY_OF_WEEK)) }
-                .sortedBy { it.toMinutesSinceMidnight() }
-
+            val routesToUse = if (selectedRouteId != null)
+                loadedRoutes.filter { it.route.id == selectedRouteId }
+            else loadedRoutes
+            val departures = routesToUse.flatMap { routeData ->
+                routeData.timetables
+                    .filter { it.dayType in futureDayTypes && it.stopId == stop.id && it.direction == direction }
+                    .flatMap { timetable ->
+                        timetable.seasonalDepartures(weekday = calendar.get(Calendar.DAY_OF_WEEK))
+                            .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                    }
+            }.sortedBy { it.departure.toMinutesSinceMidnight() }
             if (departures.isNotEmpty()) {
-                DebugConfig.debugPrint("Found next departures in $daysAhead day(s): ${departures.size} departures")
-                result = NextDayDepartures(departures, daysAhead)
+                result = NextDayTaggedDepartures(departures, daysAhead)
                 break
             }
         }
-
-        if (result == null) {
-            DebugConfig.debugPrint("No departures found in next 7 days")
-        }
-
         result
     }
 
-    // Find next departures (including future days if no more today)
+    // Departure info
     data class DepartureInfo(
-        val departure: DepartureTime?,
-        val following: List<DepartureTime>,
-        val daysAhead: Int  // 0 = today, 1 = tomorrow, 2+ = future
+        val departure: TaggedDeparture?,
+        val following: List<TaggedDeparture>,
+        val daysAhead: Int
     )
 
-    val departureInfo = remember(todayDepartures, nextDayDepartures, currentTime) {
-        DebugConfig.debugPrint("Current time: $currentTime")
-
+    val departureInfo = remember(todayTaggedDepartures, nextDayTaggedDepartures, currentTime) {
+        DebugConfig.debugPrint("NextDepartureScreen: currentTime=$currentTime, todayDepartures=${todayTaggedDepartures.size}")
         if (hasTodayDepartures) {
-            val upcoming = todayDepartures.filter { departure ->
-                val departureTime = LocalTime.of(departure.hour, departure.minute)
-                departureTime.isAfter(currentTime) || departureTime == currentTime
+            val upcoming = todayTaggedDepartures.filter { td ->
+                val dt = LocalTime.of(td.departure.hour, td.departure.minute)
+                dt.isAfter(currentTime) || dt == currentTime
             }
-
-            DebugConfig.debugPrint("Upcoming departures today: ${upcoming.size}")
-
             if (upcoming.isNotEmpty()) {
-                val next = upcoming.first()
-                val following = upcoming.drop(1).take(5)
-                DepartureInfo(next, following, 0)
-            } else if (nextDayDepartures != null) {
-                val nextFirst = nextDayDepartures.departures.firstOrNull()
-                val following = nextDayDepartures.departures.drop(1).take(5)
-                DepartureInfo(nextFirst, following, nextDayDepartures.daysAhead)
+                DepartureInfo(upcoming.first(), upcoming.drop(1).take(5), 0)
+            } else if (nextDayTaggedDepartures != null) {
+                DepartureInfo(
+                    nextDayTaggedDepartures.departures.firstOrNull(),
+                    nextDayTaggedDepartures.departures.drop(1).take(5),
+                    nextDayTaggedDepartures.daysAhead
+                )
             } else {
                 DepartureInfo(null, emptyList(), 0)
             }
-        } else if (nextDayDepartures != null) {
-            val nextFirst = nextDayDepartures.departures.firstOrNull()
-            val following = nextDayDepartures.departures.drop(1).take(5)
-            DepartureInfo(nextFirst, following, nextDayDepartures.daysAhead)
+        } else if (nextDayTaggedDepartures != null) {
+            DepartureInfo(
+                nextDayTaggedDepartures.departures.firstOrNull(),
+                nextDayTaggedDepartures.departures.drop(1).take(5),
+                nextDayTaggedDepartures.daysAhead
+            )
         } else {
             DepartureInfo(null, emptyList(), 0)
         }
     }
 
-    val nextDeparture = departureInfo.departure
-    val followingDepartures = departureInfo.following
+    val nextTaggedDeparture = departureInfo.departure
+    val followingTaggedDepartures = departureInfo.following
     val daysAhead = departureInfo.daysAhead
+
+    // TopAppBar title: route name when single route context, stop name for multi-route
+    val topBarTitle = if (loadedRoutes.size == 1) {
+        "Línea ${loadedRoutes.first().route.number}"
+    } else if (selectedRouteId != null) {
+        "Línea $selectedRouteId"
+    } else {
+        stop.name
+    }
+
+    // The active single route (for "Ver horario completo" button and direction label)
+    val activeSingleRoute = if (selectedRouteId != null) {
+        loadedRoutes.find { it.route.id == selectedRouteId }?.route
+    } else if (loadedRoutes.size == 1) {
+        loadedRoutes.first().route
+    } else null
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Línea ${route.number}")
-                },
+                title = { Text(topBarTitle) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -286,8 +368,8 @@ fun NextDepartureScreen(
                     }
                 },
                 actions = {
-                    swapViewId?.let { targetId ->
-                        IconButton(onClick = { currentViewId = targetId }) {
+                    if (swapDirection != null) {
+                        IconButton(onClick = { currentDirection = swapDirection }) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
                                 contentDescription = "Cambiar dirección"
@@ -332,8 +414,7 @@ fun NextDepartureScreen(
                     )
                 }
             }
-            nextDeparture == null -> {
-                // No departures available at all (not even in future days)
+            nextTaggedDeparture == null -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -354,19 +435,33 @@ fun NextDepartureScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    // Hero header with map tile
+                    // Hero header (no route badge — shown in filter chips or TopAppBar)
                     item {
                         StopHeroHeader(
-                            route = route,
                             stop = stop,
                             direction = direction,
-                            onNavigateClick = {
-                                openMapsForStop(context, stop)
-                            }
+                            isCircular = activeSingleRoute?.isCircular ?: false,
+                            onNavigateClick = { openMapsForStop(context, stop) }
                         )
                     }
 
-                    // Future day warning card (if showing future departure)
+                    // Line filter chips (only when >1 route serves this stop)
+                    if (showMultiRoute) {
+                        item {
+                            LineFilterChips(
+                                routeIds = loadedRoutes.map { it.route.id },
+                                selectedRouteId = selectedRouteId,
+                                onSelect = { id ->
+                                    selectedRouteId = id
+                                    // When switching filter, reset direction to first available
+                                    currentDirection = null
+                                },
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+
+                    // Future day warning card
                     if (daysAhead > 0) {
                         item {
                             Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -375,19 +470,18 @@ fun NextDepartureScreen(
                         }
                     }
 
-                    // Spacer after header
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                    item { Spacer(modifier = Modifier.height(8.dp)) }
 
-                    // Next departure with circular progress
+                    // Next departure card
                     item {
-                        val matchKey = BusReminder.matchKey(
-                            route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute
-                        )
                         val bellEnabled = daysAhead == 0 && reminderService != null
+                        val td = nextTaggedDeparture
+                        val matchKey = BusReminder.matchKey(
+                            td.routeId, stop.id, direction, td.departure.hour, td.departure.minute
+                        )
                         NextDepartureWithProgress(
-                            departure = nextDeparture,
+                            departure = td.departure,
+                            routeNumber = if (showMultiRoute && selectedRouteId == null) td.routeNumber else null,
                             currentTime = currentTime,
                             selectedVariantLabel = selectedVariantLabel,
                             daysAhead = daysAhead,
@@ -396,10 +490,11 @@ fun NextDepartureScreen(
                             onBellTap = if (bellEnabled) {
                                 {
                                     reminderError = null
+                                    val route = allRoutes.find { it.id == td.routeId }
                                     if (reminderKeys.contains(matchKey)) {
-                                        reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
-                                    } else {
-                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction, dayType = currentDayType)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                    } else if (route != null) {
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -409,13 +504,14 @@ fun NextDepartureScreen(
                             onBellLongPress = if (bellEnabled) {
                                 {
                                     reminderError = null
+                                    val route = allRoutes.find { it.id == td.routeId }
                                     if (dailyReminderKeys.contains(matchKey)) {
-                                        reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
-                                    } else {
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                    } else if (route != null) {
                                         if (reminderKeys.contains(matchKey)) {
-                                            reminderService!!.cancelReminder(route.id, stop.id, direction, nextDeparture.hour, nextDeparture.minute)
+                                            reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
                                         }
-                                        val result = reminderService!!.scheduleReminder(nextDeparture, stop, route, direction, isDaily = true, dayType = currentDayType)
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -435,11 +531,13 @@ fun NextDepartureScreen(
                         )
                     }
 
-                    // "Ver horario completo" button — only for today's schedule
-                    if (hasTodayDepartures) {
+                    // "Ver horario completo" — only when there's a clear single route context
+                    if (hasTodayDepartures && activeSingleRoute != null) {
                         item {
                             OutlinedButton(
-                                onClick = { onDaySchedule(direction, selectedVariantLabel) },
+                                onClick = {
+                                    onDaySchedule(activeSingleRoute.id, direction, selectedVariantLabel)
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp)
@@ -458,10 +556,8 @@ fun NextDepartureScreen(
                     }
 
                     // Following departures section
-                    if (followingDepartures.isNotEmpty()) {
-                        item {
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
+                    if (followingTaggedDepartures.isNotEmpty()) {
+                        item { Spacer(modifier = Modifier.height(24.dp)) }
 
                         item {
                             Text(
@@ -473,42 +569,42 @@ fun NextDepartureScreen(
                             )
                         }
 
-                        item {
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
+                        item { Spacer(modifier = Modifier.height(12.dp)) }
 
-                        // Timeline-style following departures
                         item {
                             val timelineBellEnabled = daysAhead == 0 && reminderService != null
                             DepartureTimeline(
-                                departures = followingDepartures,
+                                departures = followingTaggedDepartures,
                                 selectedVariantLabel = selectedVariantLabel,
-                                isBellSetFor = if (timelineBellEnabled) { dep ->
-                                    reminderKeys.contains(BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute))
+                                showRouteBadge = showMultiRoute && selectedRouteId == null,
+                                isBellSetFor = if (timelineBellEnabled) { td ->
+                                    reminderKeys.contains(BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute))
                                 } else null,
-                                isDailyBellFor = if (timelineBellEnabled) { dep ->
-                                    dailyReminderKeys.contains(BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute))
+                                isDailyBellFor = if (timelineBellEnabled) { td ->
+                                    dailyReminderKeys.contains(BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute))
                                 } else null,
-                                onBellTap = if (timelineBellEnabled) { dep ->
+                                onBellTap = if (timelineBellEnabled) { td ->
                                     reminderError = null
-                                    val key = BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute)
+                                    val route = allRoutes.find { it.id == td.routeId }
+                                    val key = BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
                                     if (reminderKeys.contains(key)) {
-                                        reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
-                                    } else {
-                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction, dayType = currentDayType)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                    } else if (route != null) {
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
                                     dailyReminderKeys = reminderService.dailyMatchKeys()
                                 } else null,
-                                onBellLongPress = if (timelineBellEnabled) { dep ->
+                                onBellLongPress = if (timelineBellEnabled) { td ->
                                     reminderError = null
-                                    val key = BusReminder.matchKey(route.id, stop.id, direction, dep.hour, dep.minute)
+                                    val route = allRoutes.find { it.id == td.routeId }
+                                    val key = BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
                                     if (dailyReminderKeys.contains(key)) {
-                                        reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
-                                    } else {
-                                        if (reminderKeys.contains(key)) reminderService!!.cancelReminder(route.id, stop.id, direction, dep.hour, dep.minute)
-                                        val result = reminderService!!.scheduleReminder(dep, stop, route, direction, isDaily = true, dayType = currentDayType)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                    } else if (route != null) {
+                                        if (reminderKeys.contains(key)) reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -519,16 +615,16 @@ fun NextDepartureScreen(
                         }
                     }
 
-                    // Bottom spacing
-                    item {
-                        Spacer(modifier = Modifier.height(32.dp))
-                    }
+                    item { Spacer(modifier = Modifier.height(32.dp)) }
                 }
             }
         }
     }
 }
 
+// ============================================================================
+// NAVIGATION HELPER
+// ============================================================================
 
 /**
  * Opens the system default maps app for navigation to a bus stop.
@@ -549,9 +645,12 @@ fun openMapsForStop(
     }
 }
 
+// ============================================================================
+// WARNING CARDS
+// ============================================================================
+
 /**
  * Warning card shown when displaying a future day's first bus.
- * Styled to match FarmaciasDeGuardia warning cards.
  */
 @Composable
 fun FutureDayWarningCard(daysAhead: Int) {
@@ -561,12 +660,10 @@ fun FutureDayWarningCard(daysAhead: Int) {
         else -> "No hay más autobuses en los próximos días. Mostrando próximo horario disponible."
     }
 
-    val warningColor = WarningOrange
-
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = warningColor.copy(alpha = 0.15f)
+            containerColor = WarningOrange.copy(alpha = 0.15f)
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -580,17 +677,75 @@ fun FutureDayWarningCard(daysAhead: Int) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = "Advertencia",
-                tint = warningColor,
+                tint = WarningOrange,
                 modifier = Modifier.size(20.dp)
             )
-
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
-                color = warningColor,
+                color = WarningOrange,
                 lineHeight = 18.sp
             )
         }
+    }
+}
+
+// ============================================================================
+// LINE FILTER CHIPS
+// ============================================================================
+
+/**
+ * Horizontal row of filter chips for selecting a specific line or "Todas".
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LineFilterChips(
+    routeIds: List<String>,
+    selectedRouteId: String?,
+    onSelect: (String?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        FilterChip(
+            selected = selectedRouteId == null,
+            onClick = { onSelect(null) },
+            label = { Text("Todas") }
+        )
+        routeIds.forEach { routeId ->
+            FilterChip(
+                selected = selectedRouteId == routeId,
+                onClick = { onSelect(routeId) },
+                label = { Text(routeId) }
+            )
+        }
+    }
+}
+
+// ============================================================================
+// ROUTE BADGE
+// ============================================================================
+
+/**
+ * Small badge showing a line number (e.g. "M6", "M7").
+ */
+@Composable
+fun RouteBadge(number: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.primary
+    ) {
+        Text(
+            text = number,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
     }
 }
 
@@ -669,11 +824,10 @@ fun TimeOfDayIndicator(
 
 /**
  * Badge displaying departure time in a styled chip format.
- * Reuses the visual style of TimeOfDayIndicator for consistency.
  */
 @Composable
 fun DepartureTimeBadge(
-    time: String,  // e.g., "14:30"
+    time: String,
     modifier: Modifier = Modifier
 ) {
     val color = MaterialTheme.colorScheme.primary
@@ -695,16 +849,17 @@ fun DepartureTimeBadge(
 
 /**
  * Hero header section with gradient background, stop information, and optional static map tile.
+ * Route badge is intentionally absent — line context is provided by filter chips or TopAppBar.
  */
 @Composable
 fun StopHeroHeader(
-    route: BusRoute,
     stop: BusStop,
     direction: String,
+    isCircular: Boolean = false,
     modifier: Modifier = Modifier,
     onNavigateClick: () -> Unit
 ) {
-    val directionLabel = if (route.isCircular) {
+    val directionLabel = if (isCircular) {
         direction
     } else {
         val destination = direction.split("→").lastOrNull()?.trim() ?: direction
@@ -730,20 +885,6 @@ fun StopHeroHeader(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Route badge
-            Surface(
-                color = MaterialTheme.colorScheme.primary,
-                shape = MaterialTheme.shapes.small
-            ) {
-                Text(
-                    text = "Línea ${route.number}",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
-            }
-
             // Stop name
             Text(
                 text = stop.name,
@@ -841,7 +982,6 @@ fun StopHeroHeader(
 
 /**
  * Displays a 3x3 grid of OSM tiles centered on the marker, with a 2:1 aspect ratio.
- * The grid is offset so the pin marker always appears at the center of the viewport.
  */
 @Composable
 private fun StopMapTile(
@@ -881,11 +1021,9 @@ private fun StopMapTile(
                 val dotRadius = 4.dp.toPx()
                 val strokeWidth = 2.5f.dp.toPx()
 
-                // Tip of the pin sits at the center (the actual location)
                 val tipY = cy
                 val bulbY = tipY - pinHeight + pinRadius
 
-                // Tapered tail from bulb to tip
                 val path = androidx.compose.ui.graphics.Path().apply {
                     moveTo(cx - pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
                     lineTo(cx, tipY)
@@ -895,11 +1033,8 @@ private fun StopMapTile(
                 drawPath(path, color = pinColor)
                 drawPath(path, color = Color.White, style = Stroke(width = strokeWidth))
 
-                // Filled circle (bulb)
                 drawCircle(color = pinColor, radius = pinRadius, center = Offset(cx, bulbY))
                 drawCircle(color = Color.White, radius = pinRadius, center = Offset(cx, bulbY), style = Stroke(width = strokeWidth))
-
-                // Inner dot
                 drawCircle(color = Color.White, radius = dotRadius, center = Offset(cx, bulbY))
             }
         },
@@ -912,11 +1047,9 @@ private fun StopMapTile(
         val viewportH = constraints.maxHeight
         val tileSize = viewportW
 
-        // Marker position within the 3x3 grid (center tile is at row=1, col=1)
         val markerGridX = tileSize + (mapData.markerX / 256f * tileSize).toInt()
         val markerGridY = tileSize + (mapData.markerY / 256f * tileSize).toInt()
 
-        // Offset the grid so the marker lands at the viewport center
         val offsetX = viewportW / 2 - markerGridX
         val offsetY = viewportH / 2 - markerGridY
 
@@ -946,7 +1079,6 @@ private fun StopMapTile(
 
 /**
  * Bell icon with tap (one-off reminder) and long-press (daily reminder) support.
- * Shows a small repeat badge overlay when [isDailyBell] is true.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -994,12 +1126,18 @@ fun BellIcon(
     }
 }
 
+// ============================================================================
+// DEPARTURE CARDS
+// ============================================================================
+
 /**
  * Compact next departure display with badge-styled time and countdown.
+ * [routeNumber] shows a route badge (e.g. "M6") when displaying multi-line results.
  */
 @Composable
 fun NextDepartureWithProgress(
     departure: DepartureTime,
+    routeNumber: String? = null,
     currentTime: LocalTime,
     selectedVariantLabel: String? = null,
     daysAhead: Int = 0,
@@ -1011,7 +1149,6 @@ fun NextDepartureWithProgress(
 ) {
     val departureTime = LocalTime.of(departure.hour, departure.minute)
 
-    // Calculate minutes until departure
     val minutesUntil = if (daysAhead > 0) {
         val minutesUntilMidnight = currentTime.until(LocalTime.MAX, ChronoUnit.MINUTES)
         val minutesFromMidnight = LocalTime.MIN.until(departureTime, ChronoUnit.MINUTES)
@@ -1033,7 +1170,6 @@ fun NextDepartureWithProgress(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Top row: "Próxima salida:" + time badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1048,7 +1184,12 @@ fun NextDepartureWithProgress(
 
                 DepartureTimeBadge(time = departure.toDisplayString())
 
-                // Variant label badge: show for non-default variants
+                // Route badge for multi-line display
+                routeNumber?.let {
+                    RouteBadge(number = it)
+                }
+
+                // Variant label badge
                 val showLabel = !departure.variantLabel.isNullOrBlank() && when {
                     selectedVariantLabel == null -> departure.variantLabel != "Regular"
                     else -> departure.variantLabel != selectedVariantLabel
@@ -1067,7 +1208,7 @@ fun NextDepartureWithProgress(
                     }
                 }
 
-                // Seasonal label badge: show when departure has a day/season restriction
+                // Seasonal label badge
                 departure.seasonalAvailability.displayLabel?.let { label ->
                     Surface(
                         shape = MaterialTheme.shapes.small,
@@ -1093,7 +1234,6 @@ fun NextDepartureWithProgress(
                 }
             }
 
-            // Countdown text
             Text(
                 text = when {
                     minutesUntil < 1 -> "Saliendo ahora"
@@ -1110,7 +1250,6 @@ fun NextDepartureWithProgress(
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
 
-            // Notes if any
             if (!departure.notes.isNullOrBlank()) {
                 Text(
                     text = departure.notes,
@@ -1124,21 +1263,22 @@ fun NextDepartureWithProgress(
 
 /**
  * Timeline-style display for following departures.
+ * [showRouteBadge] enables per-row route badges (for multi-line stops).
  */
 @Composable
 fun DepartureTimeline(
-    departures: List<DepartureTime>,
+    departures: List<TaggedDeparture>,
     selectedVariantLabel: String? = null,
-    isBellSetFor: ((DepartureTime) -> Boolean)? = null,
-    isDailyBellFor: ((DepartureTime) -> Boolean)? = null,
-    onBellTap: ((DepartureTime) -> Unit)? = null,
-    onBellLongPress: ((DepartureTime) -> Unit)? = null,
+    showRouteBadge: Boolean = false,
+    isBellSetFor: ((TaggedDeparture) -> Boolean)? = null,
+    isDailyBellFor: ((TaggedDeparture) -> Boolean)? = null,
+    onBellTap: ((TaggedDeparture) -> Unit)? = null,
+    onBellLongPress: ((TaggedDeparture) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        departures.forEachIndexed { index, departure ->
+    Column(modifier = modifier.fillMaxWidth()) {
+        departures.forEachIndexed { index, tagged ->
+            val departure = tagged.departure
             val timeOfDay = getTimeOfDay(departure.hour)
 
             Row(
@@ -1153,7 +1293,6 @@ fun DepartureTimeline(
                     modifier = Modifier.width(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Vertical line
                     if (index < departures.size - 1) {
                         Canvas(modifier = Modifier
                             .width(2.dp)
@@ -1169,7 +1308,6 @@ fun DepartureTimeline(
                         }
                     }
 
-                    // Dot
                     Surface(
                         modifier = Modifier.size(12.dp),
                         shape = MaterialTheme.shapes.extraSmall,
@@ -1202,6 +1340,11 @@ fun DepartureTimeline(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
 
+                            // Route badge for multi-line stops
+                            if (showRouteBadge) {
+                                RouteBadge(number = tagged.routeNumber)
+                            }
+
                             val showLabel = !departure.variantLabel.isNullOrBlank() && when {
                                 selectedVariantLabel == null -> departure.variantLabel != "Regular"
                                 else -> departure.variantLabel != selectedVariantLabel
@@ -1220,7 +1363,6 @@ fun DepartureTimeline(
                                 }
                             }
 
-                            // Seasonal label badge
                             departure.seasonalAvailability.displayLabel?.let { label ->
                                 Surface(
                                     shape = MaterialTheme.shapes.small,
@@ -1247,19 +1389,23 @@ fun DepartureTimeline(
 
                     TimeOfDayIndicator(timeOfDay = timeOfDay)
 
-                        if (isBellSetFor != null || onBellTap != null) {
-                            BellIcon(
-                                isBellSet = isBellSetFor?.invoke(departure) ?: false,
-                                isDailyBell = isDailyBellFor?.invoke(departure) ?: false,
-                                onTap = onBellTap?.let { { it(departure) } },
-                                onLongPress = onBellLongPress?.let { { it(departure) } }
-                            )
-                        }
+                    if (isBellSetFor != null || onBellTap != null) {
+                        BellIcon(
+                            isBellSet = isBellSetFor?.invoke(tagged) ?: false,
+                            isDailyBell = isDailyBellFor?.invoke(tagged) ?: false,
+                            onTap = onBellTap?.let { { it(tagged) } },
+                            onLongPress = onBellLongPress?.let { { it(tagged) } }
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+// ============================================================================
+// DISCLAIMER CARD
+// ============================================================================
 
 /**
  * Expandable disclaimer card informing users that departure times are approximate.
@@ -1298,60 +1444,30 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
                     tint = WarningOrange,
                     modifier = Modifier.size(18.dp)
                 )
-
                 Text(
-                    text = "Los horarios son orientativos",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = WarningOrangeText,
-                    fontWeight = FontWeight.Medium,
+                    text = "Horarios orientativos",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = WarningOrange,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-
                 Icon(
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp
-                        else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Contraer" else "Expandir",
+                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
                     tint = WarningOrange,
                     modifier = Modifier.size(18.dp)
                 )
             }
 
             if (expanded) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = "Se recomienda estar en la parada con 10–15 minutos de antelación.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = WarningOrangeText,
-                        fontWeight = FontWeight.Medium
-                    )
-
-                    DisclaimerBulletPoint("Los horarios oficiales solo ofrecen una orientación del paso del autobús.")
-                    DisclaimerBulletPoint("Los autobuses no disponen de GPS para estimar la hora de paso.")
-                    DisclaimerBulletPoint("Se han dado casos de adelantos y retrasos respecto al horario previsto.")
-                }
+                Text(
+                    text = "Los horarios mostrados son orientativos y pueden variar. " +
+                        "Consulta siempre la información oficial de Linecar para confirmar los horarios actuales.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarningOrange,
+                    lineHeight = 18.sp
+                )
             }
         }
     }
 }
-
-@Composable
-private fun DisclaimerBulletPoint(text: String) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(start = 4.dp)
-    ) {
-        Text(
-            text = "•",
-            style = MaterialTheme.typography.bodySmall,
-            color = WarningOrangeText
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = WarningOrangeText
-        )
-    }
-}
-

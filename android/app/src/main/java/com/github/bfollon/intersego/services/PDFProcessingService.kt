@@ -62,6 +62,9 @@ class PDFProcessingService(private val context: Context) {
     // Map of route IDs to their parsing strategies
     private val parsers = mutableMapOf<String, BusTimetableParser>()
 
+    // Reverse index: stopId → list of routeIds that serve that stop
+    private val stopToRoutes: Map<String, List<String>> by lazy { buildStopToRoutes() }
+
     init {
         // Register all available parsers
         registerParser(M1Parser())
@@ -74,6 +77,20 @@ class PDFProcessingService(private val context: Context) {
         registerParser(M8Parser())
 
         DebugConfig.debugPrint("PDFProcessingService: Initialized with ${parsers.size} parsers")
+    }
+
+    private fun buildStopToRoutes(): Map<String, List<String>> {
+        val index = mutableMapOf<String, MutableList<String>>()
+        parsers.forEach { (routeId, parser) ->
+            if (parser is RouteStopsProvider) {
+                parser.getRoutesForId(routeId).flatten().forEach { stop ->
+                    index.getOrPut(stop.id) { mutableListOf() }.let {
+                        if (!it.contains(routeId)) it.add(routeId)
+                    }
+                }
+            }
+        }
+        return index
     }
 
     /**
@@ -157,6 +174,15 @@ class PDFProcessingService(private val context: Context) {
     fun getSupportedRoutes(): List<String> {
         return parsers.keys.toList()
     }
+
+    /**
+     * Get all route IDs that serve a given stop.
+     *
+     * @param stopId Canonical stop ID (from BusStopRegistry)
+     * @return Sorted list of route IDs (e.g. ["M6", "M7"])
+     */
+    fun getRoutesForStop(stopId: String): List<String> =
+        stopToRoutes[stopId]?.sorted() ?: emptyList()
 
     /**
      * Get the operating mode of a parser for a route

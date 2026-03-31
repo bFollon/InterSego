@@ -514,7 +514,7 @@ fun AppNavigation() {
                 try {
                     val location = locationMgr.requestLocationOnce()
                     val result = closestStopFinder.findClosest(location, routes)
-                    navController.navigate("next_departure/${result.routeId}/${result.stopId}/${result.viewId}")
+                    navController.navigate("next_departure/${result.stopId}/none/none")
                 } catch (e: BusLocationManager.LocationError) {
                     closestStopError = e.message
                 } catch (e: ClosestStopFinderService.ClosestStopError) {
@@ -602,7 +602,7 @@ fun AppNavigation() {
                 }} else null,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                 },
                 onMapSelected = { viewId ->
                     navController.navigate("route_map/${route.id}/$viewId/none")
@@ -610,40 +610,41 @@ fun AppNavigation() {
             )
         }
 
-        composable("next_departure/{routeId}/{stopId}/{viewId}") { backStackEntry ->
-            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+        composable("next_departure/{stopId}/{primaryRouteId}/{primaryViewId}") { backStackEntry ->
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
-            val initialViewId = backStackEntry.arguments?.getString("viewId") ?: return@composable
-            val route = routes.find { it.id == routeId } ?: return@composable
+            val primaryRouteId = backStackEntry.arguments?.getString("primaryRouteId")
+                ?.takeIf { it != "none" }
+            val primaryViewId = backStackEntry.arguments?.getString("primaryViewId")
+                ?.takeIf { it != "none" }
 
-            val currentDayType = remember {
-                when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
-                    java.util.Calendar.SATURDAY -> DayType.SATURDAY
-                    java.util.Calendar.SUNDAY -> DayType.SUNDAY
-                    else -> DayType.WEEKDAY
-                }
-            }
-            val views = remember(routeId, currentDayType) {
-                pdfProcessingService.getRouteViews(routeId, currentDayType)
-            }
-
-            // Find the stop from all views by ID
-            val stop = remember(views, stopId) {
-                views.flatMap { it.stops }.find { it.stop.id == stopId }?.stop
+            // Resolve stop from BusStopRegistry, falling back to a search across all views
+            val stop = remember(stopId) {
+                com.github.bfollon.intersego.data.BusStopRegistry.findById(stopId)
+                    ?: run {
+                        // Fallback: search across known route views
+                        val dayType = when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
+                            java.util.Calendar.SATURDAY -> DayType.SATURDAY
+                            java.util.Calendar.SUNDAY -> DayType.SUNDAY
+                            else -> DayType.WEEKDAY
+                        }
+                        pdfProcessingService.getSupportedRoutes()
+                            .flatMap { pdfProcessingService.getRouteViews(it, dayType) }
+                            .flatMap { it.stops }
+                            .find { it.stop.id == stopId }
+                            ?.stop
+                    }
             } ?: return@composable
 
             NextDepartureScreen(
-                route = route,
                 stop = stop,
-                views = views,
-                initialViewId = initialViewId,
+                allRoutes = routes,
+                primaryRouteId = primaryRouteId,
+                primaryViewId = primaryViewId,
                 reminderService = reminderService,
-                onBack = {
-                    navController.popBackStack()
-                },
-                onDaySchedule = { direction, variantLabel ->
+                onBack = { navController.popBackStack() },
+                onDaySchedule = { routeId, direction, variantLabel ->
                     val label = variantLabel ?: "all"
-                    navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/none")
+                    navController.navigate("day_schedule/$routeId/${stop.id}/$direction/$label/none")
                 }
             )
         }
@@ -671,7 +672,7 @@ fun AppNavigation() {
                 initialViewId = initialViewId,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                    navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                 }
             )
         }
@@ -700,7 +701,7 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                        navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                     } else {
                         val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name
@@ -740,7 +741,7 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        navController.navigate("next_departure/${route.id}/${stop.id}/$viewId")
+                        navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                     } else {
                         val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name

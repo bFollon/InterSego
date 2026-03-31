@@ -19,6 +19,7 @@ package com.github.bfollon.intersego.services.pdfparsing.strategies
 
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.BusStopRegistry
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.RouteSelectorEntry
@@ -62,7 +63,7 @@ class M8Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M8"),
         mode = ParserMode.PRODUCTION,
-        version = "1.0"
+        version = "1.1"
     )
 
     companion object {
@@ -72,183 +73,35 @@ class M8Parser : CapableParser, RouteStopsProvider {
         // ── Stops ─────────────────────────────────────────────────────────────────────
 
         private object Stops {
-            // Outbound Segovia cluster (4 sub-stops, +2 min each from anchor)
-            // Recorrido urbano: Estación Bus → Iglesia Santo Tomás → Enfrente Bar Norte → Plaza de Toros
-            val OUT_ESTACION_BUS = BusStop(
-                id = "m8-estacion-bus",
-                name = "Estación de Autobuses",
-                area = "Segovia Capital",
-                coordinates = "40.944768, -4.121823"
-            )
-            val OUT_IGLESIA_STO_TOMAS = BusStop(
-                id = "m8-iglesia-sto-tomas",
-                name = "Iglesia Santo Tomás",
-                area = "Segovia Capital",
-                coordinates = "40.941935, -4.118070"
-            )
-            val OUT_FRENTE_BAR_NORTE = BusStop(
-                id = "m8-frente-bar-norte",
-                name = "Enfrente Bar Norte",
-                area = "Segovia Capital",
-                coordinates = "40.937206, -4.113999"
-            )
-            val OUT_PLAZA_TOROS = BusStop(
-                id = "m8-plaza-de-toros",
-                name = "Plaza de Toros",
-                area = "Segovia Capital",
-                coordinates = "40.942093, -4.107603"
-            )
-
-            // Main route stops (outbound)
-            val CARRASCALEJO = BusStop(
-                id = "m8-carrascalejo",
-                name = "carrascalejo",
-                area = "La Granja",
-                coordinates = "40.922847, -4.078270"
-            )
-            val PENAS_DEL_ERIZO = BusStop(
-                id = "m8-penas-del-erizo",
-                name = "Peñas del Erizo",
-                area = "La Granja",
-                coordinates = "40.914155, -4.066063"
-            )
-            val C_LA_FUENCISLA = BusStop(
-                id = "m8-c-la-fuencisla",
-                name = "C. La Fuencisla",
-                area = "La Granja",
-                coordinates = "40.917151, -4.060857"
-            )
-            val PARQUE_ROBLEDO = BusStop(
-                id = "m8-parque-robledo",
-                name = "Parque Robledo",
-                area = "La Granja",
-                coordinates = "40.910103, -4.058763"
-            )
-            val FABRICA_CRISTAL = BusStop(
-                id = "m8-fabrica-cristal",
-                name = "Fábrica Cristal",
-                area = "La Granja",
-                coordinates = "40.902789, -4.006773"
-            )
-            val PISCINAS = BusStop(
-                id = "m8-piscinas",
-                name = "Piscinas",
-                area = "La Granja",
-                coordinates = "40.909126, -4.009200"
-            )
-            val PTAS_SEGOVIA = BusStop(
-                id = "m8-ptas-segovia",
-                name = "Ptas. Segovia",
-                area = "La Granja",
-                coordinates = "40.900325, -4.009467"
-            )
-            val LA_PRADERA = BusStop(
-                id = "m8-la-pradera",
-                name = "La Pradera",
-                area = "Valsaín",
-                coordinates = "40.878114, -4.018356"
-            )
-            val FRONTON = BusStop(
-                id = "m8-fronton",
-                name = "Frontón",
-                area = "Valsaín",
-                coordinates = "40.875741, -4.021955"
-            )
-            val PLAZA = BusStop(
-                id = "m8-plaza",
-                name = "Plaza",
-                area = "Valsaín",
-                coordinates = "40.878374, -4.027028"
-            )
-
-            // Inbound stops (with -in suffix)
-            val PLAZA_IN = BusStop(
-                id = "m8-plaza-in",
-                name = "Plaza",
-                area = "Valsaín",
-                coordinates = "40.878374, -4.027028"
-            )
-            val FRONTON_IN = BusStop(
-                id = "m8-fronton-in",
-                name = "Frontón",
-                area = "Valsaín",
-                coordinates = "40.875741, -4.021955"
-            )
-            val LA_PRADERA_IN = BusStop(
-                id = "m8-la-pradera-in",
-                name = "La Pradera",
-                area = "Valsaín",
-                coordinates = "40.878114, -4.018356"
-            )
-            val FABRICA_CRISTAL_IN = BusStop(
-                id = "m8-fabrica-cristal-in",
-                name = "Fábrica Cristal",
-                area = "La Granja",
-                coordinates = "40.902789, -4.006773"
-            )
-            val PISCINAS_IN = BusStop(
-                id = "m8-piscinas-in",
-                name = "Piscinas",
-                area = "La Granja",
-                coordinates = "40.909126, -4.009200"
-            )
-            val PTAS_SEGOVIA_IN = BusStop(
-                id = "m8-ptas-segovia-in",
-                name = "Ptas. Segovia",
-                area = "La Granja",
-                coordinates = "40.900325, -4.009467"
-            )
-            val PARQUE_ROBLEDO_IN = BusStop(
-                id = "m8-parque-robledo-in",
-                name = "Parque Robledo",
-                area = "La Granja",
-                coordinates = "40.910103, -4.058763"
-            )
-            val C_LA_FUENCISLA_IN = BusStop(
-                id = "m8-c-la-fuencisla-in",
-                name = "C. La Fuencisla",
-                area = "La Granja",
-                coordinates = "40.917151, -4.060857"
-            )
-            val PENAS_DEL_ERIZO_IN = BusStop(
-                id = "m8-penas-del-erizo-in",
-                name = "Peñas del Erizo",
-                area = "La Granja",
-                coordinates = "40.914155, -4.066063"
-            )
-            val CARRASCALEJO_IN = BusStop(
-                id = "m8-carrascalejo-in",
-                name = "carrascalejo",
-                area = "La Granja",
-                coordinates = "40.922847, -4.078270"
-            )
-
-            // Inbound Segovia cluster (4 sub-stops, +2 min each from anchor)
-            // Recorrido urbano: Plaza de Toros → Enfrente Bar Norte → Iglesia Santo Tomás → Estación Bus
-            val IN_PLAZA_TOROS = BusStop(
-                id = "m8-plaza-de-toros-in",
-                name = "Plaza de Toros",
-                area = "Segovia Capital",
-                coordinates = "40.942093, -4.107603"
-            )
-            val IN_FRENTE_BAR_NORTE = BusStop(
-                id = "m8-frente-bar-norte-in",
-                name = "Enfrente Bar Norte",
-                area = "Segovia Capital",
-                coordinates = "40.937206, -4.113999"
-            )
-            val IN_IGLESIA_STO_TOMAS = BusStop(
-                id = "m8-iglesia-sto-tomas-in",
-                name = "Iglesia Santo Tomás",
-                area = "Segovia Capital",
-                coordinates = "40.941935, -4.118070"
-            )
-            val IN_ESTACION_BUS = BusStop(
-                id = "m8-estacion-bus-in",
-                name = "Estación de Autobuses",
-                area = "Segovia Capital",
-                coordinates = "40.944768, -4.121823"
-            )
+            val OUT_ESTACION_BUS = BusStopRegistry.estacionAutobuses
+            val OUT_IGLESIA_STO_TOMAS = BusStopRegistry.iglesiaStTomas
+            val OUT_FRENTE_BAR_NORTE = BusStopRegistry.frenteBarNorte
+            val OUT_PLAZA_TOROS = BusStopRegistry.plazaDeToros
+            val CARRASCALEJO = BusStopRegistry.urbCarrascalejo
+            val PENAS_DEL_ERIZO = BusStopRegistry.penasDelErizo
+            val C_LA_FUENCISLA = BusStopRegistry.cLaFuencisla
+            val PARQUE_ROBLEDO = BusStopRegistry.parqueRobledo
+            val FABRICA_CRISTAL = BusStopRegistry.fabricaCristal
+            val PISCINAS = BusStopRegistry.piscinas
+            val PTAS_SEGOVIA = BusStopRegistry.ptasSegovia
+            val LA_PRADERA = BusStopRegistry.laPradera
+            val FRONTON = BusStopRegistry.fronton
+            val PLAZA = BusStopRegistry.plazaValsain
+            // Inbound — same canonical stops; direction distinguishes timetable buckets
+            val PLAZA_IN = BusStopRegistry.plazaValsain
+            val FRONTON_IN = BusStopRegistry.fronton
+            val LA_PRADERA_IN = BusStopRegistry.laPradera
+            val FABRICA_CRISTAL_IN = BusStopRegistry.fabricaCristal
+            val PISCINAS_IN = BusStopRegistry.piscinas
+            val PTAS_SEGOVIA_IN = BusStopRegistry.ptasSegovia
+            val PARQUE_ROBLEDO_IN = BusStopRegistry.parqueRobledo
+            val C_LA_FUENCISLA_IN = BusStopRegistry.cLaFuencisla
+            val PENAS_DEL_ERIZO_IN = BusStopRegistry.penasDelErizo
+            val CARRASCALEJO_IN = BusStopRegistry.urbCarrascalejo
+            val IN_PLAZA_TOROS = BusStopRegistry.plazaDeToros
+            val IN_FRENTE_BAR_NORTE = BusStopRegistry.frenteBarNorte
+            val IN_IGLESIA_STO_TOMAS = BusStopRegistry.iglesiaStTomas
+            val IN_ESTACION_BUS = BusStopRegistry.estacionAutobuses
         }
 
         // ── Stop lists ────────────────────────────────────────────────────────────────

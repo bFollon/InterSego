@@ -33,9 +33,7 @@ import java.util.Calendar
 class ClosestStopFinderService(private val context: Context) {
 
     data class Result(
-        val routeId: String,
-        val stopId: String,
-        val viewId: String
+        val stopId: String
     )
 
     sealed class ClosestStopError : Exception() {
@@ -54,13 +52,13 @@ class ClosestStopFinderService(private val context: Context) {
         val dayType = getCurrentDayType()
 
         val candidates = mutableListOf<StopCandidate>()
+        // Global dedup: each physical stop is a candidate at most once across all routes
+        val seenStopIds = mutableSetOf<String>()
 
         for (routeId in supportedRouteIds) {
             val route = routes.find { it.id == routeId } ?: continue
-            val views = pdfService.getRouteViews(routeId, dayType) ?: continue
+            val views = pdfService.getRouteViews(routeId, dayType)
             if (views.isEmpty()) continue
-
-            val seenStopIds = mutableSetOf<String>()
 
             for (view in views) {
                 for (viewStop in view.stops) {
@@ -94,8 +92,8 @@ class ClosestStopFinderService(private val context: Context) {
             pickBySoonestDeparture(tied, dayType)
         }
 
-        DebugConfig.debugPrint("ClosestStopFinderService: Winner → ${winner.route.id} / ${winner.stop.name}")
-        return Result(winner.route.id, winner.stop.id, winner.viewId)
+        DebugConfig.debugPrint("ClosestStopFinderService: Winner → ${winner.stop.name} (${winner.stop.id})")
+        return Result(winner.stop.id)
     }
 
     private suspend fun pickBySoonestDeparture(

@@ -19,6 +19,7 @@ package com.github.bfollon.intersego.services.pdfparsing.strategies
 
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.BusStopRegistry
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
@@ -59,7 +60,7 @@ class M1Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
         mode = ParserMode.PRODUCTION,
-        version = "1.7"
+        version = "1.8"
     )
 
     companion object {
@@ -74,74 +75,18 @@ class M1Parser : CapableParser, RouteStopsProvider {
         private const val DIRECTION_SAT_INBOUND = "Abades → Segovia"
 
         private object Stops {
-            val SEGOVIA = BusStop(
-                id = "m1-segovia",
-                name = "Estación de Autobuses",
-                area = "Segovia capital",
-                coordinates = "40.944973, -4.122431"
-            )
-            val POLIGONO = BusStop(
-                id = "m1-poligono",
-                name = "Polígono Industrial",
-                area = "Valverde del Majano",
-                coordinates = "40.957976, -4.198156"
-            )
-            val POLIGONO_2 = BusStop(
-                id = "m1-poligono-2",
-                name = "Polígono Industrial 2",
-                area = "Valverde del Majano",
-                coordinates = "40.957554, -4.206457"
-            )
-            val CASINO = BusStop(
-                id = "m1-casino",
-                name = "Casino",
-                area = "Casino de la Unión",
-                coordinates = "40.965154, -4.209251"
-            )
-            val VALVERDE = BusStop(
-                id = "m1-valverde",
-                name = "Valverde de Majano",
-                area = "Valverde del Majano",
-                coordinates = "40.956274, -4.235343"
-            )
-            val ABADES = BusStop(
-                id = "m1-abades",
-                name = "Abades",
-                area = "Abades",
-                coordinates = "40.915804, -4.267038"
-            )
-            val MARTIN_MIGUEL = BusStop(
-                id = "m1-martin-miguel",
-                name = "Martín Miguel",
-                area = "Martín Miguel",
-                coordinates = "40.951889, -4.268660"
-            )
-            val GARCILLAN = BusStop(
-                id = "m1-garcillan",
-                name = "Garcillán",
-                area = "Garcillán",
-                coordinates = "40.976809, -4.264724"
-            )
-
-            // Circular return stops — same physical locations, distinct IDs for route positioning
-            val SEGOVIA_RETURN = BusStop(
-                id = "m1-segovia-return",
-                name = "Estación de Autobuses",
-                area = "Segovia capital",
-                coordinates = "40.944973, -4.122431"
-            )
-            val POLIGONO_B_IN = BusStop(
-                id = "m1-poligono-b-in",
-                name = "Polígono Industrial",
-                area = "Valverde del Majano",
-                coordinates = "40.957976, -4.198156"
-            )
-            val POLIGONO_2_B_IN = BusStop(
-                id = "m1-poligono-2-b-in",
-                name = "Polígono Industrial 2",
-                area = "Valverde del Majano",
-                coordinates = "40.957554, -4.206457"
-            )
+            val SEGOVIA = BusStopRegistry.estacionAutobuses
+            val POLIGONO = BusStopRegistry.poligonoIndM1
+            val POLIGONO_2 = BusStopRegistry.poligonoIndM1B
+            val CASINO = BusStopRegistry.casinoUnion
+            val VALVERDE = BusStopRegistry.valverdeMajano
+            val ABADES = BusStopRegistry.abades
+            val MARTIN_MIGUEL = BusStopRegistry.martinMiguel
+            val GARCILLAN = BusStopRegistry.garcillan
+            // Circular return — same canonical stops; direction distinguishes timetable buckets
+            val SEGOVIA_RETURN = BusStopRegistry.estacionAutobuses
+            val POLIGONO_B_IN = BusStopRegistry.poligonoIndM1
+            val POLIGONO_2_B_IN = BusStopRegistry.poligonoIndM1B
         }
 
         // Direction A: Segovia → (all villages) → Garcillán → Segovia (return)
