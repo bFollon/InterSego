@@ -84,9 +84,17 @@ import androidx.compose.ui.layout.Layout
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
+import com.github.bfollon.intersego.data.BoardingEvent
+import com.github.bfollon.intersego.data.BoardingRequest
+import com.github.bfollon.intersego.services.BoardingService
+import androidx.compose.material.icons.filled.DirectionsBus
 
 // ============================================================================
 // DATA CLASSES
@@ -174,6 +182,14 @@ fun NextDepartureScreen(
     var dailyReminderKeys by remember { mutableStateOf(reminderService?.dailyMatchKeys() ?: emptySet()) }
     var reminderError by remember { mutableStateOf<String?>(null) }
 
+    // Boarding state
+    var boardingConfirmed by remember { mutableStateOf(false) }
+    var boardingSubmitting by remember { mutableStateOf(false) }
+    var boardingError by remember { mutableStateOf<String?>(null) }
+    var showDirectionPickerForBoarding by remember { mutableStateOf(false) }
+    var activeBoardings by remember { mutableStateOf<List<BoardingEvent>>(emptyList()) }
+    val boardingScope = rememberCoroutineScope()
+
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -244,6 +260,11 @@ fun NextDepartureScreen(
 
     val direction = currentDirection ?: availableDirections.firstOrNull() ?: ""
     val swapDirection = availableDirections.firstOrNull { it != direction }
+
+    // Reset boarding confirmation when direction changes
+    LaunchedEffect(direction) {
+        boardingConfirmed = false
+    }
 
     // Active view (for variant label) — from single-route context
     val activeView = remember(loadedRoutes, selectedRouteId, direction) {
@@ -338,6 +359,36 @@ fun NextDepartureScreen(
     val nextTaggedDeparture = departureInfo.departure
     val followingTaggedDepartures = departureInfo.following
     val daysAhead = departureInfo.daysAhead
+
+    // Boarding derived state
+    val tripKey = remember(nextTaggedDeparture, direction, currentDayType) {
+        nextTaggedDeparture?.let { BoardingRequest.makeTripKey(it.routeId, direction, currentDayType, it.departure) }
+    }
+    val matchingBoardings = remember(activeBoardings, tripKey) {
+        if (tripKey == null) emptyList() else activeBoardings.filter { it.tripKey == tripKey }
+    }
+    val adjustedETA: String? = remember(matchingBoardings, nextTaggedDeparture) {
+        val latest = matchingBoardings.maxByOrNull { it.boardedAt } ?: return@remember null
+        val scheduledStr = latest.scheduledDepartureTime ?: return@remember null
+        val td = nextTaggedDeparture ?: return@remember null
+        try {
+            val boardedInstant = Instant.parse(latest.boardedAt)
+            val scheduledInstant = Instant.parse(scheduledStr)
+            val latenessMinutes = (boardedInstant.epochSecond - scheduledInstant.epochSecond) / 60
+            val myMinutes = td.departure.hour * 60L + td.departure.minute
+            val adjusted = ((myMinutes + latenessMinutes) % 1440 + 1440) % 1440
+            "%02d:%02d".format(adjusted / 60, adjusted % 60)
+        } catch (_: Exception) { null }
+    }
+
+    LaunchedEffect(tripKey) {
+        boardingConfirmed = false
+        if (tripKey == null) return@LaunchedEffect
+        while (true) {
+            activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
+            delay(60_000)
+        }
+    }
 
     // TopAppBar title: route name when single route context, stop name for multi-route
     val topBarTitle = if (loadedRoutes.size == 1) {
@@ -532,6 +583,68 @@ fun NextDepartureScreen(
                         )
                     }
 
+                    // Boarding status badge (others confirmed on this trip)
+                    if (matchingBoardings.isNotEmpty()) {
+                        item {
+                            BoardingStatusCard(
+                                confirmationCount = matchingBoardings.size,
+                                adjustedETA = adjustedETA,
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 12.dp)
+                            )
+                        }
+                    }
+
+                    // "Estoy en el autobús" button
+                    if (daysAhead == 0) {
+                        item {
+                            BoardingButton(
+                                confirmed = boardingConfirmed,
+                                isLoading = boardingSubmitting,
+                                errorMessage = boardingError,
+                                onClick = {
+                                    boardingError = null
+                                    if (availableDirections.size > 1) {
+                                        showDirectionPickerForBoarding = true
+                                    } else {
+                                        boardingScope.launch {
+                                            val dep = nextTaggedDeparture ?: return@launch
+                                            val key = tripKey ?: return@launch
+                                            boardingSubmitting = true
+                                            try {
+                                                val now = Instant.now()
+                                                val scheduled = LocalDate.now()
+                                                    .atTime(LocalTime.of(dep.departure.hour, dep.departure.minute, 0))
+                                                    .atZone(ZoneId.systemDefault()).toInstant()
+                                                val request = BoardingRequest(
+                                                    stopId = stop.id,
+                                                    routeId = dep.routeId,
+                                                    direction = direction,
+                                                    tripKey = key,
+                                                    boardedAt = now.toString(),
+                                                    scheduledDepartureTime = scheduled.toString()
+                                                )
+                                                val result = BoardingService.postBoarding(request)
+                                                if (result.isSuccess) {
+                                                    boardingConfirmed = true
+                                                    activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
+                                                } else {
+                                                    boardingError = "No se pudo enviar. Inténtalo de nuevo."
+                                                }
+                                            } finally {
+                                                boardingSubmitting = false
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 12.dp)
+                            )
+                        }
+                    }
+
                     // "Ver horario completo" — show whenever there's a clear single route context,
                     // even when all of today's buses have passed or there's no service today.
                     if (activeSingleRoute != null) {
@@ -630,6 +743,78 @@ fun NextDepartureScreen(
                 }
             }
         }
+    }
+
+    // Direction picker dialog for boarding
+    if (showDirectionPickerForBoarding) {
+        AlertDialog(
+            onDismissRequest = { showDirectionPickerForBoarding = false },
+            title = { Text("¿En qué dirección vas?") },
+            text = {
+                Column {
+                    availableDirections.forEach { dir ->
+                        TextButton(
+                            onClick = {
+                                showDirectionPickerForBoarding = false
+                                val dep = nextTaggedDeparture
+                                if (dep != null) {
+                                    boardingScope.launch {
+                                        boardingSubmitting = true
+                                        boardingError = null
+                                        try {
+                                            // Look up the actual next departure for the chosen direction
+                                            val routesToUse = if (selectedRouteId != null)
+                                                loadedRoutes.filter { it.route.id == selectedRouteId }
+                                            else loadedRoutes
+                                            val dirDeparture = routesToUse
+                                                .flatMap { routeData ->
+                                                    routeData.timetables
+                                                        .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == dir }
+                                                        .flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }
+                                                }
+                                                .sortedBy { it.toMinutesSinceMidnight() }
+                                                .firstOrNull { LocalTime.of(it.hour, it.minute).isAfter(currentTime) }
+                                                ?: dep.departure
+                                            val key = BoardingRequest.makeTripKey(dep.routeId, dir, currentDayType, dirDeparture)
+                                            val now = Instant.now()
+                                            val scheduled = LocalDate.now()
+                                                .atTime(LocalTime.of(dirDeparture.hour, dirDeparture.minute, 0))
+                                                .atZone(ZoneId.systemDefault()).toInstant()
+                                            val request = BoardingRequest(
+                                                stopId = stop.id,
+                                                routeId = dep.routeId,
+                                                direction = dir,
+                                                tripKey = key,
+                                                boardedAt = now.toString(),
+                                                scheduledDepartureTime = scheduled.toString()
+                                            )
+                                            val result = BoardingService.postBoarding(request)
+                                            if (result.isSuccess) {
+                                                boardingConfirmed = true
+                                                activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
+                                            } else {
+                                                boardingError = "No se pudo enviar. Inténtalo de nuevo."
+                                            }
+                                        } finally {
+                                            boardingSubmitting = false
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(dir, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showDirectionPickerForBoarding = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
@@ -1479,6 +1664,96 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
                     lineHeight = 18.sp
                 )
             }
+        }
+    }
+}
+
+// ============================================================================
+// BOARDING
+// ============================================================================
+
+/**
+ * Badge shown when one or more users have confirmed they are on this trip.
+ * Shows a confirmation count and, if available, an adjusted departure ETA.
+ */
+@Composable
+private fun BoardingStatusCard(
+    confirmationCount: Int,
+    adjustedETA: String?,
+    modifier: Modifier = Modifier
+) {
+    val text = buildString {
+        append(if (confirmationCount == 1) "1 usuario confirmó" else "$confirmationCount usuarios confirmaron")
+        append(" que está en este autobús.")
+        if (adjustedETA != null) append(" ETA estimada: $adjustedETA.")
+    }
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.primaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.DirectionsBus,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
+/**
+ * Full-width button that lets the user announce they are on this bus.
+ * Disabled once confirmed; resets when the direction changes.
+ */
+@Composable
+private fun BoardingButton(
+    confirmed: Boolean,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Button(
+            onClick = onClick,
+            enabled = !confirmed && !isLoading,
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.DirectionsBus,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(if (confirmed) "¡Gracias por confirmar!" else "Estoy en el autobús")
+        }
+        if (errorMessage != null) {
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
     }
 }

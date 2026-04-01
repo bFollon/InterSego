@@ -17,6 +17,9 @@ android {
         versionName = "1.8.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BOARDING_SERVER_URL", "\"https://boarding.example.com\"")
+        buildConfigField("String", "BOARDING_API_KEY", "\"placeholder-key\"")
     }
 
     buildTypes {
@@ -45,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests.isReturnDefaultValues = true

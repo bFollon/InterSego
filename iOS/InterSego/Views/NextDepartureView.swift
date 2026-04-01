@@ -113,6 +113,14 @@ struct NextDepartureView: View {
     @AppStorage("bellTutorialShown") private var bellTutorialShown = false
     @State private var showBellTip = false
 
+    // Boarding state
+    @State private var boardingConfirmed = false
+    @State private var boardingSubmitting = false
+    @State private var boardingError: String? = nil
+    @State private var showBoardingError = false
+    @State private var showDirectionPicker = false
+    @State private var activeBoardings: [BoardingEvent] = []
+
     init(stop: BusStop, primaryRouteId: String?, primaryViewId: String?) {
         self.stop = stop
         self.primaryRouteId = primaryRouteId
@@ -164,6 +172,27 @@ struct NextDepartureView: View {
 
     private var singleActiveRoute: BusRoute? {
         activeRoutesData.count == 1 ? activeRoutesData.first?.route : nil
+    }
+
+    private var currentTripKey: String? {
+        guard let next = departureInfo.departure else { return nil }
+        return "\(next.routeId)|\(direction)|\(currentDayType.rawValue)|\(next.departure.displayString)"
+    }
+
+    private var matchingBoardings: [BoardingEvent] {
+        guard let key = currentTripKey else { return [] }
+        return activeBoardings.filter { $0.tripKey == key }
+    }
+
+    private var adjustedETA: String? {
+        guard let latest = matchingBoardings.max(by: { $0.boardedAt < $1.boardedAt }),
+              let scheduled = latest.scheduledDepartureDate,
+              let boarded = latest.boardedAtDate,
+              let next = departureInfo.departure else { return nil }
+        let latenessMinutes = Int(boarded.timeIntervalSince(scheduled) / 60)
+        let myMinutes = next.departure.hour * 60 + next.departure.minute
+        let adjusted = ((myMinutes + latenessMinutes) % 1440 + 1440) % 1440
+        return String(format: "%02d:%02d", adjusted / 60, adjusted % 60)
     }
 
     private var todayDepartures: [TaggedDeparture] {
@@ -246,12 +275,31 @@ struct NextDepartureView: View {
             }
             .task { await loadTimetables() }
             .task { await refreshReminderKeys() }
-            .onReceive(timer) { time in currentTime = time }
+            .task(id: currentTripKey) { await pollBoardings() }
+            .onReceive(timer) { time in
+                currentTime = time
+                Task { await pollBoardings() }
+            }
             .alert("Error al programar el recordatorio", isPresented: $showReminderAlert) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(reminderErrorMessage ?? "")
             }
+            .alert("Error al enviar", isPresented: $showBoardingError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(boardingError ?? "")
+            }
+            .confirmationDialog("¿En qué dirección vas?", isPresented: $showDirectionPicker, titleVisibility: .visible) {
+                ForEach(availableDirections, id: \.self) { dir in
+                    Button(dir) {
+                        Task { await submitBoarding(direction: dir) }
+                    }
+                }
+                Button("Cancelar", role: .cancel) {}
+            }
+            .onChange(of: direction) { _, _ in boardingConfirmed = false }
+            .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }
             .onAppear {
                 if !bellTutorialShown {
                     bellTutorialShown = true
@@ -316,6 +364,25 @@ struct NextDepartureView: View {
 
                 TimesDisclaimerCard()
                     .padding(.horizontal, 16).padding(.top, 16)
+
+                // Boarding status badge (others on the same trip)
+                if !matchingBoardings.isEmpty {
+                    BoardingBadgeView(
+                        confirmationCount: matchingBoardings.count,
+                        adjustedETA: adjustedETA
+                    )
+                    .padding(.horizontal, 16).padding(.top, 12)
+                }
+
+                // "Estoy en el autobús" button
+                if info.daysAhead == 0 {
+                    BoardingButton(
+                        confirmed: boardingConfirmed,
+                        isLoading: boardingSubmitting,
+                        onTap: handleBoardingTap
+                    )
+                    .padding(.horizontal, 16).padding(.top, 12)
+                }
 
                 if let activeRoute = singleActiveRoute {
                     let scheduleOverrideDayType: DayType? = {
@@ -494,6 +561,57 @@ struct NextDepartureView: View {
                 }
             }
             await refreshReminderKeys()
+        }
+    }
+
+    // MARK: - Boarding helpers
+
+    private func pollBoardings() async {
+        activeBoardings = await BoardingService.shared.fetchActiveBoardings()
+    }
+
+    private func handleBoardingTap() {
+        if availableDirections.count > 1 {
+            showDirectionPicker = true
+        } else {
+            Task { await submitBoarding(direction: direction) }
+        }
+    }
+
+    private func nextDeparture(forDirection dir: String) -> DepartureTime? {
+        let cal = Calendar.current
+        let h = cal.component(.hour, from: currentTime)
+        let m = cal.component(.minute, from: currentTime)
+        return activeRoutesData
+            .flatMap { routeData in
+                routeData.timetables
+                    .filter { currentDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == dir }
+                    .flatMap { $0.seasonalDepartures(weekday: currentWeekday) }
+            }
+            .sorted()
+            .first { $0.isFuture(currentHour: h, currentMinute: m) }
+    }
+
+    private func submitBoarding(direction dir: String) async {
+        guard let next = departureInfo.departure else { return }
+        boardingSubmitting = true
+        defer { boardingSubmitting = false }
+        // Use the actual next departure for the chosen direction (may differ from the displayed one)
+        let departure = (dir == direction) ? next.departure : (nextDeparture(forDirection: dir) ?? next.departure)
+        let request = BoardingRequest.make(
+            stop: stop,
+            routeId: next.routeId,
+            direction: dir,
+            dayType: currentDayType,
+            departure: departure
+        )
+        do {
+            try await BoardingService.shared.postBoarding(request)
+            boardingConfirmed = true
+            activeBoardings = await BoardingService.shared.fetchActiveBoardings()
+        } catch {
+            boardingError = error.localizedDescription
+            showBoardingError = true
         }
     }
 }
@@ -1033,5 +1151,63 @@ private struct DepartureTimeline: View {
                 .padding(.vertical, 4)
             }
         }
+    }
+}
+
+// MARK: - Boarding Badge View
+
+private struct BoardingBadgeView: View {
+    let confirmationCount: Int
+    let adjustedETA: String?
+
+    private var message: String {
+        let who = confirmationCount == 1 ? "1 usuario confirmó" : "\(confirmationCount) usuarios confirmaron"
+        var text = "\(who) que está en este autobús."
+        if let eta = adjustedETA { text += " ETA estimada: \(eta)." }
+        return text
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "bus.fill")
+                .font(.subheadline)
+            Text(message)
+                .font(.caption)
+                .lineSpacing(2)
+        }
+        .foregroundColor(.accentColor)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentColor.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - Boarding Button
+
+private struct BoardingButton: View {
+    let confirmed: Bool
+    let isLoading: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(.white)
+                } else {
+                    Image(systemName: confirmed ? "checkmark.circle.fill" : "bus")
+                }
+                Text(confirmed ? "¡Gracias por confirmar!" : "Estoy en el autobús")
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(confirmed || isLoading)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

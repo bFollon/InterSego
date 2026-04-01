@@ -23,6 +23,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Three-tier caching (memory → JSON → PDF) | ✅ | ✅ | |
 | Timetable cache service | ✅ | ✅ | |
 | Debug config / logging | ✅ | ✅ | |
+| Boarding notification service | ✅ | ✅ | Node.js/TypeScript server at `server/`; stores boarding events; GET+POST /boardings; 4h TTL; Bearer auth; see `server/docs/API.md` |
+| BoardingService client | ✅ | ✅ | Android: OkHttp object singleton + BuildConfig; iOS: URLSession actor + AppConfig |
 
 ### PDF Parsers
 
@@ -57,6 +59,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | About screen | ✅ | ✅ | Sheet presented from "Acerca de" footer button on landing screen; shows app info, Ko-fi, GitHub, Linecar data source, contact links, legal notice |
 | Reminders screen | ✅ | ✅ | "Mis recordatorios" card on Landing; bell tap = one-off, long-press = daily (recurring); daily reminders show repeat badge (circular arrows + bell); smart-skip: day type + seasonal check at fire time silently skips if bus doesn't run; one-off uses "next occurrence" logic (finds next future date the bus runs, up to 30 days ahead); bells shown on ALL departures in DaySchedule + NextDeparture (not just today's future ones); separate lead times for one-off (default 10 min) and daily (default 15 min); cancel individual reminders; auto-pruned one-offs on app launch. Android: AlarmManager one-shot re-scheduling + BootReceiver for reboot resilience; iOS: 7-day rolling batch of UNNotificationRequest with deterministic IDs + replenishDailyReminders() at launch |
 | Reminders tutorial | ✅ | ✅ | 4-slide onboarding shown on first open of RemindersScreen; re-accessible via "?" button in toolbar; slides: La campana → Aviso puntual → Aviso diario → Tus recordatorios; platform-specific screenshots; Android: ModalBottomSheet + SharedPreferences flag; iOS: .sheet + @AppStorage flag |
+| Live boarding confirmations | ✅ | ✅ | "Estoy en el autobús" button on NextDeparture; direction picker when multi-direction stop; one-tap-per-session; badge + adjusted ETA when others confirmed same trip; 60s polling via BoardingService; server URL + API key in BuildConfig/AppConfig (placeholder) |
 
 ### Location & Geolocation
 
