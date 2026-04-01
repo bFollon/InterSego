@@ -1,36 +1,86 @@
-# Feature description
-I want to implement a sort of user-sourced "live-updates" feature.
+# Feature: User-sourced live updates
 
 ## Problem
-Right now, all the departure times are static and estimated. Historically, Linecar buses are not very punctual and can either depart early, depart late or even there have been cases of busses straight up not departing, leaving users stranded with no warning whatsoever.
 
-This leads to a horrible user experience in which you never know if youa rrived slightly too late and the bus passed early, or if it's going to be 20 minutes late and you should stay and wait. With busses in many cases departing every hour, this can be a very bad experience.
+All departure times are static and estimated. Linecar buses are historically unpunctual — they can depart early, late, or not at all, leaving users stranded with no warning. With buses often running hourly, this is a bad experience: you never know if you arrived slightly too late and the bus passed early, or if it's 20 minutes late and you should wait.
 
 ## Target solution
-The ideal solution would be for drivers to have a way to report their location. But this app is not being developed with the cooperation of the bus company help and is a standalone effort.
-The next best thing would be for the app to report the user's location intelligently and only during the trip so other users could have a live update of the bus.
 
-## MVP
-As an MVP, the solution will simply be allowing users to notify whenever they get on the bus.  
-This would solve two issues:
-- Clear up the uncertainty of "Will this departure even be served?" to downstream users.
-- Provide a more accurate ETA to users downstream.
+The ideal solution would be for drivers to report their location. Since this app is a standalone effort without bus company cooperation, the next best thing is for the app to report the user's location intelligently and only during the trip, so other users get a live update of the bus.
 
-To implement this, I have created a `server` folder in which we will implement a simple server that will have two endpoints (as a starting point):
-- One endpoint to receive boarding notifications from users
-  - That endpoint will need to receive:
-    - Boarded stop
-    - Time of boarding
-- One endpoint to query current active notifications that can help the app provide better ETA and inform users that the bus that will serve their departure has indeed departed from a stop prior to theirs
+## MVP — boarding notifications
 
-The stop ID to send to the boarding endpoint should be derived from the user's location  
-Either the server or the app should be able to, based on the bus stop and the time, determine which ETA they can provide an updated ETA for.
+Users tap a "I'm on the bus" button. This solves two problems for downstream users:
+- Confirms the departure is actually being served
+- Provides a more accurate ETA based on how early or late the boarding happened
 
-Busses serve lines on a trip basis, event if the route is circular.  
-If a user notifies a boarding, updated ETA should only apply to one trip / one cicle of the circular route.
+## Architecture decisions
+
+### Dumb repository server
+
+The server is a pure event store — it knows nothing about routes, stops, or timetables. All trip matching and ETA computation happen on the client, which already carries the full timetable locally. This keeps the server minimal and immune to timetable updates.
+
+### Trip key
+
+Since the data model has no first-class trip ID, the app synthesises one before submitting:
+
+```
+{routeId}|{direction}|{dayType}|{HH:MM}
+```
+
+Where `HH:MM` is the **scheduled departure time at the boarding stop** (zero-padded, 24h). Example:
+
+```
+M4|Lastrilla → Sotillo|WEEKDAY|07:30
+```
+
+Other devices filter GET /boardings by this key to find events for the same trip.
+
+### ETA calculation (client-side)
+
+```
+lateness = boardedAt − scheduledDepartureTime
+estimatedDeparture = scheduledAtMyStop + lateness
+```
+
+`scheduledDepartureTime` is optional in the POST body but strongly recommended — it's what makes the lateness calculation possible.
+
+### Auth
+
+Bearer token in the `Authorization` header. The same token is bundled into the apps at build time and stored in `.env` on the server. The server runs behind a Cloudflare Tunnel (HTTPS enforced).
+
+### Event expiry
+
+Events expire 4 hours after submission — longer than any route cycle. Expired events are pruned lazily on the next request.
 
 ## Server stack
-The server should be implemented in nodejs, with some framework aimed at services, like next.js or something similar.
-Ideally, we should use typescript to have some type safety.
 
-We should use some file-based database. Data structures should be JSON or some typescript-compatible technology.
+- **Runtime:** Node.js 20+
+- **Framework:** Fastify + TypeScript
+- **Storage:** lowdb (JSON file, `server/data/boardings.json`)
+- **Docs:** `server/docs/API.md` (endpoint reference) and `server/docs/ARCHITECTURE.md` (design decisions + app integration guide)
+
+## Status
+
+| Step | Status |
+|---|---|
+| Server implementation | ✅ Done |
+| Android integration | ⬜ Pending |
+| iOS integration | ⬜ Pending |
+
+## API summary
+
+**POST `/boardings`** — submit a boarding event
+
+| Field | Required | Notes |
+|---|---|---|
+| `stopId` | ✅ | Canonical ID from BusStopRegistry |
+| `routeId` | ✅ | e.g. `"M4"` |
+| `direction` | ✅ | Exact string from BusTimetable |
+| `tripKey` | ✅ | See format above |
+| `boardedAt` | ✅ | ISO 8601 UTC |
+| `scheduledDepartureTime` | ❌ | ISO 8601 UTC — enables lateness calculation |
+
+**GET `/boardings`** — returns all active (non-expired) events as a JSON array.
+
+See `server/docs/API.md` for full details and curl examples.
