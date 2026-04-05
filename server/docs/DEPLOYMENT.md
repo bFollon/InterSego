@@ -21,23 +21,23 @@ The server only binds to `127.0.0.1`, so it is not reachable from the LAN direct
 
 ## Services
 
-### `intersego-server.service`
+### `intersego-server` (pm2)
 
-Systemd unit at `/etc/systemd/system/intersego-server.service`.
+Managed by pm2, running as user `bruno.follon`.
 
-- Runs as user `bruno.follon`
 - Working directory: `/home/bruno.follon/services/InterSego/server`
 - Reads environment from `.env` (port, host, API key)
-- Enabled at boot, restarts automatically on failure
+- Persisted via `pm2 save` + `pm2 startup`, restarts automatically on failure and reboot
 
 ```bash
 # Start / stop / restart
-sudo systemctl start intersego-server
-sudo systemctl stop intersego-server
-sudo systemctl restart intersego-server
+pm2 start dist/index.js --name intersego-server
+pm2 stop intersego-server
+pm2 restart intersego-server
 
 # Logs
-journalctl -u intersego-server -f
+pm2 logs intersego-server
+pm2 logs intersego-server --lines 100
 ```
 
 ### `cloudflared.service`
@@ -69,8 +69,10 @@ This pointed the subdomain at the existing tunnel — no Cloudflare dashboard ch
 
 ```bash
 cd /home/bruno.follon/services/InterSego/server
+git pull
+npm install
 npm run build
-sudo systemctl restart intersego-server
+pm2 restart intersego-server
 ```
 
 ## Environment variables
