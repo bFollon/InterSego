@@ -180,8 +180,22 @@ struct NextDepartureView: View {
     }
 
     private var matchingBoardings: [BoardingEvent] {
-        guard let key = currentTripKey else { return [] }
-        return activeBoardings.filter { $0.tripKey == key }
+        guard let next = departureInfo.departure else { return [] }
+        let myMinutes = next.departure.hour * 60 + next.departure.minute
+        return activeBoardings.filter { boarding in
+            let parts = boarding.tripKey.split(separator: "|", maxSplits: 3).map(String.init)
+            guard parts.count == 4 else { return false }
+            let timeParts = parts[3].split(separator: ":").map(String.init)
+            guard timeParts.count == 2,
+                  let bHour = Int(timeParts[0]),
+                  let bMin = Int(timeParts[1]) else { return false }
+            let bMinutes = bHour * 60 + bMin
+            return parts[0] == next.routeId
+                && parts[1] == direction
+                && parts[2] == currentDayType.rawValue
+                && bMinutes <= myMinutes
+                && myMinutes - bMinutes <= 90
+        }
     }
 
     private var adjustedETA: String? {
@@ -355,6 +369,8 @@ struct NextDepartureView: View {
                         selectedVariantLabel: variantLabel(for: next),
                         daysAhead: info.daysAhead,
                         showRouteBadge: isMultiRoute,
+                        adjustedETA: adjustedETA,
+                        boardingCount: matchingBoardings.count,
                         bellState: isToday ? bellState(for: next) : .off,
                         onBellTap: isToday ? { handleBellTap(for: next) } : nil,
                         onBellLongPress: isToday ? { handleBellLongPress(for: next) } : nil,
@@ -364,15 +380,6 @@ struct NextDepartureView: View {
 
                 TimesDisclaimerCard()
                     .padding(.horizontal, 16).padding(.top, 16)
-
-                // Boarding status badge (others on the same trip)
-                if !matchingBoardings.isEmpty {
-                    BoardingBadgeView(
-                        confirmationCount: matchingBoardings.count,
-                        adjustedETA: adjustedETA
-                    )
-                    .padding(.horizontal, 16).padding(.top, 12)
-                }
 
                 // "Estoy en el autobús" button
                 if info.daysAhead == 0 {
@@ -902,9 +909,13 @@ private struct NextDepartureCard: View {
     let selectedVariantLabel: String?
     let daysAhead: Int
     let showRouteBadge: Bool
+    var adjustedETA: String? = nil
+    var boardingCount: Int = 0
     var bellState: BellState = .off
     var onBellTap: (() -> Void)? = nil
     var onBellLongPress: (() -> Void)? = nil
+
+    @State private var showBoardingInfo = false
 
     private var departure: DepartureTime { tagged.departure }
 
@@ -986,6 +997,28 @@ private struct NextDepartureCard: View {
             Text(countdownText)
                 .font(.body)
                 .foregroundColor(.secondary)
+
+            // Real-time ETA from boarding confirmations
+            if let eta = adjustedETA, boardingCount > 0 {
+                HStack(spacing: 8) {
+                    Text("Tiempo real:")
+                        .font(.headline)
+                    DepartureTimeBadge(time: eta)
+                    Button {
+                        showBoardingInfo = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .alert("Tiempo real", isPresented: $showBoardingInfo) {
+                    Button("Entendido", role: .cancel) {}
+                } message: {
+                    let who = boardingCount == 1 ? "1 usuario confirmó" : "\(boardingCount) usuarios confirmaron"
+                    Text("\(who) que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a \(eta).")
+                }
+            }
 
             // Notes
             if let notes = departure.notes, !notes.isEmpty {
@@ -1151,35 +1184,6 @@ private struct DepartureTimeline: View {
                 .padding(.vertical, 4)
             }
         }
-    }
-}
-
-// MARK: - Boarding Badge View
-
-private struct BoardingBadgeView: View {
-    let confirmationCount: Int
-    let adjustedETA: String?
-
-    private var message: String {
-        let who = confirmationCount == 1 ? "1 usuario confirmó" : "\(confirmationCount) usuarios confirmaron"
-        var text = "\(who) que está en este autobús."
-        if let eta = adjustedETA { text += " ETA estimada: \(eta)." }
-        return text
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "bus.fill")
-                .font(.subheadline)
-            Text(message)
-                .font(.caption)
-                .lineSpacing(2)
-        }
-        .foregroundColor(.accentColor)
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.accentColor.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

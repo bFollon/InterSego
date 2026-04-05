@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.HolidayVillage
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.SwapVert
@@ -364,8 +365,23 @@ fun NextDepartureScreen(
     val tripKey = remember(nextTaggedDeparture, direction, currentDayType) {
         nextTaggedDeparture?.let { BoardingRequest.makeTripKey(it.routeId, direction, currentDayType, it.departure) }
     }
-    val matchingBoardings = remember(activeBoardings, tripKey) {
-        if (tripKey == null) emptyList() else activeBoardings.filter { it.tripKey == tripKey }
+    val matchingBoardings = remember(activeBoardings, nextTaggedDeparture, direction, currentDayType) {
+        val td = nextTaggedDeparture ?: return@remember emptyList()
+        val myMinutes = td.departure.hour * 60 + td.departure.minute
+        activeBoardings.filter { boarding ->
+            val parts = boarding.tripKey.split("|", limit = 4)
+            if (parts.size < 4) return@filter false
+            val bTimeParts = parts[3].split(":")
+            if (bTimeParts.size < 2) return@filter false
+            val bHour = bTimeParts[0].toIntOrNull() ?: return@filter false
+            val bMin = bTimeParts[1].toIntOrNull() ?: return@filter false
+            val bMinutes = bHour * 60 + bMin
+            parts[0] == td.routeId
+                && parts[1] == direction
+                && parts[2] == currentDayType.name
+                && bMinutes <= myMinutes
+                && myMinutes - bMinutes <= 90
+        }
     }
     val adjustedETA: String? = remember(matchingBoardings, nextTaggedDeparture) {
         val latest = matchingBoardings.maxByOrNull { it.boardedAt } ?: return@remember null
@@ -570,6 +586,8 @@ fun NextDepartureScreen(
                                     dailyReminderKeys = reminderService.dailyMatchKeys()
                                 }
                             } else null,
+                            adjustedETA = adjustedETA,
+                            boardingCount = matchingBoardings.size,
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
                     }
@@ -581,19 +599,6 @@ fun NextDepartureScreen(
                                 .padding(horizontal = 16.dp)
                                 .padding(top = 16.dp)
                         )
-                    }
-
-                    // Boarding status badge (others confirmed on this trip)
-                    if (matchingBoardings.isNotEmpty()) {
-                        item {
-                            BoardingStatusCard(
-                                confirmationCount = matchingBoardings.size,
-                                adjustedETA = adjustedETA,
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .padding(top = 12.dp)
-                            )
-                        }
                     }
 
                     // "Estoy en el autobús" button
@@ -1337,6 +1342,8 @@ fun NextDepartureWithProgress(
     currentTime: LocalTime,
     selectedVariantLabel: String? = null,
     daysAhead: Int = 0,
+    adjustedETA: String? = null,
+    boardingCount: Int = 0,
     isBellSet: Boolean = false,
     isDailyBell: Boolean = false,
     onBellTap: (() -> Unit)? = null,
@@ -1445,6 +1452,45 @@ fun NextDepartureWithProgress(
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
             )
+
+            // Real-time ETA from boarding confirmations
+            if (adjustedETA != null && boardingCount > 0) {
+                var showBoardingInfo by remember { mutableStateOf(false) }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Tiempo real:",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    DepartureTimeBadge(time = adjustedETA)
+                    IconButton(
+                        onClick = { showBoardingInfo = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Info,
+                            contentDescription = "Información sobre tiempo real",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+                if (showBoardingInfo) {
+                    val who = if (boardingCount == 1) "1 usuario confirmó" else "$boardingCount usuarios confirmaron"
+                    AlertDialog(
+                        onDismissRequest = { showBoardingInfo = false },
+                        title = { Text("Tiempo real") },
+                        text = { Text("$who que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a $adjustedETA.") },
+                        confirmButton = {
+                            TextButton(onClick = { showBoardingInfo = false }) { Text("Entendido") }
+                        }
+                    )
+                }
+            }
 
             if (!departure.notes.isNullOrBlank()) {
                 Text(
@@ -1671,46 +1717,6 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
 // ============================================================================
 // BOARDING
 // ============================================================================
-
-/**
- * Badge shown when one or more users have confirmed they are on this trip.
- * Shows a confirmation count and, if available, an adjusted departure ETA.
- */
-@Composable
-private fun BoardingStatusCard(
-    confirmationCount: Int,
-    adjustedETA: String?,
-    modifier: Modifier = Modifier
-) {
-    val text = buildString {
-        append(if (confirmationCount == 1) "1 usuario confirmó" else "$confirmationCount usuarios confirmaron")
-        append(" que está en este autobús.")
-        if (adjustedETA != null) append(" ETA estimada: $adjustedETA.")
-    }
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.DirectionsBus,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-    }
-}
 
 /**
  * Full-width button that lets the user announce they are on this bus.
