@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.10"
+}
+
+val localProperties = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
 }
 
 android {
@@ -18,8 +25,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "BOARDING_SERVER_URL", "\"https://boarding.example.com\"")
-        buildConfigField("String", "BOARDING_API_KEY", "\"placeholder-key\"")
+        buildConfigField("String", "BOARDING_SERVER_URL", "\"https://intersego.bfollon.dev\"")
+        buildConfigField("String", "BOARDING_API_KEY", "\"${localProperties["boarding.api.key"] ?: ""}\"")
     }
 
     buildTypes {

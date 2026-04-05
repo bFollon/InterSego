@@ -5,6 +5,9 @@
 # Claude local preferences
 .claude/settings.local.json
 
+# Secret keys (never commit — copy from Secrets.swift.template)
+iOS/InterSego/Config/Secrets.swift
+
 # Xcode user-specific files
 iOS/InterSego.xcodeproj/project.xcworkspace/
 iOS/InterSego.xcodeproj/xcuserdata/
