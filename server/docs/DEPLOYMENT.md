@@ -75,6 +75,34 @@ npm run build
 pm2 restart intersego-server
 ```
 
+## App integration
+
+The server URL is `https://intersego.bfollon.dev`. The API key is in `.env` on the Pi at `/home/bruno.follon/services/InterSego/server/.env`.
+
+### Android
+
+In `android/app/build.gradle.kts`, update the two `buildConfigField` lines:
+
+```kotlin
+buildConfigField("String", "BOARDING_SERVER_URL", "\"https://intersego.bfollon.dev\"")
+buildConfigField("String", "BOARDING_API_KEY", "\"<API_KEY>\"")
+```
+
+`BoardingService` reads these via `BuildConfig.BOARDING_SERVER_URL` and `BuildConfig.BOARDING_API_KEY` — no other changes needed.
+
+### iOS
+
+In `iOS/InterSego/Config/AppConfig.swift`, update the two constants:
+
+```swift
+static let boardingServerURL = "https://intersego.bfollon.dev"
+static let boardingAPIKey = "<API_KEY>"
+```
+
+`BoardingService` reads these via `AppConfig.boardingServerURL` and `AppConfig.boardingAPIKey` — no other changes needed.
+
+---
+
 ## Environment variables
 
 | Variable | Description |
