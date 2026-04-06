@@ -68,7 +68,10 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import com.github.bfollon.intersego.data.BoardingRequest
 import com.github.bfollon.intersego.data.BusStop
@@ -577,12 +580,24 @@ fun AppNavigation() {
                         return@launch
                     }
                     val routeIds = pdfProcessingService.getRoutesForStop(stop.id)
+                    val cal = java.util.Calendar.getInstance()
+                    val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
+                    val todayDayTypes = when (dayOfWeek) {
+                        java.util.Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
+                        java.util.Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+                        else -> setOf(DayType.WEEKDAY)
+                    }
+                    val currentMinutes = LocalTime.now().let { it.hour * 60 + it.minute }
                     val options = mutableListOf<Pair<BusRoute, List<String>>>()
                     for (routeId in routeIds.sorted()) {
                         val route = routes.find { it.id == routeId } ?: continue
                         val timetables = timetableService.loadTimetables(routeId)
                         val dirs = timetables
-                            .filter { it.stopId == stop.id }
+                            .filter { it.stopId == stop.id && it.dayType in todayDayTypes }
+                            .filter { t ->
+                                t.seasonalDepartures(weekday = dayOfWeek)
+                                    .any { dep -> kotlin.math.abs(dep.toMinutesSinceMidnight() - currentMinutes) <= 20 }
+                            }
                             .mapNotNull { it.direction }
                             .distinct()
                         if (dirs.isNotEmpty()) options.add(Pair(route, dirs))
@@ -630,21 +645,29 @@ fun AppNavigation() {
             title = { Text("¿En qué línea estás?") },
             text = {
                 Column {
-                    boardingStop?.name?.let { Text(it) }
-                    boardingRouteDirections.forEach { (route, _) ->
-                        TextButton(
-                            onClick = {
-                                selectedBoardingRoute = route
-                                showBoardingRoutePicker = false
-                                showBoardingDirectionPicker = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                "Línea ${route.number} — ${route.name}",
-                                textAlign = TextAlign.Start,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                    boardingStop?.name?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                        boardingRouteDirections.forEach { (route, _) ->
+                            Surface(
+                                onClick = {
+                                    selectedBoardingRoute = route
+                                    showBoardingRoutePicker = false
+                                    showBoardingDirectionPicker = true
+                                },
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primary
+                            ) {
+                                Text(
+                                    text = route.number,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -722,7 +745,8 @@ fun AppNavigation() {
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(dir, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+                            val label = dir.split("→").lastOrNull()?.trim() ?: dir
+                            Text(label, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }

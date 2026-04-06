@@ -167,6 +167,19 @@ struct NextDepartureView: View {
         availableDirections.first { $0 != direction }
     }
 
+    /// True when any departure for the current stop/direction is within ±20 minutes of now.
+    private var isWithinBoardingWindow: Bool {
+        let h = Calendar.current.component(.hour, from: currentTime)
+        let m = Calendar.current.component(.minute, from: currentTime)
+        let currentMinutes = h * 60 + m
+        return activeRoutesData.contains { routeData in
+            routeData.timetables
+                .filter { currentDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
+                .flatMap { $0.seasonalDepartures(weekday: currentWeekday) }
+                .contains { abs($0.minutesSinceMidnight - currentMinutes) <= 20 }
+        }
+    }
+
     private var isMultiRoute: Bool { activeRoutesData.count > 1 }
 
     private var singleActiveRoute: BusRoute? {
@@ -372,8 +385,8 @@ struct NextDepartureView: View {
                 TimesDisclaimerCard()
                     .padding(.horizontal, 16).padding(.top, 16)
 
-                // "Estoy en el autobús" button
-                if info.daysAhead == 0 {
+                // "Estoy en el autobús" button — only within ±20 min of a departure
+                if info.daysAhead == 0 && (isWithinBoardingWindow || boardingConfirmed) {
                     BoardingButton(
                         confirmed: boardingConfirmed,
                         isLoading: boardingSubmitting,

@@ -109,14 +109,23 @@ struct ContentView: View {
                                         let stop = selection.stop
                                         let routeIds = await PDFProcessingService.shared.getRoutesForStop(stopId: stop.id)
                                         let allRoutes = BusRouteRegistry.knownRoutes()
+                                        let now = Date()
+                                        let weekday = Calendar.current.component(.weekday, from: now)
+                                        let todayDayTypes = dayTypesForCalendarDay(weekday)
+                                        let h = Calendar.current.component(.hour, from: now)
+                                        let m = Calendar.current.component(.minute, from: now)
+                                        let currentMinutes = h * 60 + m
                                         var options: [LandingBoardingOption] = []
                                         for routeId in routeIds.sorted() {
                                             guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
                                             let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
                                             var seen = Set<String>()
                                             var dirs: [String] = []
-                                            for t in timetables where t.stopId == stop.id {
-                                                if let d = t.direction, seen.insert(d).inserted { dirs.append(d) }
+                                            for t in timetables where t.stopId == stop.id && todayDayTypes.contains(t.dayType) {
+                                                guard let d = t.direction else { continue }
+                                                let hasNearbyDeparture = t.seasonalDepartures(weekday: weekday)
+                                                    .contains { abs($0.minutesSinceMidnight - currentMinutes) <= 20 }
+                                                if hasNearbyDeparture, seen.insert(d).inserted { dirs.append(d) }
                                             }
                                             if !dirs.isEmpty {
                                                 options.append(LandingBoardingOption(route: route, directions: dirs, timetables: timetables))
@@ -510,7 +519,7 @@ private struct LandingBoardingPickerView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Text(stop.name)
                 .font(.headline)
                 .padding(.top, 8)
@@ -519,21 +528,27 @@ private struct LandingBoardingPickerView: View {
                 Text("¿En qué línea estás?")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
-                ForEach(options, id: \.route.id) { option in
-                    Button("Línea \(option.route.number) — \(option.route.name)") {
-                        selectedRoute = option.route
+                HStack(spacing: 10) {
+                    ForEach(options, id: \.route.id) { option in
+                        Button(action: { selectedRoute = option.route }) {
+                            Text(option.route.number)
+                                .font(.callout)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 10)
+                                .background(Color.accentColor)
+                                .foregroundColor(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             } else if let option = selectedOption {
                 Text("¿En qué dirección vas?")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 ForEach(option.directions, id: \.self) { dir in
-                    Button(dir) {
+                    Button(destination(from: dir)) {
                         onSubmit(option.route, dir)
                     }
                     .frame(maxWidth: .infinity)
@@ -558,5 +573,9 @@ private struct LandingBoardingPickerView: View {
         .onAppear {
             if options.count == 1 { selectedRoute = options[0].route }
         }
+    }
+
+    private func destination(from direction: String) -> String {
+        direction.components(separatedBy: "→").last?.trimmingCharacters(in: .whitespaces) ?? direction
     }
 }

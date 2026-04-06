@@ -261,6 +261,22 @@ fun NextDepartureScreen(
     val direction = currentDirection ?: availableDirections.firstOrNull() ?: ""
     val swapDirection = availableDirections.firstOrNull { it != direction }
 
+    // True when any departure for the current stop/direction is within ±20 minutes of now.
+    val isWithinBoardingWindow by remember(currentTime, direction, loadedRoutes, selectedRouteId) {
+        derivedStateOf {
+            val currentMinutes = currentTime.hour * 60 + currentTime.minute
+            val routesToCheck = if (selectedRouteId != null)
+                loadedRoutes.filter { it.route.id == selectedRouteId }
+            else loadedRoutes
+            routesToCheck.any { routeData ->
+                routeData.timetables
+                    .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == direction }
+                    .flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }
+                    .any { dep -> kotlin.math.abs(dep.toMinutesSinceMidnight() - currentMinutes) <= 20 }
+            }
+        }
+    }
+
     // Reset boarding confirmation when direction changes
     LaunchedEffect(direction) {
         boardingConfirmed = false
@@ -600,8 +616,8 @@ fun NextDepartureScreen(
                         )
                     }
 
-                    // "Estoy en el autobús" button
-                    if (daysAhead == 0) {
+                    // "Estoy en el autobús" button — only within ±20 min of a departure
+                    if (daysAhead == 0 && (isWithinBoardingWindow || boardingConfirmed)) {
                         item {
                             BoardingButton(
                                 confirmed = boardingConfirmed,
