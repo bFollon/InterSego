@@ -51,9 +51,13 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -188,6 +192,7 @@ fun NextDepartureScreen(
     var boardingSubmitting by remember { mutableStateOf(false) }
     var boardingError by remember { mutableStateOf<String?>(null) }
     var activeBoardings by remember { mutableStateOf<List<BoardingEvent>>(emptyList()) }
+    var showBoardingWindowTooltip by remember { mutableStateOf(false) }
     val boardingScope = rememberCoroutineScope()
 
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
@@ -616,12 +621,58 @@ fun NextDepartureScreen(
                         )
                     }
 
-                    // "Estoy en el autobús" button — only within ±20 min of a departure
-                    if (daysAhead == 0 && (isWithinBoardingWindow || boardingConfirmed)) {
+                    // "Estoy en el autobús" button — disabled outside ±20 min window
+                    if (daysAhead == 0) {
                         item {
+                            val boardingWindowSheetText = run {
+                                val openMin = (nextTaggedDeparture?.departure?.toMinutesSinceMidnight() ?: -1) - 20
+                                if (openMin >= 0) "Disponible a partir de las %02d:%02d, cuando el bus esté más cerca.".format(openMin / 60, openMin % 60)
+                                else "La ventana de confirmación ha pasado. Espera al siguiente bus."
+                            }
+                            if (showBoardingWindowTooltip) {
+                                ModalBottomSheet(
+                                    onDismissRequest = { showBoardingWindowTooltip = false },
+                                    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 32.dp)
+                                            .padding(bottom = 48.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.AccessTime,
+                                            contentDescription = null,
+                                            tint = Color(0xFFFF9800),
+                                            modifier = Modifier.size(56.dp)
+                                        )
+                                        Text(
+                                            text = "Confirmación no disponible",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Text(
+                                            text = boardingWindowSheetText,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Text(
+                                            text = "El botón se activa en los 20 minutos antes y después de cada salida, para que tu confirmación sea útil para otros viajeros.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
                             BoardingButton(
                                 confirmed = boardingConfirmed,
                                 isLoading = boardingSubmitting,
+                                isActive = isWithinBoardingWindow,
                                 errorMessage = boardingError,
                                 onClick = {
                                     boardingError = null
@@ -654,6 +705,7 @@ fun NextDepartureScreen(
                                         }
                                     }
                                 },
+                                onInactiveClick = { showBoardingWindowTooltip = true },
                                 modifier = Modifier
                                     .padding(horizontal = 16.dp)
                                     .padding(top = 12.dp)
@@ -1680,15 +1732,19 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
 private fun BoardingButton(
     confirmed: Boolean,
     isLoading: Boolean,
+    isActive: Boolean,
     errorMessage: String?,
     onClick: () -> Unit,
+    onInactiveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Button(
-            onClick = onClick,
+            onClick = { if (isActive) onClick() else onInactiveClick() },
             enabled = !confirmed && !isLoading,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(if (!isActive && !confirmed) Modifier.alpha(0.5f) else Modifier),
             shape = MaterialTheme.shapes.medium
         ) {
             if (isLoading) {

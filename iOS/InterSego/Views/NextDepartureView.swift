@@ -118,6 +118,7 @@ struct NextDepartureView: View {
     @State private var boardingSubmitting = false
     @State private var boardingError: String? = nil
     @State private var showBoardingError = false
+    @State private var showBoardingWindowTooltip = false
     @State private var activeBoardings: [BoardingEvent] = []
 
     init(stop: BusStop, primaryRouteId: String?, primaryViewId: String?) {
@@ -177,6 +178,23 @@ struct NextDepartureView: View {
                 .filter { currentDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
                 .flatMap { $0.seasonalDepartures(weekday: currentWeekday) }
                 .contains { abs($0.minutesSinceMidnight - currentMinutes) <= 20 }
+        }
+    }
+
+    private var boardingWindowTooltipText: String {
+        guard let next = departureInfo.departure else {
+            return "No hay salidas próximas para este trayecto."
+        }
+        let h = Calendar.current.component(.hour, from: currentTime)
+        let m = Calendar.current.component(.minute, from: currentTime)
+        let currentMinutes = h * 60 + m
+        let depMinutes = next.departure.minutesSinceMidnight
+        let diff = depMinutes - currentMinutes
+        if diff > 20 {
+            let mins = diff - 20
+            return "Disponible en \(mins) min, cuando el bus esté más cerca."
+        } else {
+            return "La ventana de confirmación ha pasado. Espera al siguiente bus."
         }
     }
 
@@ -316,6 +334,9 @@ struct NextDepartureView: View {
             } message: {
                 Text(boardingError ?? "")
             }
+            .sheet(isPresented: $showBoardingWindowTooltip) {
+                BoardingWindowExplanationSheet(tooltipText: boardingWindowTooltipText)
+            }
             .onChange(of: direction) { _, _ in boardingConfirmed = false }
             .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }
             .onAppear {
@@ -385,12 +406,14 @@ struct NextDepartureView: View {
                 TimesDisclaimerCard()
                     .padding(.horizontal, 16).padding(.top, 16)
 
-                // "Estoy en el autobús" button — only within ±20 min of a departure
-                if info.daysAhead == 0 && (isWithinBoardingWindow || boardingConfirmed) {
+                // "Estoy en el autobús" button — always visible for today, active within ±20 min
+                if info.daysAhead == 0 {
                     BoardingButton(
                         confirmed: boardingConfirmed,
                         isLoading: boardingSubmitting,
-                        onTap: handleBoardingTap
+                        isActive: isWithinBoardingWindow,
+                        onTap: handleBoardingTap,
+                        onInactiveTap: { showBoardingWindowTooltip = true }
                     )
                     .padding(.horizontal, 16).padding(.top, 12)
                 }
@@ -1222,10 +1245,12 @@ private struct DepartureTimeline: View {
 private struct BoardingButton: View {
     let confirmed: Bool
     let isLoading: Bool
+    let isActive: Bool
     let onTap: () -> Void
+    let onInactiveTap: () -> Void
 
     var body: some View {
-        Button(action: onTap) {
+        Button(action: { if isActive { onTap() } else { onInactiveTap() } }) {
             HStack(spacing: 8) {
                 if isLoading {
                     ProgressView()
@@ -1242,6 +1267,42 @@ private struct BoardingButton: View {
         }
         .buttonStyle(.borderedProminent)
         .disabled(confirmed || isLoading)
+        .opacity(!isActive && !confirmed ? 0.5 : 1.0)
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+// MARK: - Boarding Window Explanation Sheet
+
+private struct BoardingWindowExplanationSheet: View {
+    let tooltipText: String
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "clock.badge.exclamationmark")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+
+            VStack(spacing: 12) {
+                Text("Confirmación no disponible")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+
+                Text(tooltipText)
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Text("El botón se activa en los 20 minutos antes y después de cada salida, para que tu confirmación sea útil para otros viajeros.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
+            }
+        }
+        .padding(32)
+        .presentationDetents([.height(360)])
+        .presentationDragIndicator(.visible)
     }
 }

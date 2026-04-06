@@ -99,6 +99,10 @@ import com.github.bfollon.intersego.services.PDFCacheManager
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.Arrangement
 import com.github.bfollon.intersego.ui.screens.AboutScreen
 import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
@@ -566,6 +570,8 @@ fun AppNavigation() {
     var landingBoardingConfirmed by remember { mutableStateOf(false) }
     var landingBoardingSubmitting by remember { mutableStateOf(false) }
     var landingBoardingError by remember { mutableStateOf<String?>(null) }
+    var showNoServiceSheet by remember { mutableStateOf(false) }
+    var noServiceStop by remember { mutableStateOf<BusStop?>(null) }
 
     val launchBoardingSearch: () -> Unit = remember(coroutineScope) {
         {
@@ -603,7 +609,8 @@ fun AppNavigation() {
                         if (dirs.isNotEmpty()) options.add(Pair(route, dirs))
                     }
                     if (options.isEmpty()) {
-                        landingBoardingError = "No hay servicios disponibles en esta parada."
+                        noServiceStop = stop
+                        showNoServiceSheet = true
                     } else {
                         boardingStop = stop
                         boardingRouteDirections = options
@@ -756,6 +763,55 @@ fun AppNavigation() {
                 TextButton(onClick = { showBoardingDirectionPicker = false }) { Text("Cancelar") }
             }
         )
+    }
+
+    // No service nearby sheet
+    if (showNoServiceSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showNoServiceSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+                    .padding(bottom = 48.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DirectionsBus,
+                    contentDescription = null,
+                    tint = Color(0xFFFF9800),
+                    modifier = Modifier.size(56.dp)
+                )
+                Text(
+                    text = "No hay buses próximos",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+                noServiceStop?.name?.let { stopName ->
+                    Text(
+                        text = "Hemos detectado que estás en la parada $stopName.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Text(
+                    text = "Sin embargo, ninguna de sus líneas tiene salidas en los próximos 20 minutos.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "Vuelve a pulsar el botón cuando estés a punto de subir al autobús.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 
     NavHost(

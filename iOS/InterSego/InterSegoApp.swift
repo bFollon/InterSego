@@ -69,6 +69,8 @@ struct ContentView: View {
     @State private var landingBoardingStop: BusStop? = nil
     @State private var landingBoardingOptions: [LandingBoardingOption] = []
     @State private var landingBoardingSubmitting = false
+    @State private var showNoServiceSheet = false
+    @State private var noServiceStop: BusStop? = nil
 
     var body: some View {
         ZStack {
@@ -132,7 +134,8 @@ struct ContentView: View {
                                             }
                                         }
                                         if options.isEmpty {
-                                            landingBoardingError = "No hay servicios disponibles en esta parada."
+                                            noServiceStop = stop
+                                            showNoServiceSheet = true
                                         } else {
                                             landingBoardingStop = stop
                                             landingBoardingOptions = options
@@ -209,6 +212,9 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showReminders) {
                     RemindersView()
+                }
+                .sheet(isPresented: $showNoServiceSheet) {
+                    NoServiceNearbySheet(stop: noServiceStop)
                 }
                 .sheet(isPresented: $showLandingBoardingPicker) {
                     if let stop = landingBoardingStop {
@@ -577,5 +583,46 @@ private struct LandingBoardingPickerView: View {
 
     private func destination(from direction: String) -> String {
         direction.components(separatedBy: "→").last?.trimmingCharacters(in: .whitespaces) ?? direction
+    }
+}
+
+// MARK: - No Service Nearby Sheet
+
+private struct NoServiceNearbySheet: View {
+    let stop: BusStop?
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "bus.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+
+            VStack(spacing: 12) {
+                Text("No hay buses próximos")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
+
+                if let stopName = stop?.name {
+                    Text("Hemos detectado que estás en la parada **\(stopName)**.")
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                }
+
+                Text("Sin embargo, ninguna de sus líneas tiene salidas en los próximos 20 minutos.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+
+                Text("Vuelve a pulsar el botón cuando estés a punto de subir al autobús.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
+            }
+        }
+        .padding(32)
+        .presentationDetents([.height(400)])
+        .presentationDragIndicator(.visible)
     }
 }
