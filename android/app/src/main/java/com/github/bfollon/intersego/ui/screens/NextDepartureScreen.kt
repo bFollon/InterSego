@@ -187,7 +187,6 @@ fun NextDepartureScreen(
     var boardingConfirmed by remember { mutableStateOf(false) }
     var boardingSubmitting by remember { mutableStateOf(false) }
     var boardingError by remember { mutableStateOf<String?>(null) }
-    var showDirectionPickerForBoarding by remember { mutableStateOf(false) }
     var activeBoardings by remember { mutableStateOf<List<BoardingEvent>>(emptyList()) }
     val boardingScope = rememberCoroutineScope()
 
@@ -610,36 +609,32 @@ fun NextDepartureScreen(
                                 errorMessage = boardingError,
                                 onClick = {
                                     boardingError = null
-                                    if (availableDirections.size > 1) {
-                                        showDirectionPickerForBoarding = true
-                                    } else {
-                                        boardingScope.launch {
-                                            val dep = nextTaggedDeparture ?: return@launch
-                                            val key = tripKey ?: return@launch
-                                            boardingSubmitting = true
-                                            try {
-                                                val now = Instant.now()
-                                                val scheduled = LocalDate.now()
-                                                    .atTime(LocalTime.of(dep.departure.hour, dep.departure.minute, 0))
-                                                    .atZone(ZoneId.systemDefault()).toInstant()
-                                                val request = BoardingRequest(
-                                                    stopId = stop.id,
-                                                    routeId = dep.routeId,
-                                                    direction = direction,
-                                                    tripKey = key,
-                                                    boardedAt = now.toString(),
-                                                    scheduledDepartureTime = scheduled.toString()
-                                                )
-                                                val result = BoardingService.postBoarding(request)
-                                                if (result.isSuccess) {
-                                                    boardingConfirmed = true
-                                                    activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
-                                                } else {
-                                                    boardingError = "No se pudo enviar. Inténtalo de nuevo."
-                                                }
-                                            } finally {
-                                                boardingSubmitting = false
+                                    boardingScope.launch {
+                                        val dep = nextTaggedDeparture ?: return@launch
+                                        val key = tripKey ?: return@launch
+                                        boardingSubmitting = true
+                                        try {
+                                            val now = Instant.now()
+                                            val scheduled = LocalDate.now()
+                                                .atTime(LocalTime.of(dep.departure.hour, dep.departure.minute, 0))
+                                                .atZone(ZoneId.systemDefault()).toInstant()
+                                            val request = BoardingRequest(
+                                                stopId = stop.id,
+                                                routeId = dep.routeId,
+                                                direction = direction,
+                                                tripKey = key,
+                                                boardedAt = now.toString(),
+                                                scheduledDepartureTime = scheduled.toString()
+                                            )
+                                            val result = BoardingService.postBoarding(request)
+                                            if (result.isSuccess) {
+                                                boardingConfirmed = true
+                                                activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
+                                            } else {
+                                                boardingError = "No se pudo enviar. Inténtalo de nuevo."
                                             }
+                                        } finally {
+                                            boardingSubmitting = false
                                         }
                                     }
                                 },
@@ -750,77 +745,6 @@ fun NextDepartureScreen(
         }
     }
 
-    // Direction picker dialog for boarding
-    if (showDirectionPickerForBoarding) {
-        AlertDialog(
-            onDismissRequest = { showDirectionPickerForBoarding = false },
-            title = { Text("¿En qué dirección vas?") },
-            text = {
-                Column {
-                    availableDirections.forEach { dir ->
-                        TextButton(
-                            onClick = {
-                                showDirectionPickerForBoarding = false
-                                val dep = nextTaggedDeparture
-                                if (dep != null) {
-                                    boardingScope.launch {
-                                        boardingSubmitting = true
-                                        boardingError = null
-                                        try {
-                                            // Look up the actual next departure for the chosen direction
-                                            val routesToUse = if (selectedRouteId != null)
-                                                loadedRoutes.filter { it.route.id == selectedRouteId }
-                                            else loadedRoutes
-                                            val dirDeparture = routesToUse
-                                                .flatMap { routeData ->
-                                                    routeData.timetables
-                                                        .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == dir }
-                                                        .flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }
-                                                }
-                                                .sortedBy { it.toMinutesSinceMidnight() }
-                                                .firstOrNull { LocalTime.of(it.hour, it.minute).isAfter(currentTime) }
-                                                ?: dep.departure
-                                            val key = BoardingRequest.makeTripKey(dep.routeId, dir, currentDayType, dirDeparture)
-                                            val now = Instant.now()
-                                            val scheduled = LocalDate.now()
-                                                .atTime(LocalTime.of(dirDeparture.hour, dirDeparture.minute, 0))
-                                                .atZone(ZoneId.systemDefault()).toInstant()
-                                            val request = BoardingRequest(
-                                                stopId = stop.id,
-                                                routeId = dep.routeId,
-                                                direction = dir,
-                                                tripKey = key,
-                                                boardedAt = now.toString(),
-                                                scheduledDepartureTime = scheduled.toString()
-                                            )
-                                            val result = BoardingService.postBoarding(request)
-                                            if (result.isSuccess) {
-                                                boardingConfirmed = true
-                                                activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
-                                            } else {
-                                                boardingError = "No se pudo enviar. Inténtalo de nuevo."
-                                            }
-                                        } finally {
-                                            boardingSubmitting = false
-                                        }
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(dir, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showDirectionPickerForBoarding = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
 }
 
 // ============================================================================

@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,8 +62,12 @@ fun LandingScreen(
     onFindClosestStop: () -> Unit = {},
     onShowAbout: () -> Unit = {},
     onShowReminders: () -> Unit = {},
+    onBoardBus: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
-    closestStopError: String? = null
+    closestStopError: String? = null,
+    isBoardingBus: Boolean = false,
+    boardingBusConfirmed: Boolean = false,
+    boardingBusError: String? = null
 ) {
     val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
 
@@ -145,9 +150,43 @@ fun LandingScreen(
                 )
             }
 
+            LandingButton(
+                label = if (boardingBusConfirmed) "¡Gracias por confirmar!" else "Estoy en el autobús",
+                onClick = onBoardBus,
+                enabled = !isBoardingBus && !boardingBusConfirmed,
+                labelColor = if (boardingBusConfirmed) Color(0xFF34C759) else null
+            ) {
+                if (isBoardingBus) {
+                    Box(
+                        modifier = Modifier.size(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.DirectionsBus,
+                        contentDescription = null,
+                        tint = if (boardingBusConfirmed) Color(0xFF34C759) else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(60.dp).padding(14.dp)
+                    )
+                }
+            }
+
             if (closestStopError != null) {
                 Text(
                     text = closestStopError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                )
+            }
+            if (boardingBusError != null) {
+                Text(
+                    text = boardingBusError,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center,
@@ -179,6 +218,7 @@ private fun LandingButton(
     label: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    labelColor: Color? = null,
     icon: @Composable () -> Unit
 ) {
     Column(
@@ -201,7 +241,7 @@ private fun LandingButton(
             text = label,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
-            color = if (enabled) MaterialTheme.colorScheme.primary
+            color = labelColor ?: if (enabled) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
     }

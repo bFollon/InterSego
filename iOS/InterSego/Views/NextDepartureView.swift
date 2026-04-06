@@ -20,7 +20,7 @@ import SwiftUI
 
 // MARK: - Day Type Matching
 
-private func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
+func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
     switch weekday {
     case 7: [.saturday, .weekend] // Saturday
     case 1: [.sunday, .weekend, .holiday] // Sunday
@@ -118,7 +118,6 @@ struct NextDepartureView: View {
     @State private var boardingSubmitting = false
     @State private var boardingError: String? = nil
     @State private var showBoardingError = false
-    @State private var showDirectionPicker = false
     @State private var activeBoardings: [BoardingEvent] = []
 
     init(stop: BusStop, primaryRouteId: String?, primaryViewId: String?) {
@@ -303,29 +302,6 @@ struct NextDepartureView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(boardingError ?? "")
-            }
-            .sheet(isPresented: $showDirectionPicker) {
-                VStack(spacing: 16) {
-                    Text("¿En qué dirección vas?")
-                        .font(.headline)
-                        .padding(.top, 8)
-                    ForEach(availableDirections, id: \.self) { dir in
-                        Button(dir) {
-                            showDirectionPicker = false
-                            Task { await submitBoarding(direction: dir) }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    }
-                    Button("Cancelar") { showDirectionPicker = false }
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 8)
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .presentationDetents([.fraction(0.3)])
             }
             .onChange(of: direction) { _, _ in boardingConfirmed = false }
             .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }
@@ -593,11 +569,7 @@ struct NextDepartureView: View {
     }
 
     private func handleBoardingTap() {
-        if availableDirections.count > 1 {
-            showDirectionPicker = true
-        } else {
-            Task { await submitBoarding(direction: direction) }
-        }
+        Task { await submitBoarding(direction: direction) }
     }
 
     private func nextDeparture(forDirection dir: String) -> DepartureTime? {

@@ -22,8 +22,12 @@ struct LandingView: View {
     let onFindClosestStop: () -> Void
     let onShowAbout: () -> Void
     let onShowReminders: () -> Void
+    let onBoardBus: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
+    let isBoardingBus: Bool
+    let boardingBusConfirmed: Bool
+    let boardingBusError: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -107,7 +111,38 @@ struct LandingView: View {
                 }
                 .buttonStyle(.plain)
 
+                Button(action: onBoardBus) {
+                    VStack(spacing: 14) {
+                        if isBoardingBus {
+                            ProgressView()
+                                .frame(width: 60, height: 60)
+                        } else {
+                            Image(systemName: boardingBusConfirmed ? "checkmark.circle.fill" : "bus")
+                                .font(.system(size: 32))
+                                .foregroundColor(boardingBusConfirmed ? .green : .accentColor)
+                                .frame(width: 60, height: 60)
+                        }
+                        Text(boardingBusConfirmed ? "¡Gracias por confirmar!" : "Estoy en el autobús")
+                            .font(.headline)
+                            .foregroundColor(boardingBusConfirmed ? .green : .accentColor)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 28)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+                }
+                .buttonStyle(.plain)
+                .disabled(isBoardingBus || boardingBusConfirmed)
+
                 if let error = closestStopError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                }
+                if let error = boardingBusError {
                     Text(error)
                         .font(.caption)
                         .foregroundColor(.red)

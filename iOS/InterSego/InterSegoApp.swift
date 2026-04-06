@@ -62,6 +62,13 @@ struct ContentView: View {
     @State private var navigationPath = NavigationPath()
     @State private var isSearchingClosestStop = false
     @State private var closestStopError: String?
+    @State private var isSearchingBoardingStop = false
+    @State private var landingBoardingConfirmed = false
+    @State private var landingBoardingError: String?
+    @State private var showLandingBoardingPicker = false
+    @State private var landingBoardingStop: BusStop? = nil
+    @State private var landingBoardingOptions: [LandingBoardingOption] = []
+    @State private var landingBoardingSubmitting = false
 
     var body: some View {
         ZStack {
@@ -93,8 +100,48 @@ struct ContentView: View {
                             onShowReminders: {
                                 showReminders = true
                             },
+                            onBoardBus: {
+                                Task {
+                                    isSearchingBoardingStop = true
+                                    landingBoardingError = nil
+                                    do {
+                                        let selection = try await ClosestStopService.shared.findClosest()
+                                        let stop = selection.stop
+                                        let routeIds = await PDFProcessingService.shared.getRoutesForStop(stopId: stop.id)
+                                        let allRoutes = BusRouteRegistry.knownRoutes()
+                                        var options: [LandingBoardingOption] = []
+                                        for routeId in routeIds.sorted() {
+                                            guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
+                                            let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
+                                            var seen = Set<String>()
+                                            var dirs: [String] = []
+                                            for t in timetables where t.stopId == stop.id {
+                                                if let d = t.direction, seen.insert(d).inserted { dirs.append(d) }
+                                            }
+                                            if !dirs.isEmpty {
+                                                options.append(LandingBoardingOption(route: route, directions: dirs, timetables: timetables))
+                                            }
+                                        }
+                                        if options.isEmpty {
+                                            landingBoardingError = "No hay servicios disponibles en esta parada."
+                                        } else {
+                                            landingBoardingStop = stop
+                                            landingBoardingOptions = options
+                                            showLandingBoardingPicker = true
+                                        }
+                                    } catch let error as ClosestStopError {
+                                        landingBoardingError = error.errorDescription
+                                    } catch {
+                                        landingBoardingError = "No se pudo encontrar la parada más cercana."
+                                    }
+                                    isSearchingBoardingStop = false
+                                }
+                            },
                             isSearchingClosestStop: isSearchingClosestStop,
                             closestStopError: closestStopError,
+                            isBoardingBus: isSearchingBoardingStop || landingBoardingSubmitting,
+                            boardingBusConfirmed: landingBoardingConfirmed,
+                            boardingBusError: landingBoardingError,
                         )
                     }
                 }
@@ -153,6 +200,47 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showReminders) {
                     RemindersView()
+                }
+                .sheet(isPresented: $showLandingBoardingPicker) {
+                    if let stop = landingBoardingStop {
+                        LandingBoardingPickerView(
+                            stop: stop,
+                            options: landingBoardingOptions,
+                            onSubmit: { route, direction in
+                                showLandingBoardingPicker = false
+                                Task {
+                                    landingBoardingSubmitting = true
+                                    let option = landingBoardingOptions.first { $0.route.id == route.id }
+                                    let weekday = Calendar.current.component(.weekday, from: Date())
+                                    let currentDayType: DayType = weekday == 7 ? .saturday : (weekday == 1 ? .sunday : .weekday)
+                                    let dayTypes = dayTypesForCalendarDay(weekday)
+                                    let h = Calendar.current.component(.hour, from: Date())
+                                    let m = Calendar.current.component(.minute, from: Date())
+                                    let departure = option?.timetables
+                                        .filter { dayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
+                                        .flatMap { $0.seasonalDepartures(weekday: weekday) }
+                                        .sorted()
+                                        .first { $0.isFuture(currentHour: h, currentMinute: m) }
+                                        ?? DepartureTime(hour: h, minute: m)
+                                    let request = BoardingRequest.make(
+                                        stop: stop,
+                                        routeId: route.id,
+                                        direction: direction,
+                                        dayType: currentDayType,
+                                        departure: departure
+                                    )
+                                    do {
+                                        try await BoardingService.shared.postBoarding(request)
+                                        landingBoardingConfirmed = true
+                                    } catch {
+                                        landingBoardingError = "No se pudo enviar. Inténtalo de nuevo."
+                                    }
+                                    landingBoardingSubmitting = false
+                                }
+                            },
+                            onDismiss: { showLandingBoardingPicker = false }
+                        )
+                    }
                 }
             }
 
@@ -397,5 +485,78 @@ struct ContentView: View {
 
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
+    }
+}
+
+// MARK: - Landing Boarding
+
+private struct LandingBoardingOption {
+    let route: BusRoute
+    let directions: [String]
+    let timetables: [BusTimetable]
+}
+
+private struct LandingBoardingPickerView: View {
+    let stop: BusStop
+    let options: [LandingBoardingOption]
+    let onSubmit: (BusRoute, String) -> Void
+    let onDismiss: () -> Void
+
+    @State private var selectedRoute: BusRoute? = nil
+
+    private var selectedOption: LandingBoardingOption? {
+        guard let r = selectedRoute else { return nil }
+        return options.first { $0.route.id == r.id }
+    }
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(stop.name)
+                .font(.headline)
+                .padding(.top, 8)
+
+            if selectedRoute == nil {
+                Text("¿En qué línea estás?")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                ForEach(options, id: \.route.id) { option in
+                    Button("Línea \(option.route.number) — \(option.route.name)") {
+                        selectedRoute = option.route
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            } else if let option = selectedOption {
+                Text("¿En qué dirección vas?")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                ForEach(option.directions, id: \.self) { dir in
+                    Button(dir) {
+                        onSubmit(option.route, dir)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                if options.count > 1 {
+                    Button("← Cambiar línea") { selectedRoute = nil }
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Button("Cancelar") { onDismiss() }
+                .foregroundColor(.secondary)
+                .padding(.bottom, 8)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
+        .presentationDetents([.medium])
+        .onAppear {
+            if options.count == 1 { selectedRoute = options[0].route }
+        }
     }
 }

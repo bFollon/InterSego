@@ -67,8 +67,21 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import com.github.bfollon.intersego.data.BoardingRequest
+import com.github.bfollon.intersego.data.BusStop
+import com.github.bfollon.intersego.data.BusStopRegistry
+import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.ClosestStopFinderService
 import com.github.bfollon.intersego.services.LocationManager as BusLocationManager
+import com.github.bfollon.intersego.services.TimetableService
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -539,6 +552,188 @@ fun AppNavigation() {
     }
     // --- End closest stop state ---
 
+    // --- Landing boarding state ---
+    val timetableService = remember { TimetableService(activity) }
+    var isSearchingBoardingStop by remember { mutableStateOf(false) }
+    var boardingStop by remember { mutableStateOf<BusStop?>(null) }
+    var boardingRouteDirections by remember { mutableStateOf<List<Pair<BusRoute, List<String>>>>(emptyList()) }
+    var showBoardingRoutePicker by remember { mutableStateOf(false) }
+    var selectedBoardingRoute by remember { mutableStateOf<BusRoute?>(null) }
+    var showBoardingDirectionPicker by remember { mutableStateOf(false) }
+    var landingBoardingConfirmed by remember { mutableStateOf(false) }
+    var landingBoardingSubmitting by remember { mutableStateOf(false) }
+    var landingBoardingError by remember { mutableStateOf<String?>(null) }
+
+    val launchBoardingSearch: () -> Unit = remember(coroutineScope) {
+        {
+            coroutineScope.launch {
+                isSearchingBoardingStop = true
+                landingBoardingError = null
+                try {
+                    val location = locationMgr.requestLocationOnce()
+                    val result = closestStopFinder.findClosest(location, routes)
+                    val stop = BusStopRegistry.findById(result.stopId) ?: run {
+                        landingBoardingError = "No se pudo encontrar la parada."
+                        return@launch
+                    }
+                    val routeIds = pdfProcessingService.getRoutesForStop(stop.id)
+                    val options = mutableListOf<Pair<BusRoute, List<String>>>()
+                    for (routeId in routeIds.sorted()) {
+                        val route = routes.find { it.id == routeId } ?: continue
+                        val timetables = timetableService.loadTimetables(routeId)
+                        val dirs = timetables
+                            .filter { it.stopId == stop.id }
+                            .mapNotNull { it.direction }
+                            .distinct()
+                        if (dirs.isNotEmpty()) options.add(Pair(route, dirs))
+                    }
+                    if (options.isEmpty()) {
+                        landingBoardingError = "No hay servicios disponibles en esta parada."
+                    } else {
+                        boardingStop = stop
+                        boardingRouteDirections = options
+                        if (options.size == 1) {
+                            selectedBoardingRoute = options[0].first
+                            showBoardingDirectionPicker = true
+                        } else {
+                            showBoardingRoutePicker = true
+                        }
+                    }
+                } catch (e: BusLocationManager.LocationError) {
+                    landingBoardingError = e.message
+                } catch (e: ClosestStopFinderService.ClosestStopError) {
+                    landingBoardingError = e.message
+                } catch (e: Exception) {
+                    landingBoardingError = "No se pudo encontrar la parada más cercana."
+                } finally {
+                    isSearchingBoardingStop = false
+                }
+            }
+        }
+    }
+
+    val boardingPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            launchBoardingSearch()
+        } else {
+            landingBoardingError = "Permiso de ubicación denegado. Actívalo en Ajustes para usar esta función."
+        }
+    }
+    // --- End landing boarding state ---
+
+    // Route picker dialog for landing boarding
+    if (showBoardingRoutePicker) {
+        AlertDialog(
+            onDismissRequest = { showBoardingRoutePicker = false },
+            title = { Text("¿En qué línea estás?") },
+            text = {
+                Column {
+                    boardingStop?.name?.let { Text(it) }
+                    boardingRouteDirections.forEach { (route, _) ->
+                        TextButton(
+                            onClick = {
+                                selectedBoardingRoute = route
+                                showBoardingRoutePicker = false
+                                showBoardingDirectionPicker = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                "Línea ${route.number} — ${route.name}",
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showBoardingRoutePicker = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    // Direction picker dialog for landing boarding
+    if (showBoardingDirectionPicker) {
+        val dirs = boardingRouteDirections.find { it.first.id == selectedBoardingRoute?.id }?.second ?: emptyList()
+        AlertDialog(
+            onDismissRequest = { showBoardingDirectionPicker = false },
+            title = { Text("¿En qué dirección vas?") },
+            text = {
+                Column {
+                    dirs.forEach { dir ->
+                        TextButton(
+                            onClick = {
+                                showBoardingDirectionPicker = false
+                                val stop = boardingStop ?: return@TextButton
+                                val route = selectedBoardingRoute ?: return@TextButton
+                                coroutineScope.launch {
+                                    landingBoardingSubmitting = true
+                                    landingBoardingError = null
+                                    try {
+                                        val timetables = timetableService.loadTimetables(route.id)
+                                        val cal = java.util.Calendar.getInstance()
+                                        val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
+                                        val currentDayType = when (dayOfWeek) {
+                                            java.util.Calendar.SATURDAY -> DayType.SATURDAY
+                                            java.util.Calendar.SUNDAY -> DayType.SUNDAY
+                                            else -> DayType.WEEKDAY
+                                        }
+                                        val currentDayTypes = when (dayOfWeek) {
+                                            java.util.Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
+                                            java.util.Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+                                            else -> setOf(DayType.WEEKDAY)
+                                        }
+                                        val currentTime = LocalTime.now()
+                                        val departure = timetables
+                                            .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == dir }
+                                            .flatMap { it.seasonalDepartures(weekday = dayOfWeek) }
+                                            .sortedBy { it.toMinutesSinceMidnight() }
+                                            .firstOrNull { LocalTime.of(it.hour, it.minute).isAfter(currentTime) }
+                                            ?: DepartureTime(cal.get(java.util.Calendar.HOUR_OF_DAY), cal.get(java.util.Calendar.MINUTE))
+                                        val key = BoardingRequest.makeTripKey(route.id, dir, currentDayType, departure)
+                                        val now = Instant.now()
+                                        val scheduled = LocalDate.now()
+                                            .atTime(LocalTime.of(departure.hour, departure.minute, 0))
+                                            .atZone(ZoneId.systemDefault()).toInstant()
+                                        val request = BoardingRequest(
+                                            stopId = stop.id,
+                                            routeId = route.id,
+                                            direction = dir,
+                                            tripKey = key,
+                                            boardedAt = now.toString(),
+                                            scheduledDepartureTime = scheduled.toString()
+                                        )
+                                        val result = BoardingService.postBoarding(request)
+                                        if (result.isSuccess) {
+                                            landingBoardingConfirmed = true
+                                        } else {
+                                            landingBoardingError = "No se pudo enviar. Inténtalo de nuevo."
+                                        }
+                                    } catch (e: Exception) {
+                                        landingBoardingError = "No se pudo enviar. Inténtalo de nuevo."
+                                    } finally {
+                                        landingBoardingSubmitting = false
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(dir, textAlign = TextAlign.Start, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showBoardingDirectionPicker = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
     NavHost(
         navController = navController,
         startDestination = "landing"
@@ -558,8 +753,19 @@ fun AppNavigation() {
                         locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     }
                 },
+                onBoardBus = {
+                    landingBoardingError = null
+                    if (locationMgr.hasLocationPermission()) {
+                        launchBoardingSearch()
+                    } else {
+                        boardingPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                },
                 isSearchingClosestStop = isSearchingClosestStop,
-                closestStopError = closestStopError
+                closestStopError = closestStopError,
+                isBoardingBus = isSearchingBoardingStop || landingBoardingSubmitting,
+                boardingBusConfirmed = landingBoardingConfirmed,
+                boardingBusError = landingBoardingError
             )
         }
 
