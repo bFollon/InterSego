@@ -304,13 +304,28 @@ struct NextDepartureView: View {
             } message: {
                 Text(boardingError ?? "")
             }
-            .confirmationDialog("¿En qué dirección vas?", isPresented: $showDirectionPicker, titleVisibility: .visible) {
-                ForEach(availableDirections, id: \.self) { dir in
-                    Button(dir) {
-                        Task { await submitBoarding(direction: dir) }
+            .sheet(isPresented: $showDirectionPicker) {
+                VStack(spacing: 16) {
+                    Text("¿En qué dirección vas?")
+                        .font(.headline)
+                        .padding(.top, 8)
+                    ForEach(availableDirections, id: \.self) { dir in
+                        Button(dir) {
+                            showDirectionPicker = false
+                            Task { await submitBoarding(direction: dir) }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+                    Button("Cancelar") { showDirectionPicker = false }
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 8)
                 }
-                Button("Cancelar", role: .cancel) {}
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .presentationDetents([.fraction(0.3)])
             }
             .onChange(of: direction) { _, _ in boardingConfirmed = false }
             .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }
@@ -1019,12 +1034,24 @@ private struct NextDepartureCard: View {
                             .foregroundColor(.secondary)
                     }
                     .buttonStyle(.plain)
-                }
-                .alert("Tiempo real", isPresented: $showBoardingInfo) {
-                    Button("Entendido", role: .cancel) {}
-                } message: {
-                    let who = boardingCount == 1 ? "1 usuario confirmó" : "\(boardingCount) usuarios confirmaron"
-                    Text("\(who) que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a \(eta).")
+                    .sheet(isPresented: $showBoardingInfo) {
+                        let who = boardingCount == 1 ? "1 usuario confirmó" : "\(boardingCount) usuarios confirmaron"
+                        VStack(spacing: 16) {
+                            Image(systemName: "bus.fill")
+                                .font(.largeTitle)
+                                .foregroundColor(.accentColor)
+                            Text("Tiempo real")
+                                .font(.headline)
+                            Text("\(who) que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a \(eta).")
+                                .font(.body)
+                                .multilineTextAlignment(.center)
+                                .foregroundColor(.secondary)
+                            Button("Entendido") { showBoardingInfo = false }
+                                .buttonStyle(.borderedProminent)
+                        }
+                        .padding(32)
+                        .presentationDetents([.fraction(0.35)])
+                    }
                 }
             }
 
