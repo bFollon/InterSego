@@ -77,6 +77,8 @@ The token is set via the `API_KEY` environment variable on the server. The same 
 
 There is no per-user identity. Any client with a valid API key can submit and read boarding events. This is intentional for an MVP: the user base is small and trusted.
 
+A stronger alternative — cryptographic app attestation via Apple App Attest and Android Play Integrity — was researched but deferred. See `APP-ATTESTATION.md` for the full design.
+
 ## Storage
 
 Events are persisted in `data/boardings.json` via **lowdb** (a thin JSON file adapter). The file is loaded into memory at startup and written after each mutation. With the expected traffic volume (tens of events per day at most), this is more than sufficient.
