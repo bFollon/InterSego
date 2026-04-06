@@ -1437,45 +1437,27 @@ fun NextDepartureWithProgress(
                 }
             }
 
-            Text(
-                text = when {
-                    minutesUntil < 1 -> "Saliendo ahora"
-                    minutesUntil == 1L -> "Sale en 1 minuto"
-                    minutesUntil < 60 -> "Sale en $minutesUntil minutos"
-                    else -> {
-                        val hours = minutesUntil / 60
-                        val mins = minutesUntil % 60
-                        if (mins == 0L) "Sale en $hours hora${if (hours > 1) "s" else ""}"
-                        else "Sale en ${hours}h ${mins}m"
-                    }
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
-            )
-
-            // Real-time ETA from boarding confirmations
+            // Tiempo real (subtle, right under Próxima salida)
             if (adjustedETA != null && boardingCount > 0) {
                 var showBoardingInfo by remember { mutableStateOf(false) }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Tiempo real:",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Tiempo real: $adjustedETA",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    DepartureTimeBadge(time = adjustedETA)
                     IconButton(
                         onClick = { showBoardingInfo = true },
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Info,
                             contentDescription = "Información sobre tiempo real",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
@@ -1491,6 +1473,38 @@ fun NextDepartureWithProgress(
                     )
                 }
             }
+
+            // Countdown with live suffix when ETA available
+            val liveMinutes = remember(adjustedETA, currentTime) {
+                if (adjustedETA == null || boardingCount == 0) return@remember null
+                val p = adjustedETA.split(":")
+                if (p.size < 2) return@remember null
+                val etaTotal = (p[0].toIntOrNull() ?: return@remember null) * 60 +
+                               (p[1].toIntOrNull() ?: return@remember null)
+                val nowTotal = currentTime.hour * 60 + currentTime.minute
+                var diff = etaTotal - nowTotal
+                if (diff < -720) diff += 1440
+                diff
+            }
+            val liveSuffix = liveMinutes?.let { m ->
+                val str = if (m < 60) "${m}m" else "${m / 60}h ${m % 60}m"
+                " ($str 🔴)"
+            } ?: ""
+            Text(
+                text = when {
+                    minutesUntil < 1 -> "Saliendo ahora"
+                    minutesUntil == 1L -> "Sale en 1 minuto"
+                    minutesUntil < 60 -> "Sale en $minutesUntil minutos"
+                    else -> {
+                        val hours = minutesUntil / 60
+                        val mins = minutesUntil % 60
+                        if (mins == 0L) "Sale en $hours hora${if (hours > 1) "s" else ""}"
+                        else "Sale en ${hours}h ${mins}m"
+                    }
+                } + liveSuffix,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+            )
 
             if (!departure.notes.isNullOrBlank()) {
                 Text(

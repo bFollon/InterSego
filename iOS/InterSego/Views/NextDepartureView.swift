@@ -934,6 +934,18 @@ private struct NextDepartureCard: View {
         return departure.minutesUntil(currentHour: currentHour, currentMinute: currentMinute)
     }
 
+    private var liveMinutesUntil: Int? {
+        guard let eta = adjustedETA, boardingCount > 0 else { return nil }
+        let parts = eta.split(separator: ":").map(String.init)
+        guard parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) else { return nil }
+        let cal = Calendar.current
+        let currentHour = cal.component(.hour, from: currentTime)
+        let currentMinute = cal.component(.minute, from: currentTime)
+        var diff = (h * 60 + m) - (currentHour * 60 + currentMinute)
+        if diff < -720 { diff += 1440 }
+        return diff
+    }
+
     private var countdownText: String {
         let mins = minutesUntil
         switch mins {
@@ -993,21 +1005,17 @@ private struct NextDepartureCard: View {
                 }
             }
 
-            // Countdown
-            Text(countdownText)
-                .font(.body)
-                .foregroundColor(.secondary)
-
-            // Real-time ETA from boarding confirmations
+            // Tiempo real (subtle, right under Próxima salida)
             if let eta = adjustedETA, boardingCount > 0 {
-                HStack(spacing: 8) {
-                    Text("Tiempo real:")
-                        .font(.headline)
-                    DepartureTimeBadge(time: eta)
+                HStack(spacing: 4) {
+                    Text("Tiempo real: \(eta)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                     Button {
                         showBoardingInfo = true
                     } label: {
                         Image(systemName: "info.circle")
+                            .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -1019,6 +1027,16 @@ private struct NextDepartureCard: View {
                     Text("\(who) que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a \(eta).")
                 }
             }
+
+            // Countdown (with live suffix when ETA available)
+            let liveSuffix: String = {
+                guard let m = liveMinutesUntil else { return "" }
+                let str = m < 60 ? "\(m)m" : "\(m / 60)h \(m % 60)m"
+                return " (\(str) 🔴)"
+            }()
+            Text(countdownText + liveSuffix)
+                .font(.body)
+                .foregroundColor(.secondary)
 
             // Notes
             if let notes = departure.notes, !notes.isEmpty {
