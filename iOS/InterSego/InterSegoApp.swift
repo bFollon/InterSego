@@ -407,7 +407,9 @@ struct ContentView: View {
                 let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
                 if !entries.isEmpty {
                     routeEntries = entries
-                    selectedEntryId = entries.first { $0.isActiveToday }?.id ?? entries.first?.id
+                    if selectedEntryId == nil {
+                        selectedEntryId = entries.first { $0.isActiveToday }?.id ?? entries.first?.id
+                    }
                 }
             }
         }
