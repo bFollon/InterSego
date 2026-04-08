@@ -26,7 +26,7 @@ class M6Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M6"]),
         mode: .production,
-        version: "0.6",
+        version: "0.9",
     )
 
     // MARK: - Types
@@ -201,12 +201,19 @@ class M6Parser: CapableParser, RouteStopsProvider {
                 clusters: Array(Weekday.circular.clusters.dropLast()),
             )
 
-            static let reversed = Route(
-                clusters: Array(regular.clusters.dropLast()) + [
-                    StopCluster([Stops.azoguejo, Stops.jardinillos]),
-                ],
-                alignment: .fromEnd,
-            )
+            // Return leg: proper reversal of regular, but the Segovia urban terminus
+            // is Plaza de Toros → La Pista → Andres Laguna → Jardinillos
+            // (not Estacion Bus as in outbound). See PDF footnote:
+            // "RECORRIDO URBANO: PLAZA DE TOROS-LA PISTA-ANDRES LAGUNA-JARDINILLOS"
+            static let reversed: Route = {
+                let base = regular.reversed()
+                return Route(
+                    clusters: Array(base.clusters.dropLast()) + [
+                        StopCluster([Stops.plazaToros, Stops.laPista, Stops.andresLaguna, Stops.jardinillos]),
+                    ],
+                    alignment: base.alignment,
+                )
+            }()
         }
 
         enum Sunday {
@@ -274,9 +281,11 @@ class M6Parser: CapableParser, RouteStopsProvider {
             }
         #endif
 
-        let preprocessedLines = preprocessLines(lines)
-        let reorderedLines = reorderSwappedLines(preprocessedLines)
-        let timetables = parseTimeTable(reorderedLines)
+        // All three day types use hardcoded static data. This avoids PDFKit's
+        // y-position interleaving that breaks the isReversed flip logic for
+        // side-by-side tables (Saturday/Sunday), and ensures deterministic output
+        // regardless of future PDF text-extraction quirks.
+        let timetables = staticWeekdayTimetables() + staticSaturdayTimetables() + staticSundayTimetables()
 
         DebugConfig.debugPrint(
             "M6Parser: Parsed \(timetables.count) timetables",
@@ -373,7 +382,6 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     stops: plainStops(Routes.Saturday.regular),
                     direction: Self.directionOutbound,
                     departureLabel: "Sábado",
-                    swapAction: SwapAction(targetViewId: "saturday-reversed"),
                 ),
                 RouteView(
                     id: "saturday-reversed",
@@ -381,7 +389,6 @@ class M6Parser: CapableParser, RouteStopsProvider {
                     stops: plainStops(Routes.Saturday.reversed),
                     direction: Self.directionInbound,
                     departureLabel: "Sábado",
-                    swapAction: SwapAction(targetViewId: "saturday-regular"),
                 ),
             ]
 
@@ -439,10 +446,18 @@ class M6Parser: CapableParser, RouteStopsProvider {
                 isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
-                id: "entry-sabado",
-                label: "Sábado",
-                views: saturdayViews,
+                id: "entry-sabado-ida",
+                label: "Sáb - Ida",
+                views: saturdayViews.filter { $0.id == "saturday-regular" },
                 initialViewId: "saturday-regular",
+                timetableDayType: .saturday,
+                isActiveToday: isSaturday,
+            ),
+            RouteSelectorEntry(
+                id: "entry-sabado-vuelta",
+                label: "Sáb - Vuelta",
+                views: saturdayViews.filter { $0.id == "saturday-reversed" },
+                initialViewId: "saturday-reversed",
                 timetableDayType: .saturday,
                 isActiveToday: isSaturday,
             ),
@@ -455,6 +470,240 @@ class M6Parser: CapableParser, RouteStopsProvider {
                 isActiveToday: isSunday,
             ),
         ]
+    }
+
+    // MARK: - Static Saturday / Sunday Timetables
+
+    /// Hardcoded Saturday timetables from the PDF (5 outbound, 4 inbound trips).
+    /// Used instead of dynamic parsing because PDFKit interleaves the two
+    /// side-by-side tables by y-position, breaking the isReversed flip logic.
+    private func staticSaturdayTimetables() -> [BusTimetable] {
+        var regular = createInitialTimetables(
+            route: Routes.Saturday.regular,
+            dayType: .saturday,
+            direction: Self.directionOutbound,
+        )
+        var reversed = createInitialTimetables(
+            route: Routes.Saturday.reversed,
+            dayType: .saturday,
+            direction: Self.directionInbound,
+        )
+
+        // Outbound (Segovia → Torrecaballeros)
+        // Urban leg: Estacion Bus - Andres Laguna - La Pista - Plaza de Toros
+        for times in [
+            [(9,20),(9,35),(9,37),(9,40),(9,43),(9,45),(9,47),(9,50)],
+            [(13,30),(13,45),(13,47),(13,49),(13,51),(13,53)],           // partial: through Trescasas
+            [(15,15),(15,30),(15,32),(15,35),(15,38),(15,41),(15,43),(15,45)],
+            [(19,30),(19,45),(19,47),(19,50),(19,53),(19,56),(19,58),(20,0)],
+            [(22,30),(22,45),(22,47),(22,50),(22,53),(22,56),(22,58),(23,0)],
+        ] as [[(Int, Int)]] {
+            regular = updateTimetables(
+                route: Routes.Saturday.regular,
+                timetables: regular,
+                times: times.map { (hour: $0.0, minute: $0.1) },
+                variantLabel: routeLabel(Routes.Saturday.regular.id),
+            )
+        }
+
+        // Inbound (Torrecaballeros → Segovia)
+        // Urban leg: Plaza de Toros - La Pista - Andres Laguna - Jardinillos
+        // Sonsoto column times (16:10, 18:38, 23:10) are estimated in the PDF
+        for times in [
+            [(10,10),(10,13),(10,16),(10,19),(10,22),(10,25),(10,28),(10,45)],
+            [(16,0),(16,2),(16,5),(16,10),(16,13),(16,15),(16,18),(16,30)],
+            [(18,30),(18,32),(18,35),(18,38),(18,40),(18,43),(18,45),(19,0)],
+            [(23,0),(23,2),(23,5),(23,10),(23,13),(23,15),(23,18),(23,30)],
+        ] as [[(Int, Int)]] {
+            reversed = updateTimetables(
+                route: Routes.Saturday.reversed,
+                timetables: reversed,
+                times: times.map { (hour: $0.0, minute: $0.1) },
+                variantLabel: routeLabel(Routes.Saturday.reversed.id),
+            )
+        }
+
+        return regular + reversed
+    }
+
+    /// Hardcoded Sunday timetables from the PDF (4 outbound incl. 2 seasonal, 4 inbound incl. 2 seasonal).
+    /// *** trips: first occurrence = summerOnly (vacaciones escolares), second = schoolOnly (periodo lectivo).
+    private func staticSundayTimetables() -> [BusTimetable] {
+        var regular = createInitialTimetables(
+            route: Routes.Sunday.regular,
+            dayType: .sunday,
+            direction: Self.directionOutbound,
+        )
+        var reversed = createInitialTimetables(
+            route: Routes.Sunday.reversed,
+            dayType: .sunday,
+            direction: Self.directionInbound,
+        )
+
+        // Outbound
+        regular = updateTimetables(route: Routes.Sunday.regular, timetables: regular,
+            times: [(11,45),(12,0),(12,3),(12,6),(12,9),(12,10),(12,13),(12,15)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.regular.id))
+        regular = updateTimetables(route: Routes.Sunday.regular, timetables: regular,  // *** vacaciones escolares
+            times: [(19,30),(19,45),(19,47),(19,50),(19,53),(19,55)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.regular.id), seasonalAvailability: .summerOnly)
+        regular = updateTimetables(route: Routes.Sunday.regular, timetables: regular,  // *** periodo lectivo
+            times: [(20,30),(20,45),(20,47),(20,50),(20,53),(20,55)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.regular.id), seasonalAvailability: .schoolOnly)
+        regular = updateTimetables(route: Routes.Sunday.regular, timetables: regular,
+            times: [(21,45),(22,0),(22,2),(22,5),(22,8),(22,10),(22,12),(22,15)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.regular.id))
+
+        // Inbound
+        reversed = updateTimetables(route: Routes.Sunday.reversed, timetables: reversed,
+            times: [(12,15),(12,17),(12,20),(12,23),(12,25),(12,28),(12,33),(12,45)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.reversed.id))
+        reversed = updateTimetables(route: Routes.Sunday.reversed, timetables: reversed,
+            times: [(16,30),(16,32),(16,35),(16,38),(16,40),(16,43),(16,45),(17,0)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.reversed.id))
+        reversed = updateTimetables(route: Routes.Sunday.reversed, timetables: reversed,  // *** vacaciones: partial from Trescasas
+            times: [(19,55),(19,58),(20,0),(20,5),(20,8),(20,30)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.reversed.id), seasonalAvailability: .summerOnly)
+        reversed = updateTimetables(route: Routes.Sunday.reversed, timetables: reversed,  // *** lectivo: partial from Trescasas
+            times: [(20,55),(20,58),(21,0),(21,5),(21,8),(21,30)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: routeLabel(Routes.Sunday.reversed.id), seasonalAvailability: .schoolOnly)
+
+        return regular + reversed
+    }
+
+    // MARK: - Static Weekday Timetables
+
+    /// Hardcoded weekday timetables from the PDF.
+    ///
+    /// Outbound: 9 full regular + 2 partial (→Trescasas) + 1 extended (→08:20) + 1 circular (**21:20).
+    /// Inbound: 10 full regular + 2 partial (Trescasas→) + 1 extended reversed (→07:45).
+    ///
+    /// The inbound `#21:50` row in the PDF is the circular bus's return pass-through
+    /// times shown for passenger reference — it is the same trip as the outbound
+    /// circular and is not added as a separate timetable entry.
+    private func staticWeekdayTimetables() -> [BusTimetable] {
+        var regular = createInitialTimetables(
+            route: Routes.Weekday.regular,
+            dayType: .weekday,
+            direction: Self.directionOutbound,
+        )
+        var reversed = createInitialTimetables(
+            route: Routes.Weekday.reversed,
+            dayType: .weekday,
+            direction: Self.directionInbound,
+        )
+        var extended = createInitialTimetables(
+            route: Routes.Weekday.extended,
+            dayType: .weekday,
+            direction: Self.directionOutbound,
+        )
+        var extendedReversed = createInitialTimetables(
+            route: Routes.Weekday.extendedReversed,
+            dayType: .weekday,
+            direction: Self.directionInbound,
+        )
+        var circular = createInitialTimetables(
+            route: Routes.Weekday.circular,
+            dayType: .weekday,
+            direction: Self.directionOutbound,
+        )
+
+        let regularLabel = routeLabel(Routes.Weekday.regular.id)
+        let extendedLabel = routeLabel(Routes.Weekday.extended.id)
+        let circularLabel = routeLabel(Routes.Weekday.circular.id)
+
+        // Outbound regular (Segovia → Torrecaballeros)
+        // Urban leg: Azoguejo (Via Roma) and Delicias
+        for times in [
+            [(7,20),(7,30),(7,35),(7,37),(7,40),(7,45)],
+            [(9,40),(9,55),(10,0),(10,2),(10,5),(10,10)],
+            [(11,0),(11,15),(11,20),(11,22),(11,25),(11,30)],
+            [(12,0),(12,15),(12,20),(12,22),(12,25),(12,30)],
+            [(13,0),(13,15),(13,20),(13,22),(13,25),(13,30)],
+            [(15,15),(15,30),(15,35),(15,37),(15,40),(15,45)],
+            [(16,30),(16,45),(16,50),(16,52),(16,55),(17,0)],
+            [(19,0),(19,15),(19,20),(19,22),(19,25),(19,30)],
+            [(20,15),(20,30),(20,35),(20,37),(20,40),(20,45)],
+        ] as [[(Int, Int)]] {
+            regular = updateTimetables(
+                route: Routes.Weekday.regular,
+                timetables: regular,
+                times: times.map { (hour: $0.0, minute: $0.1) },
+                variantLabel: regularLabel,
+            )
+        }
+        // Partial outbound (Segovia → Trescasas)
+        for times in [
+            [(14,20),(14,25),(14,30),(14,35)],
+            [(18,0),(18,15),(18,20),(18,22)],
+        ] as [[(Int, Int)]] {
+            regular = updateTimetables(
+                route: Routes.Weekday.regular,
+                timetables: regular,
+                times: times.map { (hour: $0.0, minute: $0.1) },
+                variantLabel: regularLabel,
+            )
+        }
+
+        // Inbound regular (Torrecaballeros → Segovia)
+        for times in [
+            [(7,0),(7,5),(7,8),(7,10),(7,15),(7,20)],
+            [(9,0),(9,5),(9,8),(9,10),(9,15),(9,30)],
+            [(10,10),(10,15),(10,18),(10,20),(10,25),(10,40)],
+            [(11,30),(11,35),(11,38),(11,40),(11,45),(12,0)],
+            [(12,30),(12,35),(12,38),(12,40),(12,45),(13,0)],
+            [(13,30),(13,35),(13,38),(13,40),(13,45),(14,0)],
+            [(15,45),(15,50),(15,53),(15,55),(16,0),(16,15)],
+            [(17,0),(17,5),(17,8),(17,10),(17,15),(17,30)],
+            [(19,30),(19,35),(19,38),(19,40),(19,45),(20,0)],
+            [(20,45),(20,50),(20,52),(20,55),(21,0),(21,15)],
+        ] as [[(Int, Int)]] {
+            reversed = updateTimetables(
+                route: Routes.Weekday.reversed,
+                timetables: reversed,
+                times: times.map { (hour: $0.0, minute: $0.1) },
+                variantLabel: regularLabel,
+            )
+        }
+        // Partial inbound (Trescasas → Segovia); italic estimated times on PDF
+        for times in [
+            [(14,28),(14,30),(14,35),(14,50)],
+            [(18,22),(18,25),(18,30),(18,45)],
+        ] as [[(Int, Int)]] {
+            reversed = updateTimetables(
+                route: Routes.Weekday.reversed,
+                timetables: reversed,
+                times: times.map { (hour: $0.0, minute: $0.1) },
+                variantLabel: regularLabel,
+            )
+        }
+
+        // Extended outbound (→, Andres Laguna → Torrecaballeros)
+        extended = updateTimetables(
+            route: Routes.Weekday.extended,
+            timetables: extended,
+            times: [(8,20),(8,45),(8,50),(8,52),(8,55),(9,0)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: extendedLabel,
+        )
+
+        // Extended inbound (→, Torrecaballeros → Andres Laguna)
+        extendedReversed = updateTimetables(
+            route: Routes.Weekday.extendedReversed,
+            timetables: extendedReversed,
+            times: [(7,45),(7,50),(7,52),(7,55),(8,0),(8,10)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: extendedLabel,
+        )
+
+        // Circular (**/#, Estacion Bus → Palazuelos → Tabanera → villages → Torrecab → Delicias)
+        // 9 clusters; last cluster (Delicias/Azoguejo) estimated: 21:50 + 15 min = 22:05
+        circular = updateTimetables(
+            route: Routes.Weekday.circular,
+            timetables: circular,
+            times: [(21,20),(21,35),(21,37),(21,40),(21,43),(21,46),(21,48),(21,50),(22,5)].map { (hour: $0.0, minute: $0.1) },
+            variantLabel: circularLabel,
+        )
+
+        return regular + reversed + extended + extendedReversed + circular
     }
 
     // MARK: - Line Preprocessing

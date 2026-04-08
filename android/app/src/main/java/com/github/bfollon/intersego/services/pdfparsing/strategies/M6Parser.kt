@@ -58,7 +58,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M6"),
         mode = ParserMode.PRODUCTION,
-        version = "0.6"
+        version = "0.7"
     )
 
     private data class ParsingState(
@@ -210,13 +210,19 @@ class M6Parser : CapableParser, RouteStopsProvider {
                 val regular = Weekday.circular
                     .copy(id = UUID.randomUUID(), clusters = Weekday.circular.clusters.dropLast(1))
 
-                // Same as busStation but the return leg adds Jardinillos after Azoguejo
-                val reversed = Route(
-                    clusters = regular.clusters.dropLast(1) + listOf(
-                        StopCluster(listOf(Stops.AZOGUEJO, Stops.JARDINILLOS))
-                    ),
-                    alignment = ClusterAlignment.FROM_END
-                )
+                // Return leg: proper reversal of regular, but the Segovia urban terminus
+                // is Plaza de Toros → La Pista → Andres Laguna → Jardinillos
+                // (not Estacion Bus as in outbound). See PDF footnote:
+                // "RECORRIDO URBANO: PLAZA DE TOROS-LA PISTA-ANDRES LAGUNA-JARDINILLOS"
+                val reversed: Route = run {
+                    val base = regular.reversed()
+                    Route(
+                        clusters = base.clusters.dropLast(1) + listOf(
+                            StopCluster(listOf(Stops.PLAZA_TOROS, Stops.LA_PISTA, Stops.ANDRES_LAGUNA, Stops.JARDINILLOS))
+                        ),
+                        alignment = base.alignment
+                    )
+                }
             }
 
             object Sunday {
@@ -732,16 +738,14 @@ class M6Parser : CapableParser, RouteStopsProvider {
                     label = "Segovia → Torrecaballeros",
                     stops = plainStops(Routes.Saturday.regular),
                     direction = DIRECTION_OUTBOUND,
-                    departureLabel = "Sábado",
-                    swapAction = SwapAction("saturday-reversed")
+                    departureLabel = "Sábado"
                 ),
                 RouteView(
                     id = "saturday-reversed",
                     label = "Torrecaballeros → Segovia",
                     stops = plainStops(Routes.Saturday.reversed),
                     direction = DIRECTION_INBOUND,
-                    departureLabel = "Sábado",
-                    swapAction = SwapAction("saturday-regular")
+                    departureLabel = "Sábado"
                 )
             )
 
@@ -781,7 +785,8 @@ class M6Parser : CapableParser, RouteStopsProvider {
         return listOf(
             RouteSelectorEntry("entry-lv-regular",  "L-V - Regular",  weekdayViews,  "weekday-unified",  DayType.WEEKDAY,  isWeekday),
             RouteSelectorEntry("entry-lv-circular", "L-V - Circular", weekdayViews,  "weekday-circular", DayType.WEEKDAY,  isWeekday),
-            RouteSelectorEntry("entry-sabado",       "Sábado",         saturdayViews, "saturday-regular", DayType.SATURDAY, isSaturday),
+            RouteSelectorEntry("entry-sabado-ida",    "Sáb - Ida",      saturdayViews.filter { it.id == "saturday-regular" },  "saturday-regular",  DayType.SATURDAY, isSaturday),
+            RouteSelectorEntry("entry-sabado-vuelta", "Sáb - Vuelta",   saturdayViews.filter { it.id == "saturday-reversed" }, "saturday-reversed", DayType.SATURDAY, isSaturday),
             RouteSelectorEntry("entry-domingo",      "Domingo",        sundayViews,   "sunday-regular",   DayType.SUNDAY,   isSunday)
         )
     }

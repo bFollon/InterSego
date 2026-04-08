@@ -93,7 +93,7 @@ struct AllRoutesView: View {
                 VStack {
                     Text("Línea \(route.number)")
                         .font(.headline)
-                    Text("Todas las rutas")
+                    Text(currentView.label)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
