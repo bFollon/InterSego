@@ -55,85 +55,54 @@ struct LandingView: View {
 
             VStack(spacing: 16) {
                 Button(action: onFindClosestStop) {
-                    VStack(spacing: 14) {
-                        if isSearchingClosestStop {
-                            ProgressView()
-                                .frame(width: 60, height: 60)
-                        } else {
-                            Image(systemName: "location.fill")
-                                .font(.system(size: 32))
-                                .foregroundColor(.accentColor)
-                                .frame(width: 60, height: 60)
-                        }
-                        Text("Parada más cercana")
-                            .font(.headline)
+                    HorizontalCard(
+                        label: "Parada más cercana",
+                        showChevron: true,
+                        isLoading: isSearchingClosestStop,
+                    ) {
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 24))
                             .foregroundColor(.accentColor)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 28)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                 }
                 .buttonStyle(.plain)
                 .disabled(isSearchingClosestStop)
 
-                Button(action: onShowRouteList) {
-                    VStack(spacing: 14) {
-                        BusLineIcon(size: 60)
-                        Text("Líneas de bus")
-                            .font(.headline)
-                            .foregroundColor(.accentColor)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 28)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-                }
-                .buttonStyle(.plain)
-
-                Button(action: onShowReminders) {
-                    VStack(spacing: 14) {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.accentColor)
-                            .frame(width: 60, height: 60)
-                        Text("Mis recordatorios")
-                            .font(.headline)
-                            .foregroundColor(.accentColor)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 28)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-                }
-                .buttonStyle(.plain)
-
                 Button(action: onBoardBus) {
-                    VStack(spacing: 14) {
-                        if isBoardingBus {
-                            ProgressView()
-                                .frame(width: 60, height: 60)
-                        } else {
-                            Image(systemName: boardingBusConfirmed ? "checkmark.circle.fill" : "bus")
-                                .font(.system(size: 32))
-                                .foregroundColor(boardingBusConfirmed ? .green : .accentColor)
-                                .frame(width: 60, height: 60)
-                        }
-                        Text(boardingBusConfirmed ? "¡Gracias por confirmar!" : "Estoy en el autobús")
-                            .font(.headline)
-                            .foregroundColor(boardingBusConfirmed ? .green : .accentColor)
+                    HorizontalCard(
+                        label: boardingBusConfirmed ? "¡Gracias por confirmar!" : "Estoy en el autobús",
+                        labelColor: boardingBusConfirmed ? Color(UIColor.systemGreen) : .accentColor,
+                        showChevron: false,
+                        isLoading: isBoardingBus,
+                    ) {
+                        Image(systemName: boardingBusConfirmed ? "checkmark.circle.fill" : "bus")
+                            .font(.system(size: 24))
+                            .foregroundColor(boardingBusConfirmed ? Color(UIColor.systemGreen) : .accentColor)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 28)
-                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
                 }
                 .buttonStyle(.plain)
                 .disabled(isBoardingBus || boardingBusConfirmed)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    Button(action: onShowRouteList) {
+                        SquareCard(label: "Líneas de bus") {
+                            BusLineIcon(size: 40)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .aspectRatio(1, contentMode: .fit)
+
+                    Button(action: onShowReminders) {
+                        SquareCard(label: "Mis recordatorios") {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(.accentColor)
+                                .frame(width: 40, height: 40)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .aspectRatio(1, contentMode: .fit)
+                }
 
                 if let error = closestStopError {
                     Text(error)
@@ -164,6 +133,65 @@ struct LandingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
         .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+private struct HorizontalCard<Icon: View>: View {
+    let label: String
+    var labelColor: Color = .accentColor
+    let showChevron: Bool
+    let isLoading: Bool
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Group {
+                if isLoading {
+                    ProgressView()
+                } else {
+                    icon()
+                }
+            }
+            .frame(width: 32, height: 32)
+
+            Text(label)
+                .font(.headline)
+                .foregroundColor(labelColor)
+
+            Spacer()
+
+            if showChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .background(Color(UIColor.systemGreen).opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+    }
+}
+
+private struct SquareCard<Icon: View>: View {
+    let label: String
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        VStack(spacing: 12) {
+            icon()
+            Text(label)
+                .font(.headline)
+                .foregroundColor(.accentColor)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(16)
+        .background(Color(UIColor.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
     }
 }
 
