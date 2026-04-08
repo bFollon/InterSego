@@ -59,7 +59,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val GreenTint = Color(0xFF34C759).copy(alpha = 0.12f)
+private val GreenSource = Color(0xFF34C759)
 private val GreenConfirmed = Color(0xFF34C759)
 
 @Composable
@@ -233,12 +233,21 @@ private fun HorizontalLandingCard(
     labelColor: Color? = null,
     icon: @Composable () -> Unit
 ) {
+    // Blend green over background to get a solid color — semi-transparent backgrounds
+    // cause Modifier.shadow() to render a colored glow instead of a neutral shadow.
+    val bg = MaterialTheme.colorScheme.background
+    val cardColor = Color(
+        red = bg.red * 0.88f + GreenSource.red * 0.12f,
+        green = bg.green * 0.88f + GreenSource.green * 0.12f,
+        blue = bg.blue * 0.88f + GreenSource.blue * 0.12f,
+        alpha = 1f
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(4.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
-            .background(GreenTint)
+            .background(cardColor)
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 20.dp, vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
