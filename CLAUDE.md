@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Parser | Android | iOS | Notes |
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ | ✅ | iOS handles PDFKit text differences; v1.2 (stable stop IDs) |
-| M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; Android v0.7 (dynamic weekday), iOS v0.9 (fully static); Sat inbound: proper reversal via PlazaToros→LaPista→AndresLaguna→Jardinillos; Sáb has 2 separate entries (Ida/Vuelta) |
+| M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; v0.9 (fully static, both platforms); Sat inbound: proper reversal via PlazaToros→LaPista→AndresLaguna→Jardinillos; Sáb has 2 separate entries (Ida/Vuelta) |
 | M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); v1.6; isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); ★=JUNE_TO_SEPT_ONLY, (*)=YEAR_ROUND, LYV=MON_FRI_ONLY (circularB: Martín Miguel 9:40, Valverde 9:40), #=FRI_ONLY |
 | M2 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-20); v1.0; isCircular=true; weekday only; two circular directions (circularA: Segovia→Valseca outbound view; circularB: Valseca→Segovia return via Los Huertos+Hontanares); 7:25 Valseca bus originates from Valseca (chronologically out of stop order in circularB, accepted as Option A) |
 | M3 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-23); v1.0; Saturday only; linear (Segovia→Navacerrada); Segovia is a 4-stop cluster (Estación de Autobuses, Iglesia Santo Tomás, Frente Bar Norte, Plaza de Toros) with +2 min estimated times |

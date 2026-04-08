@@ -58,7 +58,7 @@ class M6Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M6"),
         mode = ParserMode.PRODUCTION,
-        version = "0.7"
+        version = "0.9"
     )
 
     private data class ParsingState(
@@ -328,8 +328,10 @@ class M6Parser : CapableParser, RouteStopsProvider {
     private fun parseM6Timetables(lines: List<String>): List<BusTimetable> {
         DebugConfig.debugPrint("M6Parser: Starting timetable parsing for ${lines.size} lines")
 
-        val reorderedLines = reorderSwappedLines(lines)
-        val timetables = parseTimeTable(reorderedLines)
+        // All three day types use hardcoded static data. This ensures deterministic
+        // output regardless of future PDF text-extraction quirks, and keeps Android
+        // behaviour identical to iOS.
+        val timetables = staticWeekdayTimetables() + staticSaturdayTimetables() + staticSundayTimetables()
 
         DebugConfig.debugPrint("M6Parser: Parsed ${timetables.size} timetables")
         return timetables
@@ -498,6 +500,180 @@ class M6Parser : CapableParser, RouteStopsProvider {
         Routes.Sunday.reversed.id -> "Domingo"
         else -> null
     }
+
+    // region Static timetables
+
+    /**
+     * Hardcoded weekday timetables from the PDF.
+     *
+     * Outbound: 9 full regular + 2 partial (→Trescasas) + 1 extended (→08:20) + 1 circular (**21:20).
+     * Inbound: 10 full regular + 2 partial (Trescasas→) + 1 extended reversed (→07:45).
+     *
+     * The inbound `#21:50` row in the PDF is the circular bus's return pass-through
+     * times shown for passenger reference — it is the same trip as the outbound
+     * circular and is not added as a separate timetable entry.
+     */
+    private fun staticWeekdayTimetables(): List<BusTimetable> {
+        var regular = createInitialTimetables(Routes.Weekday.regular, DayType.WEEKDAY, DIRECTION_OUTBOUND)
+        var reversed = createInitialTimetables(Routes.Weekday.reversed, DayType.WEEKDAY, DIRECTION_INBOUND)
+        var extended = createInitialTimetables(Routes.Weekday.extended, DayType.WEEKDAY, DIRECTION_OUTBOUND)
+        var extendedReversed = createInitialTimetables(Routes.Weekday.extendedReversed, DayType.WEEKDAY, DIRECTION_INBOUND)
+        var circular = createInitialTimetables(Routes.Weekday.circular, DayType.WEEKDAY, DIRECTION_OUTBOUND)
+
+        val regularLabel = routeLabel(Routes.Weekday.regular.id)
+        val extendedLabel = routeLabel(Routes.Weekday.extended.id)
+        val circularLabel = routeLabel(Routes.Weekday.circular.id)
+
+        fun t(h: Int, m: Int) = LocalTime.of(h, m)
+
+        // Outbound regular (Segovia → Torrecaballeros)
+        // Urban leg: Azoguejo (Via Roma) and Delicias
+        for (times in listOf(
+            listOf(t(7,20),t(7,30),t(7,35),t(7,37),t(7,40),t(7,45)),
+            listOf(t(9,40),t(9,55),t(10,0),t(10,2),t(10,5),t(10,10)),
+            listOf(t(11,0),t(11,15),t(11,20),t(11,22),t(11,25),t(11,30)),
+            listOf(t(12,0),t(12,15),t(12,20),t(12,22),t(12,25),t(12,30)),
+            listOf(t(13,0),t(13,15),t(13,20),t(13,22),t(13,25),t(13,30)),
+            listOf(t(15,15),t(15,30),t(15,35),t(15,37),t(15,40),t(15,45)),
+            listOf(t(16,30),t(16,45),t(16,50),t(16,52),t(16,55),t(17,0)),
+            listOf(t(19,0),t(19,15),t(19,20),t(19,22),t(19,25),t(19,30)),
+            listOf(t(20,15),t(20,30),t(20,35),t(20,37),t(20,40),t(20,45)),
+        )) {
+            regular = updateTimetables(Routes.Weekday.regular, regular, times, regularLabel)
+        }
+        // Partial outbound (Segovia → Trescasas)
+        for (times in listOf(
+            listOf(t(14,20),t(14,25),t(14,30),t(14,35)),
+            listOf(t(18,0),t(18,15),t(18,20),t(18,22)),
+        )) {
+            regular = updateTimetables(Routes.Weekday.regular, regular, times, regularLabel)
+        }
+
+        // Inbound regular (Torrecaballeros → Segovia)
+        for (times in listOf(
+            listOf(t(7,0),t(7,5),t(7,8),t(7,10),t(7,15),t(7,20)),
+            listOf(t(9,0),t(9,5),t(9,8),t(9,10),t(9,15),t(9,30)),
+            listOf(t(10,10),t(10,15),t(10,18),t(10,20),t(10,25),t(10,40)),
+            listOf(t(11,30),t(11,35),t(11,38),t(11,40),t(11,45),t(12,0)),
+            listOf(t(12,30),t(12,35),t(12,38),t(12,40),t(12,45),t(13,0)),
+            listOf(t(13,30),t(13,35),t(13,38),t(13,40),t(13,45),t(14,0)),
+            listOf(t(15,45),t(15,50),t(15,53),t(15,55),t(16,0),t(16,15)),
+            listOf(t(17,0),t(17,5),t(17,8),t(17,10),t(17,15),t(17,30)),
+            listOf(t(19,30),t(19,35),t(19,38),t(19,40),t(19,45),t(20,0)),
+            listOf(t(20,45),t(20,50),t(20,52),t(20,55),t(21,0),t(21,15)),
+        )) {
+            reversed = updateTimetables(Routes.Weekday.reversed, reversed, times, regularLabel)
+        }
+        // Partial inbound (Trescasas → Segovia); italic estimated times on PDF
+        for (times in listOf(
+            listOf(t(14,28),t(14,30),t(14,35),t(14,50)),
+            listOf(t(18,22),t(18,25),t(18,30),t(18,45)),
+        )) {
+            reversed = updateTimetables(Routes.Weekday.reversed, reversed, times, regularLabel)
+        }
+
+        // Extended outbound (→, Andres Laguna → Torrecaballeros)
+        extended = updateTimetables(
+            Routes.Weekday.extended, extended,
+            listOf(t(8,20),t(8,45),t(8,50),t(8,52),t(8,55),t(9,0)),
+            extendedLabel
+        )
+
+        // Extended inbound (→, Torrecaballeros → Andres Laguna)
+        extendedReversed = updateTimetables(
+            Routes.Weekday.extendedReversed, extendedReversed,
+            listOf(t(7,45),t(7,50),t(7,52),t(7,55),t(8,0),t(8,10)),
+            extendedLabel
+        )
+
+        // Circular (**/#, Estacion Bus → Palazuelos → Tabanera → villages → Torrecab → Delicias)
+        // 9 clusters; last cluster (Delicias/Azoguejo) estimated: 21:50 + 15 min = 22:05
+        circular = updateTimetables(
+            Routes.Weekday.circular, circular,
+            listOf(t(21,20),t(21,35),t(21,37),t(21,40),t(21,43),t(21,46),t(21,48),t(21,50),t(22,5)),
+            circularLabel
+        )
+
+        return regular + reversed + extended + extendedReversed + circular
+    }
+
+    /**
+     * Hardcoded Saturday timetables from the PDF (5 outbound, 4 inbound trips).
+     * Urban outbound leg: Estacion Bus - Andres Laguna - La Pista - Plaza de Toros.
+     * Urban inbound leg: Plaza de Toros - La Pista - Andres Laguna - Jardinillos.
+     */
+    private fun staticSaturdayTimetables(): List<BusTimetable> {
+        var regular = createInitialTimetables(Routes.Saturday.regular, DayType.SATURDAY, DIRECTION_OUTBOUND)
+        var reversed = createInitialTimetables(Routes.Saturday.reversed, DayType.SATURDAY, DIRECTION_INBOUND)
+
+        val label = routeLabel(Routes.Saturday.regular.id)
+        fun t(h: Int, m: Int) = LocalTime.of(h, m)
+
+        for (times in listOf(
+            listOf(t(9,20),t(9,35),t(9,37),t(9,40),t(9,43),t(9,45),t(9,47),t(9,50)),
+            listOf(t(13,30),t(13,45),t(13,47),t(13,49),t(13,51),t(13,53)),  // partial: through Trescasas
+            listOf(t(15,15),t(15,30),t(15,32),t(15,35),t(15,38),t(15,41),t(15,43),t(15,45)),
+            listOf(t(19,30),t(19,45),t(19,47),t(19,50),t(19,53),t(19,56),t(19,58),t(20,0)),
+            listOf(t(22,30),t(22,45),t(22,47),t(22,50),t(22,53),t(22,56),t(22,58),t(23,0)),
+        )) {
+            regular = updateTimetables(Routes.Saturday.regular, regular, times, label)
+        }
+
+        // Sonsoto column times (16:10, 18:38, 23:10) are estimated in the PDF
+        for (times in listOf(
+            listOf(t(10,10),t(10,13),t(10,16),t(10,19),t(10,22),t(10,25),t(10,28),t(10,45)),
+            listOf(t(16,0),t(16,2),t(16,5),t(16,10),t(16,13),t(16,15),t(16,18),t(16,30)),
+            listOf(t(18,30),t(18,32),t(18,35),t(18,38),t(18,40),t(18,43),t(18,45),t(19,0)),
+            listOf(t(23,0),t(23,2),t(23,5),t(23,10),t(23,13),t(23,15),t(23,18),t(23,30)),
+        )) {
+            reversed = updateTimetables(Routes.Saturday.reversed, reversed, times, routeLabel(Routes.Saturday.reversed.id))
+        }
+
+        return regular + reversed
+    }
+
+    /**
+     * Hardcoded Sunday timetables from the PDF (4 outbound incl. 2 seasonal, 4 inbound incl. 2 seasonal).
+     * *** trips: first occurrence = summerOnly (vacaciones escolares), second = schoolOnly (periodo lectivo).
+     */
+    private fun staticSundayTimetables(): List<BusTimetable> {
+        var regular = createInitialTimetables(Routes.Sunday.regular, DayType.SUNDAY, DIRECTION_OUTBOUND)
+        var reversed = createInitialTimetables(Routes.Sunday.reversed, DayType.SUNDAY, DIRECTION_INBOUND)
+
+        fun t(h: Int, m: Int) = LocalTime.of(h, m)
+
+        // Outbound
+        regular = updateTimetables(Routes.Sunday.regular, regular,
+            listOf(t(11,45),t(12,0),t(12,3),t(12,6),t(12,9),t(12,10),t(12,13),t(12,15)),
+            routeLabel(Routes.Sunday.regular.id))
+        regular = updateTimetables(Routes.Sunday.regular, regular,  // *** vacaciones escolares
+            listOf(t(19,30),t(19,45),t(19,47),t(19,50),t(19,53),t(19,55)),
+            routeLabel(Routes.Sunday.regular.id), SeasonalAvailability.SUMMER_ONLY)
+        regular = updateTimetables(Routes.Sunday.regular, regular,  // *** periodo lectivo
+            listOf(t(20,30),t(20,45),t(20,47),t(20,50),t(20,53),t(20,55)),
+            routeLabel(Routes.Sunday.regular.id), SeasonalAvailability.SCHOOL_ONLY)
+        regular = updateTimetables(Routes.Sunday.regular, regular,
+            listOf(t(21,45),t(22,0),t(22,2),t(22,5),t(22,8),t(22,10),t(22,12),t(22,15)),
+            routeLabel(Routes.Sunday.regular.id))
+
+        // Inbound
+        reversed = updateTimetables(Routes.Sunday.reversed, reversed,
+            listOf(t(12,15),t(12,17),t(12,20),t(12,23),t(12,25),t(12,28),t(12,33),t(12,45)),
+            routeLabel(Routes.Sunday.reversed.id))
+        reversed = updateTimetables(Routes.Sunday.reversed, reversed,
+            listOf(t(16,30),t(16,32),t(16,35),t(16,38),t(16,40),t(16,43),t(16,45),t(17,0)),
+            routeLabel(Routes.Sunday.reversed.id))
+        reversed = updateTimetables(Routes.Sunday.reversed, reversed,  // *** vacaciones: partial from Trescasas
+            listOf(t(19,55),t(19,58),t(20,0),t(20,5),t(20,8),t(20,30)),
+            routeLabel(Routes.Sunday.reversed.id), SeasonalAvailability.SUMMER_ONLY)
+        reversed = updateTimetables(Routes.Sunday.reversed, reversed,  // *** lectivo: partial from Trescasas
+            listOf(t(20,55),t(20,58),t(21,0),t(21,5),t(21,8),t(21,30)),
+            routeLabel(Routes.Sunday.reversed.id), SeasonalAvailability.SCHOOL_ONLY)
+
+        return regular + reversed
+    }
+
+    // endregion
 
     private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
         val routeById: Map<UUID, Route> = listOf(
