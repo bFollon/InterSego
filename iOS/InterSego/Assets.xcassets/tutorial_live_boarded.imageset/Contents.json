@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "tutorial_live_boarded.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

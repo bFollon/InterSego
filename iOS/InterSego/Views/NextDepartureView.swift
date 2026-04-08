@@ -112,6 +112,8 @@ struct NextDepartureView: View {
     @State private var showReminderAlert = false
     @AppStorage("bellTutorialShown") private var bellTutorialShown = false
     @State private var showBellTip = false
+    @AppStorage("liveUpdateTutorialShown") private var liveUpdateTutorialShown = false
+    @State private var showLiveUpdateTutorial = false
 
     // Boarding state
     @State private var boardingConfirmed = false
@@ -316,15 +318,26 @@ struct NextDepartureView: View {
             .navigationTitle(stop.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if let target = swapDirection {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button { direction = target } label: {
-                            Image(systemName: "arrow.up.arrow.down")
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 4) {
+                        if let target = swapDirection {
+                            Button { direction = target } label: {
+                                Image(systemName: "arrow.up.arrow.down")
+                            }
+                        }
+                        Button { showLiveUpdateTutorial = true } label: {
+                            Image(systemName: "questionmark.circle")
                         }
                     }
                 }
             }
-            .task { await loadTimetables() }
+            .task {
+                await loadTimetables()
+                if !liveUpdateTutorialShown && departureInfo.daysAhead == 0 {
+                    liveUpdateTutorialShown = true
+                    showLiveUpdateTutorial = true
+                }
+            }
             .task { await refreshReminderKeys() }
             .task(id: currentTripKey) { await pollBoardings() }
             .onReceive(timer) { time in
@@ -343,6 +356,9 @@ struct NextDepartureView: View {
             }
             .sheet(isPresented: $showBoardingWindowTooltip) {
                 BoardingWindowExplanationSheet(tooltipText: boardingWindowTooltipText)
+            }
+            .sheet(isPresented: $showLiveUpdateTutorial) {
+                LiveUpdateTutorialView { showLiveUpdateTutorial = false }
             }
             .onChange(of: direction) { _, _ in boardingConfirmed = false }
             .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }

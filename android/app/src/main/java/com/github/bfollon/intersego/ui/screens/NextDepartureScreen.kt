@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.Color
 import com.github.bfollon.intersego.ui.theme.WarningOrange
 import com.github.bfollon.intersego.ui.theme.WarningOrangeText
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.edit
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -194,6 +195,10 @@ fun NextDepartureScreen(
     var activeBoardings by remember { mutableStateOf<List<BoardingEvent>>(emptyList()) }
     var showBoardingWindowTooltip by remember { mutableStateOf(false) }
     val boardingScope = rememberCoroutineScope()
+
+    // Live update tutorial state
+    val liveUpdatePrefs = remember { context.getSharedPreferences("live_update_tutorial", android.content.Context.MODE_PRIVATE) }
+    var showLiveUpdateTutorial by remember { mutableStateOf(false) }
 
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     LaunchedEffect(Unit) {
@@ -376,6 +381,14 @@ fun NextDepartureScreen(
     val followingTaggedDepartures = departureInfo.following
     val daysAhead = departureInfo.daysAhead
 
+    // Show live update tutorial on first visit where the boarding button is visible (today only)
+    LaunchedEffect(isLoading) {
+        if (!isLoading && daysAhead == 0 && !liveUpdatePrefs.getBoolean("tutorial_shown", false)) {
+            liveUpdatePrefs.edit { putBoolean("tutorial_shown", true) }
+            showLiveUpdateTutorial = true
+        }
+    }
+
     // True when the displayed departure is within ±20 minutes of now.
     val isWithinBoardingWindow by remember(currentTime, nextTaggedDeparture, daysAhead) {
         derivedStateOf {
@@ -467,6 +480,12 @@ fun NextDepartureScreen(
                                 contentDescription = "Cambiar dirección"
                             )
                         }
+                    }
+                    IconButton(onClick = { showLiveUpdateTutorial = true }) {
+                        Icon(
+                            imageVector = Icons.Outlined.HelpOutline,
+                            contentDescription = "Acerca de las actualizaciones en directo"
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -814,6 +833,15 @@ fun NextDepartureScreen(
                     item { Spacer(modifier = Modifier.height(32.dp)) }
                 }
             }
+        }
+    }
+
+    if (showLiveUpdateTutorial) {
+        ModalBottomSheet(
+            onDismissRequest = { showLiveUpdateTutorial = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            LiveUpdateTutorialSheet(onDismiss = { showLiveUpdateTutorial = false })
         }
     }
 
