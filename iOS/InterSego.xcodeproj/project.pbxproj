@@ -58,13 +58,13 @@
 		A10000010000000000000049 /* ReminderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000049 /* ReminderService.swift */; };
 		A1000001000000000000004A /* RemindersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004A /* RemindersView.swift */; };
 		A1000001000000000000004B /* ReminderTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004B /* ReminderTutorialView.swift */; };
-		A10000010000000000000052 /* LiveUpdateTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000052 /* LiveUpdateTutorialView.swift */; };
 		A1000001000000000000004C /* BusStopRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004C /* BusStopRegistry.swift */; };
 		A1000001000000000000004D /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004D /* AppConfig.swift */; };
-		A10000010000000000000051 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000051 /* Secrets.swift */; };
 		A1000001000000000000004E /* BoardingEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004E /* BoardingEvent.swift */; };
 		A1000001000000000000004F /* BoardingRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000004F /* BoardingRequest.swift */; };
 		A10000010000000000000050 /* BoardingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000050 /* BoardingService.swift */; };
+		A10000010000000000000051 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000051 /* Secrets.swift */; };
+		A10000010000000000000052 /* LiveUpdateTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000052 /* LiveUpdateTutorialView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -119,13 +119,13 @@
 		A20000010000000000000049 /* ReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderService.swift; sourceTree = "<group>"; };
 		A2000001000000000000004A /* RemindersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersView.swift; sourceTree = "<group>"; };
 		A2000001000000000000004B /* ReminderTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderTutorialView.swift; sourceTree = "<group>"; };
-		A20000010000000000000052 /* LiveUpdateTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUpdateTutorialView.swift; sourceTree = "<group>"; };
 		A2000001000000000000004C /* BusStopRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusStopRegistry.swift; sourceTree = "<group>"; };
 		A2000001000000000000004D /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
-		A20000010000000000000051 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		A2000001000000000000004E /* BoardingEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardingEvent.swift; sourceTree = "<group>"; };
 		A2000001000000000000004F /* BoardingRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardingRequest.swift; sourceTree = "<group>"; };
 		A20000010000000000000050 /* BoardingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardingService.swift; sourceTree = "<group>"; };
+		A20000010000000000000051 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		A20000010000000000000052 /* LiveUpdateTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUpdateTutorialView.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -542,7 +542,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.8.1;
+				MARKETING_VERSION = 1.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -577,7 +577,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.8.1;
+				MARKETING_VERSION = 1.9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

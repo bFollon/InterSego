@@ -362,6 +362,13 @@ struct NextDepartureView: View {
             }
             .onChange(of: direction) { _, _ in boardingConfirmed = false }
             .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }
+            .onChange(of: selectedRouteId) { _, _ in
+                if !availableDirections.contains(direction),
+                   let first = availableDirections.first
+                {
+                    direction = first
+                }
+            }
             .onAppear {
                 if !bellTutorialShown {
                     bellTutorialShown = true
