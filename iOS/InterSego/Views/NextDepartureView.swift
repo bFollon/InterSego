@@ -168,17 +168,13 @@ struct NextDepartureView: View {
         availableDirections.first { $0 != direction }
     }
 
-    /// True when any departure for the current stop/direction is within ±20 minutes of now.
+    /// True when the displayed departure is within ±20 minutes of now.
     private var isWithinBoardingWindow: Bool {
+        guard let next = departureInfo.departure, departureInfo.daysAhead == 0 else { return false }
         let h = Calendar.current.component(.hour, from: currentTime)
         let m = Calendar.current.component(.minute, from: currentTime)
         let currentMinutes = h * 60 + m
-        return activeRoutesData.contains { routeData in
-            routeData.timetables
-                .filter { currentDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
-                .flatMap { $0.seasonalDepartures(weekday: currentWeekday) }
-                .contains { abs($0.minutesSinceMidnight - currentMinutes) <= 20 }
-        }
+        return abs(next.departure.minutesSinceMidnight - currentMinutes) <= 20
     }
 
     private var boardingWindowTooltipText: String {
@@ -261,9 +257,20 @@ struct NextDepartureView: View {
         let cal = Calendar.current
         let currentHour = cal.component(.hour, from: currentTime)
         let currentMinute = cal.component(.minute, from: currentTime)
+        let currentMinutes = currentHour * 60 + currentMinute
 
         let today = todayDepartures
         let upcoming = today.filter { $0.departure.isFuture(currentHour: currentHour, currentMinute: currentMinute) }
+
+        // If a bus departed within the last 20 minutes, show it as primary so
+        // the boarding button always refers to the trip the user can see on screen.
+        let justDeparted = today.last(where: {
+            let diff = currentMinutes - $0.departure.minutesSinceMidnight
+            return diff > 0 && diff <= 20
+        })
+        if let recent = justDeparted {
+            return DepartureInfo(departure: recent, following: Array(upcoming.prefix(5)), daysAhead: 0)
+        }
 
         if !upcoming.isEmpty {
             return DepartureInfo(
@@ -972,7 +979,8 @@ private struct NextDepartureCard: View {
     private var countdownText: String {
         let mins = minutesUntil
         switch mins {
-        case ..<1: return "Saliendo ahora"
+        case ..<0: return "Salió hace \(-mins) min"
+        case 0: return "Saliendo ahora"
         case 1: return "Sale en 1 minuto"
         case 2 ..< 60: return "Sale en \(mins) minutos"
         default:
@@ -993,7 +1001,7 @@ private struct NextDepartureCard: View {
         VStack(alignment: .leading, spacing: 12) {
             // Top row: label + time badge
             HStack(spacing: 8) {
-                Text("Próxima salida:")
+                Text(minutesUntil < 0 ? "Última salida:" : "Próxima salida:")
                     .font(.headline)
 
                 DepartureTimeBadge(time: departure.displayString)

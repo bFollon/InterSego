@@ -266,22 +266,6 @@ fun NextDepartureScreen(
     val direction = currentDirection ?: availableDirections.firstOrNull() ?: ""
     val swapDirection = availableDirections.firstOrNull { it != direction }
 
-    // True when any departure for the current stop/direction is within ±20 minutes of now.
-    val isWithinBoardingWindow by remember(currentTime, direction, loadedRoutes, selectedRouteId) {
-        derivedStateOf {
-            val currentMinutes = currentTime.hour * 60 + currentTime.minute
-            val routesToCheck = if (selectedRouteId != null)
-                loadedRoutes.filter { it.route.id == selectedRouteId }
-            else loadedRoutes
-            routesToCheck.any { routeData ->
-                routeData.timetables
-                    .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == direction }
-                    .flatMap { it.seasonalDepartures(weekday = currentDayOfWeek) }
-                    .any { dep -> kotlin.math.abs(dep.toMinutesSinceMidnight() - currentMinutes) <= 20 }
-            }
-        }
-    }
-
     // Reset boarding confirmation when direction changes
     LaunchedEffect(direction) {
         boardingConfirmed = false
@@ -351,11 +335,22 @@ fun NextDepartureScreen(
     val departureInfo = remember(todayTaggedDepartures, nextDayTaggedDepartures, currentTime) {
         DebugConfig.debugPrint("NextDepartureScreen: currentTime=$currentTime, todayDepartures=${todayTaggedDepartures.size}")
         if (hasTodayDepartures) {
+            val currentMinutes = currentTime.hour * 60 + currentTime.minute
             val upcoming = todayTaggedDepartures.filter { td ->
                 val dt = LocalTime.of(td.departure.hour, td.departure.minute)
                 dt.isAfter(currentTime) || dt == currentTime
             }
-            if (upcoming.isNotEmpty()) {
+            // If a bus departed within the last 20 minutes, show it as primary so
+            // the boarding button always refers to the trip the user can see on screen.
+            val justDeparted = todayTaggedDepartures
+                .filter { td ->
+                    val diff = currentMinutes - td.departure.toMinutesSinceMidnight()
+                    diff in 1..20
+                }
+                .lastOrNull()
+            if (justDeparted != null) {
+                DepartureInfo(justDeparted, upcoming.take(5), 0)
+            } else if (upcoming.isNotEmpty()) {
                 DepartureInfo(upcoming.first(), upcoming.drop(1).take(5), 0)
             } else if (nextDayTaggedDepartures != null) {
                 DepartureInfo(
@@ -380,6 +375,15 @@ fun NextDepartureScreen(
     val nextTaggedDeparture = departureInfo.departure
     val followingTaggedDepartures = departureInfo.following
     val daysAhead = departureInfo.daysAhead
+
+    // True when the displayed departure is within ±20 minutes of now.
+    val isWithinBoardingWindow by remember(currentTime, nextTaggedDeparture, daysAhead) {
+        derivedStateOf {
+            if (daysAhead > 0 || nextTaggedDeparture == null) return@derivedStateOf false
+            val currentMinutes = currentTime.hour * 60 + currentTime.minute
+            kotlin.math.abs(nextTaggedDeparture.departure.toMinutesSinceMidnight() - currentMinutes) <= 20
+        }
+    }
 
     // Boarding derived state
     val tripKey = remember(nextTaggedDeparture, direction, currentDayType) {
@@ -1371,7 +1375,7 @@ fun NextDepartureWithProgress(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Próxima salida:",
+                    text = if (minutesUntil < 0) "Última salida:" else "Próxima salida:",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
@@ -1484,6 +1488,7 @@ fun NextDepartureWithProgress(
             } ?: ""
             Text(
                 text = when {
+                    minutesUntil < 0 -> "Salió hace ${-minutesUntil} min"
                     minutesUntil < 1 -> "Saliendo ahora"
                     minutesUntil == 1L -> "Sale en 1 minuto"
                     minutesUntil < 60 -> "Sale en $minutesUntil minutos"
