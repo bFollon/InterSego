@@ -169,9 +169,12 @@ private struct HorizontalCard<Icon: View>: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
         .frame(maxWidth: .infinity)
-        .background(Color(UIColor.systemGreen).opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .background(Color.green.opacity(0.1))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.green.opacity(0.3), lineWidth: 1)
+        )
     }
 }
 

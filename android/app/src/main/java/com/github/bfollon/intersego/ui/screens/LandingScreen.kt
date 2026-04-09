@@ -20,6 +20,7 @@ package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +60,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val GreenSource = Color(0xFF34C759)
+private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
+private val GreenBorder = Color(0xFF34C759).copy(alpha = 0.3f)
 private val GreenConfirmed = Color(0xFF34C759)
 
 @Composable
@@ -233,21 +235,12 @@ private fun HorizontalLandingCard(
     labelColor: Color? = null,
     icon: @Composable () -> Unit
 ) {
-    // Blend green over background to get a solid color — semi-transparent backgrounds
-    // cause Modifier.shadow() to render a colored glow instead of a neutral shadow.
-    val bg = MaterialTheme.colorScheme.background
-    val cardColor = Color(
-        red = bg.red * 0.88f + GreenSource.red * 0.12f,
-        green = bg.green * 0.88f + GreenSource.green * 0.12f,
-        blue = bg.blue * 0.88f + GreenSource.blue * 0.12f,
-        alpha = 1f
-    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
-            .background(cardColor)
+            .background(GreenTint)
+            .border(1.dp, GreenBorder, RoundedCornerShape(16.dp))
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 20.dp, vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
