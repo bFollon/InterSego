@@ -1575,7 +1575,7 @@ fun DepartureTimeline(
                         .clip(MaterialTheme.shapes.medium)
                         .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(
@@ -1640,15 +1640,21 @@ fun DepartureTimeline(
                         }
                     }
 
-                    TimeOfDayIndicator(timeOfDay = timeOfDay)
+                    // Right-side controls grouped together
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TimeOfDayIndicator(timeOfDay = timeOfDay)
 
-                    if (isBellSetFor != null || onBellTap != null) {
-                        BellIcon(
-                            isBellSet = isBellSetFor?.invoke(tagged) ?: false,
-                            isDailyBell = isDailyBellFor?.invoke(tagged) ?: false,
-                            onTap = onBellTap?.let { { it(tagged) } },
-                            onLongPress = onBellLongPress?.let { { it(tagged) } }
-                        )
+                        if (isBellSetFor != null || onBellTap != null) {
+                            BellIcon(
+                                isBellSet = isBellSetFor?.invoke(tagged) ?: false,
+                                isDailyBell = isDailyBellFor?.invoke(tagged) ?: false,
+                                onTap = onBellTap?.let { { it(tagged) } },
+                                onLongPress = onBellLongPress?.let { { it(tagged) } }
+                            )
+                        }
                     }
                 }
             }

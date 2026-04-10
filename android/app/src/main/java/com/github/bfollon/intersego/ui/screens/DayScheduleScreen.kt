@@ -470,10 +470,13 @@ private fun DayScheduleTimelineRow(
                 .clip(MaterialTheme.shapes.medium)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -528,15 +531,21 @@ private fun DayScheduleTimelineRow(
                 }
             }
 
-            TimeOfDayIndicator(timeOfDay = timeOfDay)
+            // Right-side controls grouped together
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TimeOfDayIndicator(timeOfDay = timeOfDay)
 
-            if (showBell) {
-                BellIcon(
-                    isBellSet = isBellSet,
-                    isDailyBell = isDailyBell,
-                    onTap = onBellTap,
-                    onLongPress = onBellLongPress
-                )
+                if (showBell) {
+                    BellIcon(
+                        isBellSet = isBellSet,
+                        isDailyBell = isDailyBell,
+                        onTap = onBellTap,
+                        onLongPress = onBellLongPress
+                    )
+                }
             }
         }
     }
