@@ -21,6 +21,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -213,12 +214,19 @@ fun DirectionPickerScreen(
 
                 directionGroups.forEach { group ->
                     item {
-                        Text(
-                            text = "Línea ${group.route.number}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
-                        )
+                        Surface(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
+                            Text(
+                                text = "Línea ${group.route.number}",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
                     }
 
                     items(group.directions) { option ->

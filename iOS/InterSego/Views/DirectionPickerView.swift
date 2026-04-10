@@ -93,7 +93,7 @@ struct DirectionPickerView: View {
                     }
 
                     ForEach(directionGroups) { group in
-                        Section(header: Text("Línea \(group.route.number)")) {
+                        Section(header: LineNamePill(routeNumber: group.route.number)) {
                             ForEach(group.directions) { option in
                                 Button(action: {
                                     GuidedModePrefs.saveLastViewId(option.viewId, stopId: stop.id, routeId: option.routeId)
@@ -210,5 +210,22 @@ struct DirectionPickerView: View {
 
     private func destinationFromDirection(_ direction: String) -> String {
         direction.components(separatedBy: "→").last?.trimmingCharacters(in: .whitespaces) ?? direction
+    }
+}
+
+// MARK: - Helper Views
+
+struct LineNamePill: View {
+    let routeNumber: String
+
+    var body: some View {
+        Text("Línea \(routeNumber)")
+            .font(.caption)
+            .fontWeight(.semibold)
+            .foregroundColor(.accentColor)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.accentColor.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }
