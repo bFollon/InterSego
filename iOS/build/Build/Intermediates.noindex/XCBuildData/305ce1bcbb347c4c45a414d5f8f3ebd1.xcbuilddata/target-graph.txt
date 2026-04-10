@@ -1,2 +1,0 @@
-Target dependency graph (1 target)
-Target 'InterSego' in project 'InterSego' (no dependencies)

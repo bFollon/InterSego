@@ -14,3 +14,4 @@ iOS/InterSego.xcodeproj/xcuserdata/
 
 # Temporary files
 tmp/
+/iOS/build
