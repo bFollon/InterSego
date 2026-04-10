@@ -85,9 +85,14 @@ struct DirectionPickerView: View {
             } else {
                 List {
                     Section {
-                        Text(stop.name)
-                            .font(.headline)
-                            .fontWeight(.bold)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(stop.name)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                            Text("¿A dónde vas?")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
                     }
 
                     ForEach(directionGroups) { group in
