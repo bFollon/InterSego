@@ -29,7 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.TextAlign
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
@@ -149,7 +149,7 @@ fun DirectionPickerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Selecciona dirección") },
+                title = { Text(stop.name) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -201,15 +201,6 @@ fun DirectionPickerScreen(
             ) {
                 item {
                     Text(
-                        text = stop.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-
-                item {
-                    Text(
                         text = "¿A dónde vas?",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold,
@@ -232,7 +223,7 @@ fun DirectionPickerScreen(
 
                     items(group.directions) { option ->
                         DirectionPickerItem(
-                            direction = option.direction,
+                            direction = destinationFromDirection(option.direction),
                             isLastSelected = GuidedModePrefs.getLastViewId(stopId, option.routeId) == option.viewId,
                             onClick = {
                                 GuidedModePrefs.saveLastViewId(stopId, option.routeId, option.viewId)
@@ -285,4 +276,8 @@ private fun DirectionPickerItem(
         }
     }
     Divider()
+}
+
+private fun destinationFromDirection(direction: String): String {
+    return direction.split("→").lastOrNull()?.trim() ?: direction
 }

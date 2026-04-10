@@ -85,12 +85,6 @@ struct DirectionPickerView: View {
             } else {
                 List {
                     Section {
-                        Text(stop.name)
-                            .font(.headline)
-                            .fontWeight(.bold)
-                    }
-
-                    Section {
                         Text("¿A dónde vas?")
                             .font(.title3)
                             .fontWeight(.semibold)
@@ -106,7 +100,7 @@ struct DirectionPickerView: View {
                                     onSelected(option.routeId, option.viewId)
                                 }) {
                                     HStack {
-                                        Text(option.direction)
+                                        Text(destinationFromDirection(option.direction))
                                             .foregroundColor(.primary)
 
                                         Spacer()
@@ -128,7 +122,7 @@ struct DirectionPickerView: View {
                 }
             }
         }
-        .navigationTitle("Selecciona dirección")
+        .navigationTitle(stop.name)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showTutorial) {
             GuidedModeTutorialView(onDismiss: {
@@ -212,5 +206,9 @@ struct DirectionPickerView: View {
         }
 
         loading = false
+    }
+
+    private func destinationFromDirection(_ direction: String) -> String {
+        direction.components(separatedBy: "→").last?.trimmingCharacters(in: .whitespaces) ?? direction
     }
 }
