@@ -21,7 +21,11 @@ package com.github.bfollon.intersego.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -37,7 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -274,131 +281,17 @@ internal fun StopRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Left side: Route line indicator
-        Box(
-            modifier = Modifier
-                .width(40.dp)
-                .height(80.dp)
-        ) {
-            when {
-                isFirst -> {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_route_start_chevron),
-                        contentDescription = "Inicio",
-                        tint = lineColor,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .offset(x = 8.dp, y = 12.dp)
-                    )
-                    if (isExtended) {
-                        DashedVerticalLine(
-                            color = lineColor,
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(80.dp)
-                                .offset(x = 18.dp, y = 28.dp)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(80.dp)
-                                .offset(x = 18.dp, y = 28.dp)
-                                .background(lineColor)
-                        )
-                    }
-                }
-                isLast -> {
-                    if (isExtended) {
-                        DashedVerticalLine(
-                            color = lineColor,
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(16.dp)
-                                .offset(x = 18.dp, y = 0.dp)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(16.dp)
-                                .offset(x = 18.dp, y = 0.dp)
-                                .background(lineColor)
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(16.dp)
-                            .offset(x = 12.dp, y = 20.dp)
-                            .background(lineColor)
-                    )
-                }
-                else -> {
-                    // Line above
-                    if (isExtended) {
-                        DashedVerticalLine(
-                            color = lineColor,
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(24.dp)
-                                .offset(x = 18.dp, y = 0.dp)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(24.dp)
-                                .offset(x = 18.dp, y = 0.dp)
-                                .background(lineColor)
-                        )
-                    }
-                    // Line below (drawn before dot so dot renders on top)
-                    if (isExtended) {
-                        DashedVerticalLine(
-                            color = lineColor,
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(80.dp)
-                                .offset(x = 18.dp, y = 28.dp)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .width(4.dp)
-                                .height(80.dp)
-                                .offset(x = 18.dp, y = 28.dp)
-                                .background(lineColor)
-                        )
-                    }
-                    // Stop dot (drawn last to cover dashed lines)
-                    if (isExtended) {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .offset(x = 12.dp, y = 20.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surface,
-                                    shape = CircleShape
-                                )
-                                .border(3.dp, lineColor, CircleShape)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .offset(x = 12.dp, y = 20.dp)
-                                .background(
-                                    color = lineColor,
-                                    shape = CircleShape
-                                )
-                        )
-                    }
-                }
-            }
-        }
+        StopIndicator(
+            isFirst = isFirst,
+            isLast = isLast,
+            isExtended = isExtended,
+            lineColor = lineColor
+        )
 
         // Right side: Stop information
         Column(
@@ -444,6 +337,158 @@ internal fun DashedVerticalLine(
             )
         }
     )
+}
+
+/**
+ * Adaptive stop indicator: dots and lines whose positions are calculated from measured row height.
+ * Replaces hardcoded offsets with dynamic calculations.
+ */
+@Composable
+private fun StopIndicator(
+    isFirst: Boolean,
+    isLast: Boolean,
+    isExtended: Boolean,
+    lineColor: Color
+) {
+    val density = LocalDensity.current
+    val containerWidth = 40.dp
+    val dotSize = 16.dp
+    val lineWidth = 4.dp
+    val chevronSize = 24.dp
+
+    var containerHeightPx by remember { mutableStateOf(0) }
+
+    Box(
+        modifier = Modifier
+            .width(containerWidth)
+            .fillMaxHeight()
+            .onSizeChanged { containerHeightPx = it.height }
+    ) {
+        if (containerHeightPx > 0) {
+            val h = with(density) { containerHeightPx.toDp() }
+
+            // All positions derived from container height (no magic numbers)
+            val dotX = (containerWidth - dotSize) / 2           // 12.dp
+            val dotY = (h - dotSize) / 2                        // vertically centered
+            val lineX = (containerWidth - lineWidth) / 2         // 18.dp
+            val dotCenterY = h / 2
+            val chevronX = (containerWidth - chevronSize) / 2   // 8.dp
+            val chevronY = (h - chevronSize) / 2                // vertically centered
+
+            when {
+                isFirst -> {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_route_start_chevron),
+                        contentDescription = "Inicio",
+                        tint = lineColor,
+                        modifier = Modifier
+                            .size(chevronSize)
+                            .offset(x = chevronX, y = chevronY)
+                    )
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .fillMaxHeight()
+                                .offset(x = lineX, y = dotCenterY)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .fillMaxHeight()
+                                .offset(x = lineX, y = dotCenterY)
+                                .background(lineColor)
+                        )
+                    }
+                }
+                isLast -> {
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .height(dotCenterY)
+                                .offset(x = lineX)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .height(dotCenterY)
+                                .offset(x = lineX)
+                                .background(lineColor)
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(dotSize)
+                            .offset(x = dotX, y = dotY)
+                            .background(lineColor)
+                    )
+                }
+                else -> {
+                    // Line above (top to dot top)
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .height(dotY)
+                                .offset(x = lineX)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .height(dotY)
+                                .offset(x = lineX)
+                                .background(lineColor)
+                        )
+                    }
+                    // Line below (dot center to overflow)
+                    if (isExtended) {
+                        DashedVerticalLine(
+                            color = lineColor,
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .fillMaxHeight()
+                                .offset(x = lineX, y = dotCenterY)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .width(lineWidth)
+                                .fillMaxHeight()
+                                .offset(x = lineX, y = dotCenterY)
+                                .background(lineColor)
+                        )
+                    }
+                    // Dot (drawn last to render on top)
+                    if (isExtended) {
+                        Box(
+                            modifier = Modifier
+                                .size(dotSize)
+                                .offset(x = dotX, y = dotY)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = CircleShape
+                                )
+                                .border(3.dp, lineColor, CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(dotSize)
+                                .offset(x = dotX, y = dotY)
+                                .background(lineColor, CircleShape)
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
