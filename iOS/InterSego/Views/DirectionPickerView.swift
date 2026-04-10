@@ -94,6 +94,8 @@ struct DirectionPickerView: View {
                         Text("¿A dónde vas?")
                             .font(.title3)
                             .fontWeight(.semibold)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
                     }
 
                     ForEach(directionGroups) { group in
