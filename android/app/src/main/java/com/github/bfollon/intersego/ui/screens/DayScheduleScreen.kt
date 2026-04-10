@@ -18,9 +18,11 @@
 
 package com.github.bfollon.intersego.ui.screens
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -370,14 +372,12 @@ private fun NowMarkerRow(
             modifier = Modifier.width(32.dp),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.fillMaxHeight().width(2.dp)) {
-                drawLine(
-                    color = accentColor,
-                    start = Offset(size.width / 2, 0f),
-                    end = Offset(size.width / 2, size.height),
-                    strokeWidth = 2.dp.toPx()
-                )
-            }
+            Box(
+                modifier = Modifier
+                    .width(2.dp)
+                    .fillMaxHeight()
+                    .background(accentColor)
+            )
         }
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -431,37 +431,13 @@ private fun DayScheduleTimelineRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .height(IntrinsicSize.Min)
+            .padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Timeline visual (dot + line)
-        Box(
-            modifier = Modifier.width(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            if (!isLast) {
-                Canvas(
-                    modifier = Modifier
-                        .width(2.dp)
-                        .height(56.dp)
-                        .offset(y = 20.dp)
-                ) {
-                    drawLine(
-                        color = androidx.compose.ui.graphics.Color.LightGray,
-                        start = Offset(size.width / 2, 0f),
-                        end = Offset(size.width / 2, size.height),
-                        strokeWidth = 2.dp.toPx()
-                    )
-                }
-            }
-
-            Surface(
-                modifier = Modifier.size(12.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                color = MaterialTheme.colorScheme.primary
-            ) {}
-        }
+        DayScheduleTimelineIndicator(isLast = isLast)
 
         // Departure info
         Row(
@@ -548,5 +524,40 @@ private fun DayScheduleTimelineRow(
                 }
             }
         }
+    }
+}
+
+/**
+ * Visual indicator for a day schedule timeline entry: a connecting line and a dot.
+ * Spans the full height of the parent Row. The line fills from top to bottom,
+ * and the dot is centered (drawn after so it covers the line's midpoint).
+ * [isLast] controls whether the connecting line is shown (hidden for the last item).
+ */
+@Composable
+private fun DayScheduleTimelineIndicator(isLast: Boolean) {
+    val dotColor = MaterialTheme.colorScheme.primary
+    val lineColor = MaterialTheme.colorScheme.outlineVariant
+
+    Box(
+        modifier = Modifier
+            .width(32.dp)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center
+    ) {
+        // Full-height connecting line that overflows Row bounds to bridge gaps, drawn first so dot renders on top
+        if (!isLast) {
+            Box(
+                modifier = Modifier
+                    .width(2.dp)
+                    .fillMaxHeight()
+                    .offset(y = 35.dp)
+                    .background(lineColor)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(dotColor, CircleShape)
+        )
     }
 }
