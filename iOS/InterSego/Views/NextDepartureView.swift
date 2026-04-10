@@ -1147,6 +1147,57 @@ private struct TimeOfDayIndicator: View {
     }
 }
 
+// MARK: - Timeline Indicator
+
+/// Reusable timeline indicator component with centered dot and connecting lines above and below.
+/// Uses Canvas to draw lines and dots without affecting layout (inspired by RouteLineIndicator).
+/// Draws lines above and below the dot so they connect across rows.
+private struct TimelineIndicator: View {
+    let isFirst: Bool
+    let isLast: Bool
+    var dotColor: Color = .accentColor
+    var lineColor: Color = Color(.separator)
+    var dotSize: CGFloat = 12
+
+    var body: some View {
+        GeometryReader { geometry in
+            let size = geometry.size
+            let midX = size.width / 2
+            let midY = size.height / 2
+            let dotRadius = dotSize / 2
+
+            Canvas { context, canvasSize in
+                // Line above dot (from row top to dot top)
+                if !isFirst {
+                    let lineStartY = 0.0
+                    let lineEndY = midY - dotRadius
+                    let lineHeight = max(0.0, lineEndY - lineStartY)
+
+                    let rect = CGRect(x: midX - 1, y: lineStartY, width: 2, height: lineHeight)
+                    context.fill(Path(rect), with: .color(lineColor))
+                }
+
+                // Line below dot (from dot bottom to row bottom)
+                if !isLast {
+                    let lineStartY = midY + dotRadius
+                    let lineEndY = canvasSize.height
+                    let lineHeight = max(0.0, lineEndY - lineStartY)
+
+                    let rect = CGRect(x: midX - 1, y: lineStartY, width: 2, height: lineHeight)
+                    context.fill(Path(rect), with: .color(lineColor))
+                }
+
+                // Centered dot
+                let dotRect = CGRect(x: midX - dotRadius, y: midY - dotRadius, width: dotSize, height: dotSize)
+                let circle = Path(ellipseIn: dotRect)
+                context.fill(circle, with: .color(dotColor))
+            }
+        }
+        .frame(width: 32)
+        .frame(maxHeight: .infinity)  // Allow vertical expansion to connect lines across rows
+    }
+}
+
 // MARK: - Departure Timeline
 
 private struct DepartureTimeline: View {
@@ -1162,84 +1213,75 @@ private struct DepartureTimeline: View {
             ForEach(Array(departures.enumerated()), id: \.offset) { index, tagged in
                 let departure = tagged.departure
                 let timeOfDay = getTimeOfDay(departure.hour)
+                let isFirst = index == 0
                 let isLast = index == departures.count - 1
 
                 HStack(spacing: 16) {
-                    // Timeline dot + line
-                    VStack(spacing: 0) {
-                        Circle()
-                            .fill(Color.accentColor)
-                            .frame(width: 12, height: 12)
+                    TimelineIndicator(isFirst: isFirst, isLast: isLast)
 
-                        if !isLast {
-                            Rectangle()
-                                .fill(Color(.separator))
-                                .frame(width: 2)
-                                .frame(maxHeight: .infinity)
-                        }
-                    }
-                    .frame(width: 32)
+                    // Wrapper for departure card (with vertical padding for timeline)
+                    VStack {
+                        // Departure row
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 8) {
+                                    Text(departure.displayString)
+                                        .font(.headline)
 
-                    // Departure row
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 8) {
-                                Text(departure.displayString)
-                                    .font(.headline)
+                                    if showRouteBadge {
+                                        RouteBadge(number: tagged.routeNumber)
+                                    }
 
-                                if showRouteBadge {
-                                    RouteBadge(number: tagged.routeNumber)
+                                    let variantLabel = selectedVariantLabelFor?(tagged)
+                                    let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: variantLabel)
+
+                                    if showLabel, let label = departure.variantLabel {
+                                        Text(label)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color(.systemGray5))
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    }
+
+                                    if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                                        Text(seasonalLabel)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.accentColor.opacity(0.12))
+                                            .foregroundColor(.accentColor)
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    }
                                 }
 
-                                let variantLabel = selectedVariantLabelFor?(tagged)
-                                let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: variantLabel)
-
-                                if showLabel, let label = departure.variantLabel {
-                                    Text(label)
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color(.systemGray5))
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
-                                }
-
-                                if let seasonalLabel = departure.seasonalAvailability.displayLabel {
-                                    Text(seasonalLabel)
-                                        .font(.caption2)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.accentColor.opacity(0.12))
-                                        .foregroundColor(.accentColor)
-                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                if let notes = departure.notes, !notes.isEmpty {
+                                    Text(notes)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
                                 }
                             }
 
-                            if let notes = departure.notes, !notes.isEmpty {
-                                Text(notes)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                            Spacer()
+
+                            TimeOfDayIndicator(timeOfDay: timeOfDay)
+
+                            if bellStateFor != nil || onBellTap != nil {
+                                let state = bellStateFor?(tagged) ?? .off
+                                BellButton(
+                                    bellState: state,
+                                    onTap: onBellTap.map { tap in { tap(tagged) } },
+                                    onLongPress: onBellLongPress.map { lp in { lp(tagged) } }
+                                )
+                                .font(.subheadline)
                             }
                         }
-
-                        Spacer()
-
-                        TimeOfDayIndicator(timeOfDay: timeOfDay)
-
-                        if bellStateFor != nil || onBellTap != nil {
-                            let state = bellStateFor?(tagged) ?? .off
-                            BellButton(
-                                bellState: state,
-                                onTap: onBellTap.map { tap in { tap(tagged) } },
-                                onLongPress: onBellLongPress.map { lp in { lp(tagged) } }
-                            )
-                            .font(.subheadline)
-                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground).opacity(0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .padding(16)
-                    .background(Color(.secondarySystemBackground).opacity(0.5))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding(.vertical, 8)
                 }
-                .padding(.vertical, 4)
             }
         }
     }
