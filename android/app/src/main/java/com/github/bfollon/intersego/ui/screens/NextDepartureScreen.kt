@@ -30,9 +30,11 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1566,7 +1568,7 @@ fun DepartureTimeline(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .height(IntrinsicSize.Min),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1669,6 +1671,8 @@ fun DepartureTimeline(
 
 /**
  * Visual indicator for a timeline entry: a connecting line and a dot.
+ * Spans the full height of the parent Row. The line fills from top to bottom,
+ * and the dot is centered (drawn after so it covers the line's midpoint).
  * [isLast] controls whether the connecting line is shown (hidden for the last item).
  */
 @Composable
@@ -1677,16 +1681,18 @@ private fun TimelineIndicator(isLast: Boolean) {
     val lineColor = MaterialTheme.colorScheme.outlineVariant
 
     Box(
-        modifier = Modifier.width(32.dp),
+        modifier = Modifier
+            .width(32.dp)
+            .fillMaxHeight(),
         contentAlignment = Alignment.Center
     ) {
-        // Connecting line drawn first so the dot renders on top (same z-order trick as StopRow)
+        // Full-height connecting line drawn first so the dot renders on top covering the midpoint
         if (!isLast) {
             Box(
                 modifier = Modifier
                     .width(2.dp)
-                    .height(56.dp)
-                    .offset(y = 20.dp)
+                    .fillMaxHeight()
+                    .offset(y = 25.dp)
                     .background(lineColor)
             )
         }
