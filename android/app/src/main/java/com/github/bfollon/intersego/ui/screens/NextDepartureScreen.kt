@@ -1568,7 +1568,8 @@ fun DepartureTimeline(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
+                    .height(IntrinsicSize.Min)
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1686,13 +1687,13 @@ private fun TimelineIndicator(isLast: Boolean) {
             .fillMaxHeight(),
         contentAlignment = Alignment.Center
     ) {
-        // Full-height connecting line drawn first so the dot renders on top covering the midpoint
+        // Tall connecting line that overflows Row bounds to bridge gaps, drawn first so dot renders on top
         if (!isLast) {
             Box(
                 modifier = Modifier
                     .width(2.dp)
                     .fillMaxHeight()
-                    .offset(y = 25.dp)
+                    .offset(y = 35.dp)
                     .background(lineColor)
             )
         }
@@ -1822,6 +1823,61 @@ private fun BoardingButton(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+    }
+}
+
+// ============================================================================
+// PREVIEW
+// ============================================================================
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, heightDp = 600)
+@Composable
+fun DepartureTimelinePreview() {
+    val dummyDepartures = listOf(
+        TaggedDeparture(
+            departure = DepartureTime(7, 30),
+            routeId = "M4",
+            routeNumber = "M4"
+        ),
+        TaggedDeparture(
+            departure = DepartureTime(8, 15),
+            routeId = "M4",
+            routeNumber = "M4"
+        ),
+        TaggedDeparture(
+            departure = DepartureTime(9, 0),
+            routeId = "M4",
+            routeNumber = "M4"
+        ),
+        TaggedDeparture(
+            departure = DepartureTime(9, 45),
+            routeId = "M4",
+            routeNumber = "M4"
+        ),
+        TaggedDeparture(
+            departure = DepartureTime(10, 30),
+            routeId = "M4",
+            routeNumber = "M4"
+        ),
+    )
+
+    MaterialTheme {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            DepartureTimeline(
+                departures = dummyDepartures,
+                selectedVariantLabel = "Regular",
+                showRouteBadge = false,
+                isBellSetFor = { false },
+                isDailyBellFor = { false },
+                onBellTap = null,
+                onBellLongPress = null
             )
         }
     }
