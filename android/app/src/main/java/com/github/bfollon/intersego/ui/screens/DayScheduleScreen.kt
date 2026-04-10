@@ -22,6 +22,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -537,26 +538,35 @@ private fun DayScheduleTimelineRow(
 private fun DayScheduleTimelineIndicator(isLast: Boolean) {
     val dotColor = MaterialTheme.colorScheme.primary
     val lineColor = MaterialTheme.colorScheme.outlineVariant
+    val dotSize = 12.dp
+
+    var containerHeight by remember { mutableStateOf(0) }
 
     Box(
         modifier = Modifier
             .width(32.dp)
-            .fillMaxHeight(),
+            .fillMaxHeight()
+            .onSizeChanged { size ->
+                containerHeight = size.height
+            },
         contentAlignment = Alignment.Center
     ) {
-        // Full-height connecting line that overflows Row bounds to bridge gaps, drawn first so dot renders on top
-        if (!isLast) {
+        // Tall connecting line that overflows Row bounds to bridge gaps, drawn first so dot renders on top
+        // Line starts from the bottom of the centered dot: containerHeight/2 + dotSize/2
+        if (!isLast && containerHeight > 0) {
+            val dotRadiusPx = (dotSize / 2).value
+            val lineOffsetPx = (containerHeight / 2 + dotRadiusPx).dp
             Box(
                 modifier = Modifier
                     .width(2.dp)
                     .fillMaxHeight()
-                    .offset(y = 35.dp)
+                    .offset(y = lineOffsetPx)
                     .background(lineColor)
             )
         }
         Box(
             modifier = Modifier
-                .size(12.dp)
+                .size(dotSize)
                 .background(dotColor, CircleShape)
         )
     }
