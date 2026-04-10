@@ -84,6 +84,10 @@ import com.github.bfollon.intersego.services.PDFProcessingService
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TimetableService
+import com.github.bfollon.intersego.services.TaggedDeparture
+import com.github.bfollon.intersego.services.RouteLoadedData
+import com.github.bfollon.intersego.services.DeparturesService
+import com.github.bfollon.intersego.services.DeparturesData
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
@@ -101,29 +105,6 @@ import com.github.bfollon.intersego.data.BoardingEvent
 import com.github.bfollon.intersego.data.BoardingRequest
 import com.github.bfollon.intersego.services.BoardingService
 import androidx.compose.material.icons.filled.DirectionsBus
-
-// ============================================================================
-// DATA CLASSES
-// ============================================================================
-
-/**
- * A departure time tagged with the route it belongs to.
- * Used when displaying merged departures from multiple lines.
- */
-data class TaggedDeparture(
-    val departure: DepartureTime,
-    val routeId: String,
-    val routeNumber: String
-)
-
-/**
- * Loaded data for a single route: route metadata, route views, and timetables.
- */
-data class RouteLoadedData(
-    val route: BusRoute,
-    val views: List<RouteView>,
-    val timetables: List<BusTimetable>
-)
 
 // ============================================================================
 // DAY TYPE HELPERS
@@ -223,28 +204,19 @@ fun NextDepartureScreen(
         isLoading = true
         errorMessage = null
         try {
-            val routeIds = pdfService.getRoutesForStop(stop.id)
+            val departuresService = DeparturesService(context)
+            val departuresData = departuresService.loadDepartures(stop, allRoutes, primaryRouteId)
+            val routeIds = departuresData.routes.map { it.route.id }
             DebugConfig.debugPrint("NextDepartureScreen: ${stop.name} served by routes: $routeIds")
-            val results = routeIds.mapNotNull { routeId ->
-                val route = allRoutes.find { it.id == routeId } ?: return@mapNotNull null
-                val timetables = try {
-                    timetableService.loadTimetables(routeId, forceRefresh = false)
-                } catch (e: Exception) {
-                    DebugConfig.debugWarn("NextDepartureScreen: failed to load $routeId: ${e.message}")
-                    emptyList()
-                }
-                val views = pdfService.getRouteViews(routeId, currentDayType)
-                RouteLoadedData(route, views, timetables)
-            }
-            loadedRoutes = results
+            loadedRoutes = departuresData.routes
 
             // Init direction from primaryViewId if available, otherwise first available
             if (currentDirection == null) {
                 currentDirection = if (primaryRouteId != null && primaryViewId != null) {
-                    results.find { it.route.id == primaryRouteId }
+                    departuresData.routes.find { it.route.id == primaryRouteId }
                         ?.views?.find { it.id == primaryViewId }?.direction
                 } else null
-                    ?: results.firstOrNull()?.views?.firstOrNull()?.direction
+                    ?: departuresData.routes.firstOrNull()?.views?.firstOrNull()?.direction
                     ?: ""
             }
         } catch (e: Exception) {

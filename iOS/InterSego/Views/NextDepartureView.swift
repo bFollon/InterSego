@@ -68,23 +68,6 @@ private func getTimeOfDay(_ hour: Int) -> TimeOfDay {
     }
 }
 
-// MARK: - Tagged Departure
-
-private struct TaggedDeparture: Identifiable {
-    let id = UUID()
-    let departure: DepartureTime
-    let routeId: String
-    let routeNumber: String
-}
-
-// MARK: - Route Loaded Data
-
-private struct RouteLoadedData {
-    let route: BusRoute
-    let views: [RouteView]
-    let timetables: [BusTimetable]
-}
-
 // MARK: - Departure Info
 
 private struct DepartureInfo {
@@ -523,33 +506,24 @@ struct NextDepartureView: View {
         isLoading = true
         errorMessage = nil
 
-        let allRouteIds = await PDFProcessingService.shared.getRoutesForStop(stopId: stop.id)
+        let departuresService = DeparturesService.shared
         let allBusRoutes = BusRouteRegistry.knownRoutes()
-        let dayType = TimetableService.shared.getCurrentDayType()
+        let departuresData = await departuresService.loadDepartures(stop: stop, allRoutes: allBusRoutes, primaryRouteId: primaryRouteId)
 
-        var loaded: [RouteLoadedData] = []
-        for routeId in allRouteIds.sorted() {
-            guard let busRoute = allBusRoutes.first(where: { $0.id == routeId }) else { continue }
-            let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
-            guard !timetables.isEmpty else { continue }
-            let views = await PDFProcessingService.shared.getRouteViews(routeId: routeId, dayType: dayType)
-            loaded.append(RouteLoadedData(route: busRoute, views: views, timetables: timetables))
-        }
-
-        routesData = loaded
+        routesData = departuresData.routes
 
         if let primaryId = primaryRouteId,
-           let primaryRoute = loaded.first(where: { $0.route.id == primaryId })
+           let primaryRoute = departuresData.routes.first(where: { $0.route.id == primaryId })
         {
             let targetView = primaryViewId.flatMap { vid in primaryRoute.views.first { $0.id == vid } }
                 ?? primaryRoute.views.first
-            direction = targetView?.direction ?? loaded.first?.views.first?.direction ?? ""
+            direction = targetView?.direction ?? departuresData.routes.first?.views.first?.direction ?? ""
             selectedRouteId = primaryId
         } else {
-            direction = loaded.first?.views.first?.direction ?? ""
+            direction = departuresData.routes.first?.views.first?.direction ?? ""
         }
 
-        if loaded.isEmpty { errorMessage = "Error al cargar horarios" }
+        if departuresData.routes.isEmpty { errorMessage = "Error al cargar horarios" }
         isLoading = false
     }
 

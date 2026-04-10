@@ -146,56 +146,25 @@ struct DirectionPickerView: View {
         error = nil
 
         do {
-            let timetableService = TimetableService.shared
-            let pdfService = PDFProcessingService.shared
-
-            // Determine which routes to load
-            let routeIdsToCheck: [String]
-            if let primaryRouteId, primaryRouteId != "none" {
-                routeIdsToCheck = [primaryRouteId]
-            } else {
-                routeIdsToCheck = stop.routesServed.sorted()
-            }
-
-            // Get today's day types
-            let now = Date()
-            let weekday = Calendar.current.component(.weekday, from: now)
-            let todayDayTypes = getPickerDayTypesForCalendarDay(weekday)
-
-            // Get current time
-            let h = Calendar.current.component(.hour, from: now)
-            let m = Calendar.current.component(.minute, from: now)
-            let currentMinutes = h * 60 + m
-
-            // Build direction groups
-            var groups: [RouteDirectionGroup] = []
+            let departuresService = DeparturesService.shared
             let allRoutes = BusRouteRegistry.knownRoutes()
+            let departuresData = await departuresService.loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId)
 
-            for routeId in routeIdsToCheck.sorted() {
-                guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
-
-                let timetables = await timetableService.loadTimetables(routeId: routeId)
-                let routeViews = await pdfService.getRouteViews(routeId: routeId, dayType: todayDayTypes.first ?? .weekday)
-
-                // Filter timetables for this stop with upcoming departures
+            // Build direction groups from the loaded routes
+            var groups: [RouteDirectionGroup] = []
+            for routeData in departuresData.routes {
+                // Collect all distinct directions for this route that serve this stop
                 var validDirections = Set<String>()
                 var directionViewMap: [String: String] = [:]
 
-                for t in timetables
-                    where t.stopId == stop.id && todayDayTypes.contains(t.dayType) {
+                for t in routeData.timetables where t.stopId == stop.id {
                     guard let direction = t.direction else { continue }
-
-                    let hasNearbyDeparture = t.seasonalDepartures(weekday: weekday)
-                        .contains { abs($0.minutesSinceMidnight - currentMinutes) <= 20 }
-
-                    if hasNearbyDeparture {
-                        validDirections.insert(direction)
-                    }
+                    validDirections.insert(direction)
                 }
 
                 // Map directions to viewIds
                 for direction in validDirections {
-                    if let view = routeViews.first(where: { $0.direction == direction }) {
+                    if let view = routeData.views.first(where: { $0.direction == direction }) {
                         directionViewMap[direction] = view.id
                     }
                 }
@@ -205,8 +174,8 @@ struct DirectionPickerView: View {
                         .compactMap { direction in
                             if let viewId = directionViewMap[direction] {
                                 DirectionOption(
-                                    routeId: routeId,
-                                    route: route,
+                                    routeId: routeData.route.id,
+                                    route: routeData.route,
                                     direction: direction,
                                     viewId: viewId
                                 )
@@ -214,10 +183,10 @@ struct DirectionPickerView: View {
                                 nil
                             }
                         }
-                        .sorted { $0.direction < $1.direction }
+                        .sorted { (lhs: DirectionOption, rhs: DirectionOption) in lhs.direction < rhs.direction }
 
                     if !dirOptions.isEmpty {
-                        groups.append(RouteDirectionGroup(route: route, directions: dirOptions))
+                        groups.append(RouteDirectionGroup(route: routeData.route, directions: dirOptions))
                     }
                 }
             }
@@ -233,24 +202,12 @@ struct DirectionPickerView: View {
             }
 
             if groups.isEmpty {
-                error = "No hay salidas disponibles para esta parada hoy."
+                error = "No hay salidas disponibles para esta parada."
             }
         } catch {
             self.error = "No se pudieron cargar las direcciones disponibles."
         }
 
         loading = false
-    }
-}
-
-// Helper function to determine day types for a calendar day
-private func getPickerDayTypesForCalendarDay(_ weekday: Int) -> [DayType] {
-    switch weekday {
-    case 7: // Saturday (Calendar.SATURDAY)
-        return [.saturday, .weekend]
-    case 1: // Sunday (Calendar.SUNDAY)
-        return [.sunday, .weekend, .holiday]
-    default:
-        return [.weekday]
     }
 }

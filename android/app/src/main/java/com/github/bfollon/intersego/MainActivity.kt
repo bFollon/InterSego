@@ -937,7 +937,6 @@ fun AppNavigation() {
                 primaryViewId = primaryViewId,
                 stop = stop,
                 allRoutes = routes,
-                pdfProcessingService = pdfProcessingService,
                 onDirectionSelected = { routeId, viewId ->
                     navController.navigate("next_departure/$stopId/$routeId/$viewId")
                 },

@@ -34,6 +34,8 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.services.*
+import com.github.bfollon.intersego.services.RouteLoadedData
+import com.github.bfollon.intersego.services.DeparturesService
 import java.time.LocalTime
 import java.util.*
 
@@ -57,7 +59,6 @@ fun DirectionPickerScreen(
     primaryViewId: String?,
     stop: BusStop,
     allRoutes: List<BusRoute>,
-    pdfProcessingService: PDFProcessingService,
     onDirectionSelected: (routeId: String, viewId: String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -75,68 +76,35 @@ fun DirectionPickerScreen(
         loading = true
         error = null
         try {
-            val timetableService = TimetableService(context)
+            val departuresService = DeparturesService(context)
+            val departuresData = departuresService.loadDepartures(stop, allRoutes, primaryRouteId)
 
-            // Determine which routes to load
-            val routeIdsToCheck = if (primaryRouteId != null && primaryRouteId != "none") {
-                listOf(primaryRouteId)
-            } else {
-                stop.routesServed.sorted()
-            }
-
-            // Get today's day types
-            val cal = Calendar.getInstance()
-            val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-            val todayDayTypes = when (dayOfWeek) {
-                Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
-                Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-                else -> setOf(DayType.WEEKDAY)
-            }
-
-            // Get current time for filtering
-            val currentMinutes = java.time.LocalTime.now().let { it.hour * 60 + it.minute }
-
-            // Build direction groups
+            // Build direction groups from the loaded routes
             val groups = mutableListOf<RouteDirectionGroup>()
-            for (routeId in routeIdsToCheck.sorted()) {
-                val route = allRoutes.find { it.id == routeId } ?: continue
+            for (routeData in departuresData.routes) {
+                // Collect all distinct directions for this route that serve this stop
+                val validDirections = routeData.timetables
+                    .filter { it.stopId == stop.id }
+                    .mapNotNull { it.direction }
+                    .distinct()
 
-                try {
-                    val timetables = timetableService.loadTimetables(routeId)
-
-                    // Get route views to map directions to viewIds
-                    val routeViews = pdfProcessingService.getRouteViews(routeId, todayDayTypes.first())
-
-                    // Filter timetables for this stop with upcoming departures
-                    val validDirections = timetables
-                        .filter { it.stopId == stop.id && it.dayType in todayDayTypes }
-                        .filter { t ->
-                            t.seasonalDepartures(weekday = dayOfWeek)
-                                .any { dep -> kotlin.math.abs(dep.toMinutesSinceMidnight() - currentMinutes) <= 20 }
-                        }
-                        .mapNotNull { it.direction }
-                        .distinct()
-
-                    if (validDirections.isNotEmpty()) {
-                        val dirOptions = validDirections.mapNotNull { direction ->
-                            val view = routeViews.find { it.direction == direction }
-                            if (view != null) {
-                                DirectionOption(
-                                    routeId = routeId,
-                                    route = route,
-                                    direction = direction,
-                                    viewId = view.id
-                                )
-                            } else {
-                                null
-                            }
-                        }
-                        if (dirOptions.isNotEmpty()) {
-                            groups.add(RouteDirectionGroup(route = route, directions = dirOptions))
+                if (validDirections.isNotEmpty()) {
+                    val dirOptions = validDirections.mapNotNull { direction ->
+                        val view = routeData.views.find { it.direction == direction }
+                        if (view != null) {
+                            DirectionOption(
+                                routeId = routeData.route.id,
+                                route = routeData.route,
+                                direction = direction,
+                                viewId = view.id
+                            )
+                        } else {
+                            null
                         }
                     }
-                } catch (e: Exception) {
-                    DebugConfig.debugError("Failed to load timetables for route $routeId", e)
+                    if (dirOptions.isNotEmpty()) {
+                        groups.add(RouteDirectionGroup(route = routeData.route, directions = dirOptions))
+                    }
                 }
             }
 
@@ -151,7 +119,7 @@ fun DirectionPickerScreen(
             }
 
             if (groups.isEmpty()) {
-                error = "No hay salidas disponibles para esta parada hoy."
+                error = "No hay salidas disponibles para esta parada."
             }
         } catch (e: Exception) {
             DebugConfig.debugError("Failed to load directions", e)
