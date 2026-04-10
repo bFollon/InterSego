@@ -1,0 +1,216 @@
+{
+  "source": "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/NextDepartureView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Error al programar el recordatorio",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 347
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error al enviar",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 352
+        }
+      },
+      {
+        "comment": "",
+        "key": "No hay horarios disponibles para esta parada",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 395
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 348
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 353
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cargando horarios...",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 390
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ver horario completo",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 466
+        }
+      },
+      {
+        "comment": "",
+        "key": "Siguientes salidas",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 478
+        }
+      },
+      {
+        "comment": "",
+        "key": "Pulsa la campana para aviso puntual · Mantén pulsado para recordatorio diario",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 500
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cómo llegar",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 789
+        }
+      },
+      {
+        "comment": "",
+        "key": "Los horarios son orientativos",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 900
+        }
+      },
+      {
+        "comment": "",
+        "key": "Contraer",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 901
+        }
+      },
+      {
+        "comment": "",
+        "key": "Expandir",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 901
+        }
+      },
+      {
+        "comment": "",
+        "key": "Los horarios son orientativos",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 864
+        }
+      },
+      {
+        "comment": "",
+        "key": "Se recomienda estar en la parada con 10–15 minutos de antelación.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 878
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 914
+        }
+      },
+      {
+        "comment": "",
+        "key": "Última salida:",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 1027
+        }
+      },
+      {
+        "comment": "",
+        "key": "Próxima salida:",
+        "location": {
+          "startingColumn": 61,
+          "startingLine": 1027
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tiempo real: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1065
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tiempo real",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1082
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a %@.",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1084
+        }
+      },
+      {
+        "comment": "",
+        "key": "Entendido",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 1088
+        }
+      },
+      {
+        "comment": "",
+        "key": "¡Gracias por confirmar!",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1293
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estoy en el autobús",
+        "location": {
+          "startingColumn": 63,
+          "startingLine": 1293
+        }
+      },
+      {
+        "comment": "",
+        "key": "Confirmación no disponible",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1318
+        }
+      },
+      {
+        "comment": "",
+        "key": "El botón se activa en los 20 minutos antes y después de cada salida, para que tu confirmación sea útil para otros viajeros.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1328
+        }
+      }
+    ]
+  },
+  "version": 1
+}

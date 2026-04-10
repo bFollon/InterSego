@@ -40,11 +40,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,12 +69,14 @@ private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
 private val GreenBorder = Color(0xFF34C759).copy(alpha = 0.3f)
 private val GreenConfirmed = Color(0xFF34C759)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LandingScreen(
     onNavigateToRouteList: () -> Unit,
     onFindClosestStop: () -> Unit = {},
     onShowAbout: () -> Unit = {},
     onShowReminders: () -> Unit = {},
+    onShowSettings: () -> Unit = {},
     onBoardBus: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
     closestStopError: String? = null,
@@ -85,6 +92,21 @@ fun LandingScreen(
             .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        TopAppBar(
+            title = { },
+            actions = {
+                IconButton(onClick = onShowSettings) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Configuración",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.background
+            )
+        )
         Spacer(modifier = Modifier.weight(1f))
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -1,0 +1,48 @@
+{
+  "source": "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Configuración",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 43
+        }
+      },
+      {
+        "comment": "",
+        "key": "Modo guiado",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Muestra una pantalla para seleccionar la dirección del autobús antes de ver las salidas",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Mostrar selector de dirección",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 29
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cerrar",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 47
+        }
+      }
+    ]
+  },
+  "version": 1
+}

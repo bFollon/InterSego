@@ -1,0 +1,30 @@
+{
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/ClosestStopService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M1Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M4Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M6Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.swiftdeps"
+  }
+}

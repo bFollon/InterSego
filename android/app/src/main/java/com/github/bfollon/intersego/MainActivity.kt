@@ -120,7 +120,10 @@ import coil.disk.DiskCache
 import coil.request.CachePolicy
 import com.github.bfollon.intersego.services.OsmTileFetcher
 import com.github.bfollon.intersego.services.TileCacheService
+import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.ui.screens.RemindersScreen
+import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
+import com.github.bfollon.intersego.ui.screens.SettingsScreen
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -289,6 +292,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
         // Initialize caches and cleanup expired entries
         CoordinateCache.initialize(this)
+        GuidedModePrefs.initialize(this)
 
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()
@@ -534,7 +538,12 @@ fun AppNavigation() {
                 try {
                     val location = locationMgr.requestLocationOnce()
                     val result = closestStopFinder.findClosest(location, routes)
-                    navController.navigate("next_departure/${result.stopId}/none/none")
+                    val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
+                        "direction_picker/${result.stopId}/none/none"
+                    } else {
+                        "next_departure/${result.stopId}/none/none"
+                    }
+                    navController.navigate(route)
                 } catch (e: BusLocationManager.LocationError) {
                     closestStopError = e.message
                 } catch (e: ClosestStopFinderService.ClosestStopError) {
@@ -825,6 +834,7 @@ fun AppNavigation() {
                 },
                 onShowAbout = { showAboutModal = true },
                 onShowReminders = { navController.navigate("reminders") },
+                onShowSettings = { navController.navigate("settings") },
                 onFindClosestStop = {
                     closestStopError = null
                     if (locationMgr.hasLocationPermission()) {
@@ -893,6 +903,45 @@ fun AppNavigation() {
                 onMapSelected = { viewId ->
                     navController.navigate("route_map/${route.id}/$viewId/none")
                 }
+            )
+        }
+
+        composable("direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}") { backStackEntry ->
+            val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
+            val primaryRouteId = backStackEntry.arguments?.getString("primaryRouteId")
+                ?.takeIf { it != "none" }
+            val primaryViewId = backStackEntry.arguments?.getString("primaryViewId")
+                ?.takeIf { it != "none" }
+
+            // Resolve stop from BusStopRegistry
+            val stop = remember(stopId) {
+                com.github.bfollon.intersego.data.BusStopRegistry.findById(stopId)
+                    ?: run {
+                        // Fallback: search across known route views
+                        val dayType = when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
+                            java.util.Calendar.SATURDAY -> DayType.SATURDAY
+                            java.util.Calendar.SUNDAY -> DayType.SUNDAY
+                            else -> DayType.WEEKDAY
+                        }
+                        pdfProcessingService.getSupportedRoutes()
+                            .flatMap { pdfProcessingService.getRouteViews(it, dayType) }
+                            .flatMap { it.stops }
+                            .find { it.stop.id == stopId }
+                            ?.stop
+                    }
+            } ?: return@composable
+
+            DirectionPickerScreen(
+                stopId = stopId,
+                primaryRouteId = primaryRouteId,
+                primaryViewId = primaryViewId,
+                stop = stop,
+                allRoutes = routes,
+                pdfProcessingService = pdfProcessingService,
+                onDirectionSelected = { routeId, viewId ->
+                    navController.navigate("next_departure/$stopId/$routeId/$viewId")
+                },
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -1042,6 +1091,12 @@ fun AppNavigation() {
         composable("reminders") {
             RemindersScreen(
                 reminderService = reminderService,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("settings") {
+            SettingsScreen(
                 onBack = { navController.popBackStack() }
             )
         }

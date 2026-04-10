@@ -1,0 +1,192 @@
+{
+  "source": "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/AboutView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Acerca de",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "InterSego",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Interurbanos de Segovia",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 54
+        }
+      },
+      {
+        "comment": "",
+        "key": "Acerca de la aplicación",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 69
+        }
+      },
+      {
+        "comment": "",
+        "key": "Esta aplicación le permite consultar los horarios de los autobuses interurbanos de Segovia de forma rápida y sencilla, con soporte offline.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 73
+        }
+      },
+      {
+        "comment": "",
+        "key": "La app es completamente gratuita, sin publicidad y así se va a quedar. Ha sido desarrollada como un proyecto personal para ayudar a la comunidad.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 77
+        }
+      },
+      {
+        "comment": "",
+        "key": "Apoye el proyecto",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "Si la aplicación le resulta útil y quiere apoyar su desarrollo, puede invitarme a un café:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 90
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cómpreme un Ko-fi ☕",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "Código fuente",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "El proyecto es de código abierto (GPL-v3) y está disponible en GitHub:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 122
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ver en GitHub",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 132
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fuente de datos",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 148
+        }
+      },
+      {
+        "comment": "",
+        "key": "Los horarios provienen de los PDFs oficiales publicados por Linecar, la empresa concesionaria del servicio de autobuses interurbanos de Segovia:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 152
+        }
+      },
+      {
+        "comment": "",
+        "key": "Linecar — Metropolitano Segovia",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "Contacto y sugerencias",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "¿Ha encontrado algún error en los horarios o tiene ideas para mejorar la app?",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 182
+        }
+      },
+      {
+        "comment": "",
+        "key": "Reportar error",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 195
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enviar sugerencia",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 216
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aviso legal",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 235
+        }
+      },
+      {
+        "comment": "",
+        "key": "Los horarios mostrados son informativos y pueden no reflejar cambios de última hora. Se recomienda confirmar la información con Linecar antes de desplazarse.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 239
+        }
+      },
+      {
+        "comment": "",
+        "key": "Desarrollado por @bFollon",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 249
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cerrar",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 264
+        }
+      }
+    ]
+  },
+  "version": 1
+}

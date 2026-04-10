@@ -1,0 +1,23 @@
+{
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Config/AppConfig.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Config/Secrets.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/DirectionPickerView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.swiftdeps"
+  }
+}

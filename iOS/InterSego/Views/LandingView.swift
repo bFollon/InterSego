@@ -22,6 +22,7 @@ struct LandingView: View {
     let onFindClosestStop: () -> Void
     let onShowAbout: () -> Void
     let onShowReminders: () -> Void
+    let onShowSettings: () -> Void
     let onBoardBus: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
@@ -132,7 +133,14 @@ struct LandingView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: onShowSettings) {
+                    Image(systemName: "gear")
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
     }
 }
 

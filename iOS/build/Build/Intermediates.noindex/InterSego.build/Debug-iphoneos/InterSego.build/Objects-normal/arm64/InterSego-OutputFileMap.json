@@ -1,0 +1,619 @@
+{
+  "" : {
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSego-primary.dia",
+    "emit-module-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSego-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSego-primary-emit-module.dia",
+    "pch" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSego-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSego-primary.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Config/AppConfig.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppConfig~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Config/Secrets.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/Secrets~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/InterSegoApp.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/InterSegoApp~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BoardingEvent.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingEvent~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BoardingRequest.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingRequest~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BusReminder.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusReminder~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BusRoute.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRoute~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BusStop.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStop~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BusStopRegistry.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusStopRegistry~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BusTimetable.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/DayType.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/DepartureTime.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/PDFVersion.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFVersion~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/RouteGroup.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteGroup~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/RouteSelectorEntry.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectorEntry~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/RouteType.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteType~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/RouteVariant.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteVariant~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/RouteView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/SeasonalAvailability.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SeasonalAvailability~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/AppDirectories.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/BoardingService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BoardingService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/BusRouteRegistry.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusRouteRegistry~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/ClosestStopService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ClosestStopService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/DebugConfig.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DebugConfig~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/GuidedModePrefs.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModePrefs~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/NetworkMonitor.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NetworkMonitor~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFCacheManager.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFDownloadService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFDownloadService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/BusTimetableParser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetableParser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/PDFTextExtractor.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFTextExtractor~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M1Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M1Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M2Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M2Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M3Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M3Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M4Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M4Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M5Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M5Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M6Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M6Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M7Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M7Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/Strategies/M8Parser.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/M8Parser~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFParsing/TimetableParserUtils.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableParserUtils~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFProcessingService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFProcessingService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFURLRepository.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLRepository~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFURLScrapingService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFURLScrapingService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/ReminderService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/TimetableCacheService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableCacheService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/TimetableService.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/TimetableService~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/AboutView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AboutView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/AllRoutesView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/DayScheduleView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayScheduleView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/DirectionPickerView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DirectionPickerView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/GuidedModeTutorialView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GuidedModeTutorialView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/LandingView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LandingView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/LiveUpdateTutorialView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/LiveUpdateTutorialView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/NextDepartureView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/ReminderTutorialView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/ReminderTutorialView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RemindersView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RemindersView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RouteMapView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteMapView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RouteSelectionView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteSelectionView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RouteStopsView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/SettingsView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SettingsView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/SplashScreenView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/SplashScreenView~partial.swiftmodule"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

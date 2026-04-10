@@ -57,6 +57,7 @@ struct ContentView: View {
     @State private var showSplash = true
     @State private var showAbout = false
     @State private var showReminders = false
+    @State private var showSettings = false
     @State private var routes: [BusRoute] = []
     @State private var supportedRoutes: Set<String> = []
     @State private var navigationPath = NavigationPath()
@@ -87,7 +88,15 @@ struct ContentView: View {
                                     closestStopError = nil
                                     do {
                                         let selection = try await ClosestStopService.shared.findClosest()
-                                        navigationPath.append(selection)
+                                        if GuidedModePrefs.isGuidedModeEnabled() {
+                                            navigationPath.append(DirectionPickerSelection(
+                                                stop: selection.stop,
+                                                primaryRouteId: nil,
+                                                primaryViewId: nil
+                                            ))
+                                        } else {
+                                            navigationPath.append(selection)
+                                        }
                                     } catch let error as ClosestStopError {
                                         closestStopError = error.errorDescription
                                     } catch {
@@ -101,6 +110,9 @@ struct ContentView: View {
                             },
                             onShowReminders: {
                                 showReminders = true
+                            },
+                            onShowSettings: {
+                                showSettings = true
                             },
                             onBoardBus: {
                                 Task {
@@ -176,6 +188,20 @@ struct ContentView: View {
                         primaryViewId: selection.primaryViewId,
                     )
                 }
+                .navigationDestination(for: DirectionPickerSelection.self) { selection in
+                    DirectionPickerView(
+                        stop: selection.stop,
+                        primaryRouteId: selection.primaryRouteId,
+                        primaryViewId: selection.primaryViewId,
+                        onSelected: { routeId, viewId in
+                            navigationPath.append(StopSelection(
+                                stop: selection.stop,
+                                primaryRouteId: routeId,
+                                primaryViewId: viewId
+                            ))
+                        }
+                    )
+                }
                 .navigationDestination(for: DayScheduleSelection.self) { selection in
                     DayScheduleView(
                         route: selection.route,
@@ -212,6 +238,9 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showReminders) {
                     RemindersView()
+                }
+                .sheet(isPresented: $showSettings) {
+                    SettingsView()
                 }
                 .sheet(isPresented: $showNoServiceSheet) {
                     NoServiceNearbySheet(stop: noServiceStop)

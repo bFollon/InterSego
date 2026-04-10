@@ -1,0 +1,30 @@
+{
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/AppDirectories.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AppDirectories.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/AllRoutesView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/AllRoutesView.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/NextDepartureView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/NextDepartureView.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RouteStopsView.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/RouteStopsView.swiftdeps"
+  }
+}

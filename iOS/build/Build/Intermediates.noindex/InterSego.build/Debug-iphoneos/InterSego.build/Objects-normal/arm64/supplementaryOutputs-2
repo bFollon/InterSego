@@ -1,0 +1,30 @@
+{
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/BusTimetable.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/BusTimetable.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/DayType.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DayType.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Models/DepartureTime.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/DepartureTime.swiftdeps"
+  },
+  "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Services/PDFCacheManager.swift" : {
+    "const-values" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.swiftconstvalues",
+    "dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.d",
+    "diagnostics" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.dia",
+    "object" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.o",
+    "swift-dependencies" : "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/build/Build/Intermediates.noindex/InterSego.build/Debug-iphoneos/InterSego.build/Objects-normal/arm64/PDFCacheManager.swiftdeps"
+  }
+}

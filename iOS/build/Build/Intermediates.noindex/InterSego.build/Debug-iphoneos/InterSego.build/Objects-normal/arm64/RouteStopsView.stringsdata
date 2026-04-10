@@ -1,0 +1,56 @@
+{
+  "source": "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RouteStopsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Línea %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 71
+        }
+      },
+      {
+        "comment": "",
+        "key": "Esta línea no ofrece servicio hoy",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ver todas las rutas",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ver todas las rutas",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ruta de hoy",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 127
+        }
+      },
+      {
+        "comment": "",
+        "key": "Línea %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 175
+        }
+      }
+    ]
+  },
+  "version": 1
+}

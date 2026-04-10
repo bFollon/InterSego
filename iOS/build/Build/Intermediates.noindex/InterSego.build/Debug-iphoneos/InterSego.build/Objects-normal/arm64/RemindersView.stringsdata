@@ -1,0 +1,136 @@
+{
+  "source": "/Users/brunofollon/Documents/dev/apps/InterSego/iOS/InterSego/Views/RemindersView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Mis recordatorios",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recordatorios activos",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 131
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cerrar",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Antelación para recordatorios puntuales (campana rápida).",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aviso puntual",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 68
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld min",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "Antelación para recordatorios diarios (campana mantenida).",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 98
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld min",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 92
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aviso diario",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "Configuración",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sin recordatorios activos",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "Pulsa la campana para un aviso puntual o mantenla para un recordatorio diario.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 121
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sale a las %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 190
+        }
+      },
+      {
+        "comment": "",
+        "key": "Línea %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cada día a las %@",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aviso a las %@",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 199
+        }
+      }
+    ]
+  },
+  "version": 1
+}
