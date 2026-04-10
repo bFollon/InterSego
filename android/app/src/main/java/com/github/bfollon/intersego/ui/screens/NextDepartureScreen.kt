@@ -27,34 +27,68 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.NightsStay
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.HolidayVillage
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.filled.NightsStay
-import androidx.compose.material.icons.filled.Brightness4
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -62,37 +96,36 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.github.bfollon.intersego.ui.theme.WarningOrange
-import com.github.bfollon.intersego.ui.theme.WarningOrangeText
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.edit
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.github.bfollon.intersego.data.BoardingEvent
+import com.github.bfollon.intersego.data.BoardingRequest
 import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
-import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
-import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.DebugConfig
+import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.PDFProcessingService
 import com.github.bfollon.intersego.services.ReminderService
-import com.github.bfollon.intersego.services.StaticMapService
-import com.github.bfollon.intersego.services.TimetableService
-import com.github.bfollon.intersego.services.TaggedDeparture
 import com.github.bfollon.intersego.services.RouteLoadedData
-import com.github.bfollon.intersego.services.DeparturesService
-import com.github.bfollon.intersego.services.DeparturesData
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.Layout
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import com.github.bfollon.intersego.services.StaticMapService
+import com.github.bfollon.intersego.services.TaggedDeparture
+import com.github.bfollon.intersego.services.TimetableService
+import com.github.bfollon.intersego.ui.theme.WarningOrange
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -101,10 +134,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
-import com.github.bfollon.intersego.data.BoardingEvent
-import com.github.bfollon.intersego.data.BoardingRequest
-import com.github.bfollon.intersego.services.BoardingService
-import androidx.compose.material.icons.filled.DirectionsBus
 
 // ============================================================================
 // DAY TYPE HELPERS
@@ -1542,31 +1571,7 @@ fun DepartureTimeline(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Timeline visual (dot + line)
-                Box(
-                    modifier = Modifier.width(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (index < departures.size - 1) {
-                        Canvas(modifier = Modifier
-                            .width(2.dp)
-                            .height(56.dp)
-                            .offset(y = 20.dp)
-                        ) {
-                            drawLine(
-                                color = Color.LightGray,
-                                start = Offset(size.width / 2, 0f),
-                                end = Offset(size.width / 2, size.height),
-                                strokeWidth = 2.dp.toPx()
-                            )
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier.size(12.dp),
-                        shape = MaterialTheme.shapes.extraSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    ) {}
-                }
+                TimelineIndicator(isLast = index == departures.lastIndex)
 
                 // Departure info
                 Row(
@@ -1659,6 +1664,37 @@ fun DepartureTimeline(
                 }
             }
         }
+    }
+}
+
+/**
+ * Visual indicator for a timeline entry: a connecting line and a dot.
+ * [isLast] controls whether the connecting line is shown (hidden for the last item).
+ */
+@Composable
+private fun TimelineIndicator(isLast: Boolean) {
+    val dotColor = MaterialTheme.colorScheme.primary
+    val lineColor = MaterialTheme.colorScheme.outlineVariant
+
+    Box(
+        modifier = Modifier.width(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Connecting line drawn first so the dot renders on top (same z-order trick as StopRow)
+        if (!isLast) {
+            Box(
+                modifier = Modifier
+                    .width(2.dp)
+                    .height(56.dp)
+                    .offset(y = 20.dp)
+                    .background(lineColor)
+            )
+        }
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(dotColor, CircleShape)
+        )
     }
 }
 
