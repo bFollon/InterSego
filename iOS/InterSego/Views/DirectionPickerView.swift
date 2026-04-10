@@ -122,11 +122,6 @@ struct DirectionPickerView: View {
         }
         .navigationTitle("Selecciona dirección")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Volver") { dismiss() }
-            }
-        }
         .sheet(isPresented: $showTutorial) {
             GuidedModeTutorialView(onDismiss: {
                 GuidedModePrefs.setTutorialShown()
