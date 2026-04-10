@@ -199,19 +199,21 @@ fun DirectionPickerScreen(
                     .padding(innerPadding)
             ) {
                 item {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = stop.name,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "¿A dónde vas?",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = stop.name,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
+                item {
+                    Text(
+                        text = "¿A dónde vas?",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                    )
                 }
 
                 directionGroups.forEach { group ->
