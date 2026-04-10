@@ -103,6 +103,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -1682,6 +1683,7 @@ private fun TimelineIndicator(isLast: Boolean) {
     val dotColor = MaterialTheme.colorScheme.primary
     val lineColor = MaterialTheme.colorScheme.outlineVariant
     val dotSize = 12.dp
+    val density = LocalDensity.current
 
     var containerHeight by remember { mutableStateOf(0) }
 
@@ -1697,13 +1699,15 @@ private fun TimelineIndicator(isLast: Boolean) {
         // Tall connecting line that overflows Row bounds to bridge gaps, drawn first so dot renders on top
         // Line starts from the bottom of the centered dot: containerHeight/2 + dotSize/2
         if (!isLast && containerHeight > 0) {
-            val dotRadiusPx = (dotSize / 2).value
-            val lineOffsetPx = (containerHeight / 2 + dotRadiusPx).dp
+            // Convert container height from pixels to dp
+            val containerHeightDp = with(density) { containerHeight.toDp() }
+            val dotRadiusDp = dotSize / 2
+            val lineOffsetDp = containerHeightDp / 2 + dotRadiusDp
             Box(
                 modifier = Modifier
                     .width(2.dp)
                     .fillMaxHeight()
-                    .offset(y = lineOffsetPx)
+                    .offset(y = lineOffsetDp)
                     .background(lineColor)
             )
         }
