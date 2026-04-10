@@ -91,9 +91,11 @@ class DeparturesService(private val context: Context) {
 
         // Load route data for all routes serving this stop
         val loadedRoutes = mutableListOf<RouteLoadedData>()
-        val currentDayType = when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-            Calendar.SATURDAY -> DayType.SATURDAY
-            Calendar.SUNDAY -> DayType.SUNDAY
+        val today = Calendar.getInstance()
+        val currentDayTypes = TimetableQueryUtils.dayTypesForDate(today)
+        val currentDayType = when {
+            currentDayTypes.contains(DayType.SATURDAY) -> DayType.SATURDAY
+            currentDayTypes.contains(DayType.SUNDAY) -> DayType.SUNDAY
             else -> DayType.WEEKDAY
         }
 
@@ -109,9 +111,7 @@ class DeparturesService(private val context: Context) {
             }
         }
 
-        // Get today's day types and current day of week
         val currentDayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        val currentDayTypes = dayTypesForCalendarDay(currentDayOfWeek)
 
         // Build today's departures for all available directions
         val todayDepartures = buildTodayDepartures(loadedRoutes, stop, currentDayTypes, currentDayOfWeek)
@@ -161,15 +161,13 @@ class DeparturesService(private val context: Context) {
             val calendar = Calendar.getInstance()
             calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
             val futureDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
-            val futureDayTypes = dayTypesForCalendarDay(futureDayOfWeek)
 
             val departures = loadedRoutes.flatMap { routeData ->
-                routeData.timetables
-                    .filter { it.stopId == stop.id && it.dayType in futureDayTypes }
-                    .flatMap { timetable ->
-                        timetable.seasonalDepartures(weekday = futureDayOfWeek)
-                            .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
-                    }
+                val matching = TimetableQueryUtils.filterTimetables(routeData.timetables, calendar, stopId = stop.id)
+                matching.flatMap { timetable ->
+                    timetable.seasonalDepartures(weekday = futureDayOfWeek)
+                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                }
             }.sortedBy { it.departure.toMinutesSinceMidnight() }
 
             if (departures.isNotEmpty()) {
@@ -178,15 +176,5 @@ class DeparturesService(private val context: Context) {
         }
 
         return result
-    }
-
-    /**
-     * Map a Calendar day-of-week to the set of DayType values that might match.
-     * M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
-     */
-    private fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
-        Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
-        Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-        else -> setOf(DayType.WEEKDAY)
     }
 }

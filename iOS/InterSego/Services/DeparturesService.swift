@@ -88,7 +88,12 @@ actor DeparturesService {
 
         // Load route data for all routes serving this stop
         var loadedRoutes: [RouteLoadedData] = []
-        let currentDayType = getCurrentDayType()
+        let today = Date()
+        let currentDayTypes = TimetableQuery.dayTypesForDate(today)
+        let currentDayType: DayType = currentDayTypes.contains(.saturday) ? .saturday :
+                             currentDayTypes.contains(.sunday) ? .sunday :
+                             .weekday
+        let currentWeekday = Calendar.current.component(.weekday, from: today)
 
         for routeId in routeIds {
             guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
@@ -97,10 +102,6 @@ actor DeparturesService {
             let views = await pdfService.getRouteViews(routeId: routeId, dayType: currentDayType)
             loadedRoutes.append(RouteLoadedData(route: route, views: views, timetables: timetables))
         }
-
-        // Get today's day types and current day of week
-        let currentWeekday = Calendar.current.component(.weekday, from: Date())
-        let currentDayTypes = dayTypesForCalendarDay(currentWeekday)
 
         // Build today's departures for all available directions
         let todayDepartures = buildTodayDepartures(
@@ -127,9 +128,7 @@ actor DeparturesService {
     ) -> [TaggedDeparture] {
         var result: [TaggedDeparture] = []
         for routeData in loadedRoutes {
-            let matching = routeData.timetables.filter { t in
-                dayTypes.contains(t.dayType) && t.stopId == stop.id
-            }
+            let matching = routeData.timetables.filter { dayTypes.contains($0.dayType) && $0.stopId == stop.id }
             for dep in matching.flatMap({ $0.seasonalDepartures(weekday: weekday) }).sorted() {
                 result.append(TaggedDeparture(
                     departure: dep, routeId: routeData.route.id,
@@ -151,14 +150,11 @@ actor DeparturesService {
         for daysAhead in 1 ... 7 {
             guard let futureDate = Calendar.current.date(byAdding: .day, value: daysAhead, to: Date()) else { continue }
             let futureWeekday = Calendar.current.component(.weekday, from: futureDate)
-            let futureDayTypes = dayTypesForCalendarDay(futureWeekday)
 
             var tagged: [TaggedDeparture] = []
             for routeData in loadedRoutes {
-                let deps = routeData.timetables
-                    .filter { futureDayTypes.contains($0.dayType) && $0.stopId == stop.id }
-                    .flatMap { $0.seasonalDepartures(weekday: futureWeekday) }
-                    .sorted()
+                let matching = TimetableQuery.filterTimetables(routeData.timetables, date: futureDate, stopId: stop.id)
+                let deps = matching.flatMap { $0.seasonalDepartures(weekday: futureWeekday) }.sorted()
                 for dep in deps {
                     tagged.append(TaggedDeparture(
                         departure: dep, routeId: routeData.route.id,
@@ -175,24 +171,4 @@ actor DeparturesService {
         return result
     }
 
-    /// Map a Calendar weekday to the set of DayType values that might match.
-    /// Saturday = 7, Sunday = 1 in Calendar.
-    /// M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
-    private func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
-        switch weekday {
-        case 7: [.saturday, .weekend]
-        case 1: [.sunday, .weekend, .holiday]
-        default: [.weekday]
-        }
-    }
-
-    /// Get the current day type based on today's date.
-    private func getCurrentDayType() -> DayType {
-        let weekday = Calendar.current.component(.weekday, from: Date())
-        switch weekday {
-        case 7: return .saturday
-        case 1: return .sunday
-        default: return .weekday
-        }
-    }
 }

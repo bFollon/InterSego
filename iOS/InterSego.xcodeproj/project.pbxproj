@@ -46,6 +46,8 @@
 		A10000010000000000000030 /* RoutePolylines in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* RoutePolylines */; };
 		A10000010000000000000031 /* M1Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* M1Parser.swift */; };
 		A10000010000000000000032 /* ClosestStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* ClosestStopService.swift */; };
+		A10000010000000000000099 /* TimetableQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000099 /* TimetableQuery.swift */; };
+		A20000010000000000000099 /* TimetableQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableQuery.swift; sourceTree = "<group>"; };
 		A10000010000000000000033 /* M2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000033 /* M2Parser.swift */; };
 		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
 		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
@@ -210,6 +212,7 @@
 				A2000001000000000000001A /* TimetableService.swift */,
 				A2000001000000000000001B /* BusRouteRegistry.swift */,
 				A2000001000000000000001F /* AppDirectories.swift */,
+				A20000010000000000000099 /* TimetableQuery.swift */,
 				A20000010000000000000032 /* ClosestStopService.swift */,
 				A20000010000000000000049 /* ReminderService.swift */,
 				A20000010000000000000050 /* BoardingService.swift */,
@@ -416,6 +419,7 @@
 				A10000010000000000000054 /* DirectionPickerView.swift in Sources */,
 				A10000010000000000000055 /* SettingsView.swift in Sources */,
 				A10000010000000000000056 /* GuidedModeTutorialView.swift in Sources */,
+				A10000010000000000000099 /* TimetableQuery.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
