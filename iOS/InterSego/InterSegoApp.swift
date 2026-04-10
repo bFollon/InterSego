@@ -323,11 +323,19 @@ struct ContentView: View {
                             navigationPath.append(AllRoutesSelection(route: route))
                         } : nil,
                         onStopSelected: { stop, viewId in
-                            navigationPath.append(StopSelection(
-                                stop: stop,
-                                primaryRouteId: route.id,
-                                primaryViewId: viewId,
-                            ))
+                            if GuidedModePrefs.isGuidedModeEnabled() {
+                                navigationPath.append(DirectionPickerSelection(
+                                    stop: stop,
+                                    primaryRouteId: route.id,
+                                    primaryViewId: viewId
+                                ))
+                            } else {
+                                navigationPath.append(StopSelection(
+                                    stop: stop,
+                                    primaryRouteId: route.id,
+                                    primaryViewId: viewId,
+                                ))
+                            }
                         },
                         onMapSelected: { viewId in
                             navigationPath.append(MapSelection(
@@ -365,11 +373,19 @@ struct ContentView: View {
                 routeViews: fallbackViews,
                 initialViewId: initialViewId,
                 onStopSelected: { stop, viewId in
-                    navigationPath.append(StopSelection(
-                        stop: stop,
-                        primaryRouteId: route.id,
-                        primaryViewId: viewId,
-                    ))
+                    if GuidedModePrefs.isGuidedModeEnabled() {
+                        navigationPath.append(DirectionPickerSelection(
+                            stop: stop,
+                            primaryRouteId: route.id,
+                            primaryViewId: viewId
+                        ))
+                    } else {
+                        navigationPath.append(StopSelection(
+                            stop: stop,
+                            primaryRouteId: route.id,
+                            primaryViewId: viewId,
+                        ))
+                    }
                 },
             )
         }
@@ -404,11 +420,19 @@ struct ContentView: View {
                         onStopSelected: { stop, viewId in
                             let entry = selectedEntry
                             if entry == nil || entry!.isActiveToday {
-                                navigationPath.append(StopSelection(
-                                    stop: stop,
-                                    primaryRouteId: route.id,
-                                    primaryViewId: viewId,
-                                ))
+                                if GuidedModePrefs.isGuidedModeEnabled() {
+                                    navigationPath.append(DirectionPickerSelection(
+                                        stop: stop,
+                                        primaryRouteId: route.id,
+                                        primaryViewId: viewId
+                                    ))
+                                } else {
+                                    navigationPath.append(StopSelection(
+                                        stop: stop,
+                                        primaryRouteId: route.id,
+                                        primaryViewId: viewId,
+                                    ))
+                                }
                             } else {
                                 let direction = views.first { $0.id == viewId }?.direction ?? ""
                                 navigationPath.append(DayScheduleSelection(
@@ -474,11 +498,19 @@ struct ContentView: View {
                 onStopSelected: { stop, viewId in
                     let entry = selectedEntry
                     if entry == nil || entry!.isActiveToday {
-                        navigationPath.append(StopSelection(
-                            stop: stop,
-                            primaryRouteId: route.id,
-                            primaryViewId: viewId,
-                        ))
+                        if GuidedModePrefs.isGuidedModeEnabled() {
+                            navigationPath.append(DirectionPickerSelection(
+                                stop: stop,
+                                primaryRouteId: route.id,
+                                primaryViewId: viewId
+                            ))
+                        } else {
+                            navigationPath.append(StopSelection(
+                                stop: stop,
+                                primaryRouteId: route.id,
+                                primaryViewId: viewId,
+                            ))
+                        }
                     } else {
                         let direction = views.first { $0.id == viewId }?.direction ?? ""
                         navigationPath.append(DayScheduleSelection(

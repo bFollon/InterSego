@@ -898,7 +898,12 @@ fun AppNavigation() {
                 }} else null,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
+                    val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
+                        "direction_picker/${stop.id}/${route.id}/$viewId"
+                    } else {
+                        "next_departure/${stop.id}/${route.id}/$viewId"
+                    }
+                    navController.navigate(route)
                 },
                 onMapSelected = { viewId ->
                     navController.navigate("route_map/${route.id}/$viewId/none")
@@ -1007,7 +1012,12 @@ fun AppNavigation() {
                 initialViewId = initialViewId,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
+                    val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
+                        "direction_picker/${stop.id}/${route.id}/$viewId"
+                    } else {
+                        "next_departure/${stop.id}/${route.id}/$viewId"
+                    }
+                    navController.navigate(route)
                 }
             )
         }
@@ -1036,7 +1046,12 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
+                        val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
+                            "direction_picker/${stop.id}/${route.id}/$viewId"
+                        } else {
+                            "next_departure/${stop.id}/${route.id}/$viewId"
+                        }
+                        navController.navigate(route)
                     } else {
                         val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name
@@ -1076,7 +1091,12 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
+                        val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
+                            "direction_picker/${stop.id}/${route.id}/$viewId"
+                        } else {
+                            "next_departure/${stop.id}/${route.id}/$viewId"
+                        }
+                        navController.navigate(route)
                     } else {
                         val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name
