@@ -92,6 +92,7 @@ struct ContentView: View {
                                     closestStopError = nil
                                     do {
                                         let selection = try await ClosestStopService.shared.findClosest()
+                                        AnalyticsService.shared.track("closest_stop_used", with: ["stop": selection.stop.id])
                                         if GuidedModePrefs.isGuidedModeEnabled() {
                                             navigationPath.append(DirectionPickerSelection(
                                                 stop: selection.stop,
@@ -280,6 +281,7 @@ struct ContentView: View {
                                     do {
                                         try await BoardingService.shared.postBoarding(request)
                                         landingBoardingConfirmed = true
+                                        AnalyticsService.shared.track("boarding_confirmed", with: ["route": route.id, "stop": stop.id])
                                     } catch {
                                         landingBoardingError = "No se pudo enviar. Inténtalo de nuevo."
                                     }

@@ -120,6 +120,7 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.DeparturesService
@@ -242,6 +243,7 @@ fun NextDepartureScreen(
             val routeIds = departuresData.routes.map { it.route.id }
             DebugConfig.debugPrint("NextDepartureScreen: ${stop.name} served by routes: $routeIds")
             loadedRoutes = departuresData.routes
+            AnalyticsService.track("next_departure_viewed", mapOf("stop" to stop.id))
 
             // Init direction from primaryViewId if available, otherwise first available
             if (currentDirection == null) {
@@ -612,6 +614,7 @@ fun NextDepartureScreen(
                                     } else if (route != null) {
                                         val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
+                                        else AnalyticsService.track("reminder_set", mapOf("type" to "one_off", "route" to td.routeId))
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
                                     dailyReminderKeys = reminderService.dailyMatchKeys()
@@ -629,6 +632,7 @@ fun NextDepartureScreen(
                                         }
                                         val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
+                                        else AnalyticsService.track("reminder_set", mapOf("type" to "daily", "route" to td.routeId))
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
                                     dailyReminderKeys = reminderService.dailyMatchKeys()
@@ -724,6 +728,7 @@ fun NextDepartureScreen(
                                             val result = BoardingService.postBoarding(request)
                                             if (result.isSuccess) {
                                                 boardingConfirmed = true
+                                                AnalyticsService.track("boarding_confirmed", mapOf("route" to dep.routeId, "stop" to stop.id))
                                                 activeBoardings = BoardingService.fetchBoardings().getOrDefault(emptyList())
                                             } else {
                                                 boardingError = "No se pudo enviar. Inténtalo de nuevo."

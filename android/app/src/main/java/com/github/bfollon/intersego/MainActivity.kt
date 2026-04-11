@@ -568,6 +568,7 @@ fun AppNavigation() {
                 try {
                     val location = locationMgr.requestLocationOnce()
                     val result = closestStopFinder.findClosest(location, routes)
+                    AnalyticsService.track("closest_stop_used", mapOf("stop" to result.stopId))
                     val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
                         "direction_picker/${result.stopId}/none/none"
                     } else {
@@ -779,6 +780,7 @@ fun AppNavigation() {
                                         val result = BoardingService.postBoarding(request)
                                         if (result.isSuccess) {
                                             landingBoardingConfirmed = true
+                                            AnalyticsService.track("boarding_confirmed", mapOf("route" to route.id, "stop" to stop.id))
                                         } else {
                                             landingBoardingError = "No se pudo enviar. Inténtalo de nuevo."
                                         }
@@ -894,6 +896,7 @@ fun AppNavigation() {
                 routes = routes,
                 pdfProcessingService = pdfProcessingService,
                 onRouteSelected = { route ->
+                    AnalyticsService.track("route_selected", mapOf("route" to route.id))
                     navController.navigate("route_stops/${route.id}")
                 }
             )

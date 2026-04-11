@@ -316,6 +316,7 @@ struct NextDepartureView: View {
             }
             .task {
                 await loadTimetables()
+                AnalyticsService.shared.track("next_departure_viewed", with: ["stop": stop.id])
                 if !liveUpdateTutorialShown && departureInfo.daysAhead == 0 {
                     liveUpdateTutorialShown = true
                     showLiveUpdateTutorial = true
@@ -562,6 +563,7 @@ struct NextDepartureView: View {
                         departure: tagged.departure, stop: stop, route: route,
                         direction: direction, dayType: currentDayType
                     )
+                    AnalyticsService.shared.track("reminder_set", with: ["type": "one_off", "route": tagged.routeId])
                 } catch {
                     reminderErrorMessage = error.localizedDescription
                     showReminderAlert = true
@@ -593,6 +595,7 @@ struct NextDepartureView: View {
                         departure: tagged.departure, stop: stop, route: route,
                         direction: direction, isDaily: true, dayType: currentDayType
                     )
+                    AnalyticsService.shared.track("reminder_set", with: ["type": "daily", "route": tagged.routeId])
                 } catch {
                     reminderErrorMessage = error.localizedDescription
                     showReminderAlert = true
@@ -642,6 +645,7 @@ struct NextDepartureView: View {
         do {
             try await BoardingService.shared.postBoarding(request)
             boardingConfirmed = true
+            AnalyticsService.shared.track("boarding_confirmed", with: ["route": next.routeId, "stop": stop.id])
             activeBoardings = await BoardingService.shared.fetchActiveBoardings()
         } catch {
             boardingError = error.localizedDescription

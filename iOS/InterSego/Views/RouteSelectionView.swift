@@ -48,6 +48,7 @@ struct RouteSelectionView: View {
                             .contentShape(RoundedRectangle(cornerRadius: 12))
                             .onTapGesture {
                                 if isAvailable {
+                                    AnalyticsService.shared.track("route_selected", with: ["route": route.id])
                                     onRouteSelected(route)
                                 }
                             }

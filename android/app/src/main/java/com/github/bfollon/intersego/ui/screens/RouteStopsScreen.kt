@@ -53,6 +53,7 @@ import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.services.AnalyticsService
 
 /**
  * Screen displaying bus stops along a route with visual route line.
@@ -249,6 +250,7 @@ fun RouteStopsScreen(
                             isFirst = index == 0,
                             isLast = index == stops.lastIndex,
                             onClick = {
+                                AnalyticsService.track("stop_selected", mapOf("stop" to viewStop.stop.id, "route" to route.id))
                                 onStopSelected(viewStop.stop, currentView.id)
                             }
                         )

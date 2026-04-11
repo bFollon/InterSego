@@ -147,6 +147,8 @@ class PDFProcessingService(private val context: Context) {
         val pdfFile = pdfCacheManager.getEffectivePDFFile(routeId, pdfUrl)
         if (pdfFile == null) {
             DebugConfig.debugError("PDFProcessingService: Failed to get PDF for $routeId", null)
+            AnalyticsService.track("pdf_download_failed", mapOf("route" to routeId, "url" to pdfUrl))
+            ErrorReportingService.captureMessage("PDF download failed for route $routeId — url=$pdfUrl")
             throw PDFParsingException("Failed to get PDF for route $routeId")
         }
 
@@ -159,6 +161,8 @@ class PDFProcessingService(private val context: Context) {
             return@withContext timetables
         } catch (e: PDFParsingException) {
             DebugConfig.debugError("PDFProcessingService: Parsing failed", e)
+            AnalyticsService.track("pdf_parse_failed", mapOf("route" to routeId, "url" to pdfUrl, "file" to pdfFile.absolutePath))
+            ErrorReportingService.captureError(e, mapOf("route" to routeId, "url" to pdfUrl, "file" to pdfFile.absolutePath))
             throw e
         }
     }

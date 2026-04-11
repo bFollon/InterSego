@@ -73,14 +73,22 @@ actor PDFProcessingService {
 
         guard let pdfFile = await PDFCacheManager.shared.getEffectivePDFFile(routeId: routeId, pdfUrl: pdfUrl) else {
             DebugConfig.debugError("PDFProcessingService: Failed to get PDF for \(routeId)")
+            AnalyticsService.shared.track("pdf_download_failed", with: ["route": routeId, "url": pdfUrl])
+            ErrorReportingService.shared.captureMessage("PDF download failed for route \(routeId) — url=\(pdfUrl)")
             throw PDFParsingError("Failed to get PDF for route \(routeId)")
         }
 
         DebugConfig.debugPrint("PDFProcessingService: Using PDF at \(pdfFile.path)")
 
-        let timetables = try parser.parse(pdfPath: pdfFile.path, routeId: routeId)
-        DebugConfig.debugPrint("PDFProcessingService: Successfully parsed \(timetables.count) timetables")
-        return timetables
+        do {
+            let timetables = try parser.parse(pdfPath: pdfFile.path, routeId: routeId)
+            DebugConfig.debugPrint("PDFProcessingService: Successfully parsed \(timetables.count) timetables")
+            return timetables
+        } catch {
+            AnalyticsService.shared.track("pdf_parse_failed", with: ["route": routeId, "url": pdfUrl, "file": pdfFile.lastPathComponent])
+            ErrorReportingService.shared.captureError(error, context: ["route": routeId, "url": pdfUrl, "file": pdfFile.lastPathComponent])
+            throw error
+        }
     }
 
     func hasParserFor(routeId: String) -> Bool {

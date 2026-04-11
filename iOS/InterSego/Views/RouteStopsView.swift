@@ -161,6 +161,7 @@ struct RouteStopsView: View {
                         )
                         .contentShape(Rectangle())
                         .onTapGesture {
+                            AnalyticsService.shared.track("stop_selected", with: ["stop": viewStop.stop.id, "route": route.id])
                             onStopSelected(viewStop.stop, currentView.id)
                         }
                     }
