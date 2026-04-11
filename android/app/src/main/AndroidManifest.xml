@@ -30,6 +30,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.InterSego"
         android:usesCleartextTraffic="true">
+        <!-- Disable Sentry auto-init; we initialize manually after user consent -->
+        <meta-data
+            android:name="io.sentry.auto-init"
+            android:value="false" />
+
         <!-- Coil ImageLoaderFactory for OSM tile compliance -->
         <meta-data
             android:name="coil.factory"

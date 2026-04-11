@@ -18,6 +18,8 @@ coil = "2.7.0"
 osmdroid = "6.1.20"
 kotest = "5.9.1"
 mockk = "1.13.13"
+sentry = "8.13.2"
+aptabase = "0.0.8"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +49,8 @@ kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", ver
 kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
+aptabase = { module = "com.github.aptabase:aptabase-kotlin", version.ref = "aptabase" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

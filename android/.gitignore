@@ -83,3 +83,6 @@ lint/tmp/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Secret keys (never commit — contains live DSN and API keys)
+app/src/main/java/com/github/bfollon/intersego/services/Secrets.kt

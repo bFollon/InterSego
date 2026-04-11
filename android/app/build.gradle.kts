@@ -103,6 +103,12 @@ dependencies {
     // Map display (OSMDroid for route map screen)
     implementation(libs.osmdroid.android)
 
+    // Error reporting (Bugsink via Sentry-compatible SDK)
+    implementation(libs.sentry.android)
+
+    // Analytics (Aptabase self-hosted)
+    implementation(libs.aptabase)
+
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.mockk)

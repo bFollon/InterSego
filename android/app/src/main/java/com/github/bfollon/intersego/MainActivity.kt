@@ -124,6 +124,10 @@ import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
+import com.github.bfollon.intersego.ui.screens.MonitoringConsentScreen
+import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.ErrorReportingService
+import com.github.bfollon.intersego.services.MonitoringPreferencesService
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -290,6 +294,19 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         // Initialize network monitor
         NetworkMonitor.initialize(this)
 
+        // Initialize monitoring preferences (must be before error reporting and analytics)
+        MonitoringPreferencesService.initialize(this)
+
+        // Initialize error reporting and analytics if user has opted in
+        ErrorReportingService.initialize(this)
+        AnalyticsService.initialize(this)
+
+        // Analytics: app launch event
+        val appVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
+        } catch (_: Exception) { "unknown" }
+        AnalyticsService.track("app_launch", mapOf("version" to appVersion, "platform" to "android"))
+
         // Initialize caches and cleanup expired entries
         CoordinateCache.initialize(this)
         GuidedModePrefs.initialize(this)
@@ -314,6 +331,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         setContent {
             // State for tracking initialization - created in composition context
             var isInitialized by remember { mutableStateOf(false) }
+            var showMonitoringConsent by remember { mutableStateOf(false) }
 
             // Perform async initialization in LaunchedEffect
             LaunchedEffect(Unit) {
@@ -336,6 +354,12 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 DebugConfig.debugPrint("🔧 Setting isInitialized = true...")
                 isInitialized = true
                 DebugConfig.debugPrint("✅ Services initialized - isInitialized = $isInitialized")
+
+                // Show privacy consent if user hasn't made an analytics choice yet
+                // (this also triggers for existing users who pre-date analytics)
+                if (!MonitoringPreferencesService.hasUserMadeAnalyticsChoice()) {
+                    showMonitoringConsent = true
+                }
             }
 
             InterSegoTheme {
@@ -352,6 +376,12 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                         exit = fadeOut()
                     ) {
                         SplashScreen()
+                    }
+
+                    if (showMonitoringConsent) {
+                        MonitoringConsentScreen(
+                            onDismiss = { showMonitoringConsent = false }
+                        )
                     }
                 }
             }

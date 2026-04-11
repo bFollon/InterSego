@@ -25,6 +25,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Debug config / logging | ✅ | ✅ | |
 | Boarding notification service | ✅ | ✅ | Node.js/TypeScript server at `server/`; stores boarding events; GET+POST /boardings; 4h TTL; Bearer auth; see `server/docs/API.md` |
 | BoardingService client | ✅ | ✅ | Android: OkHttp object singleton + BuildConfig; iOS: URLSession actor + AppConfig |
+| Analytics (Aptabase) | ✅ | ✅ (needs Xcode setup) | Self-hosted at analytics.bfollon.dev; app key A-SH-8450405077; consent-gated; tracks: app_launch, route_selected, stop_selected, next_departure_viewed, closest_stop_used, reminder_set, boarding_confirmed, pdf_parse_failed, pdf_download_failed |
+| Error reporting (Bugsink/Sentry) | ✅ | ✅ (needs Xcode setup) | Self-hosted at errors.bfollon.dev; Sentry-compatible SDK; consent-gated; explicit captureError/captureMessage call sites only |
+| Monitoring consent UI | ✅ | ✅ (needs Xcode setup) | Dual opt-in modal (error reporting + analytics independently); shown on first launch after splash; default off; re-accessible from Settings |
+| MonitoringPreferencesService | ✅ | ✅ (needs Xcode setup) | Persists 4 UserDefaults/SharedPreferences keys; consent-gated SDK initialization |
 
 ### PDF Parsers
 

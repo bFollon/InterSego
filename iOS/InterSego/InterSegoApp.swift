@@ -16,6 +16,7 @@
  */
 
 import SwiftUI
+import UIKit
 
 enum HomeDestination: Hashable {
     case routeList
@@ -45,6 +46,8 @@ struct AllRoutesMapSelection: Hashable {
 
 @main
 struct InterSegoApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -55,6 +58,7 @@ struct InterSegoApp: App {
 struct ContentView: View {
     @State private var isInitialized = false
     @State private var showSplash = true
+    @State private var showMonitoringConsent = false
     @State private var showAbout = false
     @State private var showReminders = false
     @State private var showSettings = false
@@ -291,6 +295,22 @@ struct ContentView: View {
             if showSplash {
                 SplashScreenView()
                     .transition(.opacity)
+            }
+
+            if showMonitoringConsent {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+
+                MonitoringConsentView(isPresented: $showMonitoringConsent)
+                    .frame(maxWidth: 500)
+                    .background(Color(uiColor: .systemBackground))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(radius: 20)
+                    .padding(40)
             }
         }
         .task {
@@ -563,6 +583,16 @@ struct ContentView: View {
 
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
+
+        // Analytics: app launch event
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+        AnalyticsService.shared.track("app_launch", with: ["version": version, "platform": "ios"])
+
+        // Show privacy consent if user hasn't made an analytics choice yet
+        // (this also triggers for existing users who pre-date analytics)
+        if !MonitoringPreferencesService.shared.hasUserMadeAnalyticsChoice() {
+            showMonitoringConsent = true
+        }
     }
 }
 
@@ -687,5 +717,20 @@ private struct NoServiceNearbySheet: View {
         .padding(32)
         .presentationDetents([.height(400)])
         .presentationDragIndicator(.visible)
+    }
+}
+
+// MARK: - App Delegate
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        // Initialize error reporting and analytics if user has already opted in.
+        // On first launch, these will be no-ops — the consent modal gates initialization.
+        ErrorReportingService.shared.initialize()
+        AnalyticsService.shared.initialize()
+        return true
     }
 }
