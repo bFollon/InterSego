@@ -68,6 +68,16 @@ private func getTimeOfDay(_ hour: Int) -> TimeOfDay {
     }
 }
 
+/// Formats a duration in minutes as "Xh Ym", "Xh", or "Xm".
+private func formatMinutes(_ mins: Int) -> String {
+    if mins >= 60 {
+        let h = mins / 60; let m = mins % 60
+        return m == 0 ? "\(h)h" : "\(h)h \(m)m"
+    }
+    return "\(mins)m"
+}
+
+
 // MARK: - Departure Info
 
 private struct DepartureInfo {
@@ -172,8 +182,8 @@ struct NextDepartureView: View {
         let depMinutes = next.departure.minutesSinceMidnight
         let diff = depMinutes - currentMinutes
         if diff > 20 {
-            let mins = diff - 20
-            return "Disponible en \(mins) min, cuando el bus esté más cerca."
+            let openMin = depMinutes - 20
+            return String(format: "Disponible a partir de las %02d:%02d (en \(formatMinutes(diff - 20))), cuando el bus esté más cerca.", openMin / 60, openMin % 60)
         } else {
             return "La ventana de confirmación ha pasado. Espera al siguiente bus."
         }

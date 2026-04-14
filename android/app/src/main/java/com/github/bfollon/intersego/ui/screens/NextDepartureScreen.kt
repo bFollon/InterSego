@@ -658,8 +658,10 @@ fun NextDepartureScreen(
                         item {
                             val boardingWindowSheetText = run {
                                 val openMin = (nextTaggedDeparture?.departure?.toMinutesSinceMidnight() ?: -1) - 20
-                                if (openMin >= 0) "Disponible a partir de las %02d:%02d, cuando el bus esté más cerca.".format(openMin / 60, openMin % 60)
-                                else "La ventana de confirmación ha pasado. Espera al siguiente bus."
+                                if (openMin >= 0) {
+                                    val nowMin = currentTime.hour * 60 + currentTime.minute
+                                    "Disponible a partir de las %02d:%02d (en ${formatMinutes(openMin - nowMin)}), cuando el bus esté más cerca.".format(openMin / 60, openMin % 60)
+                                } else "La ventana de confirmación ha pasado. Espera al siguiente bus."
                             }
                             if (showBoardingWindowTooltip) {
                                 ModalBottomSheet(
@@ -1004,6 +1006,15 @@ fun getTimeOfDay(hour: Int): TimeOfDay {
         else -> TimeOfDay.EVENING
     }
 }
+
+/** Formats a duration in minutes as "Xh Ym", "Xh", or "Xm". */
+fun formatMinutes(mins: Int): String {
+    return if (mins >= 60) {
+        val h = mins / 60; val m = mins % 60
+        if (m == 0) "${h}h" else "${h}h ${m}m"
+    } else "${mins}m"
+}
+
 
 /**
  * Small badge showing time of day with icon.
