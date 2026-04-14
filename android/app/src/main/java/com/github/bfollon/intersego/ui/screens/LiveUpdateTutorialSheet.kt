@@ -67,7 +67,7 @@ private val liveUpdateTutorialSlides = listOf(
     ),
     LiveUpdateTutorialSlide(
         content = LiveUpdateSlideContent.Screenshot(R.drawable.tutorial_live_boarded),
-        title = "ETA ajustada en tiempo real",
+        title = "Llegada estimada en tiempo real",
         body = "Si otro usuario ha confirmado su embarque en una parada anterior a la tuya, verás un tiempo estimado más preciso para tu próxima salida.",
     ),
 )
