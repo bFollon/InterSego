@@ -21,7 +21,14 @@ struct RemindersView: View {
     @State private var reminders: [BusReminder] = []
     @State private var leadMinutes: Int = 10
     @State private var dailyLeadMinutes: Int = 15
+    /// Mirrors of the last-saved values — used to detect unsaved changes.
+    @State private var savedLeadMinutes: Int = 10
+    @State private var savedDailyLeadMinutes: Int = 15
     @State private var showTutorial = false
+
+    private var hasUnsavedChanges: Bool {
+        leadMinutes != savedLeadMinutes || dailyLeadMinutes != savedDailyLeadMinutes
+    }
     @AppStorage("reminderTutorialShown") private var tutorialShown = false
     @Environment(\.dismiss) private var dismiss
 
@@ -69,9 +76,6 @@ struct RemindersView: View {
                     Spacer()
                     Stepper("\(leadMinutes) min", value: $leadMinutes, in: 1 ... 60, step: 5)
                         .fixedSize()
-                        .onChange(of: leadMinutes) { _, newValue in
-                            Task { await ReminderService.shared.setDefaultLeadMinutes(newValue) }
-                        }
                 }
                 Text("Antelación para recordatorios puntuales (campana rápida).")
                     .font(.caption)
@@ -91,15 +95,22 @@ struct RemindersView: View {
                     Spacer()
                     Stepper("\(dailyLeadMinutes) min", value: $dailyLeadMinutes, in: 1 ... 60, step: 5)
                         .fixedSize()
-                        .onChange(of: dailyLeadMinutes) { _, newValue in
-                            Task { await ReminderService.shared.setDailyLeadMinutes(newValue) }
-                        }
                 }
                 Text("Antelación para recordatorios diarios (campana mantenida).")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .padding(.vertical, 4)
+
+            // Save button — always visible, disabled when nothing has changed
+            HStack {
+                Spacer()
+                Button("Guardar") {
+                    Task { await saveLeadTimes() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(!hasUnsavedChanges)
+            }
         } header: {
             Text("Configuración")
         }
@@ -150,6 +161,22 @@ struct RemindersView: View {
         reminders = await r
         leadMinutes = await l
         dailyLeadMinutes = await dl
+        savedLeadMinutes = leadMinutes
+        savedDailyLeadMinutes = dailyLeadMinutes
+    }
+
+    private func saveLeadTimes() async {
+        if leadMinutes != savedLeadMinutes {
+            await ReminderService.shared.setDefaultLeadMinutes(leadMinutes)
+            await ReminderService.shared.rescheduleOneOff(newLeadMinutes: leadMinutes)
+        }
+        if dailyLeadMinutes != savedDailyLeadMinutes {
+            await ReminderService.shared.setDailyLeadMinutes(dailyLeadMinutes)
+            await ReminderService.shared.rescheduleDaily(newLeadMinutes: dailyLeadMinutes)
+        }
+        savedLeadMinutes = leadMinutes
+        savedDailyLeadMinutes = dailyLeadMinutes
+        reminders = await ReminderService.shared.getReminders()
     }
 }
 

@@ -207,6 +207,108 @@ actor ReminderService {
         persist()
     }
 
+    // MARK: - Rescheduling
+
+    /// Reschedules all one-off reminders to use [newLeadMinutes].
+    /// For each reminder:
+    ///   1. If a valid future fire date exists with the new lead → reschedule normally.
+    ///   2. If the bus still runs but the lead time can't fit (fire time already passed) → fire immediately (~10s).
+    ///   3. If no upcoming occurrence at all → leave the reminder unchanged.
+    func rescheduleOneOff(newLeadMinutes: Int) async {
+        ensureInitialized()
+        let center = UNUserNotificationCenter.current()
+
+        for i in _reminders.indices where !_reminders[i].isDaily {
+            let reminder = _reminders[i]
+
+            if let newFireDate = nextOccurrence(
+                dayType: reminder.dayType,
+                seasonalAvailability: reminder.seasonalAvailability,
+                hour: reminder.departureHour, minute: reminder.departureMinute,
+                leadMins: newLeadMinutes
+            ) {
+                // Normal reschedule: cancel old, schedule at new time
+                center.removePendingNotificationRequests(withIdentifiers: [reminder.id])
+                let updated = BusReminder(
+                    id: UUID().uuidString,
+                    routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                    stopId: reminder.stopId, stopName: reminder.stopName,
+                    direction: reminder.direction,
+                    departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
+                    leadMinutes: newLeadMinutes, fireDate: newFireDate,
+                    seasonalNote: reminder.seasonalNote, isDaily: false,
+                    seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
+                )
+                let cal = Calendar.current
+                let content = buildNotificationContent(reminder: updated)
+                let triggerComponents = cal.dateComponents([.year, .month, .day, .hour, .minute], from: newFireDate)
+                let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
+                try? await center.add(UNNotificationRequest(identifier: updated.id, content: content, trigger: trigger))
+                _reminders[i] = updated
+
+            } else if nextOccurrence(
+                dayType: reminder.dayType,
+                seasonalAvailability: reminder.seasonalAvailability,
+                hour: reminder.departureHour, minute: reminder.departureMinute,
+                leadMins: 0
+            ) != nil {
+                // Bus still runs but the lead-adjusted fire time has passed — notify immediately
+                center.removePendingNotificationRequests(withIdentifiers: [reminder.id])
+                let immediateFireDate = Date().addingTimeInterval(10)
+                let updated = BusReminder(
+                    id: UUID().uuidString,
+                    routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                    stopId: reminder.stopId, stopName: reminder.stopName,
+                    direction: reminder.direction,
+                    departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
+                    leadMinutes: newLeadMinutes, fireDate: immediateFireDate,
+                    seasonalNote: reminder.seasonalNote, isDaily: false,
+                    seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
+                )
+                let content = buildNotificationContent(reminder: updated)
+                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
+                try? await center.add(UNNotificationRequest(identifier: updated.id, content: content, trigger: trigger))
+                _reminders[i] = updated
+            }
+            // else: no upcoming occurrence — leave the reminder untouched
+        }
+        persist()
+    }
+
+    /// Reschedules all daily reminders to use [newLeadMinutes].
+    /// Cancels the existing 7-day batch and replaces it with a fresh one at the new lead time.
+    func rescheduleDaily(newLeadMinutes: Int) async {
+        ensureInitialized()
+        let center = UNUserNotificationCenter.current()
+
+        for i in _reminders.indices where _reminders[i].isDaily {
+            let reminder = _reminders[i]
+            cancelDailyBatch(matchKey: reminder.matchKey)
+
+            // Compute a representative fire date (used for display in the list)
+            let newFireDate = nextOccurrence(
+                dayType: reminder.dayType,
+                seasonalAvailability: reminder.seasonalAvailability,
+                hour: reminder.departureHour, minute: reminder.departureMinute,
+                leadMins: newLeadMinutes
+            ) ?? reminder.fireDate.addingTimeInterval(Double(reminder.leadMinutes - newLeadMinutes) * 60)
+
+            let updated = BusReminder(
+                id: reminder.id,
+                routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                stopId: reminder.stopId, stopName: reminder.stopName,
+                direction: reminder.direction,
+                departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
+                leadMinutes: newLeadMinutes, fireDate: newFireDate,
+                seasonalNote: reminder.seasonalNote, isDaily: true,
+                seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
+            )
+            try? await scheduleDailyBatch(for: updated, center: center)
+            _reminders[i] = updated
+        }
+        persist()
+    }
+
     // MARK: - Daily batch helpers
 
     private func scheduleDailyBatch(for reminder: BusReminder, center: UNUserNotificationCenter) async throws {

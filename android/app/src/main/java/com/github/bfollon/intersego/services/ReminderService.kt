@@ -249,6 +249,73 @@ class ReminderService(private val context: Context) {
         persist()
     }
 
+    // MARK: - Rescheduling
+
+    /**
+     * Reschedules all one-off reminders to use [newLeadMinutes].
+     * For each reminder:
+     *   1. If a valid future fire time exists with the new lead → reschedule normally.
+     *   2. If the bus still runs but the lead time can't fit (fire time already past) → fire immediately (~10s).
+     *   3. If no upcoming occurrence at all → leave the reminder unchanged.
+     */
+    fun rescheduleOneOff(newLeadMinutes: Int) {
+        val updated = mutableListOf<BusReminder>()
+        for (reminder in _reminders.filter { !it.isDaily }) {
+            val newFireMillis = nextOccurrenceMillis(
+                reminder.dayType, reminder.seasonalAvailability,
+                reminder.departureHour, reminder.departureMinute, newLeadMinutes
+            )
+            if (newFireMillis != null) {
+                // Normal reschedule
+                cancelAlarm(reminder.id)
+                val updatedReminder = reminder.copy(leadMinutes = newLeadMinutes, fireDateMillis = newFireMillis)
+                scheduleAlarm(updatedReminder)
+                updated.add(updatedReminder)
+            } else {
+                val departureStillRuns = nextOccurrenceMillis(
+                    reminder.dayType, reminder.seasonalAvailability,
+                    reminder.departureHour, reminder.departureMinute, 0
+                ) != null
+                if (departureStillRuns) {
+                    // Bus still runs but lead-adjusted fire time has passed — notify immediately (~10s)
+                    cancelAlarm(reminder.id)
+                    val immediateMillis = System.currentTimeMillis() + 10_000L
+                    val updatedReminder = reminder.copy(leadMinutes = newLeadMinutes, fireDateMillis = immediateMillis)
+                    scheduleAlarm(updatedReminder)
+                    updated.add(updatedReminder)
+                } else {
+                    // No upcoming occurrence — leave unchanged
+                    updated.add(reminder)
+                }
+            }
+        }
+        _reminders.removeAll { !it.isDaily }
+        _reminders.addAll(updated)
+        persist()
+    }
+
+    /**
+     * Reschedules all daily reminders to use [newLeadMinutes].
+     * Cancels each existing alarm and replaces it with one at the new lead time.
+     * The self-rescheduling chain in [ReminderBroadcastReceiver] will also use the new value
+     * because [scheduleAlarm] embeds [leadMinutes] in the PendingIntent extras.
+     */
+    fun rescheduleDaily(newLeadMinutes: Int) {
+        for (i in _reminders.indices) {
+            if (!_reminders[i].isDaily) continue
+            val reminder = _reminders[i]
+            cancelAlarm(reminder.id)
+            val newFireMillis = nextOccurrenceMillis(
+                reminder.dayType, reminder.seasonalAvailability,
+                reminder.departureHour, reminder.departureMinute, newLeadMinutes
+            ) ?: (System.currentTimeMillis() + 86_400_000L) // fallback: same time tomorrow
+            val updatedReminder = reminder.copy(leadMinutes = newLeadMinutes, fireDateMillis = newFireMillis)
+            scheduleAlarm(updatedReminder)
+            _reminders[i] = updatedReminder
+        }
+        persist()
+    }
+
     // MARK: - AlarmManager internals
 
     private fun scheduleAlarm(reminder: BusReminder) {

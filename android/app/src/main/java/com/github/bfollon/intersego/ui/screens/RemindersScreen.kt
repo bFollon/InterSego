@@ -54,6 +54,10 @@ fun RemindersScreen(
     var reminders by remember { mutableStateOf(reminderService.getReminders()) }
     var leadMinutes by remember { mutableStateOf(reminderService.getDefaultLeadMinutes()) }
     var dailyLeadMinutes by remember { mutableStateOf(reminderService.getDailyLeadMinutes()) }
+    // Mirrors of the last-saved values — used to detect unsaved changes
+    var savedLeadMinutes by remember { mutableStateOf(leadMinutes) }
+    var savedDailyLeadMinutes by remember { mutableStateOf(dailyLeadMinutes) }
+    val hasUnsavedChanges = leadMinutes != savedLeadMinutes || dailyLeadMinutes != savedDailyLeadMinutes
     var showTutorial by remember {
         val shown = prefs.getBoolean("tutorial_shown", false)
         mutableStateOf(!shown)
@@ -110,14 +114,8 @@ fun RemindersScreen(
                 title = "Aviso puntual",
                 subtitle = "Antelación para recordatorios puntuales (campana rápida).",
                 minutes = leadMinutes,
-                onDecrease = {
-                    leadMinutes = maxOf(1, leadMinutes - 5)
-                    reminderService.setDefaultLeadMinutes(leadMinutes)
-                },
-                onIncrease = {
-                    leadMinutes = minOf(60, leadMinutes + 5)
-                    reminderService.setDefaultLeadMinutes(leadMinutes)
-                }
+                onDecrease = { leadMinutes = maxOf(1, leadMinutes - 5) },
+                onIncrease = { leadMinutes = minOf(60, leadMinutes + 5) }
             )
 
             // Daily lead time card
@@ -126,15 +124,37 @@ fun RemindersScreen(
                 subtitle = "Antelación para recordatorios diarios (campana mantenida).",
                 minutes = dailyLeadMinutes,
                 isDaily = true,
-                onDecrease = {
-                    dailyLeadMinutes = maxOf(1, dailyLeadMinutes - 5)
-                    reminderService.setDailyLeadMinutes(dailyLeadMinutes)
-                },
-                onIncrease = {
-                    dailyLeadMinutes = minOf(60, dailyLeadMinutes + 5)
-                    reminderService.setDailyLeadMinutes(dailyLeadMinutes)
-                }
+                onDecrease = { dailyLeadMinutes = maxOf(1, dailyLeadMinutes - 5) },
+                onIncrease = { dailyLeadMinutes = minOf(60, dailyLeadMinutes + 5) }
             )
+
+            // Save button — always visible, disabled when nothing has changed
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    enabled = hasUnsavedChanges,
+                    onClick = {
+                        if (leadMinutes != savedLeadMinutes) {
+                            reminderService.setDefaultLeadMinutes(leadMinutes)
+                            reminderService.rescheduleOneOff(leadMinutes)
+                        }
+                        if (dailyLeadMinutes != savedDailyLeadMinutes) {
+                            reminderService.setDailyLeadMinutes(dailyLeadMinutes)
+                            reminderService.rescheduleDaily(dailyLeadMinutes)
+                        }
+                        savedLeadMinutes = leadMinutes
+                        savedDailyLeadMinutes = dailyLeadMinutes
+                        reminders = reminderService.getReminders()
+                    }
+                ) {
+                    Text("Guardar")
+                }
+            }
 
             if (reminders.isEmpty()) {
                 // Empty state
