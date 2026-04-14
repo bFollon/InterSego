@@ -425,7 +425,7 @@ fun NextDepartureScreen(
             parts[0] == td.routeId
                 && parts[1] == direction
                 && parts[2] == currentDayType.name
-                && bMinutes <= myMinutes
+                && bMinutes < myMinutes
                 && myMinutes - bMinutes <= 90
         }
     }
@@ -1484,8 +1484,28 @@ fun NextDepartureWithProgress(
                 }
             }
 
+            // Countdown with live suffix when ETA available
+            val liveMinutes = remember(adjustedETA, currentTime) {
+                if (adjustedETA == null || boardingCount == 0) return@remember null
+                val p = adjustedETA.split(":")
+                if (p.size < 2) return@remember null
+                val etaTotal = (p[0].toIntOrNull() ?: return@remember null) * 60 +
+                               (p[1].toIntOrNull() ?: return@remember null)
+                val nowTotal = currentTime.hour * 60 + currentTime.minute
+                var diff = etaTotal - nowTotal
+                if (diff < -720) diff += 1440
+                diff
+            }
+
+            // Show ETA row if: ETA is still in the future (liveMinutes >= 0),
+            // OR the ETA has passed but we are already showing "Última salida" (minutesUntil < 0).
+            // Hide entirely when ETA is past and we are in "Próxima salida" mode — that means
+            // the boarding event belongs to a different/previous trip.
+            val showEtaRow = adjustedETA != null && boardingCount > 0 &&
+                (liveMinutes == null || liveMinutes >= 0 || minutesUntil < 0)
+
             // Tiempo real (subtle, right under Próxima salida)
-            if (adjustedETA != null && boardingCount > 0) {
+            if (showEtaRow) {
                 var showBoardingInfo by remember { mutableStateOf(false) }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -1546,19 +1566,9 @@ fun NextDepartureWithProgress(
                 }
             }
 
-            // Countdown with live suffix when ETA available
-            val liveMinutes = remember(adjustedETA, currentTime) {
-                if (adjustedETA == null || boardingCount == 0) return@remember null
-                val p = adjustedETA.split(":")
-                if (p.size < 2) return@remember null
-                val etaTotal = (p[0].toIntOrNull() ?: return@remember null) * 60 +
-                               (p[1].toIntOrNull() ?: return@remember null)
-                val nowTotal = currentTime.hour * 60 + currentTime.minute
-                var diff = etaTotal - nowTotal
-                if (diff < -720) diff += 1440
-                diff
-            }
+            // Only append the live suffix when the ETA is still in the future.
             val liveSuffix = liveMinutes?.let { m ->
+                if (m < 0) return@let null
                 val str = if (m < 60) "${m}m" else "${m / 60}h ${m % 60}m"
                 " ($str 🔴)"
             } ?: ""

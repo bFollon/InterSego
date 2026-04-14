@@ -214,7 +214,7 @@ struct NextDepartureView: View {
             return parts[0] == next.routeId
                 && parts[1] == direction
                 && parts[2] == currentDayType.rawValue
-                && bMinutes <= myMinutes
+                && bMinutes < myMinutes
                 && myMinutes - bMinutes <= 90
         }
     }
@@ -1048,7 +1048,13 @@ private struct NextDepartureCard: View {
             }
 
             // Tiempo real (subtle, right under Próxima salida)
-            if let eta = adjustedETA, boardingCount > 0 {
+            // Show only when: ETA is still in the future (liveMinutesUntil >= 0),
+            // OR ETA has passed but we are already in "Última salida" mode (minutesUntil < 0).
+            // Hide entirely when ETA is past and we show "Próxima salida" — the boarding event
+            // belongs to a different/previous trip and is no longer relevant.
+            let showEtaRow = adjustedETA != nil && boardingCount > 0 &&
+                (liveMinutesUntil.map { $0 >= 0 } ?? false || minutesUntil < 0)
+            if let eta = adjustedETA, showEtaRow {
                 HStack(spacing: 4) {
                     Text("Tiempo real: \(eta)")
                         .font(.subheadline)
@@ -1082,9 +1088,9 @@ private struct NextDepartureCard: View {
                 }
             }
 
-            // Countdown (with live suffix when ETA available)
+            // Countdown (with live suffix only when ETA is still in the future)
             let liveSuffix: String = {
-                guard let m = liveMinutesUntil else { return "" }
+                guard let m = liveMinutesUntil, m >= 0 else { return "" }
                 let str = m < 60 ? "\(m)m" : "\(m / 60)h \(m % 60)m"
                 return " (\(str) 🔴)"
             }()
