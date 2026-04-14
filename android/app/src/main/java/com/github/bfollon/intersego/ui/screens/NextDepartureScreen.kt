@@ -16,6 +16,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.github.bfollon.intersego.ui.screens
 
 import android.content.Intent
@@ -1508,14 +1510,39 @@ fun NextDepartureWithProgress(
                 }
                 if (showBoardingInfo) {
                     val who = if (boardingCount == 1) "1 usuario confirmó" else "$boardingCount usuarios confirmaron"
-                    AlertDialog(
+                    ModalBottomSheet(
                         onDismissRequest = { showBoardingInfo = false },
-                        title = { Text("Tiempo real") },
-                        text = { Text("$who que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a $adjustedETA.") },
-                        confirmButton = {
-                            TextButton(onClick = { showBoardingInfo = false }) { Text("Entendido") }
+                        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 32.dp)
+                                .padding(bottom = 48.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.DirectionsBus,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(40.dp)
+                            )
+                            Text(
+                                text = "Tiempo real",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = "$who que están en este autobús, lo que nos permite ajustar el tiempo estimado de llegada a $adjustedETA.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Button(onClick = { showBoardingInfo = false }) {
+                                Text("Entendido")
+                            }
                         }
-                    )
+                    }
                 }
             }
 
