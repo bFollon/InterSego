@@ -199,6 +199,10 @@ struct ContentView: View {
                         primaryRouteId: selection.primaryRouteId,
                         primaryViewId: selection.primaryViewId,
                         onSelected: { routeId, viewId in
+                            // Replace the DirectionPickerSelection with the StopSelection so
+                            // pressing Back from NextDeparture skips past the picker entirely
+                            // rather than re-triggering it (which causes an auto-advance loop).
+                            navigationPath.removeLast()
                             navigationPath.append(StopSelection(
                                 stop: selection.stop,
                                 primaryRouteId: routeId,

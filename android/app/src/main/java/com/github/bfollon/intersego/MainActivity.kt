@@ -978,7 +978,14 @@ fun AppNavigation() {
                 stop = stop,
                 allRoutes = routes,
                 onDirectionSelected = { routeId, viewId ->
-                    navController.navigate("next_departure/$stopId/$routeId/$viewId")
+                    // Pop the direction_picker off the back stack so pressing Back from
+                    // NextDeparture returns to wherever the user came from (stop list, etc.)
+                    // rather than re-triggering the picker.
+                    navController.navigate("next_departure/$stopId/$routeId/$viewId") {
+                        popUpTo("direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}") {
+                            inclusive = true
+                        }
+                    }
                 },
                 onBack = { navController.popBackStack() }
             )

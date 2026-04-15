@@ -84,7 +84,21 @@ fun DirectionPickerScreen(
             // Build direction groups from the loaded routes
             val groups = mutableListOf<RouteDirectionGroup>()
             for (routeData in departuresData.routes) {
-                // Collect all distinct directions for this route that serve this stop
+                // If this route uses mergedDirectionLabel (e.g. M4 circular), collapse to a
+                // single option using the primary view — triggering auto-advance below.
+                val primaryMergedView = routeData.views.firstOrNull { it.mergedDirectionLabel != null }
+                if (primaryMergedView != null) {
+                    val option = DirectionOption(
+                        routeId = routeData.route.id,
+                        route = routeData.route,
+                        direction = primaryMergedView.direction ?: "",
+                        viewId = primaryMergedView.id
+                    )
+                    groups.add(RouteDirectionGroup(route = routeData.route, directions = listOf(option)))
+                    continue
+                }
+
+                // Normal flow: one option per distinct direction serving this stop
                 val validDirections = routeData.timetables
                     .filter { it.stopId == stop.id }
                     .mapNotNull { it.direction }

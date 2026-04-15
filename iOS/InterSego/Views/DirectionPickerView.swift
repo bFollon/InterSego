@@ -150,7 +150,20 @@ struct DirectionPickerView: View {
             // Build direction groups from the loaded routes
             var groups: [RouteDirectionGroup] = []
             for routeData in departuresData.routes {
-                // Collect all distinct directions for this route that serve this stop
+                // If this route uses mergedDirectionLabel (e.g. M4 circular), collapse to a
+                // single option using the primary view — triggering auto-advance below.
+                if let primaryMergedView = routeData.views.first(where: { $0.mergedDirectionLabel != nil }) {
+                    let option = DirectionOption(
+                        routeId: routeData.route.id,
+                        route: routeData.route,
+                        direction: primaryMergedView.direction ?? "",
+                        viewId: primaryMergedView.id
+                    )
+                    groups.append(RouteDirectionGroup(route: routeData.route, directions: [option]))
+                    continue
+                }
+
+                // Normal flow: one option per distinct direction serving this stop
                 var validDirections = Set<String>()
                 var directionViewMap: [String: String] = [:]
 
@@ -159,7 +172,6 @@ struct DirectionPickerView: View {
                     validDirections.insert(direction)
                 }
 
-                // Map directions to viewIds
                 for direction in validDirections {
                     if let view = routeData.views.first(where: { $0.direction == direction }) {
                         directionViewMap[direction] = view.id
@@ -168,19 +180,16 @@ struct DirectionPickerView: View {
 
                 if !validDirections.isEmpty {
                     let dirOptions = validDirections
-                        .compactMap { direction in
-                            if let viewId = directionViewMap[direction] {
-                                DirectionOption(
-                                    routeId: routeData.route.id,
-                                    route: routeData.route,
-                                    direction: direction,
-                                    viewId: viewId
-                                )
-                            } else {
-                                nil
-                            }
+                        .compactMap { direction -> DirectionOption? in
+                            guard let viewId = directionViewMap[direction] else { return nil }
+                            return DirectionOption(
+                                routeId: routeData.route.id,
+                                route: routeData.route,
+                                direction: direction,
+                                viewId: viewId
+                            )
                         }
-                        .sorted { (lhs: DirectionOption, rhs: DirectionOption) in lhs.direction < rhs.direction }
+                        .sorted { $0.direction < $1.direction }
 
                     if !dirOptions.isEmpty {
                         groups.append(RouteDirectionGroup(route: routeData.route, directions: dirOptions))
