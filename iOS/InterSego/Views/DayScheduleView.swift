@@ -25,13 +25,15 @@ struct DayScheduleSelection: Hashable {
     let direction: String
     let departureLabel: String?
     let overrideDayType: DayType?
+    let mergedDirectionLabel: String?
 
-    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil) {
+    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil) {
         self.route = route
         self.stop = stop
         self.direction = direction
         self.departureLabel = departureLabel
         self.overrideDayType = overrideDayType
+        self.mergedDirectionLabel = mergedDirectionLabel
     }
 }
 
@@ -43,13 +45,15 @@ struct DayScheduleView: View {
     let direction: String
     let selectedVariantLabel: String?
     let overrideDayType: DayType?
+    let mergedDirectionLabel: String?
 
-    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil) {
+    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil) {
         self.route = route
         self.stop = stop
         self.direction = direction
         self.selectedVariantLabel = selectedVariantLabel
         self.overrideDayType = overrideDayType
+        self.mergedDirectionLabel = mergedDirectionLabel
     }
 
     @State private var timetables: [BusTimetable] = []
@@ -72,13 +76,17 @@ struct DayScheduleView: View {
         return dayTypesForToday(currentWeekday)
     }
 
-    private var todayDepartures: [DepartureTime] {
+    // Each item is (departure, effectiveDirection) — direction may vary per-departure in merged mode.
+    private var todayItems: [(DepartureTime, String)] {
         let matching = timetables.filter { timetable in
             currentDayTypes.contains(timetable.dayType)
                 && timetable.stopId == stop.id
-                && timetable.direction == direction
+                && (mergedDirectionLabel != nil || timetable.direction == direction)
         }
-        return matching.flatMap { $0.seasonalDepartures(weekday: currentWeekday) }.sorted()
+        return matching.flatMap { timetable in
+            timetable.seasonalDepartures(weekday: currentWeekday)
+                .map { ($0, timetable.direction ?? direction) }
+        }.sorted { $0.0 < $1.0 }
     }
 
     private var dayTypeLabel: String {
@@ -94,13 +102,13 @@ struct DayScheduleView: View {
         let currentHour = cal.component(.hour, from: currentTime)
         let currentMinute = cal.component(.minute, from: currentTime)
 
-        let departures = todayDepartures
-        for (index, dep) in departures.enumerated() {
-            if dep.isFuture(currentHour: currentHour, currentMinute: currentMinute) {
+        let items = todayItems
+        for (index, item) in items.enumerated() {
+            if item.0.isFuture(currentHour: currentHour, currentMinute: currentMinute) {
                 return index
             }
         }
-        return departures.count
+        return items.count
     }
 
     private var currentTimeString: String {
@@ -144,7 +152,7 @@ struct DayScheduleView: View {
                 .foregroundColor(.red)
                 .multilineTextAlignment(.center)
                 .padding()
-        } else if todayDepartures.isEmpty {
+        } else if todayItems.isEmpty {
             Text("No hay horarios disponibles para hoy")
                 .font(.title3)
                 .multilineTextAlignment(.center)
@@ -155,7 +163,7 @@ struct DayScheduleView: View {
     }
 
     private var scheduleList: some View {
-        let departures = todayDepartures
+        let items = todayItems
         let markerIndex = nowMarkerIndex
 
         return ScrollViewReader { proxy in
@@ -181,7 +189,8 @@ struct DayScheduleView: View {
 
                     // Timeline
                     VStack(spacing: 0) {
-                        ForEach(Array(departures.enumerated()), id: \.offset) { index, departure in
+                        ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                            let (departure, depDir) = item
                             // Insert "Ahora" marker before first future departure
                             if index == markerIndex {
                                 NowMarkerRow(timeString: currentTimeString)
@@ -189,7 +198,7 @@ struct DayScheduleView: View {
                             }
 
                             let key = BusReminder.matchKey(
-                                routeId: route.id, stopId: stop.id, direction: direction,
+                                routeId: route.id, stopId: stop.id, direction: depDir,
                                 hour: departure.hour, minute: departure.minute
                             )
                             let bellStateValue: DayScheduleBellState = {
@@ -201,16 +210,16 @@ struct DayScheduleView: View {
                                 departure: departure,
                                 selectedVariantLabel: selectedVariantLabel,
                                 isFirst: index == 0,
-                                isLast: index == departures.count - 1 && markerIndex <= departures.count - 1,
+                                isLast: index == items.count - 1 && markerIndex <= items.count - 1,
                                 bellState: bellStateValue,
                                 showBell: canSetReminder(for: departure),
-                                onBellTap: { handleBellTap(for: departure) },
-                                onBellLongPress: { handleBellLongPress(for: departure) },
+                                onBellTap: { handleBellTap(for: departure, direction: depDir) },
+                                onBellLongPress: { handleBellLongPress(for: departure, direction: depDir) },
                             )
                         }
 
                         // Marker at the end if all departures are past
-                        if markerIndex == departures.count {
+                        if markerIndex == items.count {
                             NowMarkerRow(timeString: currentTimeString)
                                 .id("now_marker")
                         }
@@ -263,22 +272,22 @@ struct DayScheduleView: View {
         return true
     }
 
-    private func handleBellTap(for departure: DepartureTime) {
+    private func handleBellTap(for departure: DepartureTime, direction dir: String) {
         reminderErrorMessage = nil
         let key = BusReminder.matchKey(
-            routeId: route.id, stopId: stop.id, direction: direction,
+            routeId: route.id, stopId: stop.id, direction: dir,
             hour: departure.hour, minute: departure.minute
         )
         Task {
             if reminderKeys.contains(key) {
                 await ReminderService.shared.cancelReminder(
-                    routeId: route.id, stopId: stop.id, direction: direction,
+                    routeId: route.id, stopId: stop.id, direction: dir,
                     hour: departure.hour, minute: departure.minute
                 )
             } else {
                 do {
                     try await ReminderService.shared.scheduleReminder(
-                        departure: departure, stop: stop, route: route, direction: direction,
+                        departure: departure, stop: stop, route: route, direction: dir,
                         dayType: effectiveDayType
                     )
                 } catch {
@@ -290,28 +299,28 @@ struct DayScheduleView: View {
         }
     }
 
-    private func handleBellLongPress(for departure: DepartureTime) {
+    private func handleBellLongPress(for departure: DepartureTime, direction dir: String) {
         reminderErrorMessage = nil
         let key = BusReminder.matchKey(
-            routeId: route.id, stopId: stop.id, direction: direction,
+            routeId: route.id, stopId: stop.id, direction: dir,
             hour: departure.hour, minute: departure.minute
         )
         Task {
             if dailyReminderKeys.contains(key) {
                 await ReminderService.shared.cancelReminder(
-                    routeId: route.id, stopId: stop.id, direction: direction,
+                    routeId: route.id, stopId: stop.id, direction: dir,
                     hour: departure.hour, minute: departure.minute
                 )
             } else {
                 if reminderKeys.contains(key) {
                     await ReminderService.shared.cancelReminder(
-                        routeId: route.id, stopId: stop.id, direction: direction,
+                        routeId: route.id, stopId: stop.id, direction: dir,
                         hour: departure.hour, minute: departure.minute
                     )
                 }
                 do {
                     try await ReminderService.shared.scheduleReminder(
-                        departure: departure, stop: stop, route: route, direction: direction,
+                        departure: departure, stop: stop, route: route, direction: dir,
                         isDaily: true, dayType: effectiveDayType
                     )
                 } catch {

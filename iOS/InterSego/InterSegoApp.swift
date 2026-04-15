@@ -214,6 +214,7 @@ struct ContentView: View {
                         direction: selection.direction,
                         selectedVariantLabel: selection.departureLabel,
                         overrideDayType: selection.overrideDayType,
+                        mergedDirectionLabel: selection.mergedDirectionLabel,
                     )
                 }
                 .navigationDestination(for: MapSelection.self) { selection in

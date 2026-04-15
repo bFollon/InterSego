@@ -465,7 +465,8 @@ struct NextDepartureView: View {
                     NavigationLink(value: DayScheduleSelection(
                         route: activeRoute, stop: stop, direction: scheduleDir,
                         departureLabel: viewDepartureLabel(for: activeRoute.id, direction: scheduleDir),
-                        overrideDayType: scheduleOverrideDayType
+                        overrideDayType: scheduleOverrideDayType,
+                        mergedDirectionLabel: mergedDirectionLabel
                     )) {
                         HStack(spacing: 8) {
                             Image(systemName: "clock.arrow.2.circlepath").font(.subheadline)

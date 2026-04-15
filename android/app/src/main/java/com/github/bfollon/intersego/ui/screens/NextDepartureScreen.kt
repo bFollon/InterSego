@@ -185,7 +185,7 @@ fun NextDepartureScreen(
     primaryViewId: String? = null,
     reminderService: ReminderService? = null,
     onBack: () -> Unit,
-    onDaySchedule: (routeId: String, direction: String, variantLabel: String?, overrideDayType: DayType?) -> Unit = { _, _, _, _ -> }
+    onDaySchedule: (routeId: String, direction: String, variantLabel: String?, overrideDayType: DayType?, mergedDirectionLabel: String?) -> Unit = { _, _, _, _, _ -> }
 ) {
     val context = LocalContext.current
     val pdfService = remember { PDFProcessingService(context) }
@@ -780,7 +780,7 @@ fun NextDepartureScreen(
                             OutlinedButton(
                                 onClick = {
                                     val scheduleDir = if (mergedDirectionLabel != null) (nextTaggedDeparture?.direction ?: direction) else direction
-                                    onDaySchedule(activeSingleRoute.id, scheduleDir, selectedVariantLabel, scheduleOverrideDayType)
+                                    onDaySchedule(activeSingleRoute.id, scheduleDir, selectedVariantLabel, scheduleOverrideDayType, mergedDirectionLabel)
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()

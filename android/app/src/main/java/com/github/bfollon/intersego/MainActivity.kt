@@ -85,9 +85,11 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.RouteType
@@ -1014,10 +1016,15 @@ fun AppNavigation() {
                 primaryViewId = primaryViewId,
                 reminderService = reminderService,
                 onBack = { navController.popBackStack() },
-                onDaySchedule = { routeId, direction, variantLabel, overrideDayType ->
+                onDaySchedule = { routeId, direction, variantLabel, overrideDayType, mergedLabel ->
                     val label = variantLabel ?: "all"
                     val dayTypeParam = overrideDayType?.name ?: "none"
-                    navController.navigate("day_schedule/$routeId/${stop.id}/$direction/$label/$dayTypeParam")
+                    val base = "day_schedule/$routeId/${stop.id}/$direction/$label/$dayTypeParam"
+                    if (mergedLabel != null) {
+                        navController.navigate("$base?mergedLabel=${android.net.Uri.encode(mergedLabel)}")
+                    } else {
+                        navController.navigate(base)
+                    }
                 }
             )
         }
@@ -1165,12 +1172,16 @@ fun AppNavigation() {
             )
         }
 
-        composable("day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}/{dayTypeOverride}") { backStackEntry ->
+        composable(
+            "day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}/{dayTypeOverride}?mergedLabel={mergedLabel}",
+            arguments = listOf(navArgument("mergedLabel") { nullable = true; defaultValue = null; type = NavType.StringType })
+        ) { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
             val direction = backStackEntry.arguments?.getString("direction") ?: return@composable
             val variantLabel = backStackEntry.arguments?.getString("variantLabel")
             val dayTypeOverrideName = backStackEntry.arguments?.getString("dayTypeOverride")?.takeIf { it != "none" }
+            val mergedLabel = backStackEntry.arguments?.getString("mergedLabel")
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
@@ -1192,6 +1203,7 @@ fun AppNavigation() {
                 direction = direction,
                 selectedVariantLabel = effectiveVariantLabel,
                 overrideDayType = overrideDayType,
+                mergedDirectionLabel = mergedLabel,
                 reminderService = reminderService,
                 onBack = { navController.popBackStack() }
             )
