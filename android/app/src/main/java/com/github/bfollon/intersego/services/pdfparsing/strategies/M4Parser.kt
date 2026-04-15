@@ -32,58 +32,39 @@ import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.pdfparsing.CapableParser
 import com.github.bfollon.intersego.services.pdfparsing.ParserCapabilities
 import com.github.bfollon.intersego.services.pdfparsing.ParserMode
-import com.github.bfollon.intersego.services.pdfparsing.PDFParsingException
-import com.github.bfollon.intersego.services.pdfparsing.PDFTextDecoder
 import com.github.bfollon.intersego.services.pdfparsing.RouteStopsProvider
-import com.github.bfollon.intersego.services.pdfparsing.TimetableParserUtils
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfReader
-import java.io.File
-import java.time.LocalTime
 
 /**
  * Parser for M4 route (La Lastrilla - El Sotillo)
  *
- * PDF Structure:
- * - Two sections: "LUNES A VIERNES LABORABLES" (Weekdays) and "SÁBADOS" (Saturdays)
- * - Table format with stops as columns and departure times as rows
- * - Times formatted as HH:MM (e.g., "7:10", "14:46")
- * - Some rows marked with * for July/August only
+ * M4 is a circular route operating weekdays and Saturdays (July/August only).
+ * The bus travels from Azoguejo through La Lastrilla to El Sotillo and back.
  *
- * NOTE: Linecar has updated their PDFs:
- * - Old PDFs (2024/07): Broken font encoding (needs +29 character offset decoding)
- * - New PDFs (2025/10): Standard encoding (works with iText out of the box)
+ * Service types:
+ *   YEAR_ROUND (JULIO Y AGOSTO): buses that run throughout the year, including in summer.
+ *     In July/August these are the only buses that run.
+ *   SCHOOL_ONLY: buses that run only during the school term (not July/August).
+ *
+ * Asterisk (*) trips go to El Sotillo first, then continue to La Lastrilla (reverse direction).
+ *
+ * Footnotes:
+ *   * = bus goes to El Sotillo first, then continues to La Lastrilla
+ *   Saturday service runs July/August only
+ *   No Sunday or public holiday service
+ *
+ * Timetable data hardcoded from official Linecar M4 PDF (2026-04-15).
  */
 class M4Parser : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
         mode = ParserMode.PRODUCTION,
-        version = "1.3"
+        version = "2.0"
     )
-
-    /**
-     * Internal state used during parsing to track day type and accumulate timetables
-     */
-    private data class ParsingState(
-        val currentDayType: DayType,
-        val incompleteJourney: List<LocalTime>,
-        val isSummerSection: Boolean,
-        val regularRouteWeekdayTimetables: List<BusTimetable>,
-        val regularRouteWeekendTimetables: List<BusTimetable>,
-        val reverseRouteWeekdayTimetables: List<BusTimetable>,
-        val reverseRouteWeekendTimetables: List<BusTimetable>
-    ) {
-        val seasonal: SeasonalAvailability
-            get() = if (isSummerSection) SeasonalAvailability.YEAR_ROUND else SeasonalAvailability.SCHOOL_ONLY
-    }
 
     companion object {
         private const val DIRECTION_REGULAR = "Lastrilla → Sotillo"
         private const val DIRECTION_REVERSE = "Sotillo → Lastrilla"
-
-        // Pattern to match time with asterisk (e.g., "7:40*", "14:30 *")
-        private val TIME_WITH_ASTERISK_PATTERN = Regex("""\d{1,2}:\d{2}\s*\*""")
 
         private object Stops {
             val AZOGUEJO = BusStopRegistry.azoguejo
@@ -146,37 +127,22 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
             Stops.AZOGUEJO
         )
-
     }
 
-    override fun canParse(routeId: String): Boolean {
-        return capabilities.supportedRoutes.any { it.equals(routeId, ignoreCase = true) }
-    }
+    override fun canParse(routeId: String): Boolean =
+        capabilities.supportedRoutes.any { it.equals(routeId, ignoreCase = true) }
 
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
-        return if (routeId.equals("M4", ignoreCase = true)) {
-            // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
-            listOf(m4RegularRoute.dropLast(1), m4ReverseRoute.dropLast(1))
-        } else {
-            emptyList()
-        }
+        if (!routeId.equals("M4", ignoreCase = true)) return emptyList()
+        // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
+        return listOf(m4RegularRoute.dropLast(1), m4ReverseRoute.dropLast(1))
     }
 
     override fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
         if (!routeId.equals("M4", ignoreCase = true)) return emptyList()
         return listOf(
-            RouteVariant(
-                id = "regular",
-                label = DIRECTION_REGULAR,
-                stops = m4RegularRoute.dropLast(1),
-                direction = DIRECTION_REGULAR
-            ),
-            RouteVariant(
-                id = "reverse",
-                label = DIRECTION_REVERSE,
-                stops = m4ReverseRoute.dropLast(1),
-                direction = DIRECTION_REVERSE
-            ),
+            RouteVariant("regular", DIRECTION_REGULAR, m4RegularRoute.dropLast(1), DIRECTION_REGULAR),
+            RouteVariant("reverse", DIRECTION_REVERSE, m4ReverseRoute.dropLast(1), DIRECTION_REVERSE)
         )
     }
 
@@ -200,274 +166,123 @@ class M4Parser : CapableParser, RouteStopsProvider {
         val cal = java.util.Calendar.getInstance().apply { time = today }
         val dow = cal.get(java.util.Calendar.DAY_OF_WEEK)
         val isWeekday = dow != java.util.Calendar.SATURDAY && dow != java.util.Calendar.SUNDAY
-        val isWeekend = !isWeekday
+        val isSaturday = dow == java.util.Calendar.SATURDAY
         val weekdayViews = getRouteViews(routeId, DayType.WEEKDAY) ?: return emptyList()
-        val weekendViews = getRouteViews(routeId, DayType.WEEKEND) ?: return emptyList()
+        val saturdayViews = getRouteViews(routeId, DayType.SATURDAY) ?: return emptyList()
         return listOf(
             RouteSelectorEntry("entry-lv", "Lunes a Viernes", weekdayViews, "regular", DayType.WEEKDAY, isWeekday),
-            RouteSelectorEntry("entry-fds", "Fin de semana", weekendViews, "regular", DayType.WEEKEND, isWeekend)
+            RouteSelectorEntry("entry-sabado", "Sábados", saturdayViews, "regular", DayType.SATURDAY, isSaturday)
         )
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {
-        DebugConfig.debugPrint("M4Parser: Starting PDF parsing for $pdfPath")
-
-        val file = File(pdfPath)
-        if (!file.exists()) {
-            throw PDFParsingException("PDF file not found: $pdfPath")
-        }
-
-        val pdfReader = PdfReader(file)
-        val pdfDocument = PdfDocument(pdfReader)
-
-        try {
-            val timetables = mutableListOf<BusTimetable>()
-
-            for (pageNum in 1..pdfDocument.numberOfPages) {
-                DebugConfig.debugPrint("M4Parser: Processing page $pageNum")
-                val page = pdfDocument.getPage(pageNum)
-
-                val extractedText = PDFTextDecoder.extractText(page, tag = "M4Parser")
-                val lines = extractedText.lines()
-
-                DebugConfig.debugPrint("M4Parser: Page $pageNum has ${lines.size} lines")
-
-                DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
-                lines.forEachIndexed { index, line ->
-                    if (line.isNotEmpty()) {
-                        DebugConfig.debugPrint("  Line $index: $line")
-                    }
-                }
-                DebugConfig.debugPrint("M4Parser: ==========================")
-
-                timetables.addAll(parseTimeTable(lines))
-            }
-
-            DebugConfig.debugPrint("M4Parser: Finished parsing, created ${timetables.size} timetables")
-            return timetables
-
-        } catch (e: Exception) {
-            DebugConfig.debugError("M4Parser: Error parsing PDF", e)
-            throw PDFParsingException("Failed to parse M4 PDF: ${e.message}", e)
-        } finally {
-            pdfDocument.close()
-        }
+        DebugConfig.debugPrint("M4Parser: returning hardcoded timetable (PDF parsing bypassed)")
+        return buildStaticTimetables()
     }
 
-    /**
-     * Detect day type from section header lines.
-     * Maps SATURDAY/SUNDAY → WEEKEND since M4 only distinguishes weekday vs weekend.
-     */
-    private fun detectDayType(line: String): DayType? =
-        TimetableParserUtils.detectDayType(line)?.let { dayType ->
-            when (dayType) {
-                DayType.SATURDAY, DayType.SUNDAY -> DayType.WEEKEND
-                else -> dayType
-            }
+    // ── Static timetable ──────────────────────────────────────────────────────────────────
+    //
+    // Source: Linecar M4 PDF, 2026-04-15.
+    // Weekday + Saturday (Jul/Aug only) service. No Sunday service.
+    //
+    // Seasonal annotations:
+    //   yr = YEAR_ROUND  (JULIO Y AGOSTO rows: run all year; in summer these are the only buses)
+    //   sc = SCHOOL_ONLY (non-summer rows: run only during the school term)
+    //
+    // Regular direction (Lastrilla → Sotillo) — 15 stops:
+    //   [0]=AZOGUEJO  [1]=DELICIAS  [2]=GASOLINERA  [3]=PENSION  [4]=POLIGONO
+    //   [5]=CTRA      [6]=LEOPOLDO  [7]=COLEGIO     [8]=HOTEL    [9]=MASPALOMAS
+    //   [10]=CENTRO   [11]=PASEO    [12]=PARROQ      [13]=RAFAEL  [14]=VENTA
+    //
+    // Reverse direction (Sotillo → Lastrilla) — 16 stops:
+    //   [0]=AZOGUEJO  [1]=DELICIAS  [2]=HOTEL   [3]=MASPALOMAS  [4]=CENTRO
+    //   [5]=PASEO     [6]=PARROQ1   [7]=RAFAEL  [8]=VENTA       [9]=GASOLINERA
+    //   [10]=PENSION  [11]=POLIGONO [12]=CTRA   [13]=LEOPOLDO   [14]=COLEGIO  [15]=PARROQ2
+    //
+    // Times encoded as HHMM integers (e.g. 740 = 07:40, 1523 = 15:23).
+
+    private fun buildStaticTimetables(): List<BusTimetable> {
+        val yr = SeasonalAvailability.YEAR_ROUND
+        val sc = SeasonalAvailability.SCHOOL_ONLY
+
+        val wkRegDeps = Array(15) { mutableListOf<DepartureTime>() }
+        val wkRevDeps = Array(16) { mutableListOf<DepartureTime>() }
+        val satRegDeps = Array(15) { mutableListOf<DepartureTime>() }
+
+        // ── Weekday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
+        listOf(
+            sc to intArrayOf( 700, 703, 706, 708, 710, 711, 712, 713, 714, 716, 718, 720, 721, 723, 728),
+            yr to intArrayOf( 910, 913, 916, 918, 920, 921, 922, 923, 924, 926, 928, 930, 931, 933, 938),
+            yr to intArrayOf( 940, 943, 946, 948, 950, 951, 952, 953, 954, 956, 958,1000,1001,1003,1008),
+            sc to intArrayOf(1010,1013,1016,1018,1020,1021,1022,1023,1024,1026,1028,1030,1031,1033,1038),
+            yr to intArrayOf(1140,1143,1146,1148,1150,1151,1152,1153,1154,1156,1158,1200,1201,1203,1208),
+            yr to intArrayOf(1210,1213,1216,1218,1220,1221,1222,1223,1224,1226,1228,1230,1231,1233,1238),
+            sc to intArrayOf(1240,1243,1246,1248,1250,1251,1252,1253,1254,1256,1258,1300,1301,1303,1308),
+            yr to intArrayOf(1310,1313,1316,1318,1320,1321,1322,1323,1324,1326,1328,1330,1331,1333,1338),
+            yr to intArrayOf(1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1422,1423),
+            yr to intArrayOf(1520,1523,1526,1528,1530,1531,1532,1533,1534,1536,1538,1540,1541,1543,1548),
+            yr to intArrayOf(1620,1623,1626,1628,1630,1631,1632,1633,1634,1636,1638,1640,1641,1643,1648),
+            yr to intArrayOf(1700,1703,1706,1708,1710,1711,1712,1713,1714,1716,1718,1720,1721,1723,1728),
+            sc to intArrayOf(1810,1813,1816,1818,1820,1821,1822,1823,1824,1826,1828,1830,1831,1833,1838),
+            yr to intArrayOf(1910,1913,1916,1918,1920,1921,1922,1923,1924,1926,1928,1930,1931,1933,1938),
+            sc to intArrayOf(1940,1943,1946,1948,1950,1951,1952,1953,1954,1956,1958,2000,2001,2003,2008),
+            yr to intArrayOf(2010,2013,2016,2018,2020,2021,2022,2023,2024,2026,2028,2030,2031,2033,2038),
+            yr to intArrayOf(2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108),
+            sc to intArrayOf(2110,2113,2116,2118,2120,2121,2122,2123,2124,2126,2128,2130,2131,2133,2148),
+        ).forEach { (season, times) ->
+            times.forEachIndexed { i, hhmm -> wkRegDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
         }
 
-    /**
-     * Create initial empty timetables for a route
-     */
-    private fun createInitialTimetables(stops: List<BusStop>, dayType: DayType, direction: String): List<BusTimetable> {
-        return stops.map { stop ->
-            BusTimetable(
-                routeId = "M4",
-                stopId = stop.id,
-                dayType = dayType,
-                direction = direction,
-                departures = emptyList()
-            )
+        // ── Weekday Reverse: Sotillo → Lastrilla (*) ──────────────────────────────────────
+        // Asterisk buses go to El Sotillo first, then continue to La Lastrilla.
+        // Times are in route stop order (sorted chronologically per trip).
+        // 7:40* and 8:20* serve all 16 stops including PARROQ2 (stop 15).
+        listOf(
+            yr to intArrayOf( 740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806),
+            yr to intArrayOf( 820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846),
+        ).forEach { (season, times) ->
+            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
         }
+        // 14:40* and 21:40* do NOT serve PARROQ2 (stop 15) — only stops 0–14.
+        listOf(
+            yr to intArrayOf(1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504),
+            sc to intArrayOf(2140,2143,2146,2147,2148,2150,2151,2152,2208,2156,2158,2200,2201,2203,2204),
+        ).forEach { (season, times) ->
+            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
+            // stop 15 (PARROQ2) receives no departure for these trips
+        }
+
+        // ── Saturday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
+        // All Saturday trips are JULIO Y AGOSTO (YEAR_ROUND). No reverse service on Saturdays.
+        listOf(
+            yr to intArrayOf(1030,1033,1036,1038,1040,1041,1042,1043,1044,1046,1048,1050,1051,1053,1100),
+            yr to intArrayOf(1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1423,1428),
+            yr to intArrayOf(1710,1713,1716,1718,1720,1721,1722,1723,1724,1726,1728,1730,1731,1733,1738),
+            yr to intArrayOf(2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108),
+        ).forEach { (season, times) ->
+            times.forEachIndexed { i, hhmm -> satRegDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
+        }
+
+        return buildTimetables(m4RegularRoute.dropLast(1), DayType.WEEKDAY, DIRECTION_REGULAR, wkRegDeps) +
+                buildTimetables(m4ReverseRoute.dropLast(1), DayType.WEEKDAY, DIRECTION_REVERSE, wkRevDeps) +
+                buildTimetables(m4RegularRoute.dropLast(1), DayType.SATURDAY, DIRECTION_REGULAR, satRegDeps)
     }
 
-    /**
-     * Update timetables with new departure times
-     * Zips times with timetables and adds each time to the corresponding timetable
-     */
-    private fun updateTimetables(timetables: List<BusTimetable>, times: List<LocalTime>, seasonal: SeasonalAvailability): List<BusTimetable> {
-        return timetables.zip(times).map { (timetable, time) ->
-            timetable.copy(
-                departures = timetable.departures + DepartureTime(time.hour, time.minute, seasonalAvailability = seasonal)
-            )
-        }
-    }
+    private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
+        DepartureTime(h, m, seasonalAvailability = s)
 
-    private fun parseTimeTable(lines: List<String>): List<BusTimetable> {
-        // Create initial empty timetables for all routes and day types
-        val initialState = ParsingState(
-            currentDayType = DayType.WEEKDAY,
-            incompleteJourney = emptyList(),
-            isSummerSection = false,
-            regularRouteWeekdayTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKDAY, DIRECTION_REGULAR),
-            regularRouteWeekendTimetables = createInitialTimetables(m4RegularRoute, DayType.WEEKEND, DIRECTION_REGULAR),
-            reverseRouteWeekdayTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKDAY, DIRECTION_REVERSE),
-            reverseRouteWeekendTimetables = createInitialTimetables(m4ReverseRoute, DayType.WEEKEND, DIRECTION_REVERSE)
+    private fun buildTimetables(
+        stops: List<BusStop>,
+        dayType: DayType,
+        direction: String,
+        deps: Array<MutableList<DepartureTime>>
+    ): List<BusTimetable> = stops.mapIndexed { i, stop ->
+        BusTimetable(
+            routeId = "M4",
+            stopId = stop.id,
+            dayType = dayType,
+            direction = direction,
+            departures = deps[i]
         )
-
-        // Fold through lines, building timetables on-the-fly
-        val finalState = lines.fold(initialState) { state, line ->
-            // Check if line contains a day type marker
-            val newDayType = detectDayType(line)
-
-            // Check if line marks a summer-only section
-            val isSummerMarker = line.contains("JULIO Y AGOSTO", ignoreCase = true)
-
-            // Process lines with times
-            when {
-                newDayType != null -> {
-                    state.copy(currentDayType = newDayType)
-                }
-
-                isSummerMarker -> {
-                    // Mark that the next journey is a summer (year-round) journey
-                    state.copy(isSummerSection = true)
-                }
-
-                TimetableParserUtils.hasTimes(line) && hasAsteriskTimes(line) -> {
-                    val times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
-
-                    // Select the correct timetables list based on current day type
-                    val currentTimetables = if (state.currentDayType == DayType.WEEKDAY) {
-                        state.reverseRouteWeekdayTimetables
-                    } else {
-                        state.reverseRouteWeekendTimetables
-                    }
-
-                    when (times.size) {
-                        m4ReverseRoute.size -> { // Full route
-                            val updatedTimetables = updateTimetables(currentTimetables, times, state.seasonal)
-                            if (state.currentDayType == DayType.WEEKDAY) {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekdayTimetables = updatedTimetables)
-                            } else {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekendTimetables = updatedTimetables)
-                            }
-                        }
-
-                        m4ReverseRoute.size - 1 -> { // Route without last stop
-                            val filteredTimetables = currentTimetables.filterIndexed { index, _ ->
-                                index != m4ReverseRoute.size - 1
-                            }
-                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
-                            // Merge back into full list
-                            val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
-                                if (index == m4ReverseRoute.size - 1) tt else updatedTimetables[if (index < m4ReverseRoute.size - 1) index else index - 1]
-                            }
-                            if (state.currentDayType == DayType.WEEKDAY) {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekdayTimetables = mergedTimetables)
-                            } else {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekendTimetables = mergedTimetables)
-                            }
-                        }
-
-                        else -> { // Route without last stop and school stop
-                            val filteredTimetables = currentTimetables.filterIndexed { index, _ ->
-                                index != m4ReverseRoute.size - 1 &&
-                                        index != m4ReverseRoute.indexOf(Stops.PASEO_CABANILLAS)
-                            }
-                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
-                            // Merge back into full list
-                            val schoolIndex = m4ReverseRoute.indexOf(Stops.PASEO_CABANILLAS)
-                            val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
-                                when {
-                                    index == m4ReverseRoute.size - 1 || index == schoolIndex -> tt
-                                    index < schoolIndex -> updatedTimetables[index]
-                                    index < m4ReverseRoute.size - 1 -> updatedTimetables[index - 1]
-                                    else -> updatedTimetables[index - 2]
-                                }
-                            }
-                            if (state.currentDayType == DayType.WEEKDAY) {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekdayTimetables = mergedTimetables)
-                            } else {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, reverseRouteWeekendTimetables = mergedTimetables)
-                            }
-                        }
-                    }
-                }
-
-                TimetableParserUtils.hasTimes(line) -> {
-                    val times = TimetableParserUtils.sortTimes(state.incompleteJourney + TimetableParserUtils.extractTimes(line))
-
-                    // Select the correct timetables list based on current day type
-                    val currentTimetables = if (state.currentDayType == DayType.WEEKDAY) {
-                        state.regularRouteWeekdayTimetables
-                    } else {
-                        state.regularRouteWeekendTimetables
-                    }
-
-                    when (times.size) {
-                        m4RegularRoute.size -> { // Full route
-                            val updatedTimetables = updateTimetables(currentTimetables, times, state.seasonal)
-                            if (state.currentDayType == DayType.WEEKDAY) {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, regularRouteWeekdayTimetables = updatedTimetables)
-                            } else {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, regularRouteWeekendTimetables = updatedTimetables)
-                            }
-                        }
-
-                        m4RegularRoute.size - 1 -> { // Route without school stop
-                            val filteredTimetables = currentTimetables.filter { tt ->
-                                tt.stopId != Stops.PASEO_CABANILLAS.id
-                            }
-                            val updatedTimetables = updateTimetables(filteredTimetables, times, state.seasonal)
-                            // Merge back into full list
-                            val schoolIndex = m4RegularRoute.indexOf(Stops.PASEO_CABANILLAS)
-                            val mergedTimetables = currentTimetables.mapIndexed { index, tt ->
-                                if (index == schoolIndex) {
-                                    tt
-                                } else if (index < schoolIndex) {
-                                    updatedTimetables[index]
-                                } else {
-                                    updatedTimetables[index - 1]
-                                }
-                            }
-                            if (state.currentDayType == DayType.WEEKDAY) {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, regularRouteWeekdayTimetables = mergedTimetables)
-                            } else {
-                                state.copy(incompleteJourney = emptyList(), isSummerSection = false, regularRouteWeekendTimetables = mergedTimetables)
-                            }
-                        }
-
-                        else -> { // Incomplete route. Accumulate for next pass
-                            DebugConfig.debugPrint("Incomplete route, accumulating...")
-                            state.copy(incompleteJourney = times)
-                        }
-                    }
-                }
-
-                else -> state // No changes, keep current state
-            }
-        }
-
-        // Flatten all 4 timetable lists, dropping last stop (Azoguejo arrival) from each
-        val allTimetables = finalState.regularRouteWeekdayTimetables.dropLast(1) +
-                finalState.regularRouteWeekendTimetables.dropLast(1) +
-                finalState.reverseRouteWeekdayTimetables.dropLast(1) +
-                finalState.reverseRouteWeekendTimetables.dropLast(1)
-
-        // Sort departures within each timetable
-        val sortedTimetables = allTimetables.map { timetable ->
-            timetable.copy(
-                departures = timetable.departures.sortedBy { it.hour * 60 + it.minute }
-            )
-        }
-
-        DebugConfig.debugPrint("Created ${sortedTimetables.size} timetables")
-
-        // Show first 5 and some with reverse direction
-        sortedTimetables.take(5).forEach { DebugConfig.debugPrint("$it") }
-        sortedTimetables.filter { it.direction == DIRECTION_REVERSE }.take(5).forEach {
-            DebugConfig.debugPrint("$it")
-        }
-
-        return sortedTimetables
     }
-
-    /**
-     * Check if line contains times marked with asterisk (indicates reverse route journeys).
-     * Example: "7:40* 7:43 14:30" -> true (because of "7:40*")
-     */
-    private fun hasAsteriskTimes(line: String): Boolean = TIME_WITH_ASTERISK_PATTERN.containsMatchIn(line)
 }
-
-

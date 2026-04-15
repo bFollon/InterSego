@@ -19,26 +19,33 @@ import Foundation
 
 /// Parser for M4 route (La Lastrilla - El Sotillo)
 ///
-/// PDF Structure:
-/// - Two sections: "LUNES A VIERNES LABORABLES" (Weekdays) and "SÁBADOS" (Saturdays)
-/// - Table format with stops as columns and departure times as rows
-/// - Times formatted as HH:MM (e.g., "7:10", "14:46")
-/// - Some rows marked with * for July/August only
+/// M4 is a circular route operating weekdays and Saturdays (July/August only).
+/// The bus travels from Azoguejo through La Lastrilla to El Sotillo and back.
+///
+/// Service types:
+///   YEAR_ROUND (JULIO Y AGOSTO): buses that run throughout the year, including in summer.
+///     In July/August these are the only buses that run.
+///   SCHOOL_ONLY: buses that run only during the school term (not July/August).
+///
+/// Asterisk (*) trips go to El Sotillo first, then continue to La Lastrilla (reverse direction).
+///
+/// Footnotes:
+///   * = bus goes to El Sotillo first, then continues to La Lastrilla
+///   Saturday service runs July/August only
+///   No Sunday or public holiday service
+///
+/// Timetable data hardcoded from official Linecar M4 PDF (2026-04-15).
 class M4Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
-        version: "1.3",
+        version: "2.0",
     )
 
     // MARK: - Directions
 
     private static let directionRegular = "Lastrilla → Sotillo"
     private static let directionReverse = "Sotillo → Lastrilla"
-
-    private static let timeWithAsteriskPattern = try! NSRegularExpression(
-        pattern: #"\d{1,2}:\d{2}\s*\*"#,
-    )
 
     // MARK: - Stops
 
@@ -104,22 +111,6 @@ class M4Parser: CapableParser, RouteStopsProvider {
         Stops.azoguejo,
     ]
 
-    // MARK: - Parsing State
-
-    private struct ParsingState {
-        var currentDayType: DayType
-        var incompleteJourney: [(hour: Int, minute: Int)]
-        var isSummerSection: Bool
-        var regularRouteWeekdayTimetables: [BusTimetable]
-        var regularRouteWeekendTimetables: [BusTimetable]
-        var reverseRouteWeekdayTimetables: [BusTimetable]
-        var reverseRouteWeekendTimetables: [BusTimetable]
-
-        var seasonal: SeasonalAvailability {
-            isSummerSection ? .yearRound : .schoolOnly
-        }
-    }
-
     // MARK: - Protocol Conformance
 
     func canParse(routeId: String) -> Bool {
@@ -184,10 +175,10 @@ class M4Parser: CapableParser, RouteStopsProvider {
             return []
         }
         let dow = Calendar.current.component(.weekday, from: today)
-        let isWeekday = dow != 7 && dow != 1
-        let isWeekend = !isWeekday
+        let isWeekday = dow != 1 && dow != 7 // not Sunday (1) and not Saturday (7)
+        let isSaturday = dow == 7
         guard let weekdayViews = getRouteViews(routeId, dayType: .weekday),
-              let weekendViews = getRouteViews(routeId, dayType: .weekend)
+              let saturdayViews = getRouteViews(routeId, dayType: .saturday)
         else { return [] }
         return [
             RouteSelectorEntry(
@@ -199,331 +190,155 @@ class M4Parser: CapableParser, RouteStopsProvider {
                 isActiveToday: isWeekday,
             ),
             RouteSelectorEntry(
-                id: "entry-fds",
-                label: "Fin de semana",
-                views: weekendViews,
+                id: "entry-sabado",
+                label: "Sábados",
+                views: saturdayViews,
                 initialViewId: "regular",
-                timetableDayType: .weekend,
-                isActiveToday: isWeekend,
+                timetableDayType: .saturday,
+                isActiveToday: isSaturday,
             ),
         ]
     }
 
-    func parse(pdfPath: String, routeId _: String) throws -> [BusTimetable] {
-        DebugConfig.debugPrint("M4Parser: Starting PDF parsing for \(pdfPath)")
-
-        guard FileManager.default.fileExists(atPath: pdfPath) else {
-            throw PDFParsingError("PDF file not found: \(pdfPath)")
-        }
-
-        let extractedText = PDFTextExtractor.extractText(
-            from: pdfPath,
-            tag: "M4Parser",
-        )
-        let lines = extractedText.components(separatedBy: "\n")
-
-        DebugConfig.debugPrint("M4Parser: Extracted \(lines.count) lines")
-
-        #if DEBUG
-            if DebugConfig.isDebugEnabled {
-                DebugConfig.debugPrint("M4Parser: ===== EXTRACTED TEXT =====")
-                for (index, line) in lines.enumerated() {
-                    if !line.isEmpty {
-                        DebugConfig.debugPrint("  Line \(index): \(line)")
-                    }
-                }
-                DebugConfig.debugPrint("M4Parser: ==========================")
-            }
-        #endif
-
-        let timetables = parseTimeTable(lines)
-
+    func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
         DebugConfig.debugPrint(
-            "M4Parser: Finished parsing, created \(timetables.count) timetables",
+            "M4Parser: returning hardcoded timetable (PDF parsing bypassed)",
         )
-        return timetables
+        return buildStaticTimetables()
     }
 
-    // MARK: - Internal Parsing
+    // MARK: - Static Timetable
 
-    private func detectDayType(_ line: String) -> DayType? {
-        guard let dayType = TimetableParserUtils.detectDayType(line) else {
-            return nil
+    //
+    // Source: Linecar M4 PDF, 2026-04-15.
+    // Weekday + Saturday (Jul/Aug only) service. No Sunday service.
+    //
+    // Seasonal annotations:
+    //   yr = .yearRound  (JULIO Y AGOSTO rows: run all year; in summer these are the only buses)
+    //   sc = .schoolOnly (non-summer rows: run only during the school term)
+    //
+    // Regular direction (Lastrilla → Sotillo) — 15 stops:
+    //   [0]=AZOGUEJO  [1]=DELICIAS  [2]=GASOLINERA  [3]=PENSION  [4]=POLIGONO
+    //   [5]=CTRA      [6]=LEOPOLDO  [7]=COLEGIO     [8]=HOTEL    [9]=MASPALOMAS
+    //   [10]=CENTRO   [11]=PASEO    [12]=PARROQ      [13]=RAFAEL  [14]=VENTA
+    //
+    // Reverse direction (Sotillo → Lastrilla) — 16 stops:
+    //   [0]=AZOGUEJO  [1]=DELICIAS  [2]=HOTEL   [3]=MASPALOMAS  [4]=CENTRO
+    //   [5]=PASEO     [6]=PARROQ1   [7]=RAFAEL  [8]=VENTA       [9]=GASOLINERA
+    //   [10]=PENSION  [11]=POLIGONO [12]=CTRA   [13]=LEOPOLDO   [14]=COLEGIO  [15]=PARROQ2
+    //
+    // Times encoded as HHMM integers (e.g. 740 = 07:40, 1523 = 15:23).
+
+    private func buildStaticTimetables() -> [BusTimetable] {
+        let yr = SeasonalAvailability.yearRound
+        let sc = SeasonalAvailability.schoolOnly
+
+        var wkRegDeps: [[DepartureTime]] = Array(repeating: [], count: 15)
+        var wkRevDeps: [[DepartureTime]] = Array(repeating: [], count: 16)
+        var satRegDeps: [[DepartureTime]] = Array(repeating: [], count: 15)
+
+        func add(to deps: inout [[DepartureTime]], season: SeasonalAvailability, times: [Int]) {
+            for (i, hhmm) in times.enumerated() {
+                deps[i].append(t(hhmm / 100, hhmm % 100, season))
+            }
         }
-        switch dayType {
-        case .saturday, .sunday:
-            return .weekend
-        default:
-            return dayType
+
+        // ── Weekday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
+        let wkRegTrips: [(SeasonalAvailability, [Int])] = [
+            (sc, [  700, 703, 706, 708, 710, 711, 712, 713, 714, 716, 718, 720, 721, 723, 728]),
+            (yr, [  910, 913, 916, 918, 920, 921, 922, 923, 924, 926, 928, 930, 931, 933, 938]),
+            (yr, [  940, 943, 946, 948, 950, 951, 952, 953, 954, 956, 958,1000,1001,1003,1008]),
+            (sc, [ 1010,1013,1016,1018,1020,1021,1022,1023,1024,1026,1028,1030,1031,1033,1038]),
+            (yr, [ 1140,1143,1146,1148,1150,1151,1152,1153,1154,1156,1158,1200,1201,1203,1208]),
+            (yr, [ 1210,1213,1216,1218,1220,1221,1222,1223,1224,1226,1228,1230,1231,1233,1238]),
+            (sc, [ 1240,1243,1246,1248,1250,1251,1252,1253,1254,1256,1258,1300,1301,1303,1308]),
+            (yr, [ 1310,1313,1316,1318,1320,1321,1322,1323,1324,1326,1328,1330,1331,1333,1338]),
+            (yr, [ 1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1422,1423]),
+            (yr, [ 1520,1523,1526,1528,1530,1531,1532,1533,1534,1536,1538,1540,1541,1543,1548]),
+            (yr, [ 1620,1623,1626,1628,1630,1631,1632,1633,1634,1636,1638,1640,1641,1643,1648]),
+            (yr, [ 1700,1703,1706,1708,1710,1711,1712,1713,1714,1716,1718,1720,1721,1723,1728]),
+            (sc, [ 1810,1813,1816,1818,1820,1821,1822,1823,1824,1826,1828,1830,1831,1833,1838]),
+            (yr, [ 1910,1913,1916,1918,1920,1921,1922,1923,1924,1926,1928,1930,1931,1933,1938]),
+            (sc, [ 1940,1943,1946,1948,1950,1951,1952,1953,1954,1956,1958,2000,2001,2003,2008]),
+            (yr, [ 2010,2013,2016,2018,2020,2021,2022,2023,2024,2026,2028,2030,2031,2033,2038]),
+            (yr, [ 2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108]),
+            (sc, [ 2110,2113,2116,2118,2120,2121,2122,2123,2124,2126,2128,2130,2131,2133,2148]),
+        ]
+        for (season, times) in wkRegTrips {
+            add(to: &wkRegDeps, season: season, times: times)
         }
+
+        // ── Weekday Reverse: Sotillo → Lastrilla (*) ──────────────────────────────────────
+        // Asterisk buses go to El Sotillo first, then continue to La Lastrilla.
+        // Times are in route stop order (sorted chronologically per trip).
+        // 7:40* and 8:20* serve all 16 stops including PARROQ2 (stop 15).
+        let wkRevFull: [(SeasonalAvailability, [Int])] = [
+            (yr, [  740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806]),
+            (yr, [  820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846]),
+        ]
+        for (season, times) in wkRevFull {
+            add(to: &wkRevDeps, season: season, times: times)
+        }
+        // 14:40* and 21:40* do NOT serve PARROQ2 (stop 15) — only stops 0–14.
+        let wkRevPartial: [(SeasonalAvailability, [Int])] = [
+            (yr, [ 1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504]),
+            (sc, [ 2140,2143,2146,2147,2148,2150,2151,2152,2208,2156,2158,2200,2201,2203,2204]),
+        ]
+        for (season, times) in wkRevPartial {
+            add(to: &wkRevDeps, season: season, times: times)
+            // stop 15 (PARROQ2) receives no departure for these trips
+        }
+
+        // ── Saturday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
+        // All Saturday trips are JULIO Y AGOSTO (YEAR_ROUND). No reverse service on Saturdays.
+        let satRegTrips: [(SeasonalAvailability, [Int])] = [
+            (yr, [ 1030,1033,1036,1038,1040,1041,1042,1043,1044,1046,1048,1050,1051,1053,1100]),
+            (yr, [ 1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1423,1428]),
+            (yr, [ 1710,1713,1716,1718,1720,1721,1722,1723,1724,1726,1728,1730,1731,1733,1738]),
+            (yr, [ 2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108]),
+        ]
+        for (season, times) in satRegTrips {
+            add(to: &satRegDeps, season: season, times: times)
+        }
+
+        return buildTimetables(
+            stops: Array(Self.m4RegularRoute.dropLast()),
+            dayType: .weekday,
+            direction: Self.directionRegular,
+            deps: wkRegDeps,
+        )
+            + buildTimetables(
+                stops: Array(Self.m4ReverseRoute.dropLast()),
+                dayType: .weekday,
+                direction: Self.directionReverse,
+                deps: wkRevDeps,
+            )
+            + buildTimetables(
+                stops: Array(Self.m4RegularRoute.dropLast()),
+                dayType: .saturday,
+                direction: Self.directionRegular,
+                deps: satRegDeps,
+            )
     }
 
-    private func createInitialTimetables(
+    private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
+        DepartureTime(hour: h, minute: m, seasonalAvailability: s)
+    }
+
+    private func buildTimetables(
         stops: [BusStop],
         dayType: DayType,
         direction: String,
+        deps: [[DepartureTime]],
     ) -> [BusTimetable] {
-        stops.map { stop in
+        stops.enumerated().map { i, stop in
             BusTimetable(
                 routeId: "M4",
                 stopId: stop.id,
                 dayType: dayType,
-                departures: [],
+                departures: deps[i],
                 direction: direction,
             )
         }
-    }
-
-    private func updateTimetables(
-        _ timetables: [BusTimetable],
-        times: [(hour: Int, minute: Int)],
-        seasonal: SeasonalAvailability,
-    ) -> [BusTimetable] {
-        zip(timetables, times).map { timetable, time in
-            var updated = timetable
-            updated.departures =
-                timetable.departures + [
-                    DepartureTime(
-                        hour: time.hour,
-                        minute: time.minute,
-                        seasonalAvailability: seasonal,
-                    ),
-                ]
-            return updated
-        }
-    }
-
-    private func parseTimeTable(_ lines: [String]) -> [BusTimetable] {
-        var state = ParsingState(
-            currentDayType: .weekday,
-            incompleteJourney: [],
-            isSummerSection: false,
-            regularRouteWeekdayTimetables: createInitialTimetables(
-                stops: Self.m4RegularRoute,
-                dayType: .weekday,
-                direction: Self.directionRegular,
-            ),
-            regularRouteWeekendTimetables: createInitialTimetables(
-                stops: Self.m4RegularRoute,
-                dayType: .weekend,
-                direction: Self.directionRegular,
-            ),
-            reverseRouteWeekdayTimetables: createInitialTimetables(
-                stops: Self.m4ReverseRoute,
-                dayType: .weekday,
-                direction: Self.directionReverse,
-            ),
-            reverseRouteWeekendTimetables: createInitialTimetables(
-                stops: Self.m4ReverseRoute,
-                dayType: .weekend,
-                direction: Self.directionReverse,
-            ),
-        )
-
-        for line in lines {
-            let newDayType = detectDayType(line)
-            let isSummerMarker = line.uppercased().contains("JULIO Y AGOSTO")
-            let hasTimes = TimetableParserUtils.hasTimes(line)
-
-            if let newDayType {
-                state.currentDayType = newDayType
-                state.isSummerSection = false
-            } else if isSummerMarker, !hasTimes {
-                // iOS PDFKit sometimes puts "JULIO Y AGOSTO" on a separate line (like Android's iText7).
-                // When it does, just set the flag; times will be on the next line.
-                state.isSummerSection = true
-            } else if hasTimes {
-                // Determine seasonal: if this line has the JULIO marker, it's summer-only.
-                // If not, it's school-only (the marker doesn't bleed from previous lines).
-                state.isSummerSection = isSummerMarker
-
-                if hasAsteriskTimes(line) {
-                    let times = TimetableParserUtils.sortTimes(
-                        state.incompleteJourney
-                            + TimetableParserUtils.extractTimes(line),
-                    )
-
-                    let isWeekday = state.currentDayType == .weekday
-                    let currentTimetables =
-                        isWeekday
-                            ? state.reverseRouteWeekdayTimetables
-                            : state.reverseRouteWeekendTimetables
-                    let reverseCount = Self.m4ReverseRoute.count
-
-                    switch times.count {
-                    case reverseCount:
-                        let updated = updateTimetables(
-                            currentTimetables,
-                            times: times,
-                            seasonal: state.seasonal,
-                        )
-                        if isWeekday {
-                            state.reverseRouteWeekdayTimetables = updated
-                        } else {
-                            state.reverseRouteWeekendTimetables = updated
-                        }
-                        state.incompleteJourney = []
-
-                    case reverseCount - 1:
-                        let lastIndex = reverseCount - 1
-                        let filtered = currentTimetables.enumerated().filter {
-                            $0.offset != lastIndex
-                        }.map(\.element)
-                        let updated = updateTimetables(
-                            filtered,
-                            times: times,
-                            seasonal: state.seasonal,
-                        )
-                        var merged = currentTimetables
-                        for i in 0 ..< reverseCount {
-                            if i != lastIndex {
-                                let sourceIndex = i < lastIndex ? i : i - 1
-                                merged[i] = updated[sourceIndex]
-                            }
-                        }
-                        if isWeekday {
-                            state.reverseRouteWeekdayTimetables = merged
-                        } else {
-                            state.reverseRouteWeekendTimetables = merged
-                        }
-                        state.incompleteJourney = []
-
-                    default:
-                        let lastIndex = reverseCount - 1
-                        let schoolIndex =
-                            Self.m4ReverseRoute.firstIndex(
-                                of: Stops.paseoCabanillas,
-                            ) ?? -1
-                        let filtered = currentTimetables.enumerated()
-                            .filter {
-                                $0.offset != lastIndex
-                                    && $0.offset != schoolIndex
-                            }
-                            .map(\.element)
-                        let updated = updateTimetables(
-                            filtered,
-                            times: times,
-                            seasonal: state.seasonal,
-                        )
-                        var merged = currentTimetables
-                        var srcIdx = 0
-                        for i in 0 ..< reverseCount {
-                            if i != lastIndex, i != schoolIndex {
-                                merged[i] = updated[srcIdx]
-                                srcIdx += 1
-                            }
-                        }
-                        if isWeekday {
-                            state.reverseRouteWeekdayTimetables = merged
-                        } else {
-                            state.reverseRouteWeekendTimetables = merged
-                        }
-                        state.incompleteJourney = []
-                    }
-
-                } else {
-                    let times = TimetableParserUtils.sortTimes(
-                        state.incompleteJourney
-                            + TimetableParserUtils.extractTimes(line),
-                    )
-
-                    let isWeekday = state.currentDayType == .weekday
-                    let currentTimetables =
-                        isWeekday
-                            ? state.regularRouteWeekdayTimetables
-                            : state.regularRouteWeekendTimetables
-                    let regularCount = Self.m4RegularRoute.count
-
-                    switch times.count {
-                    case regularCount:
-                        let updated = updateTimetables(
-                            currentTimetables,
-                            times: times,
-                            seasonal: state.seasonal,
-                        )
-                        if isWeekday {
-                            state.regularRouteWeekdayTimetables = updated
-                        } else {
-                            state.regularRouteWeekendTimetables = updated
-                        }
-                        state.incompleteJourney = []
-
-                    case regularCount - 1:
-                        let schoolIndex =
-                            Self.m4RegularRoute.firstIndex(
-                                of: Stops.paseoCabanillas,
-                            ) ?? -1
-                        let filtered = currentTimetables.filter {
-                            $0.stopId != Stops.paseoCabanillas.id
-                        }
-                        let updated = updateTimetables(
-                            filtered,
-                            times: times,
-                            seasonal: state.seasonal,
-                        )
-                        var merged = currentTimetables
-                        for i in 0 ..< regularCount {
-                            if i == schoolIndex {
-                                continue
-                            } else if i < schoolIndex {
-                                merged[i] = updated[i]
-                            } else {
-                                merged[i] = updated[i - 1]
-                            }
-                        }
-                        if isWeekday {
-                            state.regularRouteWeekdayTimetables = merged
-                        } else {
-                            state.regularRouteWeekendTimetables = merged
-                        }
-                        state.incompleteJourney = []
-
-                    default:
-                        DebugConfig.debugPrint(
-                            "Incomplete route, accumulating...",
-                        )
-                        state.incompleteJourney = times
-                    }
-                }
-            }
-        }
-
-        // Drop last stop from each group — it's the return to Azoguejo (arrival, not departure)
-        let allTimetables =
-            state.regularRouteWeekdayTimetables.dropLast()
-                + state.regularRouteWeekendTimetables.dropLast()
-                + state.reverseRouteWeekdayTimetables.dropLast()
-                + state.reverseRouteWeekendTimetables.dropLast()
-
-        let sortedTimetables = allTimetables.map { timetable in
-            var sorted = timetable
-            sorted.departures = timetable.departures.sorted {
-                ($0.hour * 60 + $0.minute) < ($1.hour * 60 + $1.minute)
-            }
-            return sorted
-        }
-
-        DebugConfig.debugPrint("Created \(sortedTimetables.count) timetables")
-
-        #if DEBUG
-            if DebugConfig.isDebugEnabled {
-                for item in sortedTimetables.prefix(5) {
-                    DebugConfig.debugPrint("\(item)")
-                }
-                sortedTimetables.filter {
-                    $0.direction == Self.directionReverse
-                }.prefix(5).forEach {
-                    DebugConfig.debugPrint("\($0)")
-                }
-            }
-        #endif
-
-        return sortedTimetables
-    }
-
-    private func hasAsteriskTimes(_ line: String) -> Bool {
-        let range = NSRange(line.startIndex..., in: line)
-        return Self.timeWithAsteriskPattern.firstMatch(in: line, range: range)
-            != nil
     }
 }
