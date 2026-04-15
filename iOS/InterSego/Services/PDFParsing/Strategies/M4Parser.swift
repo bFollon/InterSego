@@ -39,7 +39,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
-        version: "2.0",
+        version: "2.1",
     )
 
     // MARK: - Directions
@@ -156,16 +156,21 @@ class M4Parser: CapableParser, RouteStopsProvider {
         }
         let variants = getRouteVariants(routeId, dayType: dayType)
         guard !variants.isEmpty else { return nil }
-        return variants.enumerated().map { index, variant in
-            let swapTargetId =
-                variants.count == 2 ? variants[1 - index].id : nil
-            return RouteView(
+        let tabs = [
+            RouteTab(label: "La Lastrilla", viewId: "regular"),
+            RouteTab(label: "El Sotillo", viewId: "reverse"),
+        ]
+        return variants.map { variant in
+            RouteView(
                 id: variant.id,
                 label: variant.label,
                 stops: variant.stops.map { RouteViewStop(stop: $0) },
                 direction: variant.direction,
                 departureLabel: variant.departureLabel,
-                swapAction: swapTargetId.map { SwapAction(targetViewId: $0) },
+                swapAction: nil,
+                tabs: tabs,
+                tabsLabel: "Pasa primero por",
+                mergedDirectionLabel: "La Lastrilla · El Sotillo",
             )
         }
     }
@@ -182,10 +187,18 @@ class M4Parser: CapableParser, RouteStopsProvider {
         else { return [] }
         return [
             RouteSelectorEntry(
-                id: "entry-lv",
-                label: "Lunes a Viernes",
+                id: "entry-lv-lastrilla",
+                label: "L-V La Lastrilla primero",
                 views: weekdayViews,
                 initialViewId: "regular",
+                timetableDayType: .weekday,
+                isActiveToday: isWeekday,
+            ),
+            RouteSelectorEntry(
+                id: "entry-lv-sotillo",
+                label: "L-V El Sotillo primero",
+                views: weekdayViews,
+                initialViewId: "reverse",
                 timetableDayType: .weekday,
                 isActiveToday: isWeekday,
             ),
@@ -272,12 +285,18 @@ class M4Parser: CapableParser, RouteStopsProvider {
         // Asterisk buses go to El Sotillo first, then continue to La Lastrilla.
         // Times are in route stop order (sorted chronologically per trip).
         // 7:40* and 8:20* serve all 16 stops including PARROQ2 (stop 15).
+        // tR() stamps variantLabel="Sotillo" so departure rows show the "Sotillo" badge.
+        func addReverse(to deps: inout [[DepartureTime]], season: SeasonalAvailability, times: [Int]) {
+            for (i, hhmm) in times.enumerated() {
+                deps[i].append(tR(hhmm / 100, hhmm % 100, season))
+            }
+        }
         let wkRevFull: [(SeasonalAvailability, [Int])] = [
             (yr, [  740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806]),
             (yr, [  820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846]),
         ]
         for (season, times) in wkRevFull {
-            add(to: &wkRevDeps, season: season, times: times)
+            addReverse(to: &wkRevDeps, season: season, times: times)
         }
         // 14:40* and 21:40* do NOT serve PARROQ2 (stop 15) — only stops 0–14.
         let wkRevPartial: [(SeasonalAvailability, [Int])] = [
@@ -285,7 +304,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
             (sc, [ 2140,2143,2146,2147,2148,2150,2151,2152,2208,2156,2158,2200,2201,2203,2204]),
         ]
         for (season, times) in wkRevPartial {
-            add(to: &wkRevDeps, season: season, times: times)
+            addReverse(to: &wkRevDeps, season: season, times: times)
             // stop 15 (PARROQ2) receives no departure for these trips
         }
 
@@ -323,6 +342,11 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
     private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
         DepartureTime(hour: h, minute: m, seasonalAvailability: s)
+    }
+
+    /// Reverse-direction departure: carries "Sotillo" label so the UI can badge it.
+    private func tR(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound) -> DepartureTime {
+        DepartureTime(hour: h, minute: m, seasonalAvailability: s, variantLabel: "Sotillo")
     }
 
     private func buildTimetables(

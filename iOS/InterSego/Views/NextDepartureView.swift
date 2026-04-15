@@ -94,6 +94,7 @@ struct NextDepartureView: View {
     let primaryViewId: String?
 
     @State private var direction: String = ""
+    @State private var mergedDirectionLabel: String? = nil
     @State private var routesData: [RouteLoadedData] = []
     @State private var selectedRouteId: String? = nil
     @State private var isLoading = true
@@ -160,7 +161,8 @@ struct NextDepartureView: View {
     }
 
     private var swapDirection: String? {
-        availableDirections.first { $0 != direction }
+        guard mergedDirectionLabel == nil else { return nil }
+        return availableDirections.first { $0 != direction }
     }
 
     /// True when the displayed departure is within ±20 minutes of now.
@@ -197,11 +199,13 @@ struct NextDepartureView: View {
 
     private var currentTripKey: String? {
         guard let next = departureInfo.departure else { return nil }
-        return "\(next.routeId)|\(direction)|\(currentDayType.rawValue)|\(next.departure.displayString)"
+        let tripDir = mergedDirectionLabel != nil ? next.direction : direction
+        return "\(next.routeId)|\(tripDir)|\(currentDayType.rawValue)|\(next.departure.displayString)"
     }
 
     private var matchingBoardings: [BoardingEvent] {
         guard let next = departureInfo.departure else { return [] }
+        let tripDir = mergedDirectionLabel != nil ? next.direction : direction
         let myMinutes = next.departure.hour * 60 + next.departure.minute
         return activeBoardings.filter { boarding in
             let parts = boarding.tripKey.split(separator: "|", maxSplits: 3).map(String.init)
@@ -212,7 +216,7 @@ struct NextDepartureView: View {
                   let bMin = Int(timeParts[1]) else { return false }
             let bMinutes = bHour * 60 + bMin
             return parts[0] == next.routeId
-                && parts[1] == direction
+                && parts[1] == tripDir
                 && parts[2] == currentDayType.rawValue
                 && bMinutes < myMinutes
                 && myMinutes - bMinutes <= 90
@@ -236,13 +240,16 @@ struct NextDepartureView: View {
             let matching = routeData.timetables.filter { t in
                 currentDayTypes.contains(t.dayType)
                     && t.stopId == stop.id
-                    && t.direction == direction
+                    && (mergedDirectionLabel != nil || t.direction == direction)
             }
-            for dep in matching.flatMap({ $0.seasonalDepartures(weekday: currentWeekday) }).sorted() {
-                result.append(TaggedDeparture(
-                    departure: dep, routeId: routeData.route.id,
-                    routeNumber: routeData.route.number,
-                ))
+            for timetable in matching {
+                for dep in timetable.seasonalDepartures(weekday: currentWeekday).sorted() {
+                    result.append(TaggedDeparture(
+                        departure: dep, routeId: routeData.route.id,
+                        routeNumber: routeData.route.number,
+                        direction: timetable.direction ?? "",
+                    ))
+                }
             }
         }
         return result.sorted { $0.departure < $1.departure }
@@ -282,15 +289,16 @@ struct NextDepartureView: View {
 
             var tagged: [TaggedDeparture] = []
             for routeData in activeRoutesData {
-                let deps = routeData.timetables
-                    .filter { futureDayTypes.contains($0.dayType) && $0.stopId == stop.id && $0.direction == direction }
-                    .flatMap { $0.seasonalDepartures(weekday: futureWeekday) }
-                    .sorted()
-                for dep in deps {
-                    tagged.append(TaggedDeparture(
-                        departure: dep, routeId: routeData.route.id,
-                        routeNumber: routeData.route.number,
-                    ))
+                let matching = routeData.timetables
+                    .filter { futureDayTypes.contains($0.dayType) && $0.stopId == stop.id && (mergedDirectionLabel != nil || $0.direction == direction) }
+                for timetable in matching {
+                    for dep in timetable.seasonalDepartures(weekday: futureWeekday).sorted() {
+                        tagged.append(TaggedDeparture(
+                            departure: dep, routeId: routeData.route.id,
+                            routeNumber: routeData.route.number,
+                            direction: timetable.direction ?? "",
+                        ))
+                    }
                 }
             }
             let sorted = tagged.sorted { $0.departure < $1.departure }
@@ -357,7 +365,8 @@ struct NextDepartureView: View {
             .onChange(of: direction) { _, _ in boardingConfirmed = false }
             .onChange(of: currentTripKey) { _, _ in boardingConfirmed = false }
             .onChange(of: selectedRouteId) { _, _ in
-                if !availableDirections.contains(direction),
+                if mergedDirectionLabel == nil,
+                   !availableDirections.contains(direction),
                    let first = availableDirections.first
                 {
                     direction = first
@@ -398,7 +407,7 @@ struct NextDepartureView: View {
         let isToday = info.daysAhead == 0
         return ScrollView {
             VStack(spacing: 0) {
-                StopHeroHeader(stop: stop, direction: direction)
+                StopHeroHeader(stop: stop, direction: mergedDirectionLabel ?? direction)
 
                 if routesData.count > 1 {
                     LineFilterChips(routes: routesData.map(\.route), selectedRouteId: $selectedRouteId)
@@ -450,9 +459,12 @@ struct NextDepartureView: View {
                         let weekday = Calendar.current.component(.weekday, from: futureDate)
                         return weekday == 7 ? .saturday : (weekday == 1 ? .sunday : .weekday)
                     }()
+                    let scheduleDir = mergedDirectionLabel != nil
+                        ? (info.departure?.direction ?? direction)
+                        : direction
                     NavigationLink(value: DayScheduleSelection(
-                        route: activeRoute, stop: stop, direction: direction,
-                        departureLabel: viewDepartureLabel(for: activeRoute.id),
+                        route: activeRoute, stop: stop, direction: scheduleDir,
+                        departureLabel: viewDepartureLabel(for: activeRoute.id, direction: scheduleDir),
                         overrideDayType: scheduleOverrideDayType
                     )) {
                         HStack(spacing: 8) {
@@ -503,14 +515,22 @@ struct NextDepartureView: View {
         }
     }
 
-    private func variantLabel(for tagged: TaggedDeparture) -> String? {
-        routesData.first { $0.route.id == tagged.routeId }?
-            .views.first { $0.direction == direction }?.departureLabel
+    /// The direction string to use for reminders and boarding for a specific departure.
+    /// In merged mode, uses the departure's own direction; otherwise uses the screen direction.
+    private func effectiveDirection(for tagged: TaggedDeparture) -> String {
+        mergedDirectionLabel != nil ? tagged.direction : direction
     }
 
-    private func viewDepartureLabel(for routeId: String) -> String? {
-        routesData.first { $0.route.id == routeId }?
-            .views.first { $0.direction == direction }?.departureLabel
+    private func variantLabel(for tagged: TaggedDeparture) -> String? {
+        let dir = effectiveDirection(for: tagged)
+        return routesData.first { $0.route.id == tagged.routeId }?
+            .views.first { $0.direction == dir }?.departureLabel
+    }
+
+    private func viewDepartureLabel(for routeId: String, direction dir: String? = nil) -> String? {
+        let useDir = dir ?? direction
+        return routesData.first { $0.route.id == routeId }?
+            .views.first { $0.direction == useDir }?.departureLabel
     }
 
     private func loadTimetables() async {
@@ -528,7 +548,12 @@ struct NextDepartureView: View {
         {
             let targetView = primaryViewId.flatMap { vid in primaryRoute.views.first { $0.id == vid } }
                 ?? primaryRoute.views.first
-            direction = targetView?.direction ?? departuresData.routes.first?.views.first?.direction ?? ""
+            if let mLabel = targetView?.mergedDirectionLabel {
+                mergedDirectionLabel = mLabel
+                direction = mLabel
+            } else {
+                direction = targetView?.direction ?? departuresData.routes.first?.views.first?.direction ?? ""
+            }
             selectedRouteId = primaryId
         } else {
             direction = departuresData.routes.first?.views.first?.direction ?? ""
@@ -548,8 +573,9 @@ struct NextDepartureView: View {
     }
 
     private func bellState(for tagged: TaggedDeparture) -> BellState {
+        let dir = effectiveDirection(for: tagged)
         let key = BusReminder.matchKey(
-            routeId: tagged.routeId, stopId: stop.id, direction: direction,
+            routeId: tagged.routeId, stopId: stop.id, direction: dir,
             hour: tagged.departure.hour, minute: tagged.departure.minute
         )
         if dailyReminderKeys.contains(key) { return .daily }
@@ -560,18 +586,19 @@ struct NextDepartureView: View {
     private func handleBellTap(for tagged: TaggedDeparture) {
         reminderErrorMessage = nil
         let state = bellState(for: tagged)
+        let dir = effectiveDirection(for: tagged)
         guard let route = routesData.first(where: { $0.route.id == tagged.routeId })?.route else { return }
         Task {
             if state != .off {
                 await ReminderService.shared.cancelReminder(
-                    routeId: tagged.routeId, stopId: stop.id, direction: direction,
+                    routeId: tagged.routeId, stopId: stop.id, direction: dir,
                     hour: tagged.departure.hour, minute: tagged.departure.minute
                 )
             } else {
                 do {
                     try await ReminderService.shared.scheduleReminder(
                         departure: tagged.departure, stop: stop, route: route,
-                        direction: direction, dayType: currentDayType
+                        direction: dir, dayType: currentDayType
                     )
                     AnalyticsService.shared.track("reminder_set", with: ["type": "one_off", "route": tagged.routeId])
                 } catch {
@@ -586,24 +613,25 @@ struct NextDepartureView: View {
     private func handleBellLongPress(for tagged: TaggedDeparture) {
         reminderErrorMessage = nil
         let state = bellState(for: tagged)
+        let dir = effectiveDirection(for: tagged)
         guard let route = routesData.first(where: { $0.route.id == tagged.routeId })?.route else { return }
         Task {
             if state == .daily {
                 await ReminderService.shared.cancelReminder(
-                    routeId: tagged.routeId, stopId: stop.id, direction: direction,
+                    routeId: tagged.routeId, stopId: stop.id, direction: dir,
                     hour: tagged.departure.hour, minute: tagged.departure.minute
                 )
             } else {
                 if state == .oneOff {
                     await ReminderService.shared.cancelReminder(
-                        routeId: tagged.routeId, stopId: stop.id, direction: direction,
+                        routeId: tagged.routeId, stopId: stop.id, direction: dir,
                         hour: tagged.departure.hour, minute: tagged.departure.minute
                     )
                 }
                 do {
                     try await ReminderService.shared.scheduleReminder(
                         departure: tagged.departure, stop: stop, route: route,
-                        direction: direction, isDaily: true, dayType: currentDayType
+                        direction: dir, isDaily: true, dayType: currentDayType
                     )
                     AnalyticsService.shared.track("reminder_set", with: ["type": "daily", "route": tagged.routeId])
                 } catch {
@@ -622,7 +650,10 @@ struct NextDepartureView: View {
     }
 
     private func handleBoardingTap() {
-        Task { await submitBoarding(direction: direction) }
+        let boardingDir = mergedDirectionLabel != nil
+            ? (departureInfo.departure?.direction ?? direction)
+            : direction
+        Task { await submitBoarding(direction: boardingDir) }
     }
 
     private func nextDeparture(forDirection dir: String) -> DepartureTime? {

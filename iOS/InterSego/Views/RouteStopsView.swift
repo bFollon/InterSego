@@ -81,25 +81,33 @@ struct RouteStopsView: View {
 
     private func mainContent(currentView: RouteView) -> some View {
         VStack(spacing: 0) {
-            // Tab chips (if available)
+            // Tab chips (if available), with optional heading label above
             if let tabs = currentView.tabs, !tabs.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(tabs, id: \.viewId) { tab in
-                            // Selected if we're on this tab's view, or we're on its swapped variant
-                            // (e.g., currentViewId is "weekday-unified-reversed" and tab.viewId is "weekday-unified")
-                            let tabView = views.first { $0.id == tab.viewId }
-                            let isSelected = currentViewId == tab.viewId
-                                || tabView?.swapAction?.targetViewId == currentViewId
-                            TabChip(label: tab.label, isSelected: isSelected) {
-                                if !isSelected {
-                                    currentViewId = tab.viewId
+                VStack(alignment: .leading, spacing: 0) {
+                    if let heading = currentView.tabsLabel {
+                        Text(heading)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                            .padding(.bottom, 2)
+                    }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(tabs, id: \.viewId) { tab in
+                                let tabView = views.first { $0.id == tab.viewId }
+                                let isSelected = currentViewId == tab.viewId
+                                    || tabView?.swapAction?.targetViewId == currentViewId
+                                TabChip(label: tab.label, isSelected: isSelected) {
+                                    if !isSelected {
+                                        currentViewId = tab.viewId
+                                    }
                                 }
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
                 }
             }
 

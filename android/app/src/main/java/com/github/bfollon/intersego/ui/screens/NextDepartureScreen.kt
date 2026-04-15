@@ -200,6 +200,8 @@ fun NextDepartureScreen(
 
     // Unified direction string across all loaded routes
     var currentDirection by remember { mutableStateOf<String?>(null) }
+    // When non-null, route is in merged-directions mode (e.g. M4 circular)
+    var mergedDirectionLabel by remember { mutableStateOf<String?>(null) }
 
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
     var dailyReminderKeys by remember { mutableStateOf(reminderService?.dailyMatchKeys() ?: emptySet()) }
@@ -249,12 +251,19 @@ fun NextDepartureScreen(
 
             // Init direction from primaryViewId if available, otherwise first available
             if (currentDirection == null) {
-                currentDirection = if (primaryRouteId != null && primaryViewId != null) {
+                val primaryView = if (primaryRouteId != null && primaryViewId != null) {
                     departuresData.routes.find { it.route.id == primaryRouteId }
-                        ?.views?.find { it.id == primaryViewId }?.direction
+                        ?.views?.find { it.id == primaryViewId }
                 } else null
-                    ?: departuresData.routes.firstOrNull()?.views?.firstOrNull()?.direction
-                    ?: ""
+                val mLabel = primaryView?.mergedDirectionLabel
+                if (mLabel != null) {
+                    mergedDirectionLabel = mLabel
+                    currentDirection = mLabel
+                } else {
+                    currentDirection = primaryView?.direction
+                        ?: departuresData.routes.firstOrNull()?.views?.firstOrNull()?.direction
+                        ?: ""
+                }
             }
         } catch (e: Exception) {
             errorMessage = "Error al cargar horarios: ${e.message}"
@@ -295,16 +304,16 @@ fun NextDepartureScreen(
     val selectedVariantLabel = activeView?.departureLabel
 
     // Merged tagged departures for today
-    val todayTaggedDepartures = remember(loadedRoutes, selectedRouteId, currentDayTypes, direction, stop.id) {
+    val todayTaggedDepartures = remember(loadedRoutes, selectedRouteId, currentDayTypes, direction, mergedDirectionLabel, stop.id) {
         val routesToUse = if (selectedRouteId != null)
             loadedRoutes.filter { it.route.id == selectedRouteId }
         else loadedRoutes
         routesToUse.flatMap { routeData ->
             routeData.timetables
-                .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == direction }
+                .filter { it.dayType in currentDayTypes && it.stopId == stop.id && (mergedDirectionLabel != null || it.direction == direction) }
                 .flatMap { timetable ->
                     timetable.seasonalDepartures(weekday = currentDayOfWeek)
-                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number, timetable.direction ?: "") }
                 }
         }.sortedBy { it.departure.toMinutesSinceMidnight() }
     }
@@ -314,7 +323,7 @@ fun NextDepartureScreen(
     // Future tagged departures (up to 7 days ahead)
     data class NextDayTaggedDepartures(val departures: List<TaggedDeparture>, val daysAhead: Int)
 
-    val nextDayTaggedDepartures = remember(loadedRoutes, selectedRouteId, direction, stop.id) {
+    val nextDayTaggedDepartures = remember(loadedRoutes, selectedRouteId, direction, mergedDirectionLabel, stop.id) {
         var result: NextDayTaggedDepartures? = null
         for (daysAhead in 1..7) {
             val calendar = Calendar.getInstance()
@@ -325,10 +334,10 @@ fun NextDepartureScreen(
             else loadedRoutes
             val departures = routesToUse.flatMap { routeData ->
                 routeData.timetables
-                    .filter { it.dayType in futureDayTypes && it.stopId == stop.id && it.direction == direction }
+                    .filter { it.dayType in futureDayTypes && it.stopId == stop.id && (mergedDirectionLabel != null || it.direction == direction) }
                     .flatMap { timetable ->
                         timetable.seasonalDepartures(weekday = calendar.get(Calendar.DAY_OF_WEEK))
-                            .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                            .map { TaggedDeparture(it, routeData.route.id, routeData.route.number, timetable.direction ?: "") }
                     }
             }.sortedBy { it.departure.toMinutesSinceMidnight() }
             if (departures.isNotEmpty()) {
@@ -408,11 +417,15 @@ fun NextDepartureScreen(
     }
 
     // Boarding derived state
-    val tripKey = remember(nextTaggedDeparture, direction, currentDayType) {
-        nextTaggedDeparture?.let { BoardingRequest.makeTripKey(it.routeId, direction, currentDayType, it.departure) }
+    val tripKey = remember(nextTaggedDeparture, direction, mergedDirectionLabel, currentDayType) {
+        nextTaggedDeparture?.let {
+            val tripDir = if (mergedDirectionLabel != null) it.direction else direction
+            BoardingRequest.makeTripKey(it.routeId, tripDir, currentDayType, it.departure)
+        }
     }
-    val matchingBoardings = remember(activeBoardings, nextTaggedDeparture, direction, currentDayType) {
+    val matchingBoardings = remember(activeBoardings, nextTaggedDeparture, direction, mergedDirectionLabel, currentDayType) {
         val td = nextTaggedDeparture ?: return@remember emptyList()
+        val tripDir = if (mergedDirectionLabel != null) td.direction else direction
         val myMinutes = td.departure.hour * 60 + td.departure.minute
         activeBoardings.filter { boarding ->
             val parts = boarding.tripKey.split("|", limit = 4)
@@ -423,7 +436,7 @@ fun NextDepartureScreen(
             val bMin = bTimeParts[1].toIntOrNull() ?: return@filter false
             val bMinutes = bHour * 60 + bMin
             parts[0] == td.routeId
-                && parts[1] == direction
+                && parts[1] == tripDir
                 && parts[2] == currentDayType.name
                 && bMinutes < myMinutes
                 && myMinutes - bMinutes <= 90
@@ -482,7 +495,7 @@ fun NextDepartureScreen(
                     }
                 },
                 actions = {
-                    if (swapDirection != null) {
+                    if (swapDirection != null && mergedDirectionLabel == null) {
                         IconButton(onClick = { currentDirection = swapDirection }) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
@@ -559,7 +572,7 @@ fun NextDepartureScreen(
                     item {
                         StopHeroHeader(
                             stop = stop,
-                            direction = direction,
+                            direction = mergedDirectionLabel ?: direction,
                             isCircular = activeSingleRoute?.isCircular ?: false,
                             onNavigateClick = { openMapsForStop(context, stop) }
                         )
@@ -596,8 +609,9 @@ fun NextDepartureScreen(
                     item {
                         val bellEnabled = daysAhead == 0 && reminderService != null
                         val td = nextTaggedDeparture
+                        val nextEffDir = if (mergedDirectionLabel != null) td.direction else direction
                         val matchKey = BusReminder.matchKey(
-                            td.routeId, stop.id, direction, td.departure.hour, td.departure.minute
+                            td.routeId, stop.id, nextEffDir, td.departure.hour, td.departure.minute
                         )
                         NextDepartureWithProgress(
                             departure = td.departure,
@@ -612,9 +626,9 @@ fun NextDepartureScreen(
                                     reminderError = null
                                     val route = allRoutes.find { it.id == td.routeId }
                                     if (reminderKeys.contains(matchKey)) {
-                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, nextEffDir, td.departure.hour, td.departure.minute)
                                     } else if (route != null) {
-                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, dayType = currentDayType)
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, nextEffDir, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                         else AnalyticsService.track("reminder_set", mapOf("type" to "one_off", "route" to td.routeId))
                                     }
@@ -627,12 +641,12 @@ fun NextDepartureScreen(
                                     reminderError = null
                                     val route = allRoutes.find { it.id == td.routeId }
                                     if (dailyReminderKeys.contains(matchKey)) {
-                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, nextEffDir, td.departure.hour, td.departure.minute)
                                     } else if (route != null) {
                                         if (reminderKeys.contains(matchKey)) {
-                                            reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                            reminderService!!.cancelReminder(td.routeId, stop.id, nextEffDir, td.departure.hour, td.departure.minute)
                                         }
-                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, isDaily = true, dayType = currentDayType)
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, nextEffDir, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                         else AnalyticsService.track("reminder_set", mapOf("type" to "daily", "route" to td.routeId))
                                     }
@@ -724,7 +738,7 @@ fun NextDepartureScreen(
                                             val request = BoardingRequest(
                                                 stopId = stop.id,
                                                 routeId = dep.routeId,
-                                                direction = direction,
+                                                direction = if (mergedDirectionLabel != null) dep.direction else direction,
                                                 tripKey = key,
                                                 boardedAt = now.toString(),
                                                 scheduledDepartureTime = scheduled.toString()
@@ -765,7 +779,8 @@ fun NextDepartureScreen(
                             } else null
                             OutlinedButton(
                                 onClick = {
-                                    onDaySchedule(activeSingleRoute.id, direction, selectedVariantLabel, scheduleOverrideDayType)
+                                    val scheduleDir = if (mergedDirectionLabel != null) (nextTaggedDeparture?.direction ?: direction) else direction
+                                    onDaySchedule(activeSingleRoute.id, scheduleDir, selectedVariantLabel, scheduleOverrideDayType)
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -807,19 +822,22 @@ fun NextDepartureScreen(
                                 selectedVariantLabel = selectedVariantLabel,
                                 showRouteBadge = showMultiRoute && selectedRouteId == null,
                                 isBellSetFor = if (timelineBellEnabled) { td ->
-                                    reminderKeys.contains(BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute))
+                                    val effDir = if (mergedDirectionLabel != null) td.direction else direction
+                                    reminderKeys.contains(BusReminder.matchKey(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute))
                                 } else null,
                                 isDailyBellFor = if (timelineBellEnabled) { td ->
-                                    dailyReminderKeys.contains(BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute))
+                                    val effDir = if (mergedDirectionLabel != null) td.direction else direction
+                                    dailyReminderKeys.contains(BusReminder.matchKey(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute))
                                 } else null,
                                 onBellTap = if (timelineBellEnabled) { td ->
                                     reminderError = null
                                     val route = allRoutes.find { it.id == td.routeId }
-                                    val key = BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                    val effDir = if (mergedDirectionLabel != null) td.direction else direction
+                                    val key = BusReminder.matchKey(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute)
                                     if (reminderKeys.contains(key)) {
-                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute)
                                     } else if (route != null) {
-                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, dayType = currentDayType)
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, effDir, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()
@@ -828,12 +846,13 @@ fun NextDepartureScreen(
                                 onBellLongPress = if (timelineBellEnabled) { td ->
                                     reminderError = null
                                     val route = allRoutes.find { it.id == td.routeId }
-                                    val key = BusReminder.matchKey(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                    val effDir = if (mergedDirectionLabel != null) td.direction else direction
+                                    val key = BusReminder.matchKey(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute)
                                     if (dailyReminderKeys.contains(key)) {
-                                        reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
+                                        reminderService!!.cancelReminder(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute)
                                     } else if (route != null) {
-                                        if (reminderKeys.contains(key)) reminderService!!.cancelReminder(td.routeId, stop.id, direction, td.departure.hour, td.departure.minute)
-                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, direction, isDaily = true, dayType = currentDayType)
+                                        if (reminderKeys.contains(key)) reminderService!!.cancelReminder(td.routeId, stop.id, effDir, td.departure.hour, td.departure.minute)
+                                        val result = reminderService!!.scheduleReminder(td.departure, stop, route, effDir, isDaily = true, dayType = currentDayType)
                                         if (result is ReminderService.ScheduleResult.Failure) reminderError = result.message
                                     }
                                     reminderKeys = reminderService!!.activeMatchKeys()

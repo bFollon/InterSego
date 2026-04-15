@@ -24,6 +24,7 @@ import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
 import com.github.bfollon.intersego.data.RouteSelectorEntry
+import com.github.bfollon.intersego.data.RouteTab
 import com.github.bfollon.intersego.data.RouteVariant
 import com.github.bfollon.intersego.data.RouteView
 import com.github.bfollon.intersego.data.RouteViewStop
@@ -59,7 +60,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
         mode = ParserMode.PRODUCTION,
-        version = "2.0"
+        version = "2.1"
     )
 
     companion object {
@@ -150,13 +151,19 @@ class M4Parser : CapableParser, RouteStopsProvider {
         if (!routeId.equals("M4", ignoreCase = true)) return null
         val variants = getRouteVariants(routeId, dayType)
         if (variants.isEmpty()) return null
-        return variants.mapIndexed { index, variant ->
-            val swapTargetId = if (variants.size == 2) variants[1 - index].id else null
+        val tabs = listOf(
+            RouteTab("La Lastrilla", "regular"),
+            RouteTab("El Sotillo", "reverse")
+        )
+        return variants.map { variant ->
             RouteView(
                 id = variant.id, label = variant.label,
                 stops = variant.stops.map { RouteViewStop(it) },
                 direction = variant.direction, departureLabel = variant.departureLabel,
-                swapAction = swapTargetId?.let { SwapAction(it) }
+                swapAction = null,
+                tabs = tabs,
+                tabsLabel = "Pasa primero por",
+                mergedDirectionLabel = "La Lastrilla · El Sotillo"
             )
         }
     }
@@ -170,7 +177,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
         val weekdayViews = getRouteViews(routeId, DayType.WEEKDAY) ?: return emptyList()
         val saturdayViews = getRouteViews(routeId, DayType.SATURDAY) ?: return emptyList()
         return listOf(
-            RouteSelectorEntry("entry-lv", "Lunes a Viernes", weekdayViews, "regular", DayType.WEEKDAY, isWeekday),
+            RouteSelectorEntry("entry-lv-lastrilla", "L-V La Lastrilla primero", weekdayViews, "regular", DayType.WEEKDAY, isWeekday),
+            RouteSelectorEntry("entry-lv-sotillo", "L-V El Sotillo primero", weekdayViews, "reverse", DayType.WEEKDAY, isWeekday),
             RouteSelectorEntry("entry-sabado", "Sábados", saturdayViews, "regular", DayType.SATURDAY, isSaturday)
         )
     }
@@ -237,18 +245,19 @@ class M4Parser : CapableParser, RouteStopsProvider {
         // Asterisk buses go to El Sotillo first, then continue to La Lastrilla.
         // Times are in route stop order (sorted chronologically per trip).
         // 7:40* and 8:20* serve all 16 stops including PARROQ2 (stop 15).
+        // tR() stamps variantLabel="Sotillo" so departure rows show the "Sotillo" badge.
         listOf(
             yr to intArrayOf( 740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806),
             yr to intArrayOf( 820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846),
         ).forEach { (season, times) ->
-            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
+            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(tR(hhmm / 100, hhmm % 100, season)) }
         }
         // 14:40* and 21:40* do NOT serve PARROQ2 (stop 15) — only stops 0–14.
         listOf(
             yr to intArrayOf(1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504),
             sc to intArrayOf(2140,2143,2146,2147,2148,2150,2151,2152,2208,2156,2158,2200,2201,2203,2204),
         ).forEach { (season, times) ->
-            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
+            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(tR(hhmm / 100, hhmm % 100, season)) }
             // stop 15 (PARROQ2) receives no departure for these trips
         }
 
@@ -270,6 +279,10 @@ class M4Parser : CapableParser, RouteStopsProvider {
 
     private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
         DepartureTime(h, m, seasonalAvailability = s)
+
+    /** Reverse-direction departure: carries "Sotillo" label so the UI can badge it. */
+    private fun tR(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
+        DepartureTime(h, m, seasonalAvailability = s, variantLabel = "Sotillo")
 
     private fun buildTimetables(
         stops: List<BusStop>,

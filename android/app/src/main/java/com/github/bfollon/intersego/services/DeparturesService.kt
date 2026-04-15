@@ -33,7 +33,8 @@ import java.util.Calendar
 data class TaggedDeparture(
     val departure: DepartureTime,
     val routeId: String,
-    val routeNumber: String
+    val routeNumber: String,
+    val direction: String = ""
 )
 
 /**
@@ -141,7 +142,7 @@ class DeparturesService(private val context: Context) {
                 .filter { it.stopId == stop.id && it.dayType in currentDayTypes }
                 .flatMap { timetable ->
                     timetable.seasonalDepartures(weekday = currentDayOfWeek)
-                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number, timetable.direction ?: "") }
                 }
         }.sortedBy { it.departure.toMinutesSinceMidnight() }
     }
@@ -166,7 +167,7 @@ class DeparturesService(private val context: Context) {
                 val matching = TimetableQueryUtils.filterTimetables(routeData.timetables, calendar, stopId = stop.id)
                 matching.flatMap { timetable ->
                     timetable.seasonalDepartures(weekday = futureDayOfWeek)
-                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number) }
+                        .map { TaggedDeparture(it, routeData.route.id, routeData.route.number, timetable.direction ?: "") }
                 }
             }.sortedBy { it.departure.toMinutesSinceMidnight() }
 

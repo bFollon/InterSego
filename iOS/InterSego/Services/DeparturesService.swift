@@ -27,6 +27,7 @@ struct TaggedDeparture: Identifiable {
     let departure: DepartureTime
     let routeId: String
     let routeNumber: String
+    let direction: String
 }
 
 /// Loaded data for a single route: route metadata, route views, and timetables.
@@ -129,11 +130,14 @@ actor DeparturesService {
         var result: [TaggedDeparture] = []
         for routeData in loadedRoutes {
             let matching = routeData.timetables.filter { dayTypes.contains($0.dayType) && $0.stopId == stop.id }
-            for dep in matching.flatMap({ $0.seasonalDepartures(weekday: weekday) }).sorted() {
-                result.append(TaggedDeparture(
-                    departure: dep, routeId: routeData.route.id,
-                    routeNumber: routeData.route.number,
-                ))
+            for timetable in matching {
+                for dep in timetable.seasonalDepartures(weekday: weekday).sorted() {
+                    result.append(TaggedDeparture(
+                        departure: dep, routeId: routeData.route.id,
+                        routeNumber: routeData.route.number,
+                        direction: timetable.direction ?? "",
+                    ))
+                }
             }
         }
         return result.sorted { $0.departure < $1.departure }
@@ -154,12 +158,14 @@ actor DeparturesService {
             var tagged: [TaggedDeparture] = []
             for routeData in loadedRoutes {
                 let matching = TimetableQuery.filterTimetables(routeData.timetables, date: futureDate, stopId: stop.id)
-                let deps = matching.flatMap { $0.seasonalDepartures(weekday: futureWeekday) }.sorted()
-                for dep in deps {
-                    tagged.append(TaggedDeparture(
-                        departure: dep, routeId: routeData.route.id,
-                        routeNumber: routeData.route.number,
-                    ))
+                for timetable in matching {
+                    for dep in timetable.seasonalDepartures(weekday: futureWeekday).sorted() {
+                        tagged.append(TaggedDeparture(
+                            departure: dep, routeId: routeData.route.id,
+                            routeNumber: routeData.route.number,
+                            direction: timetable.direction ?? "",
+                        ))
+                    }
                 }
             }
             let sorted = tagged.sorted { $0.departure < $1.departure }

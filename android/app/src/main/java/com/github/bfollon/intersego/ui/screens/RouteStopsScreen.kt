@@ -139,26 +139,38 @@ fun RouteStopsScreen(
                 .padding(paddingValues)
         ) {
             if (!noServiceToday) {
-                // Tab/chip row
+                // Tab/chip row (with optional heading label above the chips)
                 currentView?.tabs?.let { tabs ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        tabs.forEach { tab ->
-                            val isSelected = currentViewId == tab.viewId ||
-                                    currentView.swapAction?.targetViewId == tab.viewId
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    if (!isSelected) {
-                                        currentViewId = tab.viewId
-                                    }
-                                },
-                                label = { Text(tab.label) }
+                        currentView.tabsLabel?.let { heading ->
+                            Text(
+                                text = heading,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp)
                             )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            tabs.forEach { tab ->
+                                val isSelected = currentViewId == tab.viewId ||
+                                        currentView.swapAction?.targetViewId == tab.viewId
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = {
+                                        if (!isSelected) {
+                                            currentViewId = tab.viewId
+                                        }
+                                    },
+                                    label = { Text(tab.label) }
+                                )
+                            }
                         }
                     }
                 }

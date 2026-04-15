@@ -55,5 +55,7 @@ data class RouteView(
     val departureLabel: String? = null,
     val swapAction: SwapAction? = null,
     val tabs: List<RouteTab>? = null,
-    val extendedSectionLabel: String? = null
+    val tabsLabel: String? = null,
+    val extendedSectionLabel: String? = null,
+    val mergedDirectionLabel: String? = null
 )
