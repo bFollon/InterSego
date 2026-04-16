@@ -119,6 +119,36 @@ actor DeparturesService {
         )
     }
 
+    /// Returns (routeId, viewId) if there is exactly one direction option for this stop,
+    /// otherwise nil (the direction picker should be shown to let the user choose).
+    func resolveDirectionIfUnambiguous(
+        stop: BusStop,
+        allRoutes: [BusRoute],
+        primaryRouteId: String?
+    ) async -> (String, String)? {
+        let data = await loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId)
+        var count = 0
+        var resolved: (String, String)? = nil
+
+        for routeData in data.routes {
+            if let mergedView = routeData.views.first(where: { $0.mergedDirectionLabel != nil }) {
+                count += 1
+                resolved = (routeData.route.id, mergedView.id)
+                continue
+            }
+            var seen = Set<String>()
+            for t in routeData.timetables where t.stopId == stop.id {
+                guard let dir = t.direction, seen.insert(dir).inserted else { continue }
+                if let view = routeData.views.first(where: { $0.direction == dir }) {
+                    count += 1
+                    resolved = (routeData.route.id, view.id)
+                }
+            }
+        }
+
+        return count == 1 ? resolved : nil
+    }
+
     /// Build departures for all available directions on today.
     /// Returns a flat list organized by direction.
     private func buildTodayDepartures(

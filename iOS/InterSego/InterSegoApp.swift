@@ -94,11 +94,12 @@ struct ContentView: View {
                                         let selection = try await ClosestStopService.shared.findClosest()
                                         AnalyticsService.shared.track("closest_stop_used", with: ["stop": selection.stop.id])
                                         if GuidedModePrefs.isGuidedModeEnabled() {
-                                            navigationPath.append(DirectionPickerSelection(
-                                                stop: selection.stop,
-                                                primaryRouteId: nil,
-                                                primaryViewId: nil
-                                            ))
+                                            let allRoutes = BusRouteRegistry.knownRoutes()
+                                            if let resolved = await DeparturesService.shared.resolveDirectionIfUnambiguous(stop: selection.stop, allRoutes: allRoutes, primaryRouteId: nil) {
+                                                navigationPath.append(StopSelection(stop: selection.stop, primaryRouteId: resolved.0, primaryViewId: resolved.1))
+                                            } else {
+                                                navigationPath.append(DirectionPickerSelection(stop: selection.stop, primaryRouteId: nil, primaryViewId: nil))
+                                            }
                                         } else {
                                             navigationPath.append(selection)
                                         }
@@ -351,17 +352,16 @@ struct ContentView: View {
                         } : nil,
                         onStopSelected: { stop, viewId in
                             if GuidedModePrefs.isGuidedModeEnabled() {
-                                navigationPath.append(DirectionPickerSelection(
-                                    stop: stop,
-                                    primaryRouteId: route.id,
-                                    primaryViewId: viewId
-                                ))
+                                Task {
+                                    let allRoutes = BusRouteRegistry.knownRoutes()
+                                    if let resolved = await DeparturesService.shared.resolveDirectionIfUnambiguous(stop: stop, allRoutes: allRoutes, primaryRouteId: route.id) {
+                                        navigationPath.append(StopSelection(stop: stop, primaryRouteId: resolved.0, primaryViewId: resolved.1))
+                                    } else {
+                                        navigationPath.append(DirectionPickerSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
+                                    }
+                                }
                             } else {
-                                navigationPath.append(StopSelection(
-                                    stop: stop,
-                                    primaryRouteId: route.id,
-                                    primaryViewId: viewId,
-                                ))
+                                navigationPath.append(StopSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
                             }
                         },
                         onMapSelected: { viewId in
@@ -401,17 +401,16 @@ struct ContentView: View {
                 initialViewId: initialViewId,
                 onStopSelected: { stop, viewId in
                     if GuidedModePrefs.isGuidedModeEnabled() {
-                        navigationPath.append(DirectionPickerSelection(
-                            stop: stop,
-                            primaryRouteId: route.id,
-                            primaryViewId: viewId
-                        ))
+                        Task {
+                            let allRoutes = BusRouteRegistry.knownRoutes()
+                            if let resolved = await DeparturesService.shared.resolveDirectionIfUnambiguous(stop: stop, allRoutes: allRoutes, primaryRouteId: route.id) {
+                                navigationPath.append(StopSelection(stop: stop, primaryRouteId: resolved.0, primaryViewId: resolved.1))
+                            } else {
+                                navigationPath.append(DirectionPickerSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
+                            }
+                        }
                     } else {
-                        navigationPath.append(StopSelection(
-                            stop: stop,
-                            primaryRouteId: route.id,
-                            primaryViewId: viewId,
-                        ))
+                        navigationPath.append(StopSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
                     }
                 },
             )
@@ -448,17 +447,16 @@ struct ContentView: View {
                             let entry = selectedEntry
                             if entry == nil || entry!.isActiveToday {
                                 if GuidedModePrefs.isGuidedModeEnabled() {
-                                    navigationPath.append(DirectionPickerSelection(
-                                        stop: stop,
-                                        primaryRouteId: route.id,
-                                        primaryViewId: viewId
-                                    ))
+                                    Task {
+                                        let allRoutes = BusRouteRegistry.knownRoutes()
+                                        if let resolved = await DeparturesService.shared.resolveDirectionIfUnambiguous(stop: stop, allRoutes: allRoutes, primaryRouteId: route.id) {
+                                            navigationPath.append(StopSelection(stop: stop, primaryRouteId: resolved.0, primaryViewId: resolved.1))
+                                        } else {
+                                            navigationPath.append(DirectionPickerSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
+                                        }
+                                    }
                                 } else {
-                                    navigationPath.append(StopSelection(
-                                        stop: stop,
-                                        primaryRouteId: route.id,
-                                        primaryViewId: viewId,
-                                    ))
+                                    navigationPath.append(StopSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
                                 }
                             } else {
                                 let direction = views.first { $0.id == viewId }?.direction ?? ""
@@ -526,17 +524,16 @@ struct ContentView: View {
                     let entry = selectedEntry
                     if entry == nil || entry!.isActiveToday {
                         if GuidedModePrefs.isGuidedModeEnabled() {
-                            navigationPath.append(DirectionPickerSelection(
-                                stop: stop,
-                                primaryRouteId: route.id,
-                                primaryViewId: viewId
-                            ))
+                            Task {
+                                let allRoutes = BusRouteRegistry.knownRoutes()
+                                if let resolved = await DeparturesService.shared.resolveDirectionIfUnambiguous(stop: stop, allRoutes: allRoutes, primaryRouteId: route.id) {
+                                    navigationPath.append(StopSelection(stop: stop, primaryRouteId: resolved.0, primaryViewId: resolved.1))
+                                } else {
+                                    navigationPath.append(DirectionPickerSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
+                                }
+                            }
                         } else {
-                            navigationPath.append(StopSelection(
-                                stop: stop,
-                                primaryRouteId: route.id,
-                                primaryViewId: viewId,
-                            ))
+                            navigationPath.append(StopSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId))
                         }
                     } else {
                         let direction = views.first { $0.id == viewId }?.direction ?? ""

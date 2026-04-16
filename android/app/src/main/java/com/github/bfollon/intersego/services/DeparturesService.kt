@@ -128,6 +128,46 @@ class DeparturesService(private val context: Context) {
     }
 
     /**
+     * Returns (routeId, viewId) if there is exactly one direction option for this stop,
+     * otherwise null (the direction picker should be shown to let the user choose).
+     */
+    suspend fun resolveDirectionIfUnambiguous(
+        stop: BusStop,
+        allRoutes: List<BusRoute>,
+        primaryRouteId: String?
+    ): Pair<String, String>? {
+        return try {
+            val data = loadDepartures(stop, allRoutes, primaryRouteId)
+            var count = 0
+            var resolved: Pair<String, String>? = null
+
+            for (routeData in data.routes) {
+                val mergedView = routeData.views.firstOrNull { it.mergedDirectionLabel != null }
+                if (mergedView != null) {
+                    count++
+                    resolved = Pair(routeData.route.id, mergedView.id)
+                    continue
+                }
+                val directions = routeData.timetables
+                    .filter { it.stopId == stop.id }
+                    .mapNotNull { it.direction }
+                    .distinct()
+                for (direction in directions) {
+                    val view = routeData.views.find { it.direction == direction }
+                    if (view != null) {
+                        count++
+                        resolved = Pair(routeData.route.id, view.id)
+                    }
+                }
+            }
+
+            if (count == 1) resolved else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Build departures for all available directions on today.
      * Returns a flat list organized by direction.
      */

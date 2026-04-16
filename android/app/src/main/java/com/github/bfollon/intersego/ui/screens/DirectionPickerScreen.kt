@@ -126,14 +126,6 @@ fun DirectionPickerScreen(
 
             directionGroups = groups
 
-            // Auto-advance if only one direction
-            if (groups.size == 1 && groups[0].directions.size == 1) {
-                val option = groups[0].directions[0]
-                GuidedModePrefs.saveLastViewId(stopId, option.routeId, option.viewId)
-                onDirectionSelected(option.routeId, option.viewId)
-                return@LaunchedEffect
-            }
-
             if (groups.isEmpty()) {
                 error = "No hay salidas disponibles para esta parada."
             }

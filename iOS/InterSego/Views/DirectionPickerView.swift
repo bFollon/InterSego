@@ -199,14 +199,6 @@ struct DirectionPickerView: View {
 
             directionGroups = groups
 
-            // Auto-advance if only one direction
-            if groups.count == 1, groups[0].directions.count == 1 {
-                let option = groups[0].directions[0]
-                GuidedModePrefs.saveLastViewId(option.viewId, stopId: stop.id, routeId: option.routeId)
-                onSelected(option.routeId, option.viewId)
-                return
-            }
-
             if groups.isEmpty {
                 error = "No hay salidas disponibles para esta parada."
             }

@@ -128,6 +128,7 @@ import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
 import com.github.bfollon.intersego.ui.screens.MonitoringConsentScreen
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 import okhttp3.OkHttpClient
@@ -572,7 +573,15 @@ fun AppNavigation() {
                     val result = closestStopFinder.findClosest(location, routes)
                     AnalyticsService.track("closest_stop_used", mapOf("stop" to result.stopId))
                     val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
-                        "direction_picker/${result.stopId}/none/none"
+                        val stop = com.github.bfollon.intersego.data.BusStopRegistry.findById(result.stopId)
+                        val resolved = if (stop != null) {
+                            DeparturesService(activity).resolveDirectionIfUnambiguous(stop, routes, null)
+                        } else null
+                        if (resolved != null) {
+                            "next_departure/${result.stopId}/${resolved.first}/${resolved.second}"
+                        } else {
+                            "direction_picker/${result.stopId}/none/none"
+                        }
                     } else {
                         "next_departure/${result.stopId}/none/none"
                     }
@@ -933,12 +942,18 @@ fun AppNavigation() {
                 }} else null,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
-                        "direction_picker/${stop.id}/${route.id}/$viewId"
+                    if (GuidedModePrefs.isGuidedModeEnabled()) {
+                        coroutineScope.launch {
+                            val resolved = DeparturesService(activity).resolveDirectionIfUnambiguous(stop, routes, route.id)
+                            if (resolved != null) {
+                                navController.navigate("next_departure/${stop.id}/${resolved.first}/${resolved.second}")
+                            } else {
+                                navController.navigate("direction_picker/${stop.id}/${route.id}/$viewId")
+                            }
+                        }
                     } else {
-                        "next_departure/${stop.id}/${route.id}/$viewId"
+                        navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                     }
-                    navController.navigate(route)
                 },
                 onMapSelected = { viewId ->
                     navController.navigate("route_map/${route.id}/$viewId/none")
@@ -1059,12 +1074,18 @@ fun AppNavigation() {
                 initialViewId = initialViewId,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
-                        "direction_picker/${stop.id}/${route.id}/$viewId"
+                    if (GuidedModePrefs.isGuidedModeEnabled()) {
+                        coroutineScope.launch {
+                            val resolved = DeparturesService(activity).resolveDirectionIfUnambiguous(stop, routes, route.id)
+                            if (resolved != null) {
+                                navController.navigate("next_departure/${stop.id}/${resolved.first}/${resolved.second}")
+                            } else {
+                                navController.navigate("direction_picker/${stop.id}/${route.id}/$viewId")
+                            }
+                        }
                     } else {
-                        "next_departure/${stop.id}/${route.id}/$viewId"
+                        navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                     }
-                    navController.navigate(route)
                 }
             )
         }
@@ -1093,12 +1114,18 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
-                            "direction_picker/${stop.id}/${route.id}/$viewId"
+                        if (GuidedModePrefs.isGuidedModeEnabled()) {
+                            coroutineScope.launch {
+                                val resolved = DeparturesService(activity).resolveDirectionIfUnambiguous(stop, routes, route.id)
+                                if (resolved != null) {
+                                    navController.navigate("next_departure/${stop.id}/${resolved.first}/${resolved.second}")
+                                } else {
+                                    navController.navigate("direction_picker/${stop.id}/${route.id}/$viewId")
+                                }
+                            }
                         } else {
-                            "next_departure/${stop.id}/${route.id}/$viewId"
+                            navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                         }
-                        navController.navigate(route)
                     } else {
                         val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name
@@ -1138,12 +1165,18 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
                     if (selectedEntry == null || selectedEntry.isActiveToday) {
-                        val route = if (GuidedModePrefs.isGuidedModeEnabled()) {
-                            "direction_picker/${stop.id}/${route.id}/$viewId"
+                        if (GuidedModePrefs.isGuidedModeEnabled()) {
+                            coroutineScope.launch {
+                                val resolved = DeparturesService(activity).resolveDirectionIfUnambiguous(stop, routes, route.id)
+                                if (resolved != null) {
+                                    navController.navigate("next_departure/${stop.id}/${resolved.first}/${resolved.second}")
+                                } else {
+                                    navController.navigate("direction_picker/${stop.id}/${route.id}/$viewId")
+                                }
+                            }
                         } else {
-                            "next_departure/${stop.id}/${route.id}/$viewId"
+                            navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                         }
-                        navController.navigate(route)
                     } else {
                         val direction = views.find { it.id == viewId }?.direction ?: ""
                         val dayTypeOverride = selectedEntry.timetableDayType.name
