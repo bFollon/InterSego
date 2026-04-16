@@ -165,6 +165,15 @@ struct NextDepartureView: View {
         return availableDirections.first { $0 != direction }
     }
 
+    private var navigationTitle: String {
+        if routesData.count == 1, let first = routesData.first {
+            return "Línea \(first.route.number)"
+        } else if let id = selectedRouteId {
+            return "Línea \(id)"
+        }
+        return stop.name
+    }
+
     /// True when the displayed departure is within ±20 minutes of now.
     private var isWithinBoardingWindow: Bool {
         guard let next = departureInfo.departure, departureInfo.daysAhead == 0 else { return false }
@@ -316,7 +325,7 @@ struct NextDepartureView: View {
 
     var body: some View {
         content
-            .navigationTitle(stop.name)
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
