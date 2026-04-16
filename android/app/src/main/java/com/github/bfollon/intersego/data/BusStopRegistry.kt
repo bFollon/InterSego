@@ -107,6 +107,14 @@ object BusStopRegistry {
     )
 
     /** M4, M6 */
+    val azoguejoEndStop = BusStop(
+        id = "azoguejo-endStop",
+        name = "Azoguejo",
+        area = "Segovia capital",
+        coordinates = "40.948502, -4.115979"
+    )
+
+    /** M4, M6 */
     val delicias = BusStop(
         id = "delicias",
         name = "Delicias",

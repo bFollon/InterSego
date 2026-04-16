@@ -103,6 +103,14 @@ enum BusStopRegistry {
         area: "Segovia capital",
         coordinates: "40.948502, -4.115979"
     )
+    
+    /// M4
+    static let azoguejoEndStop = BusStop(
+        id: "azoguejo-end-stop",
+        name: "Azoguejo",
+        area: "Segovia capital",
+        coordinates: "40.948502, -4.115979"
+    )
 
     /// M4, M6
     static let delicias = BusStop(
