@@ -168,7 +168,7 @@ struct NextDepartureView: View {
     private var navigationTitle: String {
         if routesData.count == 1, let first = routesData.first {
             return "Línea \(first.route.number)"
-        } else if let id = selectedRouteId {
+        } else if let id = selectedRouteId ?? primaryRouteId {
             return "Línea \(id)"
         }
         return stop.name
