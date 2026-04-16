@@ -39,7 +39,7 @@ class M4Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M4"]),
         mode: .production,
-        version: "2.2",
+        version: "2.3",
     )
 
     // MARK: - Directions
@@ -125,8 +125,8 @@ class M4Parser: CapableParser, RouteStopsProvider {
         }
         // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
         return [
-            Array(Self.m4RegularRoute.dropLast()),
-            Array(Self.m4ReverseRoute.dropLast()),
+            Array(Self.m4RegularRoute),
+            Array(Self.m4ReverseRoute),
         ]
     }
 
@@ -138,13 +138,13 @@ class M4Parser: CapableParser, RouteStopsProvider {
             RouteVariant(
                 id: "regular",
                 label: Self.directionRegular,
-                stops: Array(Self.m4RegularRoute.dropLast()),
+                stops: Array(Self.m4RegularRoute),
                 direction: Self.directionRegular,
             ),
             RouteVariant(
                 id: "reverse",
                 label: Self.directionReverse,
-                stops: Array(Self.m4ReverseRoute.dropLast()),
+                stops: Array(Self.m4ReverseRoute),
                 direction: Self.directionReverse,
             ),
         ]
@@ -241,6 +241,8 @@ class M4Parser: CapableParser, RouteStopsProvider {
     //   [10]=PENSION  [11]=POLIGONO [12]=CTRA   [13]=LEOPOLDO   [14]=COLEGIO  [15]=PARROQ2
     //
     // Times encoded as HHMM integers (e.g. 740 = 07:40, 1523 = 15:23).
+    // -1 means the bus does not serve that stop on this trip (skipped in the add helpers below).
+    // PASEO [11] in regular / [5] in reverse = Colegio Madres Concepcionistas (SCHOOL_ONLY stop).
 
     private func buildStaticTimetables() -> [BusTimetable] {
         let yr = SeasonalAvailability.yearRound
@@ -252,30 +254,33 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
         func add(to deps: inout [[DepartureTime]], season: SeasonalAvailability, times: [Int]) {
             for (i, hhmm) in times.enumerated() {
-                deps[i].append(t(hhmm / 100, hhmm % 100, season))
+                if hhmm >= 0 {
+                    deps[i].append(t(hhmm / 100, hhmm % 100, season))
+                }
             }
         }
 
         // ── Weekday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
+        // -1 at index 11 (PASEO): SCHOOL_ONLY stop, not served by YEAR_ROUND trips.
         let wkRegTrips: [(SeasonalAvailability, [Int])] = [
-            (yr, [  700, 703, 706, 708, 710, 711, 712, 713, 714, 716, 718, 720, 720, 721, 728]),
-            (yr, [  910, 913, 916, 918, 920, 921, 922, 923, 924, 926, 928, 930, 931, 933, 938]),
-            (yr, [  940, 943, 946, 948, 950, 951, 952, 953, 954, 956, 958,1000,1001,1003,1008]),
-            (yr, [ 1010,1013,1016,1018,1020,1021,1022,1023,1024,1026,1028,1030,1031,1033,1038]),
-            (yr, [ 1140,1143,1146,1148,1150,1151,1152,1153,1154,1156,1158,1200,1201,1203,1208]),
-            (yr, [ 1210,1213,1216,1218,1220,1221,1222,1223,1224,1226,1228,1230,1231,1233,1238]),
-            (yr, [ 1240,1243,1246,1248,1250,1251,1252,1253,1254,1256,1258,1300,1301,1303,1308]),
-            (yr, [ 1310,1313,1316,1318,1320,1321,1322,1323,1324,1326,1328,1330,1331,1333,1338]),
-            (sc, [ 1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1422,1423]),
-            (yr, [ 1520,1523,1526,1528,1530,1531,1532,1533,1534,1536,1538,1540,1541,1543,1548]),
-            (yr, [ 1620,1623,1626,1628,1630,1631,1632,1633,1634,1636,1638,1640,1641,1643,1648]),
-            (yr, [ 1700,1703,1706,1708,1710,1711,1712,1713,1714,1716,1718,1720,1721,1723,1728]),
-            (yr, [ 1810,1813,1816,1818,1820,1821,1822,1823,1824,1826,1828,1830,1831,1833,1838]),
-            (yr, [ 1910,1913,1916,1918,1920,1921,1922,1923,1924,1926,1928,1930,1931,1933,1938]),
-            (yr, [ 1940,1943,1946,1948,1950,1951,1952,1953,1954,1956,1958,2000,2001,2003,2008]),
-            (yr, [ 2010,2013,2016,2018,2020,2021,2022,2023,2024,2026,2028,2030,2031,2033,2038]),
-            (yr, [ 2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108]),
-            (yr, [ 2110,2113,2116,2118,2120,2121,2122,2123,2124,2126,2128,2130,2131,2133,2148]),
+            (yr, [  700, 703, 706, 708, 710, 711, 712, 713,  -1, 714, 716, 718,  -1, 720, 721, 723, 728 ]),
+            (yr, [  910, 913, 916, 918, 920, 921, 922, 923,  -1, 924, 926, 928,  -1, 930, 931, 933, 938 ]),
+            (yr, [  940, 943, 946, 948, 950, 951, 952, 953,  -1, 954, 956, 958,  -1,1000,1001,1003,1008 ]),
+            (yr, [ 1010,1013,1016,1018,1020,1021,1022,1023,  -1,1024,1026,1028,  -1,1030,1031,1033,1038 ]),
+            (yr, [ 1140,1143,1146,1148,1150,1151,1152,1153,  -1,1154,1156,1158,  -1,1200,1201,1203,1208 ]),
+            (yr, [ 1210,1213,1216,1218,1220,1221,1222,1223,  -1,1224,1226,1228,  -1,1230,1231,1233,1238 ]),
+            (yr, [ 1240,1243,1246,1248,1250,1251,1252,1253,  -1,1254,1256,1258,  -1,1300,1301,1303,1308 ]),
+            (yr, [ 1310,1313,1316,1318,1320,1321,1322,1323,  -1,1324,1326,1328,  -1,1330,1331,1333,1338 ]),
+            (sc, [ 1400,1403,1406,1408,1410,1411,1412,1413,  -1,1414,1416,1418,1420,1421,1422,1423,1428 ]),
+            (yr, [ 1520,1523,1526,1528,1530,1531,1532,1533,  -1,1534,1536,1538,  -1,1540,1541,1543,1548 ]),
+            (yr, [ 1620,1623,1626,1628,1630,1631,1632,1633,  -1,1634,1636,1638,  -1,1640,1641,1643,1648 ]),
+            (yr, [ 1700,1703,1706,1708,1710,1711,1712,1713,  -1,1714,1716,1718,  -1,1720,1721,1723,1728 ]),
+            (yr, [ 1810,1813,1816,1818,1820,1821,1822,1823,  -1,1824,1826,1828,  -1,1830,1831,1833,1838 ]),
+            (yr, [ 1910,1913,1916,1918,1920,1921,1922,1923,  -1,1924,1926,1928,  -1,1930,1931,1933,1938 ]),
+            (yr, [ 1940,1943,1946,1948,1950,1951,1952,1953,  -1,1954,1956,1958,  -1,2000,2001,2003,2008 ]),
+            (yr, [ 2010,2013,2016,2018,2020,2021,2022,2023,  -1,2024,2026,2028,  -1,2030,2031,2033,2038 ]),
+            (yr, [ 2040,2043,2046,2048,2050,2051,2052,2053,  -1,2054,2056,2058,  -1,2100,2101,2103,2108 ]),
+            (yr, [ 2110,2113,2116,2118,2120,2121,2122,2123,  -1,2124,2126,2128,  -1,2130,2131,2133,2148 ]),
         ]
         for (season, times) in wkRegTrips {
             add(to: &wkRegDeps, season: season, times: times)
@@ -288,20 +293,23 @@ class M4Parser: CapableParser, RouteStopsProvider {
         // tR() stamps variantLabel="Sotillo" so departure rows show the "Sotillo" badge.
         func addReverse(to deps: inout [[DepartureTime]], season: SeasonalAvailability, times: [Int]) {
             for (i, hhmm) in times.enumerated() {
-                deps[i].append(tR(hhmm / 100, hhmm % 100, season))
+                if hhmm >= 0 {
+                    deps[i].append(tR(hhmm / 100, hhmm % 100, season))
+                }
             }
         }
         let wkRevFull: [(SeasonalAvailability, [Int])] = [
-            (sc, [  740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806]),
-            (sc, [  820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846]),
+            (sc, [ 740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806, 811 ]),
+            (sc, [ 820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846, 852 ]),
         ]
         for (season, times) in wkRevFull {
             addReverse(to: &wkRevDeps, season: season, times: times)
         }
         // 14:40* and 21:40* do NOT serve PARROQ2 (stop 15) — only stops 0–14.
+        // -1 at index 5 (PASEO): 21:40* is YEAR_ROUND; school stop not served.
         let wkRevPartial: [(SeasonalAvailability, [Int])] = [
-            (sc, [ 1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504]),
-            (yr, [ 2140,2143,2146,2147,2148,2150,2151,2152,2208,2156,2158,2200,2201,2203,2204]),
+            (sc, [ 1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504,  -1,1508 ]),
+            (yr, [ 2140,2143,2146,2147,2148,  -1,2150,2151,2152,2156,2158,2200,2201,2203,2204,  -1,2208 ]),
         ]
         for (season, times) in wkRevPartial {
             addReverse(to: &wkRevDeps, season: season, times: times)
@@ -310,30 +318,31 @@ class M4Parser: CapableParser, RouteStopsProvider {
 
         // ── Saturday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
         // All Saturday trips are JULIO Y AGOSTO (YEAR_ROUND). No reverse service on Saturdays.
+        // -1 at index 11 (PASEO): school stop, not served on Saturdays (Jul/Aug service only).
         let satRegTrips: [(SeasonalAvailability, [Int])] = [
-            (yr, [ 1030,1033,1036,1038,1040,1041,1042,1043,1044,1046,1048,1050,1051,1053,1100]),
-            (yr, [ 1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1423,1428]),
-            (yr, [ 1710,1713,1716,1718,1720,1721,1722,1723,1724,1726,1728,1730,1731,1733,1738]),
-            (yr, [ 2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108]),
+            (yr, [ 1030,1033,1036,1038,1040,1041,1042,1043,  -1,1044,1046,1048,  -1,1050,1051,1053,1100 ]),
+            (yr, [ 1400,1403,1406,1408,1410,1411,1412,1413,  -1,1414,1416,1418,  -1,1420,1421,1423,1428 ]),
+            (yr, [ 1710,1713,1716,1718,1720,1721,1722,1723,  -1,1724,1726,1728,  -1,1730,1731,1733,1738 ]),
+            (yr, [ 2040,2043,2046,2048,2050,2051,2052,2053,  -1,2054,2056,2058,  -1,2100,2101,2103,2108 ]),
         ]
         for (season, times) in satRegTrips {
             add(to: &satRegDeps, season: season, times: times)
         }
 
         return buildTimetables(
-            stops: Array(Self.m4RegularRoute.dropLast()),
+            stops: Array(Self.m4RegularRoute),
             dayType: .weekday,
             direction: Self.directionRegular,
             deps: wkRegDeps,
         )
             + buildTimetables(
-                stops: Array(Self.m4ReverseRoute.dropLast()),
+                stops: Array(Self.m4ReverseRoute),
                 dayType: .weekday,
                 direction: Self.directionReverse,
                 deps: wkRevDeps,
             )
             + buildTimetables(
-                stops: Array(Self.m4RegularRoute.dropLast()),
+                stops: Array(Self.m4RegularRoute),
                 dayType: .saturday,
                 direction: Self.directionRegular,
                 deps: satRegDeps,

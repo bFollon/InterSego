@@ -60,7 +60,7 @@ class M4Parser : CapableParser, RouteStopsProvider {
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
         mode = ParserMode.PRODUCTION,
-        version = "2.2"
+        version = "2.3"
     )
 
     companion object {
@@ -136,14 +136,14 @@ class M4Parser : CapableParser, RouteStopsProvider {
     override fun getRoutesForId(routeId: String): List<List<BusStop>> {
         if (!routeId.equals("M4", ignoreCase = true)) return emptyList()
         // Drop last stop (Azoguejo arrival) — it's a terminus, not a departure stop
-        return listOf(m4RegularRoute.dropLast(1), m4ReverseRoute.dropLast(1))
+        return listOf(m4RegularRoute, m4ReverseRoute)
     }
 
     override fun getRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
         if (!routeId.equals("M4", ignoreCase = true)) return emptyList()
         return listOf(
-            RouteVariant("regular", DIRECTION_REGULAR, m4RegularRoute.dropLast(1), DIRECTION_REGULAR),
-            RouteVariant("reverse", DIRECTION_REVERSE, m4ReverseRoute.dropLast(1), DIRECTION_REVERSE)
+            RouteVariant("regular", DIRECTION_REGULAR, m4RegularRoute, DIRECTION_REGULAR),
+            RouteVariant("reverse", DIRECTION_REVERSE, m4ReverseRoute, DIRECTION_REVERSE)
         )
     }
 
@@ -208,6 +208,8 @@ class M4Parser : CapableParser, RouteStopsProvider {
     //   [10]=PENSION  [11]=POLIGONO [12]=CTRA   [13]=LEOPOLDO   [14]=COLEGIO  [15]=PARROQ2
     //
     // Times encoded as HHMM integers (e.g. 740 = 07:40, 1523 = 15:23).
+    // -1 means the bus does not serve that stop on this trip (skipped in the forEach below).
+    // PASEO [11] in regular / [5] in reverse = Colegio Madres Concepcionistas (SCHOOL_ONLY stop).
 
     private fun buildStaticTimetables(): List<BusTimetable> {
         val yr = SeasonalAvailability.YEAR_ROUND
@@ -218,27 +220,28 @@ class M4Parser : CapableParser, RouteStopsProvider {
         val satRegDeps = Array(15) { mutableListOf<DepartureTime>() }
 
         // ── Weekday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
+        // -1 at index 11 (PASEO): SCHOOL_ONLY stop, not served by YEAR_ROUND trips.
         listOf(
-            yr to intArrayOf( 700, 703, 706, 708, 710, 711, 712, 713, 714, 716, 718, 720, 720, 721, 728),
-            yr to intArrayOf( 910, 913, 916, 918, 920, 921, 922, 923, 924, 926, 928, 930, 931, 933, 938),
-            yr to intArrayOf( 940, 943, 946, 948, 950, 951, 952, 953, 954, 956, 958,1000,1001,1003,1008),
-            yr to intArrayOf(1010,1013,1016,1018,1020,1021,1022,1023,1024,1026,1028,1030,1031,1033,1038),
-            yr to intArrayOf(1140,1143,1146,1148,1150,1151,1152,1153,1154,1156,1158,1200,1201,1203,1208),
-            yr to intArrayOf(1210,1213,1216,1218,1220,1221,1222,1223,1224,1226,1228,1230,1231,1233,1238),
-            yr to intArrayOf(1240,1243,1246,1248,1250,1251,1252,1253,1254,1256,1258,1300,1301,1303,1308),
-            yr to intArrayOf(1310,1313,1316,1318,1320,1321,1322,1323,1324,1326,1328,1330,1331,1333,1338),
-            sc to intArrayOf(1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1422,1423),
-            yr to intArrayOf(1520,1523,1526,1528,1530,1531,1532,1533,1534,1536,1538,1540,1541,1543,1548),
-            yr to intArrayOf(1620,1623,1626,1628,1630,1631,1632,1633,1634,1636,1638,1640,1641,1643,1648),
-            yr to intArrayOf(1700,1703,1706,1708,1710,1711,1712,1713,1714,1716,1718,1720,1721,1723,1728),
-            yr to intArrayOf(1810,1813,1816,1818,1820,1821,1822,1823,1824,1826,1828,1830,1831,1833,1838),
-            yr to intArrayOf(1910,1913,1916,1918,1920,1921,1922,1923,1924,1926,1928,1930,1931,1933,1938),
-            yr to intArrayOf(1940,1943,1946,1948,1950,1951,1952,1953,1954,1956,1958,2000,2001,2003,2008),
-            yr to intArrayOf(2010,2013,2016,2018,2020,2021,2022,2023,2024,2026,2028,2030,2031,2033,2038),
-            yr to intArrayOf(2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108),
-            yr to intArrayOf(2110,2113,2116,2118,2120,2121,2122,2123,2124,2126,2128,2130,2131,2133,2148),
+            yr to intArrayOf( 700, 703, 706, 708, 710, 711, 712, 713,  -1, 714, 716, 718,  -1, 720, 721, 723, 728),
+            yr to intArrayOf( 910, 913, 916, 918, 920, 921, 922, 923,  -1, 924, 926, 928,  -1, 930, 931, 933, 938),
+            yr to intArrayOf( 940, 943, 946, 948, 950, 951, 952, 953,  -1, 954, 956, 958,  -1,1000,1001,1003,1008),
+            yr to intArrayOf(1010,1013,1016,1018,1020,1021,1022,1023,  -1,1024,1026,1028,  -1,1030,1031,1033,1038),
+            yr to intArrayOf(1140,1143,1146,1148,1150,1151,1152,1153,  -1,1154,1156,1158,  -1,1200,1201,1203,1208),
+            yr to intArrayOf(1210,1213,1216,1218,1220,1221,1222,1223,  -1,1224,1226,1228,  -1,1230,1231,1233,1238),
+            yr to intArrayOf(1240,1243,1246,1248,1250,1251,1252,1253,  -1,1254,1256,1258,  -1,1300,1301,1303,1308),
+            yr to intArrayOf(1310,1313,1316,1318,1320,1321,1322,1323,  -1,1324,1326,1328,  -1,1330,1331,1333,1338),
+            sc to intArrayOf(1400,1403,1406,1408,1410,1411,1412,1413,  -1,1414,1416,1418,1420,1421,1422,1423,1428),
+            yr to intArrayOf(1520,1523,1526,1528,1530,1531,1532,1533,  -1,1534,1536,1538,  -1,1540,1541,1543,1548),
+            yr to intArrayOf(1620,1623,1626,1628,1630,1631,1632,1633,  -1,1634,1636,1638,  -1,1640,1641,1643,1648),
+            yr to intArrayOf(1700,1703,1706,1708,1710,1711,1712,1713,  -1,1714,1716,1718,  -1,1720,1721,1723,1728),
+            yr to intArrayOf(1810,1813,1816,1818,1820,1821,1822,1823,  -1,1824,1826,1828,  -1,1830,1831,1833,1838),
+            yr to intArrayOf(1910,1913,1916,1918,1920,1921,1922,1923,  -1,1924,1926,1928,  -1,1930,1931,1933,1938),
+            yr to intArrayOf(1940,1943,1946,1948,1950,1951,1952,1953,  -1,1954,1956,1958,  -1,2000,2001,2003,2008),
+            yr to intArrayOf(2010,2013,2016,2018,2020,2021,2022,2023,  -1,2024,2026,2028,  -1,2030,2031,2033,2038),
+            yr to intArrayOf(2040,2043,2046,2048,2050,2051,2052,2053,  -1,2054,2056,2058,  -1,2100,2101,2103,2108),
+            yr to intArrayOf(2110,2113,2116,2118,2120,2121,2122,2123,  -1,2124,2126,2128,  -1,2130,2131,2133,2148),
         ).forEach { (season, times) ->
-            times.forEachIndexed { i, hhmm -> wkRegDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
+            times.forEachIndexed { i, hhmm -> if (hhmm >= 0) wkRegDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
         }
 
         // ── Weekday Reverse: Sotillo → Lastrilla (*) ──────────────────────────────────────
@@ -247,34 +250,36 @@ class M4Parser : CapableParser, RouteStopsProvider {
         // 7:40* and 8:20* serve all 16 stops including PARROQ2 (stop 15).
         // tR() stamps variantLabel="Sotillo" so departure rows show the "Sotillo" badge.
         listOf(
-            sc to intArrayOf( 740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806),
-            sc to intArrayOf( 820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846),
+            sc to intArrayOf( 740, 743, 746, 747, 748, 750, 751, 752, 753, 756, 758, 800, 801, 803, 804, 806, 811),
+            sc to intArrayOf( 820, 823, 826, 827, 828, 830, 831, 832, 833, 837, 839, 841, 842, 843, 844, 846, 852),
         ).forEach { (season, times) ->
-            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(tR(hhmm / 100, hhmm % 100, season)) }
+            times.forEachIndexed { i, hhmm -> if (hhmm >= 0) wkRevDeps[i].add(tR(hhmm / 100, hhmm % 100, season)) }
         }
         // 14:40* and 21:40* do NOT serve PARROQ2 (stop 15) — only stops 0–14.
+        // -1 at index 5 (PASEO): 21:40* is YEAR_ROUND; school stop not served.
         listOf(
-            sc to intArrayOf(1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504),
-            yr to intArrayOf(2140,2143,2146,2147,2148,2150,2151,2152,2208,2156,2158,2200,2201,2203,2204),
+            sc to intArrayOf(1440,1443,1446,1447,1448,1450,1451,1452,1453,1456,1458,1500,1501,1503,1504,  -1,1508),
+            yr to intArrayOf(2140,2143,2146,2147,2148,  -1,2150,2151,2152,2156,2158,2200,2201,2203,2204,  -1,2208),
         ).forEach { (season, times) ->
-            times.forEachIndexed { i, hhmm -> wkRevDeps[i].add(tR(hhmm / 100, hhmm % 100, season)) }
+            times.forEachIndexed { i, hhmm -> if (hhmm >= 0) wkRevDeps[i].add(tR(hhmm / 100, hhmm % 100, season)) }
             // stop 15 (PARROQ2) receives no departure for these trips
         }
 
         // ── Saturday Regular: Lastrilla → Sotillo ─────────────────────────────────────────
         // All Saturday trips are JULIO Y AGOSTO (YEAR_ROUND). No reverse service on Saturdays.
+        // -1 at index 11 (PASEO): school stop, not served on Saturdays (Jul/Aug service only).
         listOf(
-            yr to intArrayOf(1030,1033,1036,1038,1040,1041,1042,1043,1044,1046,1048,1050,1051,1053,1100),
-            yr to intArrayOf(1400,1403,1406,1408,1410,1411,1412,1413,1414,1416,1418,1420,1421,1423,1428),
-            yr to intArrayOf(1710,1713,1716,1718,1720,1721,1722,1723,1724,1726,1728,1730,1731,1733,1738),
-            yr to intArrayOf(2040,2043,2046,2048,2050,2051,2052,2053,2054,2056,2058,2100,2101,2103,2108),
+            yr to intArrayOf(1030,1033,1036,1038,1040,1041,1042,1043,  -1,1044,1046,1048,  -1,1050,1051,1053,1100),
+            yr to intArrayOf(1400,1403,1406,1408,1410,1411,1412,1413,  -1,1414,1416,1418,  -1,1420,1421,1423,1428),
+            yr to intArrayOf(1710,1713,1716,1718,1720,1721,1722,1723,  -1,1724,1726,1728,  -1,1730,1731,1733,1738),
+            yr to intArrayOf(2040,2043,2046,2048,2050,2051,2052,2053,  -1,2054,2056,2058,  -1,2100,2101,2103,2108),
         ).forEach { (season, times) ->
-            times.forEachIndexed { i, hhmm -> satRegDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
+            times.forEachIndexed { i, hhmm -> if (hhmm >= 0) satRegDeps[i].add(t(hhmm / 100, hhmm % 100, season)) }
         }
 
-        return buildTimetables(m4RegularRoute.dropLast(1), DayType.WEEKDAY, DIRECTION_REGULAR, wkRegDeps) +
-                buildTimetables(m4ReverseRoute.dropLast(1), DayType.WEEKDAY, DIRECTION_REVERSE, wkRevDeps) +
-                buildTimetables(m4RegularRoute.dropLast(1), DayType.SATURDAY, DIRECTION_REGULAR, satRegDeps)
+        return buildTimetables(m4RegularRoute, DayType.WEEKDAY, DIRECTION_REGULAR, wkRegDeps) +
+                buildTimetables(m4ReverseRoute, DayType.WEEKDAY, DIRECTION_REVERSE, wkRevDeps) +
+                buildTimetables(m4RegularRoute, DayType.SATURDAY, DIRECTION_REGULAR, satRegDeps)
     }
 
     private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
