@@ -105,7 +105,12 @@ class DeparturesService(private val context: Context) {
             try {
                 val timetables = timetableService.loadTimetables(routeId)
                 if (timetables.isEmpty()) continue
-                val views = pdfService.getRouteViews(routeId, currentDayType)
+                var views = pdfService.getRouteViews(routeId, currentDayType)
+                if (views.isEmpty()) {
+                    views = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+                        .firstNotNullOfOrNull { dt -> pdfService.getRouteViews(routeId, dt).takeIf { it.isNotEmpty() } }
+                        ?: emptyList()
+                }
                 loadedRoutes.add(RouteLoadedData(route, views, timetables))
             } catch (e: Exception) {
                 DebugConfig.debugWarn("DeparturesService: failed to load $routeId: ${e.message}")

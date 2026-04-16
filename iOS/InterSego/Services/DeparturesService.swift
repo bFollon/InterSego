@@ -100,7 +100,13 @@ actor DeparturesService {
             guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
             let timetables = await timetableService.loadTimetables(routeId: routeId)
             guard !timetables.isEmpty else { continue }
-            let views = await pdfService.getRouteViews(routeId: routeId, dayType: currentDayType)
+            var views = await pdfService.getRouteViews(routeId: routeId, dayType: currentDayType)
+            if views.isEmpty {
+                for dayType in [DayType.weekday, .saturday, .sunday, .weekend, .holiday] {
+                    let v = await pdfService.getRouteViews(routeId: routeId, dayType: dayType)
+                    if !v.isEmpty { views = v; break }
+                }
+            }
             loadedRoutes.append(RouteLoadedData(route: route, views: views, timetables: timetables))
         }
 

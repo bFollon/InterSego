@@ -926,7 +926,15 @@ fun AppNavigation() {
             }
 
             val views = remember(routeId, todayDayType) {
-                pdfProcessingService.getRouteViews(routeId, todayDayType)
+                val todayViews = pdfProcessingService.getRouteViews(routeId, todayDayType)
+                if (todayViews.isNotEmpty()) todayViews
+                else {
+                    // No service today — fall back to any available day type so stops are still shown.
+                    // NextDepartureScreen handles looking up to 7 days ahead for the actual departure.
+                    listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+                        .firstNotNullOfOrNull { dt -> pdfProcessingService.getRouteViews(routeId, dt).takeIf { it.isNotEmpty() } }
+                        ?: emptyList()
+                }
             }
 
             val entries = remember(routeId) {

@@ -382,7 +382,18 @@ struct ContentView: View {
                     routeId: route.id, dayType: todayDayType,
                 )
                 showAllRoutes = entries.count > 1 || todayViews.isEmpty
-                views = todayViews
+                if todayViews.isEmpty {
+                    // No service today — find any day type that has views so stops are still shown.
+                    // NextDepartureView handles looking up to 7 days ahead for the actual departure.
+                    var fallback: [RouteView] = []
+                    for dayType in [DayType.weekday, .saturday, .sunday, .weekend, .holiday] {
+                        let v = await PDFProcessingService.shared.getRouteViews(routeId: route.id, dayType: dayType)
+                        if !v.isEmpty { fallback = v; break }
+                    }
+                    views = fallback
+                } else {
+                    views = todayViews
+                }
                 loaded = true
             }
         }
