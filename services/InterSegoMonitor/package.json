@@ -1,0 +1,29 @@
+{
+  "name": "intersego-monitor",
+  "version": "1.0.0",
+  "description": "InterSego PDF change monitor",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "fastify": "^5.2.1",
+    "lowdb": "^7.0.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "undici": "^7.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
