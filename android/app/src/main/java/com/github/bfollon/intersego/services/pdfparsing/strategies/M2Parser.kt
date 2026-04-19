@@ -17,13 +17,13 @@
 
 package com.github.bfollon.intersego.services.pdfparsing.strategies
 
+import android.content.Context
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.BusStopRegistry
 import com.github.bfollon.intersego.data.DayType
-import com.github.bfollon.intersego.data.DepartureTime
-import com.github.bfollon.intersego.data.SeasonalAvailability
 import com.github.bfollon.intersego.data.RouteSelectorEntry
+import com.github.bfollon.intersego.services.TimetableLoader
 import com.github.bfollon.intersego.data.RouteVariant
 import com.github.bfollon.intersego.data.RouteView
 import com.github.bfollon.intersego.data.RouteViewStop
@@ -57,12 +57,12 @@ import com.github.bfollon.intersego.services.pdfparsing.RouteStopsProvider
  *
  * Timetable data hardcoded from official Linecar M2 PDF screenshot (2026-03-20).
  */
-class M2Parser : CapableParser, RouteStopsProvider {
+class M2Parser(private val context: Context) : CapableParser, RouteStopsProvider {
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M2"),
         mode = ParserMode.PRODUCTION,
-        version = "1.1"
+        version = "1.2"
     )
 
     companion object {
@@ -150,71 +150,7 @@ class M2Parser : CapableParser, RouteStopsProvider {
     }
 
     override fun parse(pdfPath: String, routeId: String): List<BusTimetable> {
-        DebugConfig.debugPrint("M2Parser: returning hardcoded timetable (PDF parsing bypassed)")
-        return buildStaticTimetables()
-    }
-
-    // ── Static timetable ─────────────────────────────────────────────────────────────────────
-    //
-    // Source: Linecar M2 PDF screenshot, 2026-03-20.
-    // Weekday service only (Lunes a Viernes). No Saturday or Sunday service.
-    //
-    // The route is circular: the bus travels outbound from Segovia to Los Huertos, backtracks
-    // through Hontanares, continues to Valseca, then returns to Segovia.
-    // The left (outbound) and right (inbound) tables in the PDF are complementary halves of
-    // the same circular service.
-
-    private fun buildStaticTimetables(): List<BusTimetable> {
-
-        // ── Weekday circularA: Segovia → Casino → Hontanares → Los Huertos → Valseca ──────────
-        val circADeps = arrayOf(
-            mutableListOf(t(9, 0), t(13, 45), t(16, 15), t(19, 15)), // SEGOVIA
-            mutableListOf(t(9, 5), t(13, 50), t(16, 20), t(19, 20)), // CASINO
-            mutableListOf(t(9, 10), t(13, 55), t(16, 25), t(19, 25)), // HONTANARES
-            mutableListOf(t(9, 15), t(14, 0), t(16, 30), t(19, 30)), // LOS_HUERTOS
-            mutableListOf(t(9, 30), t(14, 15), t(16, 40), t(19, 40))  // VALSECA
-        )
-
-        // ── Weekday circularB: Los Huertos → Hontanares → Valseca → Casino → Segovia ──────────
-        //
-        // The 7:25 service originates from Valseca: its stop times are Valseca(7:25),
-        // Los Huertos(7:35), Hontanares(7:40), Casino(7:42), Segovia(7:55).
-        // In this stop list Valseca appears at position 2 (after Los Huertos), so the 7:25
-        // Valseca time is chronologically earlier than Los Huertos 7:35. All other runs
-        // (9:15, 14:00, 16:30, 19:30) follow the expected stop order.
-        val circBDeps = arrayOf(
-            mutableListOf(t(7, 35), t(9, 15), t(14, 0), t(16, 30), t(19, 30)), // LOS_HUERTOS
-            mutableListOf(t(7, 40), t(9, 20), t(14, 5), t(16, 35), t(19, 35)), // HONTANARES_RETURN
-            mutableListOf(
-                t(7, 25),
-                t(9, 30),
-                t(14, 15),
-                t(16, 45),
-                t(19, 45)
-            ), // VALSECA (7:25 = Valseca-originating run)
-            mutableListOf(t(7, 42), t(9, 35), t(14, 20), t(16, 50), t(19, 50)), // CASINO_RETURN
-            mutableListOf(t(7, 55), t(9, 50), t(14, 35), t(17, 5), t(20, 5))   // SEGOVIA_RETURN
-        )
-
-        return buildTimetables(m2CircularA, DayType.WEEKDAY, DIRECTION_CIRCULAR_A, circADeps) +
-                buildTimetables(m2CircularB, DayType.WEEKDAY, DIRECTION_CIRCULAR_B, circBDeps)
-    }
-
-    private fun t(h: Int, m: Int, s: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND) =
-        DepartureTime(h, m, seasonalAvailability = s)
-
-    private fun buildTimetables(
-        stops: List<BusStop>,
-        dayType: DayType,
-        direction: String,
-        deps: Array<MutableList<DepartureTime>>
-    ): List<BusTimetable> = stops.mapIndexed { i, stop ->
-        BusTimetable(
-            routeId = "M2",
-            stopId = stop.id,
-            dayType = dayType,
-            direction = direction,
-            departures = deps[i]
-        )
+        DebugConfig.debugPrint("M2Parser: loading timetable from bundled JSON")
+        return TimetableLoader(context).load("M2")
     }
 }

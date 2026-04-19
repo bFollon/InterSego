@@ -68,7 +68,7 @@ class PDFProcessingService(private val context: Context) {
     init {
         // Register all available parsers
         registerParser(M1Parser())
-        registerParser(M2Parser())
+        registerParser(M2Parser(context))
         registerParser(M3Parser())
         registerParser(M4Parser())
         registerParser(M5Parser())

@@ -1,0 +1,64 @@
+{
+  "routeId": "M2",
+  "version": "1.2",
+  "source": "Linecar M2 PDF, 2026-03-20",
+
+  "stops": [
+    { "id": "estacion-autobuses", "name": "Estación de Autobuses", "lat": 40.944768, "lon": -4.121823 },
+    { "id": "casino-union",       "name": "Casino",                 "lat": 40.965154, "lon": -4.209251 },
+    { "id": "hontanares",         "name": "Hontanares de Eresma",   "lat": 40.983628, "lon": -4.204160 },
+    { "id": "los-huertos",        "name": "Los Huertos",            "lat": 41.009124, "lon": -4.219216 },
+    { "id": "valseca",            "name": "Valseca",                "lat": 40.999306, "lon": -4.174266 }
+  ],
+
+  "variants": [
+    {
+      "id": "circularA",
+      "label": "Segovia → Valseca",
+      "stopSequence": ["estacion-autobuses", "casino-union", "hontanares", "los-huertos", "valseca"],
+      "swapTargetId": "circularB"
+    },
+    {
+      "id": "circularB",
+      "label": "Valseca → Segovia",
+      "stopSequence": ["los-huertos", "hontanares", "valseca", "casino-union", "estacion-autobuses"],
+      "swapTargetId": "circularA"
+    }
+  ],
+
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      {
+        "id": "entry-lv",
+        "label": "Lunes a Viernes",
+        "variantId": "circularA",
+        "dayType": "weekday"
+      }
+    ]
+  },
+
+  "timetables": [
+    {
+      "variantId": "circularA",
+      "dayType": "weekday",
+      "trips": [
+        { "departures": [900,  905,  910,  915,  930]  },
+        { "departures": [1345, 1350, 1355, 1400, 1415] },
+        { "departures": [1615, 1620, 1625, 1630, 1640] },
+        { "departures": [1915, 1920, 1925, 1930, 1940] }
+      ]
+    },
+    {
+      "variantId": "circularB",
+      "dayType": "weekday",
+      "trips": [
+        { "departures": [735, 740, 725, 742, 755]       },
+        { "departures": [915, 920, 930, 935, 950]       },
+        { "departures": [1400, 1405, 1415, 1420, 1435]  },
+        { "departures": [1630, 1635, 1645, 1650, 1705]  },
+        { "departures": [1930, 1935, 1945, 1950, 2005]  }
+      ]
+    }
+  ]
+}
