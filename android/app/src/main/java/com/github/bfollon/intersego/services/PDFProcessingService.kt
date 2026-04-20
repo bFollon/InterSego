@@ -74,7 +74,7 @@ class PDFProcessingService(private val context: Context) {
         registerParser(M5Parser(context))
         registerParser(M6Parser())
         registerParser(M7Parser())
-        registerParser(M8Parser())
+        registerParser(M8Parser(context))
 
         DebugConfig.debugPrint("PDFProcessingService: Initialized with ${parsers.size} parsers")
     }
