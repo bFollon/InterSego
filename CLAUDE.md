@@ -22,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | PDF cache manager (version checking) | ✅ | ✅ | |
 | Three-tier caching (memory → JSON → PDF) | ✅ | ✅ | |
 | Timetable cache service | ✅ | ✅ | |
+| TimetableLoader (JSON-based) | ✅ | ✅ | Reads `assets/timetables/{routeId}.json` (Android) / `Timetables/{routeId}.json` (iOS) from bundle; produces `List<BusTimetable>`; shared schema in `resources/timetables/`; replaces `buildStaticTimetables()` in migrated parsers; see `docs/TIMETABLE_JSON_REFACTOR.md` |
 | Debug config / logging | ✅ | ✅ | |
 | Boarding notification service | ✅ | ✅ | Node.js/TypeScript server at `server/`; stores boarding events; GET+POST /boardings; 4h TTL; Bearer auth; see `server/docs/API.md` |
 | BoardingService client | ✅ | ✅ | Android: OkHttp object singleton + BuildConfig; iOS: URLSession actor + AppConfig |
@@ -37,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | M4 (La Lastrilla - El Sotillo) | ✅ (static data) | ✅ (static data) | Hardcoded from PDF (2026-04-15); v2.2; isCircular=true; weekday + Saturday (Jul/Aug only); YEAR_ROUND = JULIO Y AGOSTO buses (run all year, only buses in summer); SCHOOL_ONLY = non-summer buses; SCHOOL_ONLY trips (by Azoguejo departure): regular 14:00 + reverse 07:40*, 08:20*, 14:40*; all other trips are YEAR_ROUND; 07:00 trip PARROQ=07:20, RAFAEL=07:21 (corrected from v2.1); 4 reverse (*) trips per weekday (14:40* and 21:40* skip PARROQ2); DayType changed from WEEKEND to SATURDAY; merged-directions display: RouteView uses tabsLabel="Pasa primero por" + tabs chips (La Lastrilla/El Sotillo) in stop list, mergedDirectionLabel="La Lastrilla · El Sotillo" for NextDeparture (all departures merged, "Sotillo" variantLabel badge on El Sotillo-first trips); AllRoutes/Map dropdowns split L-V into two entries |
 | M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; v0.9 (fully static, both platforms); Sat inbound: proper reversal via PlazaToros→LaPista→AndresLaguna→Jardinillos; Sáb has 2 separate entries (Ida/Vuelta) |
 | M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); v1.6; isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); ★=JUNE_TO_SEPT_ONLY, (*)=YEAR_ROUND, LYV=MON_FRI_ONLY (circularB: Martín Miguel 9:40, Valverde 9:40), #=FRI_ONLY |
-| M2 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-20); v1.0; isCircular=true; weekday only; two circular directions (circularA: Segovia→Valseca outbound view; circularB: Valseca→Segovia return via Los Huertos+Hontanares); 7:25 Valseca bus originates from Valseca (chronologically out of stop order in circularB, accepted as Option A) |
+| M2 | ✅ (JSON) | ✅ (JSON) | v1.2; isCircular=true; weekday only; two circular directions (circularA: Segovia→Valseca outbound view; circularB: Valseca→Segovia return via Los Huertos+Hontanares); 7:25 Valseca bus originates from Valseca (chronologically out of stop order in circularB, accepted as Option A); timetable data migrated to `resources/timetables/m2.json`; loaded via TimetableLoader on both platforms |
 | M3 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-23); v1.0; Saturday only; linear (Segovia→Navacerrada); Segovia is a 4-stop cluster (Estación de Autobuses, Iglesia Santo Tomás, Frente Bar Norte, Plaza de Toros) with +2 min estimated times |
 | M5 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.0; linear (Segovia→Sto. Domingo de Pirón); weekday + Saturday; partial trips (some weekday services only Segovia–La Higuera); * = Via Roma, *** = Estación de Autobuses |
 | M7 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.4; weekday: 5-stop circular (Segovia→Tabanera 2-stop→Palazuelos→Segovia); Sat/Sun: extended route (Segovia cluster→...→Torrecaballeros); Segovia cluster outbound: 5 sub-stops; inbound: 4 sub-stops; Sunday has SCHOOL_ONLY/SUMMER_ONLY seasonal trips; all shared stops reuse M6 coordinates and clusters: Tabanera (2-stop: Tabanera+Tabanera 2), San Cristóbal (3-stop), Sonsoto (2-stop: Potro+Sonsoto 2), Trescasas (2-stop: Plaza de la constitución+Trescasas 2), Torrecaballeros (3-stop); Valsaín–La Granja feeder deferred to M7-AVE |
@@ -112,7 +113,8 @@ InterSego/
 │   └── InterSego.xcodeproj/    # Xcode project
 └── resources/                   # Shared resources across platforms
     ├── Icons/                  # App launcher icons
-    └── Route display/          # Route visualization assets
+    ├── Route display/          # Route visualization assets
+    └── timetables/             # Shared JSON timetable files (source of truth for migrated routes)
 ```
 
 ## Platform Implementations
