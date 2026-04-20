@@ -42,7 +42,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M2"]),
         mode: .production,
-        version: "1.1",
+        version: "1.2",
     )
 
     // MARK: - Directions
@@ -157,82 +157,7 @@ class M2Parser: CapableParser, RouteStopsProvider {
     }
 
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
-        DebugConfig.debugPrint(
-            "M2Parser: returning hardcoded timetable (PDF parsing bypassed)",
-        )
-        return buildStaticTimetables()
-    }
-
-    // MARK: - Static Timetable
-
-    //
-    // Source: Linecar M2 PDF screenshot, 2026-03-20.
-    // Weekday service only (Lunes a Viernes). No Saturday or Sunday service.
-    //
-    // The route is circular: the bus travels outbound from Segovia to Los Huertos, backtracks
-    // through Hontanares, continues to Valseca, then returns to Segovia.
-    // The left (outbound) and right (inbound) tables in the PDF are complementary halves of
-    // the same circular service.
-
-    private func buildStaticTimetables() -> [BusTimetable] {
-        // ── Weekday circularA: Segovia → Casino → Hontanares → Los Huertos → Valseca ──────────
-        let circADeps: [[DepartureTime]] = [
-            [t(9, 0), t(13, 45), t(16, 15), t(19, 15)], // SEGOVIA
-            [t(9, 5), t(13, 50), t(16, 20), t(19, 20)], // CASINO
-            [t(9, 10), t(13, 55), t(16, 25), t(19, 25)], // HONTANARES
-            [t(9, 15), t(14, 0), t(16, 30), t(19, 30)], // LOS_HUERTOS
-            [t(9, 30), t(14, 15), t(16, 40), t(19, 40)], // VALSECA
-        ]
-
-        // ── Weekday circularB: Los Huertos → Hontanares → Valseca → Casino → Segovia ──────────
-        //
-        // The 7:25 service originates from Valseca: its stop times are Valseca(7:25),
-        // Los Huertos(7:35), Hontanares(7:40), Casino(7:42), Segovia(7:55).
-        // In this stop list Valseca appears at position 2 (after Los Huertos), so the 7:25
-        // Valseca time is chronologically earlier than Los Huertos 7:35. All other runs
-        // (9:15, 14:00, 16:30, 19:30) follow the expected stop order.
-        let circBDeps: [[DepartureTime]] = [
-            [t(7, 35), t(9, 15), t(14, 0), t(16, 30), t(19, 30)], // LOS_HUERTOS
-            [t(7, 40), t(9, 20), t(14, 5), t(16, 35), t(19, 35)], // HONTANARES_RETURN
-            [t(7, 25), t(9, 30), t(14, 15), t(16, 45), t(19, 45)], // VALSECA (7:25 = Valseca-originating run)
-            [t(7, 42), t(9, 35), t(14, 20), t(16, 50), t(19, 50)], // CASINO_RETURN
-            [t(7, 55), t(9, 50), t(14, 35), t(17, 5), t(20, 5)], // SEGOVIA_RETURN
-        ]
-
-        return buildTimetables(
-            stops: Self.m2CircularA,
-            dayType: .weekday,
-            direction: Self.directionCircularA,
-            deps: circADeps,
-        )
-            + buildTimetables(
-                stops: Self.m2CircularB,
-                dayType: .weekday,
-                direction: Self.directionCircularB,
-                deps: circBDeps,
-            )
-    }
-
-    private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound)
-        -> DepartureTime
-    {
-        DepartureTime(hour: h, minute: m, seasonalAvailability: s)
-    }
-
-    private func buildTimetables(
-        stops: [BusStop],
-        dayType: DayType,
-        direction: String,
-        deps: [[DepartureTime]],
-    ) -> [BusTimetable] {
-        stops.enumerated().map { i, stop in
-            BusTimetable(
-                routeId: "M2",
-                stopId: stop.id,
-                dayType: dayType,
-                departures: deps[i],
-                direction: direction,
-            )
-        }
+        DebugConfig.debugPrint("M2Parser: loading timetable from bundled JSON")
+        return try TimetableLoader().load("M2")
     }
 }
