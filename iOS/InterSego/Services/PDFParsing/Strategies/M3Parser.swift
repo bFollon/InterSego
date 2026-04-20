@@ -23,22 +23,18 @@ import Foundation
 /// Navacerrada via La Granja, Valsain, and Parque Nacional de Guadarrama, then
 /// returns the same way.
 ///
-/// The PDF shows two tables:
-///   outbound: Segovia → Navacerrada (top table)
-///   inbound:  Navacerrada → Segovia (bottom table)
-///
 /// "Segovia" in the PDF is a cluster of 4 sub-stops:
 ///   Estación de Autobuses → Iglesia Santo Tomás → Frente Bar Norte → Plaza de Toros
 /// Times for the cluster are estimated at +2 min per sub-stop from the anchor time.
 ///
 /// No weekday or Sunday service. No seasonal restrictions.
 ///
-/// Timetable data hardcoded from official Linecar M3 PDF screenshot (2026-03-23).
+/// Timetable data loaded from Timetables/m3.json (migrated from PDF 2026-03-23).
 class M3Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M3"]),
         mode: .production,
-        version: "1.1",
+        version: "1.2",
     )
 
     // MARK: - Directions
@@ -164,107 +160,7 @@ class M3Parser: CapableParser, RouteStopsProvider {
     }
 
     func parse(pdfPath _: String, routeId _: String) throws -> [BusTimetable] {
-        DebugConfig.debugPrint(
-            "M3Parser: returning hardcoded timetable (PDF parsing bypassed)",
-        )
-        return buildStaticTimetables()
-    }
-
-    // MARK: - Static Timetable
-
-    //
-    // Source: Linecar M3 PDF screenshot, 2026-03-23.
-    // Saturday service only (Servicio de los Sábados). No weekday or Sunday service.
-    //
-    // "Segovia" in the PDF is a cluster of 4 sub-stops. The PDF gives one time for
-    // "Segovia"; sub-stop times are estimated at +2 min per position from the anchor.
-    //   Outbound anchor = Estación de Autobuses (first sub-stop)
-    //   Inbound anchor  = Plaza de Toros (first sub-stop arriving back)
-
-    private func buildStaticTimetables() -> [BusTimetable] {
-        // ── Saturday outbound: Segovia → Navacerrada ─────────────────────────────────────────
-        // PDF times:  8:30  8:40  8:46  8:50  8:54  8:59  9:09  9:20
-        //            16:00 16:10 16:16 16:20 16:24 16:29 16:39 16:50
-        //
-        // Segovia cluster (Estación→Iglesia→BarNorte→PlazaToros): 4 stops, +2 min each
-        let segoviaOut = DepartureTime.clusterDepartures(
-            [t(8, 30), t(16, 0)],
-            stopCount: 4,
-            offsetMinutes: 2,
-        )
-        let outDeps: [[DepartureTime]] = [
-            segoviaOut[0], // ESTACION_BUS (anchor)
-            segoviaOut[1], // IGLESIA_STO_TOMAS (+2)
-            segoviaOut[2], // FRENTE_BAR_NORTE (+4)
-            segoviaOut[3], // PLAZA_TOROS (+6)
-            [t(8, 40), t(16, 10)], // URB_CARRASCALEJO
-            [t(8, 46), t(16, 16)], // PARQUE_ROBLEDO
-            [t(8, 50), t(16, 20)], // LA_GRANJA
-            [t(8, 54), t(16, 24)], // VALSAIN
-            [t(8, 59), t(16, 29)], // BOCA_DEL_ASNO
-            [t(9, 9), t(16, 39)], // PUENTE_MOSQUITOS
-            [t(9, 20), t(16, 50)], // NAVACERRADA
-        ]
-
-        // ── Saturday inbound: Navacerrada → Segovia ──────────────────────────────────────────
-        // PDF times:  9:30  9:42  9:52  9:56  9:59 10:03 10:09 10:20
-        //            17:00 17:12 17:22 17:26 17:29 17:33 17:39 17:50
-        //
-        // Segovia cluster inbound (PlazaToros→BarNorte→Iglesia→Estación): 4 stops, +2 min each
-        // Anchor = PDF "Segovia" arrival minus 6 min (e.g., 10:20 → 10:14)
-        let segoviaIn = DepartureTime.clusterDepartures(
-            [t(10, 14), t(17, 44)],
-            stopCount: 4,
-            offsetMinutes: 2,
-        )
-        let inDeps: [[DepartureTime]] = [
-            [t(9, 30), t(17, 0)], // NAVACERRADA
-            [t(9, 42), t(17, 12)], // PUENTE_MOSQUITOS
-            [t(9, 52), t(17, 22)], // BOCA_DEL_ASNO
-            [t(9, 56), t(17, 26)], // VALSAIN
-            [t(9, 59), t(17, 29)], // LA_GRANJA
-            [t(10, 3), t(17, 33)], // PARQUE_ROBLEDO
-            [t(10, 9), t(17, 39)], // URB_CARRASCALEJO
-            segoviaIn[0], // PLAZA_TOROS_IN (anchor)
-            segoviaIn[1], // FRENTE_BAR_NORTE_IN (+2)
-            segoviaIn[2], // IGLESIA_STO_TOMAS_IN (+4)
-            segoviaIn[3], // ESTACION_BUS_IN (+6 = PDF time)
-        ]
-
-        return buildTimetables(
-            stops: Self.m3Outbound,
-            dayType: .saturday,
-            direction: Self.directionOutbound,
-            deps: outDeps,
-        )
-            + buildTimetables(
-                stops: Self.m3Inbound,
-                dayType: .saturday,
-                direction: Self.directionInbound,
-                deps: inDeps,
-            )
-    }
-
-    private func t(_ h: Int, _ m: Int, _ s: SeasonalAvailability = .yearRound)
-        -> DepartureTime
-    {
-        DepartureTime(hour: h, minute: m, seasonalAvailability: s)
-    }
-
-    private func buildTimetables(
-        stops: [BusStop],
-        dayType: DayType,
-        direction: String,
-        deps: [[DepartureTime]],
-    ) -> [BusTimetable] {
-        stops.enumerated().map { i, stop in
-            BusTimetable(
-                routeId: "M3",
-                stopId: stop.id,
-                dayType: dayType,
-                departures: deps[i],
-                direction: direction,
-            )
-        }
+        DebugConfig.debugPrint("M3Parser: loading timetable from JSON bundle")
+        return try TimetableLoader().load("M3")
     }
 }
