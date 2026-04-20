@@ -23,10 +23,13 @@ struct DepartureTime: Codable, Comparable, Hashable {
     let notes: String?
     let seasonalAvailability: SeasonalAvailability
     let variantLabel: String?
+    /// ID of an `AlternateLocation` on the parent stop. `nil` = departs from primary coordinates.
+    let alternateLocationId: String?
 
     init(hour: Int, minute: Int, notes: String? = nil,
          seasonalAvailability: SeasonalAvailability = .yearRound,
-         variantLabel: String? = nil)
+         variantLabel: String? = nil,
+         alternateLocationId: String? = nil)
     {
         precondition(hour >= 0 && hour <= 23, "Hour must be between 0 and 23, got \(hour)")
         precondition(minute >= 0 && minute <= 59, "Minute must be between 0 and 59, got \(minute)")
@@ -35,6 +38,11 @@ struct DepartureTime: Codable, Comparable, Hashable {
         self.notes = notes
         self.seasonalAvailability = seasonalAvailability
         self.variantLabel = variantLabel
+        self.alternateLocationId = alternateLocationId
+    }
+
+    func alternateLocationName(in stop: BusStop) -> String? {
+        alternateLocationId.flatMap { stop.alternateLocation(id: $0)?.name }
     }
 
     var displayString: String {

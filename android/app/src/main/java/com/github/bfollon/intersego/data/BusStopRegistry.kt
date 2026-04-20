@@ -98,12 +98,19 @@ object BusStopRegistry {
         coordinates = "40.944234, -4.110012"
     )
 
-    /** M4, M6 */
+    /** M4, M5, M6 */
     val azoguejo = BusStop(
         id = "azoguejo",
         name = "Azoguejo",
         area = "Segovia capital",
-        coordinates = "40.948502, -4.115979"
+        coordinates = "40.948502, -4.115979",
+        alternates = listOf(
+            AlternateLocation(
+                id = "estacion-autobuses",
+                name = "Estación de Autobuses",
+                coordinates = "40.944768, -4.121823"
+            )
+        )
     )
 
     /** M4, M6 */

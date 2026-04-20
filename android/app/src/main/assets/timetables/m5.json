@@ -1,10 +1,18 @@
 {
   "routeId": "M5",
-  "version": "1.2",
+  "version": "1.4",
   "source": "Linecar M5 PDF, 2026-03-25",
 
   "stops": [
-    { "id": "estacion-autobuses",  "name": "Estación de Autobuses",  "lat": 40.944768, "lon": -4.121823 },
+    {
+      "id": "azoguejo",
+      "name": "Azoguejo",
+      "lat": 40.948502,
+      "lon": -4.115979,
+      "alternates": [
+        { "id": "estacion-autobuses", "name": "Estación de Autobuses", "lat": 40.944768, "lon": -4.121823 }
+      ]
+    },
     { "id": "tizneros",            "name": "Tizneros",               "lat": 40.991521, "lon": -4.055240 },
     { "id": "espirdo",             "name": "Espirdo",                "lat": 40.996957, "lon": -4.073623 },
     { "id": "la-higuera",          "name": "La Higuera",             "lat": 41.016117, "lon": -4.080770 },
@@ -16,19 +24,19 @@
   "variants": [
     {
       "id": "regular",
-      "label": "Segovia → Sto. Domingo de Pirón",
+      "label": "Azoguejo → Sto. Domingo de Pirón",
       "stopSequence": [
-        "estacion-autobuses", "tizneros", "espirdo", "la-higuera",
+        "azoguejo", "tizneros", "espirdo", "la-higuera",
         "brieva", "basardilla", "sto-domingo-piron"
       ],
       "swapTargetId": "reverse"
     },
     {
       "id": "reverse",
-      "label": "Sto. Domingo de Pirón → Segovia",
+      "label": "Sto. Domingo de Pirón → Azoguejo",
       "stopSequence": [
         "sto-domingo-piron", "basardilla", "brieva", "la-higuera",
-        "espirdo", "tizneros", "estacion-autobuses"
+        "espirdo", "tizneros", "azoguejo"
       ],
       "swapTargetId": "regular"
     }
@@ -75,14 +83,14 @@
       "variantId": "regular",
       "dayType": "saturday",
       "trips": [
-        { "departures": [1245, 1300, 1305, 1310, 1320, 1325, 1330] }
+        { "departures": [{ "hhmm": 1245, "alternateId": "estacion-autobuses" }, 1300, 1305, 1310, 1320, 1325, 1330] }
       ]
     },
     {
       "variantId": "reverse",
       "dayType": "saturday",
       "trips": [
-        { "departures": [1000, 1005, 1010, 1020, 1025, 1030, 1040] }
+        { "departures": [1000, 1005, 1010, 1020, 1025, 1030, { "hhmm": 1040, "alternateId": "estacion-autobuses" }] }
       ]
     }
   ]

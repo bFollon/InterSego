@@ -39,6 +39,14 @@ struct TimetableLoader {
         let name: String
         let lat: Double
         let lon: Double
+        let alternates: [JsonAlternate]?
+    }
+
+    private struct JsonAlternate: Decodable {
+        let id: String
+        let name: String
+        let lat: Double
+        let lon: Double
     }
 
     private struct JsonVariant: Decodable {
@@ -73,7 +81,7 @@ struct TimetableLoader {
     private enum DepartureValue: Decodable {
         case absent
         case hhmm(Int)
-        case detailed(hhmm: Int, season: String?, variantLabel: String?)
+        case detailed(hhmm: Int, season: String?, variantLabel: String?, alternateId: String?)
 
         init(from decoder: Decoder) throws {
             let container = try decoder.singleValueContainer()
@@ -86,13 +94,14 @@ struct TimetableLoader {
                 return
             }
             let obj = try container.decode(DetailedDeparture.self)
-            self = .detailed(hhmm: obj.hhmm, season: obj.season, variantLabel: obj.variantLabel)
+            self = .detailed(hhmm: obj.hhmm, season: obj.season, variantLabel: obj.variantLabel, alternateId: obj.alternateId)
         }
 
         private struct DetailedDeparture: Decodable {
             let hhmm: Int
             let season: String?
             let variantLabel: String?
+            let alternateId: String?
         }
     }
 
@@ -115,6 +124,7 @@ struct TimetableLoader {
 
     private func buildTimetables(from file: TimetableFile) -> [BusTimetable] {
         let variantsById = Dictionary(uniqueKeysWithValues: file.variants.map { ($0.id, $0) })
+        let stopsById = Dictionary(uniqueKeysWithValues: file.stops.map { ($0.id, $0) })
         var result: [BusTimetable] = []
 
         for section in file.timetables {
@@ -127,7 +137,8 @@ struct TimetableLoader {
                 let tripSeason = parseSeason(trip.season)
                 for (i, departure) in trip.departures.enumerated() {
                     guard i < stopSequence.count else { continue }
-                    if let dt = makeDepartureTime(from: departure, tripSeason: tripSeason) {
+                    let parentStop = stopsById[stopSequence[i]]
+                    if let dt = makeDepartureTime(from: departure, tripSeason: tripSeason, parentStop: parentStop) {
                         depsByStop[i].append(dt)
                     }
                 }
@@ -170,19 +181,24 @@ struct TimetableLoader {
 
     private func makeDepartureTime(
         from value: DepartureValue,
-        tripSeason: SeasonalAvailability
+        tripSeason: SeasonalAvailability,
+        parentStop: JsonStop? = nil
     ) -> DepartureTime? {
         switch value {
         case .absent:
             return nil
         case .hhmm(let raw):
             return DepartureTime(hour: raw / 100, minute: raw % 100, seasonalAvailability: tripSeason)
-        case .detailed(let raw, let season, let variantLabel):
+        case .detailed(let raw, let season, let variantLabel, let alternateId):
+            let resolvedAlternateId = alternateId.flatMap { id in
+                parentStop?.alternates?.contains { $0.id == id } == true ? id : nil
+            }
             return DepartureTime(
                 hour: raw / 100,
                 minute: raw % 100,
                 seasonalAvailability: season.map { parseSeason($0) } ?? tripSeason,
-                variantLabel: variantLabel
+                variantLabel: variantLabel,
+                alternateLocationId: resolvedAlternateId
             )
         }
     }

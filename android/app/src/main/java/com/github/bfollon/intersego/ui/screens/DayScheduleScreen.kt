@@ -295,6 +295,7 @@ fun DayScheduleScreen(
                             )
                             DayScheduleTimelineRow(
                                 departure = departure,
+                                stop = stop,
                                 selectedVariantLabel = selectedVariantLabel,
                                 isLast = index == todayItems.size - 1 && markerIndex <= todayItems.size - 1,
                                 isBellSet = reminderKeys.contains(matchKey),
@@ -424,6 +425,7 @@ private fun NowMarkerRow(
 @Composable
 private fun DayScheduleTimelineRow(
     departure: DepartureTime,
+    stop: BusStop,
     selectedVariantLabel: String?,
     isLast: Boolean,
     isBellSet: Boolean = false,
@@ -484,6 +486,20 @@ private fun DayScheduleTimelineRow(
                                 text = departure.variantLabel!!,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    departure.alternateLocationName(stop)?.let { altName ->
+                        Surface(
+                            shape = MaterialTheme.shapes.small,
+                            color = MaterialTheme.colorScheme.tertiaryContainer
+                        ) {
+                            Text(
+                                text = altName,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }

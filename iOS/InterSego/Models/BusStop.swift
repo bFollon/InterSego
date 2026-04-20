@@ -29,10 +29,13 @@ struct BusStop: Codable, Hashable, Identifiable {
     let routingCoordinates: String?
     let routesServed: [String]
     let stopCode: String?
+    /// Sub-locations used by specific departures instead of the primary coordinates.
+    let alternates: [AlternateLocation]
 
     init(id: String, name: String, area: String? = nil,
          details: String? = nil, coordinates: String, routingCoordinates: String? = nil,
-         routesServed: [String] = [], stopCode: String? = nil)
+         routesServed: [String] = [], stopCode: String? = nil,
+         alternates: [AlternateLocation] = [])
     {
         self.id = id
         self.name = name
@@ -42,6 +45,11 @@ struct BusStop: Codable, Hashable, Identifiable {
         self.routingCoordinates = routingCoordinates
         self.routesServed = routesServed
         self.stopCode = stopCode
+        self.alternates = alternates
+    }
+
+    func alternateLocation(id: String) -> AlternateLocation? {
+        alternates.first { $0.id == id }
     }
 
     private var parsedCoordinates: (lat: Double, lon: Double)? {

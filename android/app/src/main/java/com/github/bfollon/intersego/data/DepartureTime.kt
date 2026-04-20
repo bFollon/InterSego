@@ -28,8 +28,12 @@ data class DepartureTime(
     val minute: Int,                    // 0-59
     val notes: String? = null,          // Optional notes: "Solo laborables", etc.
     val seasonalAvailability: SeasonalAvailability = SeasonalAvailability.YEAR_ROUND,
-    val variantLabel: String? = null     // Route variant label for display (e.g., "Regular", "Extendido", "Circular")
+    val variantLabel: String? = null,    // Route variant label for display (e.g., "Regular", "Extendido", "Circular")
+    val alternateLocationId: String? = null // ID of an AlternateLocation on the stop; null = primary coordinates
 ) : Comparable<DepartureTime> {
+
+    fun alternateLocationName(stop: com.github.bfollon.intersego.data.BusStop): String? =
+        alternateLocationId?.let { stop.alternateLocation(it)?.name }
 
     init {
         require(hour in 0..23) { "Hour must be between 0 and 23, got $hour" }

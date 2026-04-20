@@ -496,6 +496,7 @@ struct NextDepartureView: View {
                         DepartureTimeline(
                             departures: info.following,
                             showRouteBadge: isMultiRoute,
+                            stop: isMultiRoute ? nil : stop,
                             selectedVariantLabelFor: { t in variantLabel(for: t) },
                             bellStateFor: isToday ? { t in bellState(for: t) } : nil,
                             onBellTap: isToday ? { t in handleBellTap(for: t) } : nil,
@@ -1264,6 +1265,7 @@ private struct TimelineIndicator: View {
 private struct DepartureTimeline: View {
     let departures: [TaggedDeparture]
     let showRouteBadge: Bool
+    var stop: BusStop? = nil
     var selectedVariantLabelFor: ((TaggedDeparture) -> String?)? = nil
     var bellStateFor: ((TaggedDeparture) -> BellState)? = nil
     var onBellTap: ((TaggedDeparture) -> Void)? = nil
@@ -1302,6 +1304,16 @@ private struct DepartureTimeline: View {
                                             .padding(.horizontal, 6)
                                             .padding(.vertical, 2)
                                             .background(Color(.systemGray5))
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    }
+
+                                    if let s = stop, let altName = departure.alternateLocationName(in: s) {
+                                        Text(altName)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.orange.opacity(0.15))
+                                            .foregroundColor(.orange)
                                             .clipShape(RoundedRectangle(cornerRadius: 4))
                                     }
 

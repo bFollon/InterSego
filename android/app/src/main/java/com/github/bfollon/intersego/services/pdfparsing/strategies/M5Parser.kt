@@ -51,16 +51,16 @@ class M5Parser(private val context: Context) : CapableParser, RouteStopsProvider
 
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M5"),
-        mode = ParserMode.PRODUCTION,
-        version = "1.2"
+        mode = ParserMode.DEBUG,
+        version = "1.4"
     )
 
     companion object {
-        private const val DIRECTION_OUTBOUND = "Segovia → Sto. Domingo de Pirón"
-        private const val DIRECTION_INBOUND = "Sto. Domingo de Pirón → Segovia"
+        private const val DIRECTION_OUTBOUND = "Azoguejo → Sto. Domingo de Pirón"
+        private const val DIRECTION_INBOUND = "Sto. Domingo de Pirón → Azoguejo"
 
         val m5Outbound: List<BusStop> = listOf(
-            BusStopRegistry.estacionAutobuses,
+            BusStopRegistry.azoguejo,
             BusStopRegistry.tizneros,
             BusStopRegistry.espirdo,
             BusStopRegistry.laHiguera,
@@ -76,7 +76,7 @@ class M5Parser(private val context: Context) : CapableParser, RouteStopsProvider
             BusStopRegistry.laHiguera,
             BusStopRegistry.espirdo,
             BusStopRegistry.tizneros,
-            BusStopRegistry.estacionAutobuses
+            BusStopRegistry.azoguejo
         )
     }
 

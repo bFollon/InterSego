@@ -18,6 +18,7 @@
 package com.github.bfollon.intersego.services
 
 import android.content.Context
+import com.github.bfollon.intersego.data.AlternateLocation
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
@@ -52,6 +53,15 @@ class TimetableLoader(private val context: Context) {
 
     @Serializable
     private data class JsonStop(
+        val id: String,
+        val name: String,
+        val lat: Double,
+        val lon: Double,
+        val alternates: List<JsonAlternate> = emptyList()
+    )
+
+    @Serializable
+    private data class JsonAlternate(
         val id: String,
         val name: String,
         val lat: Double,
@@ -92,6 +102,7 @@ class TimetableLoader(private val context: Context) {
 
     private fun buildTimetables(file: TimetableFile): List<BusTimetable> {
         val variantsById = file.variants.associateBy { it.id }
+        val stopsById = file.stops.associateBy { it.id }
         val result = mutableListOf<BusTimetable>()
 
         for (section in file.timetables) {
@@ -104,7 +115,8 @@ class TimetableLoader(private val context: Context) {
                 val tripSeason = parseSeason(trip.season)
                 trip.departures.forEachIndexed { i, element ->
                     if (i >= stopSequence.size) return@forEachIndexed
-                    parseDeparture(element, tripSeason)?.let { depsByStop[i].add(it) }
+                    val parentStop = stopsById[stopSequence[i]]
+                    parseDeparture(element, tripSeason, parentStop)?.let { depsByStop[i].add(it) }
                 }
             }
 
@@ -141,7 +153,11 @@ class TimetableLoader(private val context: Context) {
         else               -> SeasonalAvailability.YEAR_ROUND
     }
 
-    private fun parseDeparture(element: JsonElement, tripSeason: SeasonalAvailability): DepartureTime? {
+    private fun parseDeparture(
+        element: JsonElement,
+        tripSeason: SeasonalAvailability,
+        parentStop: JsonStop?
+    ): DepartureTime? {
         if (element is JsonNull) return null
         if (element is JsonPrimitive) {
             val hhmm = element.int
@@ -152,7 +168,14 @@ class TimetableLoader(private val context: Context) {
             val season = element["season"]?.jsonPrimitive?.content
                 ?.let { parseSeason(it) } ?: tripSeason
             val variantLabel = element["variantLabel"]?.jsonPrimitive?.content
-            return DepartureTime(hhmm / 100, hhmm % 100, seasonalAvailability = season, variantLabel = variantLabel)
+            val alternateId = element["alternateId"]?.jsonPrimitive?.content
+                ?.takeIf { id -> parentStop?.alternates?.any { it.id == id } == true }
+            return DepartureTime(
+                hhmm / 100, hhmm % 100,
+                seasonalAvailability = season,
+                variantLabel = variantLabel,
+                alternateLocationId = alternateId
+            )
         }
         return null
     }

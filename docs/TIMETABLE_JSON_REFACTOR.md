@@ -89,9 +89,9 @@ Each stop used by this route. Stops shared between routes are duplicated by valu
 
 **Stop IDs** use kebab-case and are stable across versions (changing an ID is a breaking change). When the same physical stop appears in both directions of a circular route (e.g., `estacion-autobuses` at position 0 and again at position 8), use the same ID — the stop sequence position disambiguates.
 
-**`alternates`** are named sub-locations of the same physical stop where specific buses depart or arrive from a slightly different point (e.g., gasolinera variant in M1). They are not independent stops — the closest-stop finder treats the parent stop ID as the match, but the map and departure info can display the alternate name and coordinates when relevant.
+**`alternates`** are named sub-locations of the same physical stop where specific buses depart or arrive from a slightly different point (e.g., gasolinera variant in M1, Via Roma variant in M5). They are not independent stops — the closest-stop finder navigates to the parent stop, but the map, departure list, and "take me there" feature use the alternate's coordinates when relevant.
 
-> **Open decision:** whether `alternates` are nested under the parent stop (current proposal) or listed as top-level stops with a `parentStopId` field. Nested is simpler for authoring; top-level is simpler for the loader. Defer until M1 migration.
+**Decision: nested under parent stop** (not top-level with a `parentStopId`). Authoring is simpler and alternates have no meaning outside the context of their parent stop. The loader resolves alternate IDs by searching the parent stop's `alternates` list.
 
 ### `variants`
 
@@ -189,7 +189,7 @@ Each element of `departures` maps to the stop at the same index in `stopSequence
 | `{ "hhmm": 900 }` | Explicit object form (for adding metadata) |
 | `{ "hhmm": 900, "season": "schoolOnly" }` | Per-departure season override |
 | `{ "hhmm": 900, "variantLabel": "Sotillo" }` | Badge shown in departure row (e.g., asterisk trips) |
-| `{ "hhmm": 900, "stopId": "garcillan-gasolinera" }` | Departs from an alternate location |
+| `{ "hhmm": 900, "alternateId": "garcillan-gasolinera" }` | Departs from / arrives at an alternate location of this stop |
 
 Multiple fields can be combined in the object form.
 
@@ -320,13 +320,13 @@ for each timetable section (variantId × dayType):
       if departure == null  → skip
       if departure is Int   → DepartureTime(hhmm, season: tripSeason)
       if departure is Object:
-        hhmm         = departure.hhmm
-        season       = departure.season ?? tripSeason
+        hhmm        = departure.hhmm
+        season      = departure.season ?? tripSeason
         variantLabel = departure.variantLabel ?? nil
-        stopId       = departure.stopId ?? stopId   ← alternate location
+        alternateId = departure.alternateId ?? nil   ← alternate location ID within this stop
 
-        → DepartureTime(hhmm, season, variantLabel)
-        → resolved stop = stops[stopId] or alternates[stopId]
+        → DepartureTime(hhmm, season, variantLabel, alternateLocationId: alternateId)
+        → BusTimetable stopId stays as the parent stop ID (not the alternate)
 
     → BusTimetable(routeId, stopId, dayType, direction: variant.label, departures)
 ```
@@ -370,6 +370,98 @@ Migrate one route at a time. For each route:
 - [ ] Android builds and manual test passes
 - [ ] iOS builds and manual test passes
 - [ ] Root CLAUDE.md feature tracker updated
+
+---
+
+## Alternate Boarding Points — Full Architecture
+
+This section captures the design decisions made before implementation so they aren't re-derived each time.
+
+### What this models
+
+Some stops have multiple physical sub-locations where a bus can depart or arrive, depending on the specific trip. Examples:
+
+- **M5** — "Estación de Autobuses" has a Via Roma sub-location (~1 km away); certain outbound trips depart from Via Roma instead of the main station.
+- **M1** — "Garcillán" has a gasolinera variant used by some services.
+
+These are **not** independent stops on the route. They are alternate pickup/dropoff points for the same conceptual stop, used only by specific departures.
+
+### Data model
+
+`BusStop` owns its alternate locations:
+
+```kotlin
+// Kotlin / Swift equivalent
+data class AlternateLocation(
+    val id: String,          // e.g. "via-roma" — stable, kebab-case
+    val name: String,        // "Via Roma"
+    val coordinates: String  // "40.948502, -4.115979"
+)
+
+// BusStop gains:
+val alternates: List<AlternateLocation> = emptyList()
+```
+
+`DepartureTime` carries an optional reference to which alternate applies:
+
+```kotlin
+val alternateLocationId: String? = null
+// null  → bus uses the parent stop's primary coordinates
+// "via-roma" → look up in stop.alternates to get coordinates and display name
+```
+
+Coordinates are **not** embedded in `DepartureTime` — they stay canonical on the stop. If Via Roma's coordinates need correcting, fix it in one place (the stop definition in the JSON).
+
+### JSON authoring
+
+Define the alternate on the stop:
+
+```json
+{
+  "id": "estacion-autobuses",
+  "name": "Estación de Autobuses",
+  "lat": 40.944768,
+  "lon": -4.121823,
+  "alternates": [
+    { "id": "via-roma", "name": "Via Roma", "lat": 40.948502, "lon": -4.115979 }
+  ]
+}
+```
+
+Reference it on the departure cell using `alternateId`:
+
+```json
+{ "departures": [{ "hhmm": 715, "alternateId": "via-roma" }, null, null, null, null, null, null] }
+```
+
+The `alternateId` applies to the specific (trip, stop) cell only — it does **not** cascade to other stops in the same trip. An intermediate stop can have its own `alternateId` independently.
+
+### Service behaviour
+
+**Closest stop finder:**
+For each stop, compute candidate distances using the stop's primary coordinates **and** the coordinates of every alternate defined on that stop (regardless of which departures use them — the user standing near an alternate should still find the route). The winner is the candidate with minimum distance. The result still returns the parent `stopId`; alternate context is surfaced through the departure data.
+
+**"Take me there" (navigation):**
+When the user taps "take me there" from a NextDeparture screen, if the stop has **any** departures with alternates, show a picker before opening maps:
+
+> **¿Cuándo quieres salir?**
+> *Dependiendo de la hora de salida, el bus sale en diferentes sitios*
+>
+> - 07:15 — Via Roma
+> - 13:45 — Estación de Autobuses
+> - 15:15 — Estación de Autobuses
+
+User picks a departure → resolve `alternateLocationId` on that `DepartureTime` → navigate to that alternate's coordinates, or the stop's primary coordinates if `alternateLocationId` is null. If the stop has no departures with alternates, navigate directly without the picker.
+
+**Departure list display:**
+Show `alternate.name` as a badge on any `DepartureTime` where `alternateLocationId` is non-null — same display mechanism as `variantLabel`. Applied in NextDeparture (following departures) and DaySchedule.
+
+**Inline map tile (NextDeparture):**
+Render using the next departure's resolved location (alternate if set, primary otherwise).
+
+### What this is not
+
+`BusStop` now carries alternate locations, so it is not entirely "clean" — but the stop remains the canonical owner of all its physical points. The departure only carries an ID reference, not coordinates. This keeps coordinates DRY and keeps `BusStopRegistry` and route stop lists working without modification (they reference parent stop IDs, which are unchanged).
 
 ---
 
