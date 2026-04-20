@@ -1,0 +1,89 @@
+{
+  "routeId": "M5",
+  "version": "1.2",
+  "source": "Linecar M5 PDF, 2026-03-25",
+
+  "stops": [
+    { "id": "estacion-autobuses",  "name": "Estación de Autobuses",  "lat": 40.944768, "lon": -4.121823 },
+    { "id": "tizneros",            "name": "Tizneros",               "lat": 40.991521, "lon": -4.055240 },
+    { "id": "espirdo",             "name": "Espirdo",                "lat": 40.996957, "lon": -4.073623 },
+    { "id": "la-higuera",          "name": "La Higuera",             "lat": 41.016117, "lon": -4.080770 },
+    { "id": "brieva",              "name": "Brieva",                 "lat": 41.035677, "lon": -4.052387 },
+    { "id": "basardilla",          "name": "Basardilla",             "lat": 41.027220, "lon": -4.025058 },
+    { "id": "sto-domingo-piron",   "name": "Sto. Domingo de Pirón",  "lat": 41.041438, "lon": -3.989562 }
+  ],
+
+  "variants": [
+    {
+      "id": "regular",
+      "label": "Segovia → Sto. Domingo de Pirón",
+      "stopSequence": [
+        "estacion-autobuses", "tizneros", "espirdo", "la-higuera",
+        "brieva", "basardilla", "sto-domingo-piron"
+      ],
+      "swapTargetId": "reverse"
+    },
+    {
+      "id": "reverse",
+      "label": "Sto. Domingo de Pirón → Segovia",
+      "stopSequence": [
+        "sto-domingo-piron", "basardilla", "brieva", "la-higuera",
+        "espirdo", "tizneros", "estacion-autobuses"
+      ],
+      "swapTargetId": "regular"
+    }
+  ],
+
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      {
+        "id": "entry-lv",
+        "label": "Lunes a Viernes",
+        "variantId": "regular",
+        "dayType": "weekday"
+      },
+      {
+        "id": "entry-sabado",
+        "label": "Sábados",
+        "variantId": "regular",
+        "dayType": "saturday"
+      }
+    ]
+  },
+
+  "timetables": [
+    {
+      "variantId": "regular",
+      "dayType": "weekday",
+      "trips": [
+        { "departures": [1345, 1400, 1410, 1415, 1425, 1430, 1435] },
+        { "departures": [1515, 1530, 1540, 1545, null, null, null]  },
+        { "departures": [2030, 2045, 2055, 2100, null, null, null]  }
+      ]
+    },
+    {
+      "variantId": "reverse",
+      "dayType": "weekday",
+      "trips": [
+        { "departures": [null, null, 725,  730,  735,  740,  750]   },
+        { "departures": [1000, 1005, 1010, 1020, 1025, 1030, 1040]  },
+        { "departures": [null, null, null, 1545, 1550, 1555, 1605]  }
+      ]
+    },
+    {
+      "variantId": "regular",
+      "dayType": "saturday",
+      "trips": [
+        { "departures": [1245, 1300, 1305, 1310, 1320, 1325, 1330] }
+      ]
+    },
+    {
+      "variantId": "reverse",
+      "dayType": "saturday",
+      "trips": [
+        { "departures": [1000, 1005, 1010, 1020, 1025, 1030, 1040] }
+      ]
+    }
+  ]
+}
