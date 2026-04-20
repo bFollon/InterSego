@@ -27,7 +27,7 @@ class M8Parser: CapableParser, RouteStopsProvider {
     let capabilities = ParserCapabilities(
         supportedRoutes: Set(["M8"]),
         mode: .production,
-        version: "1.2",
+        version: "1.3",
     )
 
     // MARK: - Directions

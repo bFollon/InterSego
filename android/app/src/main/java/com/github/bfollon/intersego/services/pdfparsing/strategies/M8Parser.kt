@@ -47,7 +47,7 @@ class M8Parser(private val context: Context) : CapableParser, RouteStopsProvider
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M8"),
         mode = ParserMode.PRODUCTION,
-        version = "1.2"
+        version = "1.3"
     )
 
     companion object {
