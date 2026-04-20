@@ -113,6 +113,14 @@ object BusStopRegistry {
         )
     )
 
+    /** M7 weekday circular — return arrival at Estación; distinct ID prevents departure merge with outbound position */
+    val estacionAutobusesCircRet = BusStop(
+        id = "estacion-autobuses-circ-ret",
+        name = "Estación de Autobuses",
+        area = "Segovia capital",
+        coordinates = "40.944768, -4.121823"
+    )
+
     /** M4, M6 */
     val azoguejoEndStop = BusStop(
         id = "azoguejo-endStop",
@@ -591,7 +599,7 @@ object BusStopRegistry {
 
     private val byId: Map<String, BusStop> by lazy {
         listOf(
-            estacionAutobuses, iglesiaStTomas, frenteBarNorte, plazaDeToros,
+            estacionAutobuses, estacionAutobusesCircRet, iglesiaStTomas, frenteBarNorte, plazaDeToros,
             hospitalSegovia, jardinillos, andresLaguna, laPista, hermanitas,
             azoguejo, delicias, montecorredores,
             casinoUnion, poligonoIndM1, poligonoIndM1B, valverdeMajano,
