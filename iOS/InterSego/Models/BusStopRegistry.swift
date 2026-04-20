@@ -111,6 +111,14 @@ enum BusStopRegistry {
         ]
     )
     
+    /// M7 weekday circular — return arrival at Estación; distinct ID prevents departure merge with outbound position
+    static let estacionAutobusesCircRet = BusStop(
+        id: "estacion-autobuses-circ-ret",
+        name: "Estación de Autobuses",
+        area: "Segovia capital",
+        coordinates: "40.944768, -4.121823"
+    )
+
     /// M4
     static let azoguejoEndStop = BusStop(
         id: "azoguejo-end-stop",
