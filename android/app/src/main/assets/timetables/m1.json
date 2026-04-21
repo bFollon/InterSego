@@ -4,34 +4,18 @@
   "source": "Linecar M1 PDF screenshot, 2026-03-18",
 
   "stops": [
-    {
-      "id": "estacion-autobuses",
-      "name": "Estación de Autobuses",
-      "lat": 40.944768,
-      "lon": -4.121823
-    },
-    {
-      "id": "estacion-autobuses-circ-ret",
-      "name": "Estación de Autobuses",
-      "lat": 40.944768,
-      "lon": -4.121823
-    },
-    { "id": "poligono-ind-m1",      "name": "Polígono Industrial",   "lat": 40.957976, "lon": -4.198156 },
-    { "id": "poligono-ind-m1-2",    "name": "Polígono Industrial 2", "lat": 40.957554, "lon": -4.206457 },
-    { "id": "poligono-ind-m1-ret",  "name": "Polígono Industrial",   "lat": 40.957976, "lon": -4.198156 },
-    { "id": "poligono-ind-m1-2-ret","name": "Polígono Industrial 2", "lat": 40.957554, "lon": -4.206457 },
-    { "id": "casino-union",         "name": "Casino",                "lat": 40.965154, "lon": -4.209251 },
-    { "id": "valverde-majano",      "name": "Valverde de Majano",    "lat": 40.956274, "lon": -4.235343 },
-    { "id": "abades",               "name": "Abades",                "lat": 40.915804, "lon": -4.267038 },
-    { "id": "martin-miguel",        "name": "Martín Miguel",         "lat": 40.951889, "lon": -4.268660 },
-    {
-      "id": "garcillan",
-      "name": "Garcillán",
-      "lat": 40.976809,
-      "lon": -4.264724,
-      "alternates": [
-        { "id": "garcillan-gasolinera", "name": "Garcillán (gasolinera)", "lat": 40.9745, "lon": -4.2638 }
-      ]
+    { "id": "estacion-autobuses",           "name": "Estación de Autobuses",  "lat": 40.944768, "lon": -4.121823 },
+    { "id": "estacion-autobuses-circ-ret",  "name": "Estación de Autobuses",  "lat": 40.944768, "lon": -4.121823 },
+    { "id": "poligono-ind-m1",              "name": "Polígono Industrial",    "lat": 40.957976, "lon": -4.198156 },
+    { "id": "poligono-ind-m1-2",            "name": "Polígono Industrial 2",  "lat": 40.957554, "lon": -4.206457 },
+    { "id": "poligono-ind-m1-ret",          "name": "Polígono Industrial",    "lat": 40.957976, "lon": -4.198156 },
+    { "id": "poligono-ind-m1-2-ret",        "name": "Polígono Industrial 2",  "lat": 40.957554, "lon": -4.206457 },
+    { "id": "casino-union",                 "name": "Casino",                 "lat": 40.965154, "lon": -4.209251 },
+    { "id": "valverde-majano",              "name": "Valverde de Majano",     "lat": 40.956274, "lon": -4.235343 },
+    { "id": "abades",                       "name": "Abades",                 "lat": 40.915804, "lon": -4.267038 },
+    { "id": "martin-miguel",                "name": "Martín Miguel",          "lat": 40.951889, "lon": -4.268660 },
+    { "id": "garcillan",                    "name": "Garcillán",              "lat": 40.976809, "lon": -4.264724,
+      "alternates": [ { "id": "garcillan-gasolinera", "name": "Garcillán (gasolinera)", "lat": 40.9745, "lon": -4.2638 } ] 
     }
   ],
 
@@ -56,17 +40,14 @@
       "id": "circularB",
       "label": "Garcillán → Segovia",
       "stopSequence": [
-        "estacion-autobuses",
-        "poligono-ind-m1",
-        "poligono-ind-m1-2",
         "garcillan",
         "martin-miguel",
         "abades",
         "valverde-majano",
         "casino-union",
-        "poligono-ind-m1-2-ret",
-        "poligono-ind-m1-ret",
-        "estacion-autobuses-circ-ret"
+        "poligono-ind-m1-2",
+        "poligono-ind-m1",
+        "estacion-autobuses"
       ],
       "swapTargetId": "circularA"
     },
@@ -106,32 +87,31 @@
       "variantId": "circularA",
       "dayType": "weekday",
       "trips": [
-        { "departures": [640,  650,  652,  null, null, null, null, null, null] },
-        { "departures": [725,  740,  742,  null, null, null, null, null, null] },
-        { "departures": [825,  835,  837,  null, 840,  845,  null, null, null] },
-        { "departures": [1000, 1010, 1012, {"hhmm": 1015, "season": "juneToSept"}, null, null, null, null, null] },
-        { "departures": [1200, 1205, 1207, {"hhmm": 1210, "season": "juneToSept"}, 1215, 1220, 1225, 1230, 1245] },
-        { "departures": [1300, null, null, 1307, 1310, 1315, null, null, null] },
-        { "departures": [1440, 1445, 1447, {"hhmm": 1450, "season": "juneToSept"}, 1455, 1500, null, null, null] },
-        { "departures": [1515, 1520, 1522, null, 1525, 1530, 1535, 1540, 1600] },
-        { "departures": [1800, 1805, 1807, {"hhmm": 1810, "season": "juneToSept"}, 1815, 1820, null, null, null] },
-        { "departures": [1930, null, null, null, 1940, 1945, null, {"hhmm": 1950, "season": "friOnly"}, null] },
-        { "departures": [2050, 2055, 2057, {"hhmm": 2100, "season": "juneToSept"}, 2105, 2110, 2115, 2120, 2135] }
+        { "departures": [640,  650,  652,  null,                                   null, null, null, null,                                   null] },
+        { "departures": [725,  740,  742,  null,                                   null, null, null, null,                                   null] },
+        { "departures": [825,  835,  837,  null,                                   840,  845,  null, null,                                   null] },
+        { "departures": [1000, 1010, 1012, {"hhmm": 1015, "season": "juneToSept"}, null, null, null, null,                                   null] },
+        { "departures": [1200, 1205, 1207, {"hhmm": 1210, "season": "juneToSept"}, 1215, 1220, 1225, 1230,                                   1245] },
+        { "departures": [1300, null, null, 1307,                                   1310, 1315, null, null,                                   null] },
+        { "departures": [1440, 1445, 1447, {"hhmm": 1450, "season": "juneToSept"}, 1455, 1500, null, null,                                   null] },
+        { "departures": [1515, 1520, 1522, null,                                   1525, 1530, 1535, 1540,                                   1600] },
+        { "departures": [1800, 1805, 1807, {"hhmm": 1810, "season": "juneToSept"}, 1815, 1820, null, null,                                   null] },
+        { "departures": [1930, null, null, null,                                   1940, 1945, null, {"hhmm": 1950, "season": "friOnly"},    null] },
+        { "departures": [2050, 2055, 2057, {"hhmm": 2100, "season": "juneToSept"}, 2105, 2110, 2115, 2120,                                   2135] }
       ]
     },
     {
       "variantId": "circularB",
       "dayType": "weekday",
       "trips": [
-        { "departures": [640, 650, 652, 655, 700, 705, 710, null, 715, 717, 725] },
-        { "departures": [null, null, null, null, null, 740, 750, null, null, null, 800] },
-        { "departures": [null, null, null, {"hhmm": 840,  "alternateId": "garcillan-gasolinera"}, null, null, null, null, null, null, 855] },
-        { "departures": [null, null, null, null, {"hhmm": 940, "season": "monFriOnly"}, null, {"hhmm": 940, "season": "monFriOnly"}, null, null, null, 1000] },
-        { "departures": [null, null, null, {"hhmm": 1040, "alternateId": "garcillan-gasolinera"}, null, 1045, 1050, null, 1055, 1057, 1100] },
-        { "departures": [null, null, null, null, null, null, 1505, null, 1510, 1512, 1515] },
-        { "departures": [null, null, null, null, null, 1600, 1605, 1610, null, null, 1620] },
-        { "departures": [null, null, null, 1625, null, null, null, null, null, null, 1650] },
-        { "departures": [null, null, null, null, null, 1820, 1825, null, null, null, 1835] }
+        { "departures": [ 655,  700,  705,  710, null,  715,  717,  725] },
+        { "departures": [null, null,  740,  750, null, null, null,  800] },
+        { "departures": [{"hhmm": 840,  "alternateId": "garcillan-gasolinera"}, null, null, null, null, null, null, 855] },
+        { "departures": [null, {"hhmm": 940, "season": "monFriOnly"}, null, {"hhmm": 940, "season": "monFriOnly"}, null, null, null, 1000] },
+        { "departures": [{"hhmm":1040,  "alternateId": "garcillan-gasolinera"}, null, 1045, 1050, null, 1055, 1057, 1100] },
+        { "departures": [null, null, 1500, 1505, null, 1510, 1512, 1515] },
+        { "departures": [1625, null, null, null, null, null, null, 1650] },
+        { "departures": [null, null, 1820, 1825, null, null, null, 1835] }
       ]
     },
     {

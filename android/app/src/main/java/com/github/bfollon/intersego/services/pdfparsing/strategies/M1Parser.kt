@@ -55,7 +55,7 @@ class M1Parser(private val context: Context) : CapableParser, RouteStopsProvider
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M1"),
         mode = ParserMode.PRODUCTION,
-        version = "1.9"
+        version = "2.1"
     )
 
     companion object {
@@ -65,18 +65,15 @@ class M1Parser(private val context: Context) : CapableParser, RouteStopsProvider
         private const val DIRECTION_SAT_INBOUND = "Abades → Segovia"
 
         private object Stops {
-            val SEGOVIA          = BusStopRegistry.estacionAutobuses
-            val POLIGONO         = BusStopRegistry.poligonoIndM1
-            val POLIGONO_2       = BusStopRegistry.poligonoIndM1B
-            val CASINO           = BusStopRegistry.casinoUnion
-            val VALVERDE         = BusStopRegistry.valverdeMajano
-            val ABADES           = BusStopRegistry.abades
-            val MARTIN_MIGUEL    = BusStopRegistry.martinMiguel
-            val GARCILLAN        = BusStopRegistry.garcillan
-            val SEGOVIA_RET      = BusStopRegistry.estacionAutobusesCircRet
-            // circularB return leg — distinct IDs prevent departure merge with outbound positions
-            val POLIGONO_2_B_IN  = BusStopRegistry.poligonoIndM1BRet
-            val POLIGONO_B_IN    = BusStopRegistry.poligonoIndM1Ret
+            val SEGOVIA       = BusStopRegistry.estacionAutobuses
+            val POLIGONO      = BusStopRegistry.poligonoIndM1
+            val POLIGONO_2    = BusStopRegistry.poligonoIndM1B
+            val CASINO        = BusStopRegistry.casinoUnion
+            val VALVERDE      = BusStopRegistry.valverdeMajano
+            val ABADES        = BusStopRegistry.abades
+            val MARTIN_MIGUEL = BusStopRegistry.martinMiguel
+            val GARCILLAN     = BusStopRegistry.garcillan
+            val SEGOVIA_RET   = BusStopRegistry.estacionAutobusesCircRet
         }
 
         val m1CircularAWeekday: List<BusStop> = listOf(
@@ -86,9 +83,8 @@ class M1Parser(private val context: Context) : CapableParser, RouteStopsProvider
         )
 
         val m1CircularBWeekday: List<BusStop> = listOf(
-            Stops.SEGOVIA, Stops.POLIGONO, Stops.POLIGONO_2,
             Stops.GARCILLAN, Stops.MARTIN_MIGUEL, Stops.ABADES, Stops.VALVERDE,
-            Stops.CASINO, Stops.POLIGONO_2_B_IN, Stops.POLIGONO_B_IN, Stops.SEGOVIA_RET
+            Stops.CASINO, Stops.POLIGONO_2, Stops.POLIGONO, Stops.SEGOVIA
         )
 
         val m1SaturdayOutbound: List<BusStop> = listOf(
