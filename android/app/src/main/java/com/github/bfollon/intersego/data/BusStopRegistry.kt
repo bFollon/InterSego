@@ -171,6 +171,22 @@ object BusStopRegistry {
         coordinates = "40.957554, -4.206457"
     )
 
+    /** M1 circularB return leg — distinct ID prevents departure merge with outbound position */
+    val poligonoIndM1Ret = BusStop(
+        id = "poligono-ind-m1-ret",
+        name = "Polígono Industrial",
+        area = "Valverde del Majano",
+        coordinates = "40.957976, -4.198156"
+    )
+
+    /** M1 circularB return leg — distinct ID prevents departure merge with outbound position */
+    val poligonoIndM1BRet = BusStop(
+        id = "poligono-ind-m1-2-ret",
+        name = "Polígono Industrial 2",
+        area = "Valverde del Majano",
+        coordinates = "40.957554, -4.206457"
+    )
+
     /** M1 only */
     val valverdeMajano = BusStop(
         id = "valverde-majano",
@@ -200,7 +216,14 @@ object BusStopRegistry {
         id = "garcillan",
         name = "Garcillán",
         area = "Garcillán",
-        coordinates = "40.976809, -4.264724"
+        coordinates = "40.976809, -4.264724",
+        alternates = listOf(
+            AlternateLocation(
+                id = "garcillan-gasolinera",
+                name = "Garcillán (gasolinera)",
+                coordinates = "40.9745, -4.2638"
+            )
+        )
     )
 
     /** M2 only */
