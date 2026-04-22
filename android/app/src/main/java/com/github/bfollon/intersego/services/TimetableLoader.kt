@@ -86,6 +86,7 @@ class TimetableLoader(private val context: Context) {
     @Serializable
     private data class JsonTrip(
         val season: String? = null,
+        val variantLabel: String? = null,
         val departures: List<JsonElement>
     )
 
@@ -116,7 +117,7 @@ class TimetableLoader(private val context: Context) {
                 trip.departures.forEachIndexed { i, element ->
                     if (i >= stopSequence.size) return@forEachIndexed
                     val parentStop = stopsById[stopSequence[i]]
-                    parseDeparture(element, tripSeason, parentStop)?.let { depsByStop[i].add(it) }
+                    parseDeparture(element, tripSeason, trip.variantLabel, parentStop)?.let { depsByStop[i].add(it) }
                 }
             }
 
@@ -156,18 +157,19 @@ class TimetableLoader(private val context: Context) {
     private fun parseDeparture(
         element: JsonElement,
         tripSeason: SeasonalAvailability,
+        tripVariantLabel: String?,
         parentStop: JsonStop?
     ): DepartureTime? {
         if (element is JsonNull) return null
         if (element is JsonPrimitive) {
             val hhmm = element.int
-            return DepartureTime(hhmm / 100, hhmm % 100, seasonalAvailability = tripSeason)
+            return DepartureTime(hhmm / 100, hhmm % 100, seasonalAvailability = tripSeason, variantLabel = tripVariantLabel)
         }
         if (element is JsonObject) {
             val hhmm = element["hhmm"]!!.jsonPrimitive.int
             val season = element["season"]?.jsonPrimitive?.content
                 ?.let { parseSeason(it) } ?: tripSeason
-            val variantLabel = element["variantLabel"]?.jsonPrimitive?.content
+            val variantLabel = element["variantLabel"]?.jsonPrimitive?.content ?: tripVariantLabel
             val alternateId = element["alternateId"]?.jsonPrimitive?.content
                 ?.takeIf { id -> parentStop?.alternates?.any { it.id == id } == true }
             return DepartureTime(

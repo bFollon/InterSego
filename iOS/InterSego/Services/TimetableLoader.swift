@@ -64,16 +64,18 @@ struct TimetableLoader {
 
     private struct JsonTrip: Decodable {
         let season: String?
+        let variantLabel: String?
         let departures: [DepartureValue]
 
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             season = try container.decodeIfPresent(String.self, forKey: .season)
+            variantLabel = try container.decodeIfPresent(String.self, forKey: .variantLabel)
             departures = try container.decode([DepartureValue].self, forKey: .departures)
         }
 
         private enum CodingKeys: String, CodingKey {
-            case season, departures
+            case season, variantLabel, departures
         }
     }
 
@@ -138,7 +140,7 @@ struct TimetableLoader {
                 for (i, departure) in trip.departures.enumerated() {
                     guard i < stopSequence.count else { continue }
                     let parentStop = stopsById[stopSequence[i]]
-                    if let dt = makeDepartureTime(from: departure, tripSeason: tripSeason, parentStop: parentStop) {
+                    if let dt = makeDepartureTime(from: departure, tripSeason: tripSeason, tripVariantLabel: trip.variantLabel, parentStop: parentStop) {
                         depsByStop[i].append(dt)
                     }
                 }
@@ -182,13 +184,14 @@ struct TimetableLoader {
     private func makeDepartureTime(
         from value: DepartureValue,
         tripSeason: SeasonalAvailability,
+        tripVariantLabel: String? = nil,
         parentStop: JsonStop? = nil
     ) -> DepartureTime? {
         switch value {
         case .absent:
             return nil
         case .hhmm(let raw):
-            return DepartureTime(hour: raw / 100, minute: raw % 100, seasonalAvailability: tripSeason)
+            return DepartureTime(hour: raw / 100, minute: raw % 100, seasonalAvailability: tripSeason, variantLabel: tripVariantLabel)
         case .detailed(let raw, let season, let variantLabel, let alternateId):
             let resolvedAlternateId = alternateId.flatMap { id in
                 parentStop?.alternates?.contains { $0.id == id } == true ? id : nil
@@ -197,7 +200,7 @@ struct TimetableLoader {
                 hour: raw / 100,
                 minute: raw % 100,
                 seasonalAvailability: season.map { parseSeason($0) } ?? tripSeason,
-                variantLabel: variantLabel,
+                variantLabel: variantLabel ?? tripVariantLabel,
                 alternateLocationId: resolvedAlternateId
             )
         }

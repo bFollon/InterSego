@@ -1,0 +1,139 @@
+{
+  "routeId": "M4",
+  "version": "1.0",
+  "source": "Linecar M4 PDF, 2026-04-15",
+
+  "stops": [
+    { "id": "azoguejo",                 "name": "Azoguejo",                          "lat": 40.948502, "lon": -4.115979 },
+    { "id": "azoguejo-endStop",         "name": "Azoguejo",                          "lat": 40.948502, "lon": -4.115979 },
+    { "id": "delicias",                 "name": "Delicias",                          "lat": 40.954500, "lon": -4.108889 },
+    { "id": "gasolinera-lastrilla",     "name": "Gasolinera",                        "lat": 40.965944, "lon": -4.106072 },
+    { "id": "pension",                  "name": "Pensión",                           "lat": 40.969289, "lon": -4.107552 },
+    { "id": "poligono-lastrilla",       "name": "Polígono",                          "lat": 40.972010, "lon": -4.108356 },
+    { "id": "ctra-valladolid",          "name": "Carretera de Valladolid",           "lat": 40.970464, "lon": -4.104010 },
+    { "id": "leopoldo-moreno",          "name": "Leopoldo Moreno",                   "lat": 40.967679, "lon": -4.102850 },
+    { "id": "colegio-lastrilla",        "name": "Colegio",                           "lat": 40.966693, "lon": -4.102033 },
+    { "id": "hotel-av-sotillo",         "name": "Hotel Avenida del Sotillo",         "lat": 40.965769, "lon": -4.097825 },
+    { "id": "maspalomas",               "name": "Calle Maspalomas",                  "lat": 40.965714, "lon": -4.094892 },
+    { "id": "centro-boal",              "name": "Centro Cultural Julio Boal",        "lat": 40.967592, "lon": -4.091377 },
+    { "id": "paseo-cabanillas-sotillo", "name": "Colegio Madres Concepcionistas",    "lat": 40.962806, "lon": -4.092689 },
+    { "id": "parroquia-sotillo",        "name": "Parroquia el Sotillo",              "lat": 40.963449, "lon": -4.095073 },
+    { "id": "rafael-las-heras",         "name": "Rafael de las Heras",               "lat": 40.961939, "lon": -4.096711 },
+    { "id": "venta-magullo",            "name": "Venta Magullo",                     "lat": 40.960876, "lon": -4.100906 }
+  ],
+
+  "variants": [
+    {
+      "id": "regular",
+      "label": "Lastrilla → Sotillo",
+      "stopSequence": [
+        "azoguejo",
+        "delicias",
+        "gasolinera-lastrilla",
+        "pension",
+        "poligono-lastrilla",
+        "ctra-valladolid",
+        "leopoldo-moreno",
+        "colegio-lastrilla",
+        "hotel-av-sotillo",
+        "maspalomas",
+        "centro-boal",
+        "paseo-cabanillas-sotillo",
+        "parroquia-sotillo",
+        "rafael-las-heras",
+        "venta-magullo",
+        "azoguejo-endStop"
+      ]
+    },
+    {
+      "id": "reverse",
+      "label": "Sotillo → Lastrilla",
+      "stopSequence": [
+        "azoguejo",
+        "delicias",
+        "hotel-av-sotillo",
+        "maspalomas",
+        "centro-boal",
+        "paseo-cabanillas-sotillo",
+        "parroquia-sotillo",
+        "rafael-las-heras",
+        "venta-magullo",
+        "gasolinera-lastrilla",
+        "pension",
+        "poligono-lastrilla",
+        "ctra-valladolid",
+        "leopoldo-moreno",
+        "colegio-lastrilla",
+        "parroquia-sotillo",
+        "azoguejo-endStop"
+      ]
+    }
+  ],
+
+  "routeDisplay": {
+    "type": "tabs",
+    "tabsLabel": "Pasa primero por",
+    "mergedDirectionLabel": "La Lastrilla · El Sotillo",
+    "tabs": [
+      { "label": "La Lastrilla", "variantId": "regular" },
+      { "label": "El Sotillo",   "variantId": "reverse" }
+    ],
+    "entries": [
+      { "id": "entry-lv-lastrilla", "label": "L-V La Lastrilla primero", "variantId": "regular", "dayType": "weekday"  },
+      { "id": "entry-lv-sotillo",   "label": "L-V El Sotillo primero",   "variantId": "reverse", "dayType": "weekday"  },
+      { "id": "entry-sabado",       "label": "Sábados",                  "variantId": "regular", "dayType": "saturday" }
+    ]
+  },
+
+  "timetables": [
+    {
+      "variantId": "regular",
+      "dayType": "weekday",
+      "trips": [
+        { "departures": [ 700,  703,  706,  708,  710,  711,  712,  713, null, 714,  716,  718, null,  720,  721,  723,  728] },
+        { "departures": [ 910,  913,  916,  918,  920,  921,  922,  923, null,  924,  926,  928, null,  930,  931,  933,  938] },
+        { "departures": [ 940,  943,  946,  948,  950,  951,  952,  953, null,  954,  956,  958, null, 1000, 1001, 1003, 1008] },
+        { "departures": [1010, 1013, 1016, 1018, 1020, 1021, 1022, 1023, null, 1024, 1026, 1028, null, 1030, 1031, 1033, 1038] },
+        { "departures": [1140, 1143, 1146, 1148, 1150, 1151, 1152, 1153, null, 1154, 1156, 1158, null, 1200, 1201, 1203, 1208] },
+        { "departures": [1210, 1213, 1216, 1218, 1220, 1221, 1222, 1223, null, 1224, 1226, 1228, null, 1230, 1231, 1233, 1238] },
+        { "departures": [1240, 1243, 1246, 1248, 1250, 1251, 1252, 1253, null, 1254, 1256, 1258, null, 1300, 1301, 1303, 1308] },
+        { "departures": [1310, 1313, 1316, 1318, 1320, 1321, 1322, 1323, null, 1324, 1326, 1328, null, 1330, 1331, 1333, 1338] },
+        { "season": "schoolOnly", "departures": 
+                        [1400, 1403, 1406, 1408, 1410, 1411, 1412, 1413, null, 1414, 1416, 1418, 1420, 1421, 1422, 1423, 1428] },
+        { "departures": [1520, 1523, 1526, 1528, 1530, 1531, 1532, 1533, null, 1534, 1536, 1538, null, 1540, 1541, 1543, 1548] },
+        { "departures": [1620, 1623, 1626, 1628, 1630, 1631, 1632, 1633, null, 1634, 1636, 1638, null, 1640, 1641, 1643, 1648] },
+        { "departures": [1700, 1703, 1706, 1708, 1710, 1711, 1712, 1713, null, 1714, 1716, 1718, null, 1720, 1721, 1723, 1728] },
+        { "departures": [1810, 1813, 1816, 1818, 1820, 1821, 1822, 1823, null, 1824, 1826, 1828, null, 1830, 1831, 1833, 1838] },
+        { "departures": [1910, 1913, 1916, 1918, 1920, 1921, 1922, 1923, null, 1924, 1926, 1928, null, 1930, 1931, 1933, 1938] },
+        { "departures": [1940, 1943, 1946, 1948, 1950, 1951, 1952, 1953, null, 1954, 1956, 1958, null, 2000, 2001, 2003, 2008] },
+        { "departures": [2010, 2013, 2016, 2018, 2020, 2021, 2022, 2023, null, 2024, 2026, 2028, null, 2030, 2031, 2033, 2038] },
+        { "departures": [2040, 2043, 2046, 2048, 2050, 2051, 2052, 2053, null, 2054, 2056, 2058, null, 2100, 2101, 2103, 2108] },
+        { "departures": [2110, 2113, 2116, 2118, 2120, 2121, 2122, 2123, null, 2124, 2126, 2128, null, 2130, 2131, 2133, 2148] }
+      ]
+    },
+    {
+      "variantId": "reverse",
+      "dayType": "weekday",
+      "trips": [
+        { "season": "schoolOnly", "variantLabel": "Sotillo", "departures": 
+          [ 740,  743,  746,  747,  748,  750,  751,  752,  753,  756,  758,  800,  801,  803,  804,  806,  811] },
+        { "season": "schoolOnly", "variantLabel": "Sotillo", "departures": 
+          [ 820,  823,  826,  827,  828,  830,  831,  832,  833,  837,  839,  841,  842,  843,  844,  846,  852] },
+        { "season": "schoolOnly", "variantLabel": "Sotillo", "departures": 
+          [1440, 1443, 1446, 1447, 1448, 1450, 1451, 1452, 1453, 1456, 1458, 1500, 1501, 1503, 1504, null, 1508] },
+        { "variantLabel": "Sotillo", "departures": 
+          [2140, 2143, 2146, 2147, 2148, null, 2150, 2151, 2152, 2156, 2158, 2200, 2201, 2203, 2204, null, 2208] }
+      ]
+    },
+    {
+      "variantId": "regular",
+      "dayType": "saturday",
+      "trips": [
+        { "departures": [1030, 1033, 1036, 1038, 1040, 1041, 1042, 1043, null, 1044, 1046, 1048, null, 1050, 1051, 1053, 1100] },
+        { "departures": [1400, 1403, 1406, 1408, 1410, 1411, 1412, 1413, null, 1414, 1416, 1418, null, 1420, 1421, 1423, 1428] },
+        { "departures": [1710, 1713, 1716, 1718, 1720, 1721, 1722, 1723, null, 1724, 1726, 1728, null, 1730, 1731, 1733, 1738] },
+        { "departures": [2040, 2043, 2046, 2048, 2050, 2051, 2052, 2053, null, 2054, 2056, 2058, null, 2100, 2101, 2103, 2108] }
+      ]
+    }
+  ]
+}
