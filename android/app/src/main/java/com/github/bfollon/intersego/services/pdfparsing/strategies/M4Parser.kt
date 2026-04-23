@@ -47,7 +47,7 @@ class M4Parser(private val context: Context) : CapableParser, RouteStopsProvider
     override val capabilities = ParserCapabilities(
         supportedRoutes = setOf("M4"),
         mode = ParserMode.PRODUCTION,
-        version = "3.3"
+        version = "3.4"
     )
 
     companion object {
