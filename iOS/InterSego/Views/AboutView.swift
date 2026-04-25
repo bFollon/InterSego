@@ -74,7 +74,7 @@ struct AboutView: View {
                             .font(.body)
                             .foregroundColor(.secondary)
 
-                        Text("La app es completamente gratuita, sin publicidad y así se va a quedar. Ha sido desarrollada como un proyecto personal para ayudar a la comunidad.")
+                        Text("Ha sido desarrollada como un proyecto personal para ayudar a la comunidad. La aplicación no rastrea a sus usuarios con fines comerciales.")
                             .font(.body)
                             .foregroundColor(.secondary)
                     }
