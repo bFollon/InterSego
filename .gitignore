@@ -16,3 +16,5 @@ iOS/InterSego.xcodeproj/xcuserdata/
 tmp/
 /iOS/build
 /android/.kotlin/
+# Added by code-review-graph
+.code-review-graph/
