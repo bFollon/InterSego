@@ -72,7 +72,7 @@ class PDFProcessingService(private val context: Context) {
         registerParser(M3Parser(context))
         registerParser(M4Parser(context))
         registerParser(M5Parser(context))
-        registerParser(M6Parser())
+        registerParser(M6Parser(context))
         registerParser(M7Parser(context))
         registerParser(M8Parser(context))
 

@@ -36,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Parser | Android | iOS | Notes |
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ (JSON) | ✅ (JSON) | isCircular=true; weekday + Saturday (Jul/Aug only); YEAR_ROUND = JULIO Y AGOSTO buses; SCHOOL_ONLY = non-summer buses; SCHOOL_ONLY trips: regular 14:00 + reverse 07:40*, 08:20*, 14:40*; 21:40* reverse is YEAR_ROUND; 4 reverse trips use trip-level variantLabel="Sotillo" badge (El Sotillo-first); 14:40* and 21:40* skip PARROQ2 (index 15 of reverse); null at index 11 (paseo-cabanillas) on all non-school regular trips (school-only stop); hotel-av-sotillo + parroquia-sotillo ARE served on Saturday; merged-directions display: tabsLabel="Pasa primero por", mergedDirectionLabel="La Lastrilla · El Sotillo"; TimetableLoader on both platforms; v3.4; timetable in `resources/timetables/m4.json` |
-| M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; v0.9 (fully static, both platforms); Sat inbound: proper reversal via PlazaToros→LaPista→AndresLaguna→Jardinillos; Sáb has 2 separate entries (Ida/Vuelta) |
+| M6 (Segovia - Torrecaballeros) | ✅ (JSON) | ✅ (JSON) | Cluster-based stop estimation; v1.0; all cluster-estimated times pre-computed and stored in JSON; 7 variants (outbound/inbound merged regular+extended, circular, sat/sun outbound/inbound); Sat inbound: PlazaToros→LaPista→AndresLaguna→Jardinillos; Sun inbound ends at EstacionAutobuses; timetable in `resources/timetables/m6.json`; TimetableLoader on both platforms |
 | M1 | ✅ (JSON) | ✅ (JSON) | isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); Saturday: shorter Segovia↔Abades variant; ★=juneToSept (Casino on most trips), (*)=garcillan-gasolinera alternateId (8:40+10:40 in circularB), LYV=monFriOnly (circularB Martín Miguel+Valverde 9:40), #=friOnly (circularA Garcillán 19:50); circularB return uses `poligono-ind-m1-ret`/`poligono-ind-m1-2-ret`+`estacion-autobuses-circ-ret` to prevent departure merge; v1.9; timetable in `resources/timetables/m1.json`; TimetableLoader on both platforms |
 | M2 | ✅ (JSON) | ✅ (JSON) | v1.2; isCircular=true; weekday only; two circular directions (circularA: Segovia→Valseca outbound view; circularB: Valseca→Segovia return via Los Huertos+Hontanares); 7:25 Valseca bus originates from Valseca (chronologically out of stop order in circularB, accepted as Option A); timetable data migrated to `resources/timetables/m2.json`; loaded via TimetableLoader on both platforms |
 | M3 | ✅ (JSON) | ✅ (JSON) | Saturday only; linear (Segovia→Navacerrada); Segovia is a 4-stop cluster (Estación de Autobuses, Iglesia Santo Tomás, Frente Bar Norte, Plaza de Toros) with +2 min estimated times; v1.2; timetable data migrated to `resources/timetables/m3.json`; loaded via TimetableLoader on both platforms |
@@ -143,10 +143,10 @@ See `android/CLAUDE.md` for detailed Android development guide.
 
 #### PDFKit vs iText7 parsing differences
 
-PDFKit (iOS) and iText7 (Android) extract PDF text differently. Known artifacts in M6:
+PDFKit (iOS) and iText7 (Android) extract PDF text differently. M6 no longer uses live PDF parsing — timetable data was migrated to JSON (v1.0). The historic parsing artifacts are preserved here for reference in case live parsing is ever re-enabled:
 
-- **Line swapping:** PDFKit sometimes returns two adjacent time rows in reversed order. Fixed by `reorderSwappedLines()` in `M6Parser`.
-- **Cell splitting:** Differently-formatted cells (e.g. highlighted departure cells like `**21:20`) are read as separate text blocks and may be attached to a later line (e.g. `**21:20 SÁBADOS`). Fixed by `preprocessLines()` in `M6Parser`, which splits mixed time+keyword lines and backward-merges orphaned leading times into their correct row.
+- **Line swapping:** PDFKit sometimes returns two adjacent time rows in reversed order. Was fixed by `reorderSwappedLines()` in `M6Parser`.
+- **Cell splitting:** Differently-formatted cells (e.g. highlighted departure cells like `**21:20`) are read as separate text blocks and may be attached to a later line (e.g. `**21:20 SÁBADOS`). Was fixed by `preprocessLines()` in `M6Parser`, which splits mixed time+keyword lines and backward-merges orphaned leading times into their correct row.
 
 When porting parsers from Android or debugging parsing issues on iOS, always check for these two artifacts first.
 
