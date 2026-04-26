@@ -267,6 +267,8 @@ class TimetableLoader(private val context: Context) {
         DayType.WEEKDAY  -> "weekday"
         DayType.SATURDAY -> "saturday"
         DayType.SUNDAY   -> "sunday"
+        DayType.WEEKEND  -> "saturday"
+        DayType.HOLIDAY  -> "sunday"
     }
 
     private fun isActiveToday(dayTypeStr: String, today: Date): Boolean {

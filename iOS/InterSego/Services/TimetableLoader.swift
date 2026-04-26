@@ -274,10 +274,12 @@ struct TimetableLoader {
     }
 
     private func dayTypeString(_ dayType: DayType) -> String {
-        switch dayType {
+        /switch dayType {
         case .weekday:  return "weekday"
         case .saturday: return "saturday"
         case .sunday:   return "sunday"
+        case .weekend:  return "saturday"
+        case .holiday:  return "sunday"
         }
     }
 
