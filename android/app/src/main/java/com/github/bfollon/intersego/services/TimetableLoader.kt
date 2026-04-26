@@ -84,8 +84,12 @@ class TimetableLoader(private val context: Context) {
     private data class JsonVariant(
         val id: String,
         val label: String,
+        val direction: String? = null,
         val stopSequence: List<String>,
-        val swapTargetId: String? = null
+        val swapTargetId: String? = null,
+        val departureLabel: String? = null,
+        val extendedSectionLabel: String? = null,
+        val extendedStopIds: List<String> = emptyList()
     )
 
     @Serializable
@@ -94,6 +98,7 @@ class TimetableLoader(private val context: Context) {
         val tabsLabel: String? = null,
         val mergedDirectionLabel: String? = null,
         val tabs: List<JsonRouteTab> = emptyList(),
+        val tabGroups: List<JsonTabGroup> = emptyList(),
         val entries: List<JsonRouteEntry>
     )
 
@@ -104,11 +109,18 @@ class TimetableLoader(private val context: Context) {
     )
 
     @Serializable
+    private data class JsonTabGroup(
+        val tabs: List<JsonRouteTab>,
+        val appliesTo: List<String>
+    )
+
+    @Serializable
     private data class JsonRouteEntry(
         val id: String,
         val label: String,
         val variantId: String,
-        val dayType: String
+        val dayType: String,
+        val viewIds: List<String>? = null
     )
 
     @Serializable
@@ -163,7 +175,7 @@ class TimetableLoader(private val context: Context) {
             .filter { it.id in relevant }
             .map { variant ->
                 val stops = variant.stopSequence.mapNotNull { stopsById[it] }
-                RouteVariant(id = variant.id, label = variant.label, stops = stops, direction = variant.label)
+                RouteVariant(id = variant.id, label = variant.label, stops = stops, direction = variant.direction ?: variant.label, departureLabel = variant.departureLabel)
             }
     }
 
@@ -171,7 +183,7 @@ class TimetableLoader(private val context: Context) {
     fun loadRouteViews(routeId: String, dayType: DayType): List<RouteView>? {
         val file = loadFile(routeId)
         val stopsById = stopsIndex(file)
-        val views = buildRouteViews(dayType, file, stopsById)
+        val views = buildRouteViews(relevantVariantIds(dayType, file), file, stopsById)
         return views.ifEmpty { null }
     }
 
@@ -181,7 +193,8 @@ class TimetableLoader(private val context: Context) {
         val stopsById = stopsIndex(file)
         return file.routeDisplay.entries.map { entry ->
             val dayType = parseDayType(entry.dayType)
-            val views = buildRouteViews(dayType, file, stopsById)
+            val variantIds = entry.viewIds?.toSet() ?: relevantVariantIds(dayType, file)
+            val views = buildRouteViews(variantIds, file, stopsById)
             RouteSelectorEntry(
                 id = entry.id,
                 label = entry.label,
@@ -193,10 +206,6 @@ class TimetableLoader(private val context: Context) {
         }
     }
 
-    /**
-     * Stop map keyed by stop ID — exposed for parsers that still build their own views
-     * (e.g. M6 with tabs+swap hybrid display).
-     */
     fun loadBusStopsById(routeId: String): Map<String, BusStop> = stopsIndex(loadFile(routeId))
 
     // MARK: - Route structure helpers
@@ -213,10 +222,6 @@ class TimetableLoader(private val context: Context) {
         }
     )
 
-    /**
-     * Returns the set of variant IDs relevant for a given day type, including swap targets
-     * so that both directions are available when needed.
-     */
     private fun relevantVariantIds(dayType: DayType, file: TimetableFile): Set<String> {
         val dayStr = dayTypeString(dayType)
         val fromEntries = file.routeDisplay.entries
@@ -233,32 +238,40 @@ class TimetableLoader(private val context: Context) {
     }
 
     private fun buildRouteViews(
-        dayType: DayType,
+        variantIds: Set<String>,
         file: TimetableFile,
         stopsById: Map<String, BusStop>
     ): List<RouteView> {
-        val relevant = relevantVariantIds(dayType, file)
-        if (relevant.isEmpty()) return emptyList()
+        if (variantIds.isEmpty()) return emptyList()
 
         val isTabsType = file.routeDisplay.type == "tabs"
-        val routeTabs = file.routeDisplay.tabs
+        val globalTabs = file.routeDisplay.tabs
             .takeIf { it.isNotEmpty() }
             ?.map { RouteTab(label = it.label, viewId = it.variantId) }
 
         return file.variants
-            .filter { it.id in relevant }
+            .filter { it.id in variantIds }
             .map { variant ->
-                val stops = variant.stopSequence.mapNotNull { stopsById[it] }.map { RouteViewStop(stop = it) }
+                val extendedIds = variant.extendedStopIds.toSet()
+                val stops = variant.stopSequence.mapNotNull { stopsById[it] }.map { stop ->
+                    RouteViewStop(stop = stop, isExtendedOnly = stop.id in extendedIds)
+                }
                 val swapAction = if (isTabsType) null else variant.swapTargetId?.let { SwapAction(targetViewId = it) }
+                val variantTabs = file.routeDisplay.tabGroups
+                    .find { variant.id in it.appliesTo }
+                    ?.tabs?.map { RouteTab(label = it.label, viewId = it.variantId) }
+                    ?: if (isTabsType) globalTabs else null
                 RouteView(
                     id = variant.id,
                     label = variant.label,
                     stops = stops,
-                    direction = variant.label,
+                    direction = variant.direction ?: variant.label,
+                    departureLabel = variant.departureLabel,
                     swapAction = swapAction,
-                    tabs = routeTabs,
+                    tabs = variantTabs,
                     tabsLabel = file.routeDisplay.tabsLabel,
-                    mergedDirectionLabel = if (isTabsType) file.routeDisplay.mergedDirectionLabel else null
+                    mergedDirectionLabel = if (isTabsType) file.routeDisplay.mergedDirectionLabel else null,
+                    extendedSectionLabel = variant.extendedSectionLabel
                 )
             }
     }
@@ -309,7 +322,7 @@ class TimetableLoader(private val context: Context) {
                         routeId = file.routeId,
                         stopId = stopId,
                         dayType = dayType,
-                        direction = variant.label,
+                        direction = variant.direction ?: variant.label,
                         departures = depsByStop[i]
                     )
                 )

@@ -57,8 +57,12 @@ struct TimetableLoader {
     private struct JsonVariant: Decodable {
         let id: String
         let label: String
+        let direction: String?
         let stopSequence: [String]
         let swapTargetId: String?
+        let departureLabel: String?
+        let extendedSectionLabel: String?
+        let extendedStopIds: [String]?
     }
 
     private struct JsonRouteDisplay: Decodable {
@@ -66,6 +70,7 @@ struct TimetableLoader {
         let tabsLabel: String?
         let mergedDirectionLabel: String?
         let tabs: [JsonRouteTab]?
+        let tabGroups: [JsonTabGroup]?
         let entries: [JsonRouteEntry]
     }
 
@@ -74,11 +79,17 @@ struct TimetableLoader {
         let variantId: String
     }
 
+    private struct JsonTabGroup: Decodable {
+        let tabs: [JsonRouteTab]
+        let appliesTo: [String]
+    }
+
     private struct JsonRouteEntry: Decodable {
         let id: String
         let label: String
         let variantId: String
         let dayType: String
+        let viewIds: [String]?
     }
 
     private struct JsonTimetableSection: Decodable {
@@ -173,7 +184,7 @@ struct TimetableLoader {
             .filter { relevant.contains($0.id) }
             .map { variant in
                 let stops = variant.stopSequence.compactMap { stopsById[$0] }
-                return RouteVariant(id: variant.id, label: variant.label, stops: stops, direction: variant.label)
+                return RouteVariant(id: variant.id, label: variant.label, stops: stops, direction: variant.direction ?? variant.label, departureLabel: variant.departureLabel)
             }
     }
 
@@ -181,7 +192,7 @@ struct TimetableLoader {
     func loadRouteViews(_ routeId: String, dayType: DayType) throws -> [RouteView]? {
         let file = try loadFile(routeId)
         let stopsById = stopsIndex(file)
-        let views = buildRouteViews(for: dayType, file: file, stopsById: stopsById)
+        let views = buildRouteViews(variantIds: relevantVariantIds(for: dayType, in: file), file: file, stopsById: stopsById)
         return views.isEmpty ? nil : views
     }
 
@@ -191,7 +202,8 @@ struct TimetableLoader {
         let stopsById = stopsIndex(file)
         return file.routeDisplay.entries.map { entry in
             let dayType = parseDayType(entry.dayType)
-            let views = buildRouteViews(for: dayType, file: file, stopsById: stopsById)
+            let variantIds = entry.viewIds.map { Set($0) } ?? relevantVariantIds(for: dayType, in: file)
+            let views = buildRouteViews(variantIds: variantIds, file: file, stopsById: stopsById)
             return RouteSelectorEntry(
                 id: entry.id,
                 label: entry.label,
@@ -203,8 +215,6 @@ struct TimetableLoader {
         }
     }
 
-    /// Stop dictionary keyed by stop ID — exposed for parsers that still build their own views
-    /// (e.g. M6 with tabs+swap hybrid display).
     func loadBusStopsById(_ routeId: String) throws -> [String: BusStop] {
         let file = try loadFile(routeId)
         return stopsIndex(file)
@@ -227,8 +237,6 @@ struct TimetableLoader {
         )
     }
 
-    /// Returns the set of variant IDs that should be shown for a given day type, including
-    /// swap targets so that both directions are available when needed.
     private func relevantVariantIds(for dayType: DayType, in file: TimetableFile) -> Set<String> {
         let dayStr = dayTypeString(dayType)
         let fromEntries = file.routeDisplay.entries
@@ -247,34 +255,42 @@ struct TimetableLoader {
     }
 
     private func buildRouteViews(
-        for dayType: DayType, file: TimetableFile, stopsById: [String: BusStop]
+        variantIds: Set<String>, file: TimetableFile, stopsById: [String: BusStop]
     ) -> [RouteView] {
-        let relevant = relevantVariantIds(for: dayType, in: file)
-        guard !relevant.isEmpty else { return [] }
+        guard !variantIds.isEmpty else { return [] }
 
         let isTabsType = file.routeDisplay.type == "tabs"
-        let routeTabs = file.routeDisplay.tabs?.map { RouteTab(label: $0.label, viewId: $0.variantId) }
+        let globalTabs = file.routeDisplay.tabs?.map { RouteTab(label: $0.label, viewId: $0.variantId) }
 
         return file.variants
-            .filter { relevant.contains($0.id) }
+            .filter { variantIds.contains($0.id) }
             .map { variant in
-                let stops = variant.stopSequence.compactMap { stopsById[$0] }.map { RouteViewStop(stop: $0) }
+                let extendedIds = Set(variant.extendedStopIds ?? [])
+                let stops = variant.stopSequence.compactMap { stopsById[$0] }.map { stop in
+                    RouteViewStop(stop: stop, isExtendedOnly: extendedIds.contains(stop.id))
+                }
                 let swapAction = isTabsType ? nil : variant.swapTargetId.map { SwapAction(targetViewId: $0) }
+                let variantTabs = file.routeDisplay.tabGroups?
+                    .first { $0.appliesTo.contains(variant.id) }
+                    .map { $0.tabs.map { RouteTab(label: $0.label, viewId: $0.variantId) } }
+                    ?? (isTabsType ? globalTabs : nil)
                 return RouteView(
                     id: variant.id,
                     label: variant.label,
                     stops: stops,
-                    direction: variant.label,
+                    direction: variant.direction ?? variant.label,
+                    departureLabel: variant.departureLabel,
                     swapAction: swapAction,
-                    tabs: routeTabs,
+                    tabs: variantTabs,
                     tabsLabel: file.routeDisplay.tabsLabel,
+                    extendedSectionLabel: variant.extendedSectionLabel,
                     mergedDirectionLabel: isTabsType ? file.routeDisplay.mergedDirectionLabel : nil
                 )
             }
     }
 
     private func dayTypeString(_ dayType: DayType) -> String {
-        /switch dayType {
+        switch dayType {
         case .weekday:  return "weekday"
         case .saturday: return "saturday"
         case .sunday:   return "sunday"
@@ -323,7 +339,7 @@ struct TimetableLoader {
                     stopId: stopId,
                     dayType: dayType,
                     departures: depsByStop[i],
-                    direction: variant.label
+                    direction: variant.direction ?? variant.label
                 ))
             }
         }

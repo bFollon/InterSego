@@ -1,6 +1,6 @@
 {
   "routeId": "M6",
-  "version": "1.0",
+  "version": "1.1",
   "source": "Linecar M6 PDF (static data, fully hardcoded — live PDF parsing abandoned in favour of JSON)",
 
   "stops": [
@@ -43,7 +43,9 @@
         "cabanillas",
         "torrecaballeros", "torrecaballeros-2", "torrecaballeros-3"
       ],
-      "swapTargetId": "inbound"
+      "swapTargetId": "inbound",
+      "extendedSectionLabel": "Ruta extendida",
+      "extendedStopIds": ["andres-laguna", "la-pista", "hermanitas"]
     },
     {
       "id": "inbound",
@@ -57,11 +59,14 @@
         "montecorredores", "delicias", "azoguejo",
         "hermanitas", "la-pista", "andres-laguna"
       ],
-      "swapTargetId": "outbound"
+      "swapTargetId": "outbound",
+      "extendedSectionLabel": "Ruta extendida",
+      "extendedStopIds": ["hermanitas", "la-pista", "andres-laguna"]
     },
     {
       "id": "circular",
-      "label": "Segovia → Torrecaballeros",
+      "label": "Circular",
+      "direction": "Segovia → Torrecaballeros",
       "stopSequence": [
         "estacion-autobuses", "andres-laguna", "la-pista", "plaza-de-toros",
         "palazuelos", "palazuelos-colegio",
@@ -72,7 +77,8 @@
         "cabanillas",
         "torrecaballeros", "torrecaballeros-2", "torrecaballeros-3",
         "delicias", "azoguejo"
-      ]
+      ],
+      "departureLabel": "Circular"
     },
     {
       "id": "saturday-outbound",
@@ -87,7 +93,7 @@
         "cabanillas",
         "torrecaballeros", "torrecaballeros-2", "torrecaballeros-3"
       ],
-      "swapTargetId": "saturday-inbound"
+      "departureLabel": "Sábado"
     },
     {
       "id": "saturday-inbound",
@@ -102,7 +108,7 @@
         "palazuelos-colegio", "palazuelos",
         "plaza-de-toros", "la-pista", "andres-laguna", "jardinillos"
       ],
-      "swapTargetId": "saturday-outbound"
+      "departureLabel": "Sábado"
     },
     {
       "id": "sunday-outbound",
@@ -117,7 +123,8 @@
         "cabanillas",
         "torrecaballeros", "torrecaballeros-2", "torrecaballeros-3"
       ],
-      "swapTargetId": "sunday-inbound"
+      "swapTargetId": "sunday-inbound",
+      "departureLabel": "Domingo"
     },
     {
       "id": "sunday-inbound",
@@ -132,17 +139,27 @@
         "palazuelos-colegio", "palazuelos",
         "plaza-de-toros", "la-pista", "andres-laguna", "estacion-autobuses"
       ],
-      "swapTargetId": "sunday-outbound"
+      "swapTargetId": "sunday-outbound",
+      "departureLabel": "Domingo"
     }
   ],
 
   "routeDisplay": {
     "type": "swap",
+    "tabGroups": [
+      {
+        "tabs": [
+          { "label": "Regular",  "variantId": "outbound"  },
+          { "label": "Circular", "variantId": "circular"  }
+        ],
+        "appliesTo": ["outbound", "inbound", "circular"]
+      }
+    ],
     "entries": [
       { "id": "entry-lv-regular",    "label": "L-V - Regular",   "variantId": "outbound",          "dayType": "weekday"  },
       { "id": "entry-lv-circular",   "label": "L-V - Circular",  "variantId": "circular",           "dayType": "weekday"  },
-      { "id": "entry-sabado-ida",    "label": "Sáb - Ida",       "variantId": "saturday-outbound",  "dayType": "saturday" },
-      { "id": "entry-sabado-vuelta", "label": "Sáb - Vuelta",    "variantId": "saturday-inbound",   "dayType": "saturday" },
+      { "id": "entry-sabado-ida",    "label": "Sáb - Ida",       "variantId": "saturday-outbound",  "dayType": "saturday", "viewIds": ["saturday-outbound"]  },
+      { "id": "entry-sabado-vuelta", "label": "Sáb - Vuelta",    "variantId": "saturday-inbound",   "dayType": "saturday", "viewIds": ["saturday-inbound"]   },
       { "id": "entry-domingo",       "label": "Domingo",          "variantId": "sunday-outbound",    "dayType": "sunday"   }
     ]
   },
