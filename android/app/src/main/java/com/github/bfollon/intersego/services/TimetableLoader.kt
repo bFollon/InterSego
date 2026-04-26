@@ -19,10 +19,17 @@ package com.github.bfollon.intersego.services
 
 import android.content.Context
 import com.github.bfollon.intersego.data.AlternateLocation
+import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.data.RouteSelectorEntry
+import com.github.bfollon.intersego.data.RouteTab
+import com.github.bfollon.intersego.data.RouteVariant
+import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.data.RouteViewStop
 import com.github.bfollon.intersego.data.SeasonalAvailability
+import com.github.bfollon.intersego.data.SwapAction
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -31,14 +38,18 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
+import java.util.Calendar
+import java.util.Date
 
 /**
- * Loads timetable data from bundled JSON assets and produces [BusTimetable] objects.
+ * Loads timetable data and route structure from bundled JSON assets.
  *
  * Reads `assets/timetables/{routeId.lowercase()}.json`, interprets the trip-major
- * schema defined in docs/TIMETABLE_JSON_REFACTOR.md, and returns the same
- * List<BusTimetable> contract previously fulfilled by each parser's
- * buildStaticTimetables().
+ * schema defined in docs/TIMETABLE_JSON_REFACTOR.md.
+ *
+ * - [load] returns List<BusTimetable>, the same contract as the old buildStaticTimetables().
+ * - [loadRoutesForId], [loadRouteVariants], [loadRouteViews], [loadRouteEntries] replace
+ *   the route-structure methods previously hardcoded in each parser.
  */
 class TimetableLoader(private val context: Context) {
 
@@ -48,6 +59,7 @@ class TimetableLoader(private val context: Context) {
         val version: String,
         val stops: List<JsonStop>,
         val variants: List<JsonVariant>,
+        val routeDisplay: JsonRouteDisplay,
         val timetables: List<JsonTimetableSection>
     )
 
@@ -77,6 +89,29 @@ class TimetableLoader(private val context: Context) {
     )
 
     @Serializable
+    private data class JsonRouteDisplay(
+        val type: String,
+        val tabsLabel: String? = null,
+        val mergedDirectionLabel: String? = null,
+        val tabs: List<JsonRouteTab> = emptyList(),
+        val entries: List<JsonRouteEntry>
+    )
+
+    @Serializable
+    private data class JsonRouteTab(
+        val label: String,
+        val variantId: String
+    )
+
+    @Serializable
+    private data class JsonRouteEntry(
+        val id: String,
+        val label: String,
+        val variantId: String,
+        val dayType: String
+    )
+
+    @Serializable
     private data class JsonTimetableSection(
         val variantId: String,
         val dayType: String,
@@ -92,14 +127,159 @@ class TimetableLoader(private val context: Context) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun load(routeId: String): List<BusTimetable> {
+    // MARK: - File loading
+
+    private fun loadFile(routeId: String): TimetableFile {
         val text = context.assets
             .open("timetables/${routeId.lowercase()}.json")
             .bufferedReader()
             .readText()
-        val file = json.decodeFromString<TimetableFile>(text)
-        return buildTimetables(file)
+        return json.decodeFromString(text)
     }
+
+    // MARK: - Public API: timetables
+
+    fun load(routeId: String): List<BusTimetable> {
+        return buildTimetables(loadFile(routeId))
+    }
+
+    // MARK: - Public API: route structure
+
+    /** All stop sequences for this route, one per variant. Used by the closest-stop finder. */
+    fun loadRoutesForId(routeId: String): List<List<BusStop>> {
+        val file = loadFile(routeId)
+        val stopsById = stopsIndex(file)
+        return file.variants.map { variant ->
+            variant.stopSequence.mapNotNull { stopsById[it] }
+        }
+    }
+
+    /** Named variants for a given day type. Returns empty when the route has no service that day. */
+    fun loadRouteVariants(routeId: String, dayType: DayType): List<RouteVariant> {
+        val file = loadFile(routeId)
+        val stopsById = stopsIndex(file)
+        val relevant = relevantVariantIds(dayType, file)
+        return file.variants
+            .filter { it.id in relevant }
+            .map { variant ->
+                val stops = variant.stopSequence.mapNotNull { stopsById[it] }
+                RouteVariant(id = variant.id, label = variant.label, stops = stops, direction = variant.label)
+            }
+    }
+
+    /** RouteViews for a given day type, or null when the route has no service that day. */
+    fun loadRouteViews(routeId: String, dayType: DayType): List<RouteView>? {
+        val file = loadFile(routeId)
+        val stopsById = stopsIndex(file)
+        val views = buildRouteViews(dayType, file, stopsById)
+        return views.ifEmpty { null }
+    }
+
+    /** RouteSelectorEntries built from routeDisplay.entries. */
+    fun loadRouteEntries(routeId: String, today: Date): List<RouteSelectorEntry> {
+        val file = loadFile(routeId)
+        val stopsById = stopsIndex(file)
+        return file.routeDisplay.entries.map { entry ->
+            val dayType = parseDayType(entry.dayType)
+            val views = buildRouteViews(dayType, file, stopsById)
+            RouteSelectorEntry(
+                id = entry.id,
+                label = entry.label,
+                views = views,
+                initialViewId = entry.variantId,
+                timetableDayType = dayType,
+                isActiveToday = isActiveToday(entry.dayType, today)
+            )
+        }
+    }
+
+    /**
+     * Stop map keyed by stop ID — exposed for parsers that still build their own views
+     * (e.g. M6 with tabs+swap hybrid display).
+     */
+    fun loadBusStopsById(routeId: String): Map<String, BusStop> = stopsIndex(loadFile(routeId))
+
+    // MARK: - Route structure helpers
+
+    private fun stopsIndex(file: TimetableFile): Map<String, BusStop> =
+        file.stops.associate { it.id to buildBusStop(it) }
+
+    private fun buildBusStop(jsonStop: JsonStop): BusStop = BusStop(
+        id = jsonStop.id,
+        name = jsonStop.name,
+        coordinates = "${jsonStop.lat}, ${jsonStop.lon}",
+        alternates = jsonStop.alternates.map {
+            AlternateLocation(id = it.id, name = it.name, coordinates = "${it.lat}, ${it.lon}")
+        }
+    )
+
+    /**
+     * Returns the set of variant IDs relevant for a given day type, including swap targets
+     * so that both directions are available when needed.
+     */
+    private fun relevantVariantIds(dayType: DayType, file: TimetableFile): Set<String> {
+        val dayStr = dayTypeString(dayType)
+        val fromEntries = file.routeDisplay.entries
+            .filter { it.dayType == dayStr }
+            .map { it.variantId }
+        if (fromEntries.isEmpty()) return emptySet()
+
+        val ids = fromEntries.toMutableSet()
+        val variantsById = file.variants.associateBy { it.id }
+        for (variantId in fromEntries) {
+            variantsById[variantId]?.swapTargetId?.let { ids.add(it) }
+        }
+        return ids
+    }
+
+    private fun buildRouteViews(
+        dayType: DayType,
+        file: TimetableFile,
+        stopsById: Map<String, BusStop>
+    ): List<RouteView> {
+        val relevant = relevantVariantIds(dayType, file)
+        if (relevant.isEmpty()) return emptyList()
+
+        val isTabsType = file.routeDisplay.type == "tabs"
+        val routeTabs = file.routeDisplay.tabs
+            .takeIf { it.isNotEmpty() }
+            ?.map { RouteTab(label = it.label, viewId = it.variantId) }
+
+        return file.variants
+            .filter { it.id in relevant }
+            .map { variant ->
+                val stops = variant.stopSequence.mapNotNull { stopsById[it] }.map { RouteViewStop(stop = it) }
+                val swapAction = if (isTabsType) null else variant.swapTargetId?.let { SwapAction(targetViewId = it) }
+                RouteView(
+                    id = variant.id,
+                    label = variant.label,
+                    stops = stops,
+                    direction = variant.label,
+                    swapAction = swapAction,
+                    tabs = routeTabs,
+                    tabsLabel = file.routeDisplay.tabsLabel,
+                    mergedDirectionLabel = if (isTabsType) file.routeDisplay.mergedDirectionLabel else null
+                )
+            }
+    }
+
+    private fun dayTypeString(dayType: DayType): String = when (dayType) {
+        DayType.WEEKDAY  -> "weekday"
+        DayType.SATURDAY -> "saturday"
+        DayType.SUNDAY   -> "sunday"
+    }
+
+    private fun isActiveToday(dayTypeStr: String, today: Date): Boolean {
+        val dow = Calendar.getInstance().apply { time = today }.get(Calendar.DAY_OF_WEEK)
+        return when (dayTypeStr) {
+            "weekday"  -> dow != Calendar.SUNDAY && dow != Calendar.SATURDAY
+            "saturday" -> dow == Calendar.SATURDAY
+            "sunday"   -> dow == Calendar.SUNDAY
+            else       -> false
+        }
+    }
+
+    // MARK: - Timetable builder (unchanged)
 
     private fun buildTimetables(file: TimetableFile): List<BusTimetable> {
         val variantsById = file.variants.associateBy { it.id }

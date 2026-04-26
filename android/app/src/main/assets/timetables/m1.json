@@ -59,7 +59,8 @@
         "casino-union",
         "valverde-majano",
         "abades"
-      ]
+      ],
+      "swapTargetId": "saturday-inbound"
     },
     {
       "id": "saturday-inbound",
@@ -68,7 +69,8 @@
         "abades",
         "valverde-majano",
         "estacion-autobuses"
-      ]
+      ],
+      "swapTargetId": "saturday-outbound"
     }
   ],
 

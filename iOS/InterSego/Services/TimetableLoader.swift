@@ -17,11 +17,15 @@
 
 import Foundation
 
-/// Loads timetable data from bundled JSON assets and produces [BusTimetable] objects.
+/// Loads timetable data and route structure from bundled JSON assets.
 ///
-/// Reads `Timetables/{routeId.lowercased()}.json` from the app bundle, interprets the
-/// trip-major schema defined in docs/TIMETABLE_JSON_REFACTOR.md, and returns the same
-/// [BusTimetable] contract previously fulfilled by each parser's buildStaticTimetables().
+/// Reads `Timetables/{routeId.lowercased()}.json` from the app bundle and interprets the
+/// trip-major schema defined in docs/TIMETABLE_JSON_REFACTOR.md.
+///
+/// - `load(_:)` returns `[BusTimetable]`, the same contract as the old `buildStaticTimetables()`.
+/// - `loadRoutesForId(_:)`, `loadRouteVariants(_:dayType:)`, `loadRouteViews(_:dayType:)`,
+///   `loadRouteEntries(_:today:)` replace the route-structure methods previously hardcoded in
+///   each parser. Parser classes become thin wrappers that delegate everything here.
 struct TimetableLoader {
 
     // MARK: - JSON schema types
@@ -31,6 +35,7 @@ struct TimetableLoader {
         let version: String
         let stops: [JsonStop]
         let variants: [JsonVariant]
+        let routeDisplay: JsonRouteDisplay
         let timetables: [JsonTimetableSection]
     }
 
@@ -54,6 +59,26 @@ struct TimetableLoader {
         let label: String
         let stopSequence: [String]
         let swapTargetId: String?
+    }
+
+    private struct JsonRouteDisplay: Decodable {
+        let type: String
+        let tabsLabel: String?
+        let mergedDirectionLabel: String?
+        let tabs: [JsonRouteTab]?
+        let entries: [JsonRouteEntry]
+    }
+
+    private struct JsonRouteTab: Decodable {
+        let label: String
+        let variantId: String
+    }
+
+    private struct JsonRouteEntry: Decodable {
+        let id: String
+        let label: String
+        let variantId: String
+        let dayType: String
     }
 
     private struct JsonTimetableSection: Decodable {
@@ -107,9 +132,9 @@ struct TimetableLoader {
         }
     }
 
-    // MARK: - Public API
+    // MARK: - File loading
 
-    func load(_ routeId: String) throws -> [BusTimetable] {
+    private func loadFile(_ routeId: String) throws -> TimetableFile {
         guard let url = Bundle.main.url(
             forResource: routeId.lowercased(),
             withExtension: "json",
@@ -118,11 +143,155 @@ struct TimetableLoader {
             throw TimetableLoaderError.fileNotFound(routeId)
         }
         let data = try Data(contentsOf: url)
-        let file = try JSONDecoder().decode(TimetableFile.self, from: data)
+        return try JSONDecoder().decode(TimetableFile.self, from: data)
+    }
+
+    // MARK: - Public API: timetables
+
+    func load(_ routeId: String) throws -> [BusTimetable] {
+        let file = try loadFile(routeId)
         return buildTimetables(from: file)
     }
 
-    // MARK: - Private
+    // MARK: - Public API: route structure
+
+    /// All stop sequences for this route, one per variant. Used by the closest-stop finder.
+    func loadRoutesForId(_ routeId: String) throws -> [[BusStop]] {
+        let file = try loadFile(routeId)
+        let stopsById = stopsIndex(file)
+        return file.variants.map { variant in
+            variant.stopSequence.compactMap { stopsById[$0] }
+        }
+    }
+
+    /// Named variants for a given day type. Returns empty when the route has no service that day.
+    func loadRouteVariants(_ routeId: String, dayType: DayType) throws -> [RouteVariant] {
+        let file = try loadFile(routeId)
+        let stopsById = stopsIndex(file)
+        let relevant = relevantVariantIds(for: dayType, in: file)
+        return file.variants
+            .filter { relevant.contains($0.id) }
+            .map { variant in
+                let stops = variant.stopSequence.compactMap { stopsById[$0] }
+                return RouteVariant(id: variant.id, label: variant.label, stops: stops, direction: variant.label)
+            }
+    }
+
+    /// RouteViews for a given day type, or nil when the route has no service that day.
+    func loadRouteViews(_ routeId: String, dayType: DayType) throws -> [RouteView]? {
+        let file = try loadFile(routeId)
+        let stopsById = stopsIndex(file)
+        let views = buildRouteViews(for: dayType, file: file, stopsById: stopsById)
+        return views.isEmpty ? nil : views
+    }
+
+    /// RouteSelectorEntries built from routeDisplay.entries.
+    func loadRouteEntries(_ routeId: String, today: Date) throws -> [RouteSelectorEntry] {
+        let file = try loadFile(routeId)
+        let stopsById = stopsIndex(file)
+        return file.routeDisplay.entries.map { entry in
+            let dayType = parseDayType(entry.dayType)
+            let views = buildRouteViews(for: dayType, file: file, stopsById: stopsById)
+            return RouteSelectorEntry(
+                id: entry.id,
+                label: entry.label,
+                views: views,
+                initialViewId: entry.variantId,
+                timetableDayType: dayType,
+                isActiveToday: isActiveToday(entry.dayType, today: today)
+            )
+        }
+    }
+
+    /// Stop dictionary keyed by stop ID — exposed for parsers that still build their own views
+    /// (e.g. M6 with tabs+swap hybrid display).
+    func loadBusStopsById(_ routeId: String) throws -> [String: BusStop] {
+        let file = try loadFile(routeId)
+        return stopsIndex(file)
+    }
+
+    // MARK: - Route structure helpers
+
+    private func stopsIndex(_ file: TimetableFile) -> [String: BusStop] {
+        Dictionary(file.stops.map { ($0.id, buildBusStop(from: $0)) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    private func buildBusStop(from jsonStop: JsonStop) -> BusStop {
+        BusStop(
+            id: jsonStop.id,
+            name: jsonStop.name,
+            coordinates: "\(jsonStop.lat), \(jsonStop.lon)",
+            alternates: (jsonStop.alternates ?? []).map {
+                AlternateLocation(id: $0.id, name: $0.name, coordinates: "\($0.lat), \($0.lon)")
+            }
+        )
+    }
+
+    /// Returns the set of variant IDs that should be shown for a given day type, including
+    /// swap targets so that both directions are available when needed.
+    private func relevantVariantIds(for dayType: DayType, in file: TimetableFile) -> Set<String> {
+        let dayStr = dayTypeString(dayType)
+        let fromEntries = file.routeDisplay.entries
+            .filter { $0.dayType == dayStr }
+            .map { $0.variantId }
+        guard !fromEntries.isEmpty else { return [] }
+
+        var ids = Set(fromEntries)
+        let variantsById = Dictionary(file.variants.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for variantId in fromEntries {
+            if let target = variantsById[variantId]?.swapTargetId {
+                ids.insert(target)
+            }
+        }
+        return ids
+    }
+
+    private func buildRouteViews(
+        for dayType: DayType, file: TimetableFile, stopsById: [String: BusStop]
+    ) -> [RouteView] {
+        let relevant = relevantVariantIds(for: dayType, in: file)
+        guard !relevant.isEmpty else { return [] }
+
+        let isTabsType = file.routeDisplay.type == "tabs"
+        let routeTabs = file.routeDisplay.tabs?.map { RouteTab(label: $0.label, viewId: $0.variantId) }
+
+        return file.variants
+            .filter { relevant.contains($0.id) }
+            .map { variant in
+                let stops = variant.stopSequence.compactMap { stopsById[$0] }.map { RouteViewStop(stop: $0) }
+                let swapAction = isTabsType ? nil : variant.swapTargetId.map { SwapAction(targetViewId: $0) }
+                return RouteView(
+                    id: variant.id,
+                    label: variant.label,
+                    stops: stops,
+                    direction: variant.label,
+                    swapAction: swapAction,
+                    tabs: routeTabs,
+                    tabsLabel: file.routeDisplay.tabsLabel,
+                    mergedDirectionLabel: isTabsType ? file.routeDisplay.mergedDirectionLabel : nil
+                )
+            }
+    }
+
+    private func dayTypeString(_ dayType: DayType) -> String {
+        switch dayType {
+        case .weekday:  return "weekday"
+        case .saturday: return "saturday"
+        case .sunday:   return "sunday"
+        }
+    }
+
+    private func isActiveToday(_ dayTypeStr: String, today: Date) -> Bool {
+        let dow = Calendar.current.component(.weekday, from: today) // 1=Sun, 7=Sat
+        switch dayTypeStr {
+        case "weekday":  return dow != 1 && dow != 7
+        case "saturday": return dow == 7
+        case "sunday":   return dow == 1
+        default:         return false
+        }
+    }
+
+    // MARK: - Timetable builder (unchanged)
 
     private func buildTimetables(from file: TimetableFile) -> [BusTimetable] {
         let variantsById = Dictionary(uniqueKeysWithValues: file.variants.map { ($0.id, $0) })

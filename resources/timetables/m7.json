@@ -91,31 +91,6 @@
         "jardinillos"
       ],
       "swapTargetId": "ext-outbound"
-    },
-    {
-      "id": "ext-inbound",
-      "label": "Torrecaballeros → Segovia",
-      "stopSequence": [
-        "torrecaballeros-3",
-        "torrecaballeros-2",
-        "torrecaballeros",
-        "cabanillas",
-        "trescasas-2",
-        "trescasas",
-        "sonsoto-2",
-        "sonsoto",
-        "san-cristobal-rotonda",
-        "san-cristobal-iglesia",
-        "san-cristobal",
-        "tabanera-2",
-        "tabanera",
-        "palazuelos",
-        "plaza-de-toros",
-        "la-pista",
-        "andres-laguna",
-        "jardinillos"
-      ],
-      "swapTargetId": "ext-outbound"
     }
   ],
 
