@@ -29,11 +29,7 @@
 		A10000010000000000000011 /* PDFDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000011 /* PDFDownloadService.swift */; };
 		A10000010000000000000012 /* PDFCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000012 /* PDFCacheManager.swift */; };
 		A10000010000000000000013 /* TimetableCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* TimetableCacheService.swift */; };
-		A10000010000000000000014 /* BusTimetableParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000014 /* BusTimetableParser.swift */; };
 		A10000010000000000000015 /* PDFTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000015 /* PDFTextExtractor.swift */; };
-		A10000010000000000000016 /* TimetableParserUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000016 /* TimetableParserUtils.swift */; };
-		A10000010000000000000017 /* M4Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000017 /* M4Parser.swift */; };
-		A10000010000000000000018 /* M6Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000018 /* M6Parser.swift */; };
 		A10000010000000000000019 /* PDFProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* PDFProcessingService.swift */; };
 		A1000001000000000000001A /* TimetableService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001A /* TimetableService.swift */; };
 		A1000001000000000000001B /* BusRouteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001B /* BusRouteRegistry.swift */; };
@@ -48,16 +44,10 @@
 		A10000010000000000000030 /* RoutePolylines in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* RoutePolylines */; };
 		A1000001000000000000005B /* Timetables in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005B /* Timetables */; };
 		A1000001000000000000005C /* TimetableLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005C /* TimetableLoader.swift */; };
-		A10000010000000000000031 /* M1Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000031 /* M1Parser.swift */; };
 		A10000010000000000000032 /* ClosestStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* ClosestStopService.swift */; };
-		A10000010000000000000033 /* M2Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000033 /* M2Parser.swift */; };
 		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
 		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
 		A10000010000000000000042 /* AllRoutesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000042 /* AllRoutesView.swift */; };
-		A10000010000000000000043 /* M3Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000043 /* M3Parser.swift */; };
-		A10000010000000000000044 /* M5Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000044 /* M5Parser.swift */; };
-		A10000010000000000000045 /* M7Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000045 /* M7Parser.swift */; };
-		A10000010000000000000046 /* M8Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000046 /* M8Parser.swift */; };
 		A10000010000000000000047 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000047 /* AboutView.swift */; };
 		A10000010000000000000048 /* BusReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000048 /* BusReminder.swift */; };
 		A10000010000000000000049 /* ReminderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000049 /* ReminderService.swift */; };
@@ -103,11 +93,7 @@
 		A20000010000000000000011 /* PDFDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFDownloadService.swift; sourceTree = "<group>"; };
 		A20000010000000000000012 /* PDFCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCacheManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000013 /* TimetableCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableCacheService.swift; sourceTree = "<group>"; };
-		A20000010000000000000014 /* BusTimetableParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusTimetableParser.swift; sourceTree = "<group>"; };
 		A20000010000000000000015 /* PDFTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFTextExtractor.swift; sourceTree = "<group>"; };
-		A20000010000000000000016 /* TimetableParserUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableParserUtils.swift; sourceTree = "<group>"; };
-		A20000010000000000000017 /* M4Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M4Parser.swift; sourceTree = "<group>"; };
-		A20000010000000000000018 /* M6Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M6Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000019 /* PDFProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFProcessingService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001A /* TimetableService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001B /* BusRouteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusRouteRegistry.swift; sourceTree = "<group>"; };
@@ -122,16 +108,10 @@
 		A20000010000000000000030 /* RoutePolylines */ = {isa = PBXFileReference; lastKnownFileType = folder; path = RoutePolylines; sourceTree = "<group>"; };
 		A2000001000000000000005B /* Timetables */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Timetables; sourceTree = "<group>"; };
 		A2000001000000000000005C /* TimetableLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableLoader.swift; sourceTree = "<group>"; };
-		A20000010000000000000031 /* M1Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M1Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000032 /* ClosestStopService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosestStopService.swift; sourceTree = "<group>"; };
-		A20000010000000000000033 /* M2Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M2Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000040 /* RouteGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteGroup.swift; sourceTree = "<group>"; };
 		A20000010000000000000041 /* RouteSelectorEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectorEntry.swift; sourceTree = "<group>"; };
 		A20000010000000000000042 /* AllRoutesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AllRoutesView.swift; sourceTree = "<group>"; };
-		A20000010000000000000043 /* M3Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M3Parser.swift; sourceTree = "<group>"; };
-		A20000010000000000000044 /* M5Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M5Parser.swift; sourceTree = "<group>"; };
-		A20000010000000000000045 /* M7Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M7Parser.swift; sourceTree = "<group>"; };
-		A20000010000000000000046 /* M8Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = M8Parser.swift; sourceTree = "<group>"; };
 		A20000010000000000000047 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		A20000010000000000000048 /* BusReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusReminder.swift; sourceTree = "<group>"; };
 		A20000010000000000000049 /* ReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderService.swift; sourceTree = "<group>"; };
@@ -280,27 +260,9 @@
 		A50000010000000000000007 /* PDFParsing */ = {
 			isa = PBXGroup;
 			children = (
-				A20000010000000000000014 /* BusTimetableParser.swift */,
 				A20000010000000000000015 /* PDFTextExtractor.swift */,
-				A20000010000000000000016 /* TimetableParserUtils.swift */,
-				A50000010000000000000008 /* Strategies */,
 			);
 			path = PDFParsing;
-			sourceTree = "<group>";
-		};
-		A50000010000000000000008 /* Strategies */ = {
-			isa = PBXGroup;
-			children = (
-				A20000010000000000000031 /* M1Parser.swift */,
-				A20000010000000000000033 /* M2Parser.swift */,
-				A20000010000000000000043 /* M3Parser.swift */,
-				A20000010000000000000044 /* M5Parser.swift */,
-				A20000010000000000000045 /* M7Parser.swift */,
-				A20000010000000000000046 /* M8Parser.swift */,
-				A20000010000000000000017 /* M4Parser.swift */,
-				A20000010000000000000018 /* M6Parser.swift */,
-			);
-			path = Strategies;
 			sourceTree = "<group>";
 		};
 		A50000010000000000000009 /* Config */ = {
@@ -411,18 +373,8 @@
 				A10000010000000000000012 /* PDFCacheManager.swift in Sources */,
 				A10000010000000000000013 /* TimetableCacheService.swift in Sources */,
 				A1000001000000000000005C /* TimetableLoader.swift in Sources */,
-				A10000010000000000000014 /* BusTimetableParser.swift in Sources */,
 				A10000010000000000000015 /* PDFTextExtractor.swift in Sources */,
-				A10000010000000000000016 /* TimetableParserUtils.swift in Sources */,
-				A10000010000000000000031 /* M1Parser.swift in Sources */,
-				A10000010000000000000033 /* M2Parser.swift in Sources */,
-				A10000010000000000000043 /* M3Parser.swift in Sources */,
-				A10000010000000000000044 /* M5Parser.swift in Sources */,
-				A10000010000000000000045 /* M7Parser.swift in Sources */,
-				A10000010000000000000046 /* M8Parser.swift in Sources */,
 				A10000010000000000000032 /* ClosestStopService.swift in Sources */,
-				A10000010000000000000017 /* M4Parser.swift in Sources */,
-				A10000010000000000000018 /* M6Parser.swift in Sources */,
 				A10000010000000000000019 /* PDFProcessingService.swift in Sources */,
 				A1000001000000000000001A /* TimetableService.swift in Sources */,
 				A1000001000000000000001B /* BusRouteRegistry.swift in Sources */,

@@ -206,6 +206,8 @@ class TimetableLoader(private val context: Context) {
         }
     }
 
+    fun getVersion(routeId: String): String = loadFile(routeId).version
+
     fun loadBusStopsById(routeId: String): Map<String, BusStop> = stopsIndex(loadFile(routeId))
 
     // MARK: - Route structure helpers

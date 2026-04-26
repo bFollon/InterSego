@@ -215,6 +215,10 @@ struct TimetableLoader {
         }
     }
 
+    func getVersion(_ routeId: String) throws -> String {
+        try loadFile(routeId).version
+    }
+
     func loadBusStopsById(_ routeId: String) throws -> [String: BusStop] {
         let file = try loadFile(routeId)
         return stopsIndex(file)
