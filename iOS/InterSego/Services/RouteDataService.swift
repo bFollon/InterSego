@@ -20,9 +20,8 @@ import Foundation
 /// Coordinator service for timetable and route metadata queries.
 ///
 /// All data is sourced from bundled JSON assets via TimetableLoader.
-/// The Strategy Pattern (PDF parsing) was removed when all routes migrated to JSON.
-actor PDFProcessingService {
-    static let shared = PDFProcessingService()
+actor RouteDataService {
+    static let shared = RouteDataService()
 
     private let supportedRoutes = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
     private var stopToRoutes: [String: [String]] = [:]
@@ -36,11 +35,11 @@ actor PDFProcessingService {
                 stopToRoutes[stopId, default: []].append(routeId)
             }
         }
-        DebugConfig.debugPrint("PDFProcessingService: Initialized with \(supportedRoutes.count) routes, \(stopToRoutes.count) stops indexed")
+        DebugConfig.debugPrint("RouteDataService: Initialized with \(supportedRoutes.count) routes, \(stopToRoutes.count) stops indexed")
     }
 
     func parseTimetables(routeId: String) async throws -> [BusTimetable] {
-        DebugConfig.debugPrint("PDFProcessingService: Loading timetables for route \(routeId)")
+        DebugConfig.debugPrint("RouteDataService: Loading timetables for route \(routeId)")
         return try TimetableLoader().load(routeId)
     }
 

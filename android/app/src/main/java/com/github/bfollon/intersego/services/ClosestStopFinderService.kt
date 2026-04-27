@@ -47,7 +47,7 @@ class ClosestStopFinderService(private val context: Context) {
      * @param routes The full list of known routes (used to resolve route metadata by ID).
      */
     suspend fun findClosest(userLocation: Location, routes: List<BusRoute>): Result {
-        val pdfService = PDFProcessingService(context)
+        val pdfService = RouteDataService(context)
         val supportedRouteIds = pdfService.getSupportedRoutes()
         val dayType = getCurrentDayType()
 

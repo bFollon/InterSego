@@ -31,9 +31,8 @@ import kotlinx.coroutines.withContext
  * Coordinator service for timetable and route metadata queries.
  *
  * All data is sourced from bundled JSON assets via [TimetableLoader].
- * The Strategy Pattern (PDF parsing) was removed when all routes migrated to JSON.
  */
-class PDFProcessingService(private val context: Context) {
+class RouteDataService(private val context: Context) {
 
     private val supportedRoutes = listOf("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8")
 
@@ -50,15 +49,15 @@ class PDFProcessingService(private val context: Context) {
                     }
                 }
             } catch (e: Exception) {
-                DebugConfig.debugError("PDFProcessingService: Failed to index stops for $routeId", e)
+                DebugConfig.debugError("RouteDataService: Failed to index stops for $routeId", e)
             }
         }
-        DebugConfig.debugPrint("PDFProcessingService: Initialized with ${supportedRoutes.size} routes, ${index.size} stops indexed")
+        DebugConfig.debugPrint("RouteDataService: Initialized with ${supportedRoutes.size} routes, ${index.size} stops indexed")
         return index
     }
 
     suspend fun parseTimetables(routeId: String): List<BusTimetable> = withContext(Dispatchers.IO) {
-        DebugConfig.debugPrint("PDFProcessingService: Loading timetables for route $routeId")
+        DebugConfig.debugPrint("RouteDataService: Loading timetables for route $routeId")
         TimetableLoader(context).load(routeId)
     }
 

@@ -67,7 +67,7 @@ data class DeparturesData(
  * (for listing available directions).
  */
 class DeparturesService(private val context: Context) {
-    private val pdfService = PDFProcessingService(context)
+    private val pdfService = RouteDataService(context)
     private val timetableService = TimetableService(context)
 
     /**

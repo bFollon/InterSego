@@ -51,14 +51,14 @@ final class ClosestStopService {
 
         // 2. Collect all unique stop candidates from every supported route
         let dayType = TimetableService.shared.getCurrentDayType()
-        let supportedRouteIds = await PDFProcessingService.shared.getSupportedRoutes()
+        let supportedRouteIds = await RouteDataService.shared.getSupportedRoutes()
 
         var candidates: [StopCandidate] = []
         // Global dedup: each canonical stop ID appears at most once across all routes
         var seenStopIds = Set<String>()
 
         for routeId in supportedRouteIds {
-            let views = await PDFProcessingService.shared.getRouteViews(routeId: routeId, dayType: dayType)
+            let views = await RouteDataService.shared.getRouteViews(routeId: routeId, dayType: dayType)
 
             for view in views {
                 for viewStop in view.stops {
@@ -114,7 +114,7 @@ final class ClosestStopService {
 
         for candidate in candidates {
             // Load timetables for all routes serving this stop
-            let routeIds = await PDFProcessingService.shared.getRoutesForStop(stopId: candidate.stop.id)
+            let routeIds = await RouteDataService.shared.getRoutesForStop(stopId: candidate.stop.id)
             for routeId in routeIds {
                 let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
                 let stopTimetables = timetables.filter { $0.stopId == candidate.stop.id && $0.dayType == dayType }

@@ -38,8 +38,8 @@ class TimetableService(private val context: Context) {
     // Persistent cache service (tier 2)
     private val cacheService = TimetableCacheService(context)
 
-    // PDF processing service (tier 3)
-    private val pdfProcessingService = PDFProcessingService(context)
+    // Route data service (tier 3)
+    private val routeDataService = RouteDataService(context)
 
     /**
      * Load timetables for a specific route
@@ -49,7 +49,7 @@ class TimetableService(private val context: Context) {
      */
     suspend fun loadTimetables(routeId: String, forceRefresh: Boolean = false): List<BusTimetable> {
         // Check if parser is in DEBUG mode - if so, always force refresh (bypass cache)
-        val isDebugParser = pdfProcessingService.isDebugParser(routeId)
+        val isDebugParser = routeDataService.isDebugParser(routeId)
         val shouldForceRefresh = forceRefresh || isDebugParser
 
         if (isDebugParser) {
@@ -58,7 +58,7 @@ class TimetableService(private val context: Context) {
 
         DebugConfig.debugPrint("TimetableService: Loading timetables for route $routeId (forceRefresh: $shouldForceRefresh)")
 
-        val parserVersion = pdfProcessingService.getParserVersion(routeId)
+        val parserVersion = routeDataService.getParserVersion(routeId)
 
         // Check memory cache first (tier 1)
         if (!shouldForceRefresh && cachedTimetables.containsKey(routeId)) {
@@ -81,7 +81,7 @@ class TimetableService(private val context: Context) {
 
         try {
             // Parse the PDF
-            val timetables = pdfProcessingService.parseTimetables(routeId)
+            val timetables = routeDataService.parseTimetables(routeId)
 
             // Cache in both memory and persistent storage
             cachedTimetables[routeId] = timetables

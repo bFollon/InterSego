@@ -16,7 +16,6 @@
 		A10000010000000000000004 /* BusTimetable.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000004 /* BusTimetable.swift */; };
 		A10000010000000000000005 /* DayType.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000005 /* DayType.swift */; };
 		A10000010000000000000006 /* DepartureTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000006 /* DepartureTime.swift */; };
-		A10000010000000000000007 /* PDFVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000007 /* PDFVersion.swift */; };
 		A10000010000000000000008 /* RouteType.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000008 /* RouteType.swift */; };
 		A10000010000000000000009 /* RouteVariant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000009 /* RouteVariant.swift */; };
 		A1000001000000000000000A /* RouteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000A /* RouteView.swift */; };
@@ -24,13 +23,8 @@
 		A1000001000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000C /* Assets.xcassets */; };
 		A1000001000000000000000D /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* DebugConfig.swift */; };
 		A1000001000000000000000E /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000E /* NetworkMonitor.swift */; };
-		A1000001000000000000000F /* PDFURLScrapingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000F /* PDFURLScrapingService.swift */; };
-		A10000010000000000000010 /* PDFURLRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000010 /* PDFURLRepository.swift */; };
-		A10000010000000000000011 /* PDFDownloadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000011 /* PDFDownloadService.swift */; };
-		A10000010000000000000012 /* PDFCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000012 /* PDFCacheManager.swift */; };
 		A10000010000000000000013 /* TimetableCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000013 /* TimetableCacheService.swift */; };
-		A10000010000000000000015 /* PDFTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000015 /* PDFTextExtractor.swift */; };
-		A10000010000000000000019 /* PDFProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* PDFProcessingService.swift */; };
+		A10000010000000000000019 /* RouteDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* RouteDataService.swift */; };
 		A1000001000000000000001A /* TimetableService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001A /* TimetableService.swift */; };
 		A1000001000000000000001B /* BusRouteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001B /* BusRouteRegistry.swift */; };
 		A1000001000000000000001C /* RouteSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001C /* RouteSelectionView.swift */; };
@@ -80,7 +74,6 @@
 		A20000010000000000000004 /* BusTimetable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusTimetable.swift; sourceTree = "<group>"; };
 		A20000010000000000000005 /* DayType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DayType.swift; sourceTree = "<group>"; };
 		A20000010000000000000006 /* DepartureTime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartureTime.swift; sourceTree = "<group>"; };
-		A20000010000000000000007 /* PDFVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFVersion.swift; sourceTree = "<group>"; };
 		A20000010000000000000008 /* RouteType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteType.swift; sourceTree = "<group>"; };
 		A20000010000000000000009 /* RouteVariant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteVariant.swift; sourceTree = "<group>"; };
 		A2000001000000000000000A /* RouteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteView.swift; sourceTree = "<group>"; };
@@ -88,13 +81,8 @@
 		A2000001000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000001000000000000000D /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = "<group>"; };
 		A2000001000000000000000E /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
-		A2000001000000000000000F /* PDFURLScrapingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFURLScrapingService.swift; sourceTree = "<group>"; };
-		A20000010000000000000010 /* PDFURLRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFURLRepository.swift; sourceTree = "<group>"; };
-		A20000010000000000000011 /* PDFDownloadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFDownloadService.swift; sourceTree = "<group>"; };
-		A20000010000000000000012 /* PDFCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFCacheManager.swift; sourceTree = "<group>"; };
 		A20000010000000000000013 /* TimetableCacheService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableCacheService.swift; sourceTree = "<group>"; };
-		A20000010000000000000015 /* PDFTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFTextExtractor.swift; sourceTree = "<group>"; };
-		A20000010000000000000019 /* PDFProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFProcessingService.swift; sourceTree = "<group>"; };
+		A20000010000000000000019 /* RouteDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDataService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001A /* TimetableService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001B /* BusRouteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusRouteRegistry.swift; sourceTree = "<group>"; };
 		A2000001000000000000001C /* RouteSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectionView.swift; sourceTree = "<group>"; };
@@ -182,7 +170,6 @@
 				A20000010000000000000004 /* BusTimetable.swift */,
 				A20000010000000000000005 /* DayType.swift */,
 				A20000010000000000000006 /* DepartureTime.swift */,
-				A20000010000000000000007 /* PDFVersion.swift */,
 				A20000010000000000000008 /* RouteType.swift */,
 				A20000010000000000000009 /* RouteVariant.swift */,
 				A2000001000000000000000A /* RouteView.swift */,
@@ -202,14 +189,10 @@
 			children = (
 				A2000001000000000000000D /* DebugConfig.swift */,
 				A2000001000000000000000E /* NetworkMonitor.swift */,
-				A2000001000000000000000F /* PDFURLScrapingService.swift */,
-				A20000010000000000000010 /* PDFURLRepository.swift */,
-				A20000010000000000000011 /* PDFDownloadService.swift */,
 				3A539AD02F88EEC000F9ACD0 /* DeparturesService.swift */,
-				A20000010000000000000012 /* PDFCacheManager.swift */,
 				A20000010000000000000013 /* TimetableCacheService.swift */,
 				A2000001000000000000005C /* TimetableLoader.swift */,
-				A20000010000000000000019 /* PDFProcessingService.swift */,
+				A20000010000000000000019 /* RouteDataService.swift */,
 				A2000001000000000000001A /* TimetableService.swift */,
 				A2000001000000000000001B /* BusRouteRegistry.swift */,
 				A2000001000000000000001F /* AppDirectories.swift */,
@@ -221,7 +204,6 @@
 				A20000010000000000000057 /* MonitoringPreferencesService.swift */,
 				A20000010000000000000058 /* AnalyticsService.swift */,
 				A20000010000000000000059 /* ErrorReportingService.swift */,
-				A50000010000000000000007 /* PDFParsing */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -255,14 +237,6 @@
 				A2000001000000000000005A /* MonitoringConsentView.swift */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		A50000010000000000000007 /* PDFParsing */ = {
-			isa = PBXGroup;
-			children = (
-				A20000010000000000000015 /* PDFTextExtractor.swift */,
-			);
-			path = PDFParsing;
 			sourceTree = "<group>";
 		};
 		A50000010000000000000009 /* Config */ = {
@@ -358,7 +332,6 @@
 				A10000010000000000000004 /* BusTimetable.swift in Sources */,
 				A10000010000000000000005 /* DayType.swift in Sources */,
 				A10000010000000000000006 /* DepartureTime.swift in Sources */,
-				A10000010000000000000007 /* PDFVersion.swift in Sources */,
 				A10000010000000000000008 /* RouteType.swift in Sources */,
 				A10000010000000000000009 /* RouteVariant.swift in Sources */,
 				A1000001000000000000000A /* RouteView.swift in Sources */,
@@ -367,15 +340,10 @@
 				A1000001000000000000000B /* SeasonalAvailability.swift in Sources */,
 				A1000001000000000000000D /* DebugConfig.swift in Sources */,
 				A1000001000000000000000E /* NetworkMonitor.swift in Sources */,
-				A1000001000000000000000F /* PDFURLScrapingService.swift in Sources */,
-				A10000010000000000000010 /* PDFURLRepository.swift in Sources */,
-				A10000010000000000000011 /* PDFDownloadService.swift in Sources */,
-				A10000010000000000000012 /* PDFCacheManager.swift in Sources */,
 				A10000010000000000000013 /* TimetableCacheService.swift in Sources */,
 				A1000001000000000000005C /* TimetableLoader.swift in Sources */,
-				A10000010000000000000015 /* PDFTextExtractor.swift in Sources */,
 				A10000010000000000000032 /* ClosestStopService.swift in Sources */,
-				A10000010000000000000019 /* PDFProcessingService.swift in Sources */,
+				A10000010000000000000019 /* RouteDataService.swift in Sources */,
 				A1000001000000000000001A /* TimetableService.swift in Sources */,
 				A1000001000000000000001B /* BusRouteRegistry.swift in Sources */,
 				A1000001000000000000001C /* RouteSelectionView.swift in Sources */,

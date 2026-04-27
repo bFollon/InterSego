@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**InterSego** is a bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
+**InterSego** is a bus timetable app for Segovia, Spain. It loads bus timetable data from bundled JSON assets, provides offline-first access, and helps users find the nearest bus stop using geolocation.
 
-**Current Status:** Android and iOS implementations at feature parity. Complete end-to-end user flow operational for M4 and M6 routes on both platforms.
+**Current Status:** Android and iOS implementations at feature parity. All 8 routes (M1–M8) operational on both platforms via JSON-based loading.
 
 ## Cross-Platform Feature Tracker
 
@@ -17,11 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Feature | Android | iOS | Notes |
 |---|---|---|---|
 | Network monitoring | ✅ | ✅ | |
-| PDF download service | ✅ | ✅ | |
-| PDF URL scraping (self-healing) | ✅ | ✅ | |
-| PDF cache manager (version checking) | ✅ | ✅ | |
-| Three-tier caching (memory → JSON → PDF) | ✅ | ✅ | |
-| Timetable cache service | ✅ | ✅ | |
+| Timetable cache service | ✅ | ✅ | Persistent disk cache (currently inactive — no PDFs to timestamp against; will be repurposed for server-loading) |
 | TimetableLoader (JSON-based) | ✅ | ✅ | Reads `assets/timetables/{routeId}.json` (Android) / `Timetables/{routeId}.json` (iOS) from bundle; produces `List<BusTimetable>`; **`resources/timetables/` is source-of-truth for humans only — neither app reads it at runtime; when editing a JSON timetable you MUST update all three copies**: `resources/timetables/`, `android/app/src/main/assets/timetables/`, and `iOS/InterSego/Timetables/`; replaces `buildStaticTimetables()` in migrated parsers; supports trip-level `variantLabel` (fallback for all departures in a trip, overridable per cell); see `docs/TIMETABLE_JSON_REFACTOR.md` |
 | Debug config / logging | ✅ | ✅ | |
 | Boarding notification service | ✅ | ✅ | Node.js/TypeScript server at `server/`; stores boarding events; GET+POST /boardings; 4h TTL; Bearer auth; see `server/docs/API.md` |
@@ -31,9 +27,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Monitoring consent UI | ✅ | ✅ (needs Xcode setup) | Dual opt-in modal (error reporting + analytics independently); shown on first launch after splash; default off; re-accessible from Settings |
 | MonitoringPreferencesService | ✅ | ✅ (needs Xcode setup) | Persists 4 UserDefaults/SharedPreferences keys; consent-gated SDK initialization |
 
-### PDF Parsers
+### Route Timetables (all JSON-based via TimetableLoader)
 
-| Parser | Android | iOS | Notes |
+| Route | Android | iOS | Notes |
 |---|---|---|---|
 | M4 (La Lastrilla - El Sotillo) | ✅ (JSON) | ✅ (JSON) | isCircular=true; weekday + Saturday (Jul/Aug only); YEAR_ROUND = JULIO Y AGOSTO buses; SCHOOL_ONLY = non-summer buses; SCHOOL_ONLY trips: regular 14:00 + reverse 07:40*, 08:20*, 14:40*; 21:40* reverse is YEAR_ROUND; 4 reverse trips use trip-level variantLabel="Sotillo" badge (El Sotillo-first); 14:40* and 21:40* skip PARROQ2 (index 15 of reverse); null at index 11 (paseo-cabanillas) on all non-school regular trips (school-only stop); hotel-av-sotillo + parroquia-sotillo ARE served on Saturday; merged-directions display: tabsLabel="Pasa primero por", mergedDirectionLabel="La Lastrilla · El Sotillo"; TimetableLoader on both platforms; v3.4; timetable in `resources/timetables/m4.json` |
 | M6 (Segovia - Torrecaballeros) | ✅ (JSON) | ✅ (JSON) | Cluster-based stop estimation; v1.1; all cluster-estimated times pre-computed and stored in JSON; 7 variants (outbound/inbound merged regular+extended, circular, sat/sun outbound/inbound); Sat inbound: PlazaToros→LaPista→AndresLaguna→Jardinillos; Sun inbound ends at EstacionAutobuses; circular variant has separate `direction` ("Segovia → Torrecaballeros") from `label` ("Circular"); Sat entries use `viewIds` for single-direction display (no swap); weekday views use `tabGroups` for tab bar; timetable in `resources/timetables/m6.json`; TimetableLoader on both platforms; M6Parser is now a pure stub |
@@ -88,10 +84,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | RouteVariant | ✅ | ✅ | |
 | RouteView | ✅ | ✅ | |
 | SeasonalAvailability | ✅ | ✅ | |
-| PDFVersion | ✅ | ✅ | |
 | RouteType | ✅ | ✅ | |
-| RouteCacheStatus | ✅ | ❌ | Used in PDFCacheManager, not surfaced in UI |
-| UpdateProgressState | ✅ | ❌ | Used in PDFCacheManager, not surfaced in UI |
+| RouteCacheStatus | ✅ | ❌ | Not surfaced in UI |
+| UpdateProgressState | ✅ | ❌ | Not surfaced in UI |
 | ScheduleDate | ✅ | ❌ | Not used in any UI screen |
 
 ## Repository Structure
@@ -124,9 +119,8 @@ InterSego/
 **Technology Stack:**
 - Jetpack Compose + Material3 for UI
 - Kotlin Coroutines for async operations
-- iText7 for PDF parsing
 - OkHttp for HTTP networking
-- Strategy Pattern for PDF parsing
+- JSON-based timetable loading via `TimetableLoader`
 
 See `android/CLAUDE.md` for detailed Android development guide.
 
@@ -135,20 +129,10 @@ See `android/CLAUDE.md` for detailed Android development guide.
 **Technology Stack:**
 - SwiftUI with default iOS styling
 - Swift actors for thread safety
-- PDFKit for PDF parsing
 - URLSession for HTTP networking
-- Strategy Pattern for PDF parsing
+- JSON-based timetable loading via `TimetableLoader`
 
 **Build:** Open `iOS/InterSego.xcodeproj` in Xcode. Deployment target: iOS 17.0.
-
-#### PDFKit vs iText7 parsing differences
-
-PDFKit (iOS) and iText7 (Android) extract PDF text differently. M6 no longer uses live PDF parsing — timetable data was migrated to JSON (v1.0). The historic parsing artifacts are preserved here for reference in case live parsing is ever re-enabled:
-
-- **Line swapping:** PDFKit sometimes returns two adjacent time rows in reversed order. Was fixed by `reorderSwappedLines()` in `M6Parser`.
-- **Cell splitting:** Differently-formatted cells (e.g. highlighted departure cells like `**21:20`) are read as separate text blocks and may be attached to a later line (e.g. `**21:20 SÁBADOS`). Was fixed by `preprocessLines()` in `M6Parser`, which splits mixed time+keyword lines and backward-merges orphaned leading times into their correct row.
-
-When porting parsers from Android or debugging parsing issues on iOS, always check for these two artifacts first.
 
 ### Web (Future)
 Not yet implemented.
@@ -158,22 +142,19 @@ Not yet implemented.
 **Linecar Bus Company Website:**
 - URL: https://www.linecar.es/metropolitano/segovia/
 - Contains: Bus route PDFs (schedules), route information
-- Format: PDF files (e.g., `M4.pdf`, `M5-septiembre-2024.pdf`)
 - Update frequency: Irregular (seasonal changes, service updates)
 
 **Data Strategy:**
-- PDFs are scraped and cached locally
-- Self-healing URL system re-scrapes when PDFs return 404
-- Offline-first architecture with persistent caching
+- Timetable data is pre-extracted into `resources/timetables/{routeId}.json` and bundled with each app
+- Next milestone: load JSON from a remote server instead of bundle assets
 
-## Parser Cache Versioning
+## Timetable Version Tracking
 
-Both platforms implement parser-version–aware cache invalidation. Each parser declares `capabilities.version` (e.g. `"1.4"`). This version is written to `TimetableCache/<routeId>.meta.json` alongside the PDF timestamp. On next load, if the stored version doesn't match the current parser version the JSON cache is discarded and the route is re-parsed from scratch.
+Each timetable JSON has a top-level `"version"` field (e.g. `"3.4"`). `TimetableLoader` reads this and exposes it via `RouteDataService.getParserVersion()`. `TimetableCacheService` stores the version in `.meta.json` and invalidates the disk cache if it changes.
 
-**When to bump the parser version:** any time a code change affects the parsed output — bug fixes, new stops, corrected coordinates, timetable corrections, etc. Increment the version string in the parser's `capabilities` to force all existing devices to re-parse on next launch. Always bump on **both** platforms together.
+**When to bump the version:** any change to timetable data — new stops, corrected times, seasonal rule changes, etc. Bump in the JSON file and increment on **both** platforms' copies together.
 
-**Android:** implemented in `TimetableCacheService` (stores/checks `parserVersion` in `.meta.json`) via `PDFProcessingService.getParserVersion()`.
-**iOS:** implemented in `TimetableCacheService` (same `.meta.json` contract).
+Note: the disk cache (`TimetableCacheService`) currently always misses because it checks for PDF file timestamps that no longer exist. It will be fixed when server-based loading is added.
 
 ## Development Rules
 

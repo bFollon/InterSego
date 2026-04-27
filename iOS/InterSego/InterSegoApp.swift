@@ -127,7 +127,7 @@ struct ContentView: View {
                                     do {
                                         let selection = try await ClosestStopService.shared.findClosest()
                                         let stop = selection.stop
-                                        let routeIds = await PDFProcessingService.shared.getRoutesForStop(stopId: stop.id)
+                                        let routeIds = await RouteDataService.shared.getRoutesForStop(stopId: stop.id)
                                         let allRoutes = BusRouteRegistry.knownRoutes()
                                         let now = Date()
                                         let weekday = Calendar.current.component(.weekday, from: now)
@@ -377,8 +377,8 @@ struct ContentView: View {
                 }
             }
             .task {
-                let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
-                let todayViews = await PDFProcessingService.shared.getRouteViews(
+                let entries = await RouteDataService.shared.getRouteEntries(routeId: route.id)
+                let todayViews = await RouteDataService.shared.getRouteViews(
                     routeId: route.id, dayType: todayDayType,
                 )
                 showAllRoutes = entries.count > 1 || todayViews.isEmpty
@@ -387,7 +387,7 @@ struct ContentView: View {
                     // NextDepartureView handles looking up to 7 days ahead for the actual departure.
                     var fallback: [RouteView] = []
                     for dayType in [DayType.weekday, .saturday, .sunday, .weekend, .holiday] {
-                        let v = await PDFProcessingService.shared.getRouteViews(routeId: route.id, dayType: dayType)
+                        let v = await RouteDataService.shared.getRouteViews(routeId: route.id, dayType: dayType)
                         if !v.isEmpty { fallback = v; break }
                     }
                     views = fallback
@@ -493,7 +493,7 @@ struct ContentView: View {
                 }
             }
             .task {
-                let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
+                let entries = await RouteDataService.shared.getRouteEntries(routeId: route.id)
                 if !entries.isEmpty {
                     routeEntries = entries
                     if selectedEntryId == nil {
@@ -559,7 +559,7 @@ struct ContentView: View {
                 },
             )
             .task {
-                let entries = await PDFProcessingService.shared.getRouteEntries(routeId: route.id)
+                let entries = await RouteDataService.shared.getRouteEntries(routeId: route.id)
                 if !entries.isEmpty {
                     routeEntries = entries
                     selectedEntryId = initialEntryId
@@ -581,19 +581,11 @@ struct ContentView: View {
         // Ensure network monitor is alive (starts in init)
         _ = NetworkMonitor.shared
 
-        // Initialize PDF URL repository
-        let success = await PDFURLRepository.shared.initializeURLs()
-        if success {
-            DebugConfig.debugPrint("InterSego: PDF URLs initialized successfully")
-        } else {
-            DebugConfig.debugWarn("InterSego: PDF URL initialization failed, using fallback URLs")
-        }
-
         // Load routes
         routes = BusRouteRegistry.knownRoutes()
 
-        // Get supported routes from PDFProcessingService
-        let supported = await PDFProcessingService.shared.getSupportedRoutes()
+        // Get supported routes from RouteDataService
+        let supported = await RouteDataService.shared.getSupportedRoutes()
         supportedRoutes = Set(supported)
 
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")

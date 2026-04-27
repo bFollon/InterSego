@@ -6,17 +6,16 @@ This file provides Android-specific guidance for InterSego development.
 
 ## Android Implementation
 
-**InterSego** is an Android bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
+**InterSego** is an Android bus timetable app for Segovia, Spain. It loads bus timetable data from bundled JSON assets and helps users find the nearest bus stop using geolocation.
 
-**Architecture Source:** Adapted from FarmaciasDeGuardia (pharmacy duty schedule app). The migration strategy and detailed phase documentation are in `docs/MIGRATION_PLAN.md`.
+**Architecture Source:** Adapted from FarmaciasDeGuardia (pharmacy duty schedule app).
 
 **Key Technologies:**
 - Jetpack Compose + Material3 for UI
 - Kotlin Coroutines for async operations
-- iText7 for PDF parsing
 - OkHttp for HTTP networking
-- Strategy Pattern for PDF parsing
-- Three-tier caching system (memory → persistent → PDF)
+- JSON-based timetable loading via `TimetableLoader`
+- Two-tier caching system (memory → bundle JSON)
 
 ## Build & Development Commands
 
@@ -67,12 +66,9 @@ adb shell pm clear intersegoo
 
 **Common Debug Tags:**
 - `InterSego` - General app logs
-- `PDFURLScrapingService` - PDF URL scraping
-- `PDFDownloadService` - PDF downloads
-- `PDFURLRepository` - URL repository operations
-- `M4Parser` - M4 route PDF parsing
 - `NetworkMonitor` - Network connectivity
 - `TimetableService` - Timetable loading
+- `RouteDataService` - Route metadata queries
 
 **Quick Restart & Debug:**
 ```bash
@@ -95,78 +91,39 @@ adb shell pm clear intersegoo
 
 ## High-Level Architecture
 
-### Three-Tier Caching System
+### Data Loading
 
-**Tier 1: Memory Cache** (fastest)
-- In-memory dictionaries in service classes
-- Cleared on app restart
-- Example: `TimetableService.cachedTimetables`
+All timetable data is loaded from bundled JSON assets via `TimetableLoader`. There is no network fetch or PDF parsing at runtime.
 
-**Tier 2: Persistent Cache** (fast)
-- JSON files in app's Documents directory
-- Validated against PDF modification timestamps
-- Managed by `TimetableCacheService` and `PDFCacheManager`
-- Structure: `Documents/TimetableCache/route-{routeId}.json`
+**Two-Tier Caching** (in `TimetableService`):
+- **Tier 1: Memory cache** — in-process map, cleared on app restart
+- **Tier 2: Bundle JSON** — `assets/timetables/{routeId}.json`, read on every cache miss
 
-**Tier 3: PDF Parsing** (slowest, source of truth)
-- Downloads PDF from URL
-- Parses using strategy pattern
-- Caches results in Tier 1 & 2
-- Falls back to offline if no network
-
-### PDF URL Management
-
-**Self-Healing URL System** (`PDFURLRepository`):
-1. **Scraping:** Fetches PDF URLs from https://www.linecar.es/metropolitano/segovia/
-2. **Persistence:** Stores scraped URLs in SharedPreferences
-3. **Validation:** HEAD requests to verify URLs are still valid
-4. **Healing:** If URL returns 404, automatically re-scrapes website for fresh URLs
-
-**URL Resolution Priority:**
-1. Scraped URLs (from website)
-2. Persisted URLs (cached scrapes)
-3. Fallback URLs (hardcoded in PDFURLRepository)
-
-### Strategy Pattern for PDF Parsing
-
-**Phase 5 (Not Yet Implemented):**
-```
-PDFProcessingService (coordinator)
-    ↓
-BusTimetableParser (interface)
-    ↓
-Route-specific parser strategies:
-├── SegoviaUrbanBusParser
-├── SegoviaInterurbanParser
-└── RouteXCustomParser
-```
-
-PDF parsing will use column-based extraction techniques (similar to FarmaciasDeGuardia).
+The `TimetableCacheService` (persistent disk cache keyed off PDF timestamps) is still present but effectively inactive — it always misses because no PDF files exist on-device. It will be repurposed or removed before server-based loading is added.
 
 ### Service Layer Structure
 
 **Infrastructure Services** (domain-agnostic):
 - `NetworkMonitor` - Connectivity checks
 - `CoordinateCache` - Geocoding results cache
-- `GeocodingService` - Address → coordinates (mock for now, uses coordinate cache)
+- `GeocodingService` - Address → coordinates
 - `LocationManager` - User location services
 - `DebugConfig` - Centralized debug logging
 
-**PDF Services** (bus-specific):
-- `PDFDownloadService` - Downloads PDFs from URLs
-- `PDFCacheManager` - Manages PDF file cache
-- `PDFURLScrapingService` - Scrapes URLs from Linecar website
-- `PDFURLRepository` - URL management with self-healing
+**Timetable Services**:
+- `TimetableLoader` - Reads `assets/timetables/{routeId}.json`, produces `List<BusTimetable>`
+- `RouteDataService` - Coordinator: wraps `TimetableLoader`, maintains stop→route index, exposes route variants/views/entries
+- `TimetableService` - Caching layer over `RouteDataService` (memory cache + helpers)
+- `TimetableCacheService` - Persistent JSON cache (currently inactive; no PDF timestamps to validate against)
+- `DeparturesService` - Departure queries combining `RouteDataService` + `TimetableService`
 
-**Business Logic Services**:
-- `TimetableService` - Loads and caches bus timetables (three-tier cache)
-- `TimetableCacheService` - Persistent JSON cache for timetables
-- `ClosestBusStopService` - Finds nearest bus stop to user
+**Location Services**:
+- `ClosestStopFinderService` - Finds nearest bus stop to user
 
 ### Data Models
 
 **Core Domain:**
-- `BusRoute` - Route metadata (id, number, name, origin, destination, PDF URL, type)
+- `BusRoute` - Route metadata (id, number, name, origin, destination, type)
 - `BusStop` - Stop metadata (id, name, address, coordinates, routes served)
 - `BusTimetable` - Departure times for a route/stop/day
 - `DepartureTime` - Single departure (hour, minute, notes)
@@ -178,116 +135,42 @@ PDF parsing will use column-based extraction techniques (similar to FarmaciasDeG
 
 **Utilities:**
 - `ScheduleDate` - Spanish date parsing with month names
-- `PDFVersion` - PDF metadata tracking
 - `UpdateProgressState` - Cache update progress
 
 ### Navigation & UI
 
-**Current State (Phase 7 - Active Development):**
-
 **✅ Fully Functional Screens:**
+- **LandingScreen** - Home hub with route list and closest-stop button
 - **RouteSelectionScreen** - Route selection interface
-  - List of M1-M8 routes with cache status indicators
-  - Material3 Card-based design
-  - Navigates to RouteStopsScreen
+- **RouteStopsScreen** - Visual route display with direction toggle
+- **NextDepartureScreen** - Live departure countdown with timeline
+- **DayScheduleScreen** - Full day's departures with "Ahora" marker
+- **RouteMapScreen** - Interactive OSMDroid map with stop markers
+- **AllRoutesScreen** - Dropdown selector across all routes
+- **AboutScreen** - App info, links, legal notice
+- **RemindersScreen** - Bell-tap / long-press reminders with tutorial
+- **LiveUpdatesTutorial** - Boarding confirmation onboarding
 
-- **RouteStopsScreen** - Visual route display (NEW - Oct 31)
-  - Continuous vertical line connecting all stops
-  - Chevron indicators for start/end stops
-  - Circles for intermediate stops
-  - Direction toggle button (Regular ↔ Reverse)
-  - Tap to select stop and see departures
-  - Status: ✅ Complete and polished
+**Navigation Flow:**
+- Landing → RouteStops → NextDeparture (primary)
+- Landing → AllRoutes → RouteStops / NextDeparture / DaySchedule
 
-- **NextDepartureScreen** - Live departure information (REDESIGNED - Nov 2)
-  - **Integrated Layout Design:**
-    - Hero header with gradient background (primary → surface)
-    - Circular progress clock showing visual countdown (60-min arc)
-    - Timeline-style following departures with connecting lines
-    - Time-of-day indicators (morning/afternoon/evening badges with icons)
-    - Reduced whitespace, tighter visual hierarchy
-    - Maps integration using geocoding service with geo: URI intents
-  - **New Components:**
-    - `StopHeroHeader` - Gradient hero section replacing plain card
-    - `CircularProgressClock` - Progress indicator around departure time
-    - `TimeOfDayIndicator` - Morning/afternoon/evening badges
-    - `NextDepartureWithProgress` - Enhanced next departure with circular progress
-    - `DepartureTimeline` - Timeline-style departures with dots and lines
-  - **Smart Multi-Day Departure Lookup:**
-    - Searches up to 7 days ahead for next available departure
-    - Handles weekend/holiday gaps automatically (e.g., Sunday → Monday)
-    - Shows following departures from future day (up to 5)
-    - Dynamic warning messages based on days ahead
-    - Accurate countdown calculation across multiple days
-    - Fixed logic to show future departures when today has no service
-  - **Technical Features:**
-    - Real-time countdown timer (updates every 60 seconds)
-    - Auto day-type detection (Weekday/Weekend/Holiday)
-    - Direction-aware timetable filtering
-    - TimeOfDay enum: morning (6-12), afternoon (13-19), evening (20-5)
-    - Comprehensive debug logging for troubleshooting
-    - Spanish localization
-  - Status: ✅ Complete and functional
+## Development Phases
 
-- **TimetableScreen** - Complete timetable view
-  - Full departure times grouped by day type
-  - Alternative to NextDepartureScreen for viewing all times
+**All routes (M1–M8) are fully operational via JSON-based loading.**
 
-- **Navigation Flow:**
-  - RouteSelection → RouteStops → NextDeparture (primary flow)
-  - RouteSelection → Timetable (alternative view)
-  - Direction passed through navigation chain
-  - Status: ✅ Working correctly
+**✅ Completed:**
+- Phase 1–4: Infrastructure, domain models, location services
+- Phase 5: All 8 routes migrated to `assets/timetables/{routeId}.json` (TimetableLoader)
+- Phase 6: Business logic services (TimetableService, RouteDataService, ClosestStopFinderService)
+- Phase 7: Full UI (all screens listed above)
 
-**Theme & Resources:**
-- `InterSegoTheme` - Bus-themed blue/orange Material3 design
-- `ic_route_start_chevron.xml` - Downward chevron SVG (NEW)
-- `ic_route_end_chevron.xml` - Upward chevron SVG (NEW)
-- `LoadingScreen` - Shown during app initialization
-
-**🎉 M4 Route Status:** Complete end-to-end user flow operational
-
-**📋 Future Enhancements (Optional):**
-- `SettingsScreen` - App configuration
-- `AboutScreen` - App information
-- `CacheStatusScreen` - Cache management UI
-
-## Development Phases & Current Status
-
-**Project Status:** Backend complete. Active UI development (Phase 7).
-
-**✅ Completed Phases:**
-- Phase 1: Project setup, dependencies, build config
-- Phase 2: Infrastructure services (NetworkMonitor, location, geocoding, caching)
-- Phase 3: PDF infrastructure (download, cache, URL scraping)
-- Phase 4: Bus domain data models
-- Phase 5: PDF parsing for M4 (complete with full UI workflow)
-- Phase 6: Business logic services (TimetableService, ClosestBusStopService)
-- Phase 7 (Minimal): Basic UI shell (theme + placeholder screen)
-- Phase 7 (M4 Route): Complete UI workflow for M4 ✅ (Oct 31, 2025)
-  - RouteStopsScreen with visual route display
-  - NextDepartureScreen with live countdown
-  - Direction-aware filtering
-  - Complete end-to-end user experience
-
-**⚠️ Partially Implemented:**
-- Phase 5: PDF parsing strategies (M4 ✅ complete, M1-M3, M5-M8 pending)
-
-**❌ Not Yet Implemented:**
-- Phase 7 (Other Routes): UI for M1-M3, M5-M8 (parsers needed first)
-- Phase 8: ViewModels and state management (optional - direct service calls work)
-- Phase 9: Repository layer (optional, may integrate into services)
-- Phase 10: Testing, configuration, polish
-
-**Current Priority:**
-- Implement PDF parsers for M1-M3, M5-M8 (same UI screens can be reused)
-
-See `docs/CURRENT_STATUS.md` for detailed status and `docs/MIGRATION_PLAN.md` for complete roadmap.
+**Next milestone:** Load timetable JSON from a remote server instead of bundle assets (see `docs/JSON_REFACTOR_CLEANUP.md`).
 
 ## Important Implementation Patterns
 
 ### Debug Logging
-Always use `DebugConfig` for logging (controlled by `DebugConfig.DEBUG_ENABLED`):
+Always use `DebugConfig` for logging:
 ```kotlin
 DebugConfig.debugPrint("Message")
 DebugConfig.debugWarn("Warning")
@@ -302,42 +185,20 @@ CoordinateCache.initialize(this)
 ```
 
 ### Coroutine Patterns
-Use `withContext(Dispatchers.IO)` for network/file operations:
+Use `withContext(Dispatchers.IO)` for file operations:
 ```kotlin
-suspend fun downloadPDF() = withContext(Dispatchers.IO) {
-    // Network or file I/O here
+suspend fun loadData() = withContext(Dispatchers.IO) {
+    // I/O here
 }
 ```
 
-### Offline-First Loading
-Always check cache before network:
-```kotlin
-// 1. Check memory cache
-if (memoryCache.contains(key)) return memoryCache[key]
+### Timetable JSON Format
+When editing a timetable JSON, update **all three copies**:
+- `resources/timetables/{routeId}.json` (source of truth)
+- `android/app/src/main/assets/timetables/{routeId}.json`
+- `iOS/InterSego/Timetables/{routeId}.json`
 
-// 2. Check persistent cache
-val cached = loadFromDisk(key)
-if (cached != null) return cached
-
-// 3. Fetch from network (only if online)
-if (NetworkMonitor.isOnline()) {
-    return fetchFromNetwork(key)
-}
-```
-
-### PDF URL Scraping
-URLs are scraped on app startup (MainActivity) and validated periodically:
-```kotlin
-val pdfUrlRepository = PDFURLRepository.getInstance(this)
-val success = pdfUrlRepository.initializeURLs()
-```
-
-**Supported PDF Filename Formats:**
-- Old format: `SEGOVIA-M4.pdf` → Route ID: "M4"
-- New format: `M4.pdf` → Route ID: "M4"
-- New with date: `M5-septiembre-2024.pdf` → Route ID: "M5"
-
-The scraper (`PDFURLScrapingService`) finds ALL .pdf files and tries multiple regex patterns to extract route IDs.
+See `docs/TIMETABLE_JSON_REFACTOR.md` for the full JSON schema.
 
 ## Code Organization
 
@@ -345,45 +206,25 @@ The scraper (`PDFURLScrapingService`) finds ALL .pdf files and tries multiple re
 app/src/main/java/com/github/bfollon/intersego/
 ├── MainActivity.kt                  # App entry point
 ├── data/                           # Data models (BusRoute, BusStop, etc.)
-├── repositories/                   # Data access layer
-│   └── PDFURLRepository.kt        # URL management with self-healing
 ├── services/                      # Business logic & infrastructure
 │   ├── NetworkMonitor.kt         # Connectivity checks
 │   ├── DebugConfig.kt            # Debug logging
 │   ├── LocationManager.kt        # User location
 │   ├── GeocodingService.kt       # Address → coordinates
 │   ├── CoordinateCache.kt        # Geocoding cache
-│   ├── PDFDownloadService.kt     # PDF downloading
-│   ├── PDFCacheManager.kt        # PDF file cache
-│   ├── PDFURLScrapingService.kt  # URL scraping from website
-│   ├── TimetableService.kt       # Timetable loading (three-tier cache)
-│   ├── TimetableCacheService.kt  # Persistent JSON cache
-│   └── ClosestBusStopService.kt  # Nearest stop finder
+│   ├── TimetableLoader.kt        # Bundle JSON reader → List<BusTimetable>
+│   ├── RouteDataService.kt   # Route metadata coordinator
+│   ├── TimetableService.kt       # Caching layer + departure helpers
+│   ├── TimetableCacheService.kt  # Persistent disk cache (currently inactive)
+│   ├── DeparturesService.kt      # Departure queries
+│   └── ClosestStopFinderService.kt # Nearest stop finder
 ├── ui/
 │   ├── theme/                    # Compose theme (Color, Theme, Type)
-│   ├── screens/                  # Screen composables
-│   │   ├── RouteSelectionScreen.kt  # Route selection list
-│   │   ├── RouteStopsScreen.kt      # Visual route display ✅ NEW
-│   │   ├── NextDepartureScreen.kt   # Live countdown timer ✅ NEW
-│   │   ├── TimetableScreen.kt       # Complete timetable view
-│   │   └── MainScreen.kt            # Legacy demo screen (unused)
-│   └── components/               # (Future: reusable UI components)
-├── utils/
-│   └── MapUtils.kt               # Distance calculations, map intents
+│   └── screens/                  # Screen composables
 └── res/
     ├── drawable/                 # Vector drawables
-    │   ├── ic_route_start_chevron.xml   # Start indicator ✅ NEW
-    │   └── ic_route_end_chevron.xml     # End indicator ✅ NEW
     └── mipmap-*/                # App launcher icons
-        ├── ic_launcher.png           # Main app icon
-        ├── ic_launcher_round.png     # Rounded app icon
-        └── ic_launcher_foreground.png # Adaptive icon foreground
 ```
-
-**App Icon:**
-- Minimalistic bus timetable design with blue (#1c74d3) and orange theme colors
-- Adaptive icon support for Android 8.0+ (API 26+)
-- Source files: `../resources/icons/ic_launcher-6905343ae8c3c/`
 
 ## Key Configuration Files
 
@@ -399,92 +240,33 @@ app/src/main/java/com/github/bfollon/intersego/
 2. Add GPL-v3 license header
 3. Use `DebugConfig` for logging
 4. Initialize in `MainActivity.onCreate()` if needed
-5. Document with KDoc comments
 
 ### Adding a New Data Model
 1. Create data class in `data/` package
 2. Add `@Serializable` annotation (Kotlin Serialization)
-3. Include validation logic if needed
-4. Add GPL-v3 license header
-
-### Working with PDF URLs
-```kotlin
-// Get repository instance
-val repository = PDFURLRepository.getInstance(context)
-
-// Simple URL lookup (persisted or fallback)
-val url = repository.getURL("M1")
-
-// Self-healing URL resolution (validates + re-scrapes if needed)
-when (val result = repository.resolveURLWithHealing("M1")) {
-    is URLResolutionResult.Success -> useURL(result.url)
-    is URLResolutionResult.Updated -> useURL(result.newUrl)
-    is URLResolutionResult.Failed -> showError(result.message)
-}
-```
-
-### Implementing PDF Parsing (Phase 5)
-1. Define `BusTimetableParser` interface
-2. Create parser strategies for different route types
-3. Integrate with `TimetableService.loadTimetables()` (see TODO comments)
-4. Use column-based extraction (similar to FarmaciasDeGuardia)
-5. Cache parsed results
+3. Add GPL-v3 license header
 
 ### Development Best Practices
 
-**IMPORTANT: Always Update Documentation After Significant Changes**
-
 When completing major features or making significant changes:
-1. **Update this file (`android/CLAUDE.md`)** with:
-   - New components/screens in the "Navigation & UI" section
-   - Updated technical details in relevant sections
-   - Date changes with descriptive tags (e.g., "REDESIGNED - Nov 2")
-2. **Update `docs/CURRENT_STATUS.md`** if phase status changes
-3. **Commit documentation changes** along with code changes
-
-This ensures future work has accurate context about what's been implemented.
+1. **Update this file (`android/CLAUDE.md`)** with new components/screens
+2. **Update `../CLAUDE.md` cross-platform feature tracker**
+3. Only commit after user confirms the build works
 
 ## Known Issues & TODOs
 
-**Phase 5 TODOs (HIGH PRIORITY):**
-- Implement PDF parsing strategies for M1-M3, M5-M8
-- Use M4Parser as template/reference
-- Test each parser with real PDF files
-
-**Phase 7 TODOs (HIGH PRIORITY - ACTIVE DEVELOPMENT):**
-- Design and implement proper M4 route screen
-- Enhance route selection UI
-- Redesign timetable display
-- Add proper loading/error states
-- Add Settings screen (backend APIs ready)
-- Add About screen
-- Add Cache Status screen
-- Add offline warning banner
-
-**Phase 8 TODOs (OPTIONAL):**
-- Create ViewModels for state management (currently using direct service calls)
-- Add proper state hoisting patterns
-
-**Build Warnings:**
-- 39 lint warnings (non-blocking, can be addressed in Phase 10)
-- `jvmTarget` deprecation warning (non-breaking, style preference)
+- `TimetableCacheService` persistent cache always misses (checks for PDF files that no longer exist); needs repurposing for JSON version tracking before server-loading work begins
+- `TimetableScreen` exists but has no navigation entry point (dead code)
 
 ## References
 
 **Documentation:**
-- `docs/CURRENT_STATUS.md` - Current phase status and immediate next steps
-- `docs/MIGRATION_PLAN.md` - Complete migration strategy from FarmaciasDeGuardia
-- `docs/MIGRATION_PHASE_*.md` - Detailed documentation for each completed phase
-- `docs/PDF_URL_SCRAPING_SETUP.md` - URL scraping configuration and testing
-
-**Source Reference:**
-- FarmaciasDeGuardia: `/Users/bruno.follon/Personal/dev/apps/FarmaciasDeGuardia/android/`
-- Architecture patterns and services adapted from FarmaciasDeGuardia
+- `docs/JSON_REFACTOR_CLEANUP.md` - Cleanup checklist for the JSON migration
+- `docs/TIMETABLE_JSON_REFACTOR.md` - JSON timetable schema specification
 
 **External:**
 - Linecar website: https://www.linecar.es/metropolitano/segovia/
 - Material3 Compose: https://developer.android.com/jetpack/compose/designsystems/material3
-- iText7 PDF: https://itextpdf.com/en/resources/api-documentation
 - Commit after completing every feature.
-- Do not put any claude co-authorig reference of link to claude.ai in the commits. No promotion.
-- Before committing, allow the user to test the changes via launching the app. Only commit after confirmation.
+- Do not put any Claude co-authoring reference or link to claude.ai in commits.
+- Before committing, allow the user to test the changes. Only commit after confirmation.

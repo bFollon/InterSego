@@ -32,7 +32,7 @@ import com.github.bfollon.intersego.ui.theme.SuccessGreen
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.data.BusRoute
-import com.github.bfollon.intersego.services.PDFProcessingService
+import com.github.bfollon.intersego.services.RouteDataService
 
 /**
  * Screen for selecting a bus route from the list of available routes.
@@ -44,7 +44,7 @@ import com.github.bfollon.intersego.services.PDFProcessingService
 @Composable
 fun RouteSelectionScreen(
     routes: List<BusRoute>,
-    pdfProcessingService: PDFProcessingService,
+    routeDataService: RouteDataService,
     onRouteSelected: (BusRoute) -> Unit
 ) {
     Scaffold(
@@ -80,11 +80,11 @@ fun RouteSelectionScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 val sortedRoutes = routes.sortedWith(
-                    compareByDescending<BusRoute> { pdfProcessingService.hasParserFor(it.id) }
+                    compareByDescending<BusRoute> { routeDataService.hasParserFor(it.id) }
                         .thenBy { it.number }
                 )
                 items(sortedRoutes) { route ->
-                    val isAvailable = pdfProcessingService.hasParserFor(route.id)
+                    val isAvailable = routeDataService.hasParserFor(route.id)
                     RouteCard(
                         route = route,
                         isAvailable = isAvailable,
