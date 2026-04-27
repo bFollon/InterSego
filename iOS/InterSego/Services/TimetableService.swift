@@ -17,12 +17,6 @@
 
 import Foundation
 
-/// Service for loading and managing bus timetables.
-///
-/// Implements three-tier caching pattern:
-/// 1. Memory cache (fastest)
-/// 2. Persistent cache via TimetableCacheService (fast)
-/// 3. PDF parsing via RouteDataService (slowest, source of truth)
 actor TimetableService {
     static let shared = TimetableService()
 
@@ -32,7 +26,6 @@ actor TimetableService {
 
     func loadTimetables(routeId: String, forceRefresh: Bool = false) async -> [BusTimetable] {
         let isDebugParser = await RouteDataService.shared.isDebugParser(routeId: routeId)
-        let parserVersion = await RouteDataService.shared.getParserVersion(routeId: routeId)
         let shouldForceRefresh = forceRefresh || isDebugParser
 
         if isDebugParser {
@@ -41,35 +34,20 @@ actor TimetableService {
 
         DebugConfig.debugPrint("TimetableService: Loading timetables for route \(routeId) (forceRefresh: \(shouldForceRefresh))")
 
-        // Tier 1: Memory cache
         if !shouldForceRefresh, let cached = cachedTimetables[routeId] {
             DebugConfig.debugPrint("TimetableService: Using memory cache for route \(routeId)")
             return cached
         }
 
-        // Tier 2: Persistent cache
-        if !shouldForceRefresh {
-            if let cachedData = await TimetableCacheService.shared.loadCachedTimetables(routeId: routeId, parserVersion: parserVersion) {
-                DebugConfig.debugPrint("TimetableService: Using persistent cache for route \(routeId)")
-                cachedTimetables[routeId] = cachedData
-                return cachedData
-            }
-        }
-
-        // Tier 3: Parse PDF
-        DebugConfig.debugPrint("TimetableService: Parsing PDF for route \(routeId)")
+        DebugConfig.debugPrint("TimetableService: Loading JSON for route \(routeId)")
 
         do {
             let timetables = try await RouteDataService.shared.parseTimetables(routeId: routeId)
-
             cachedTimetables[routeId] = timetables
-            await TimetableCacheService.shared.saveTimetablesToCache(routeId: routeId, timetables: timetables, parserVersion: parserVersion)
-
-            DebugConfig.debugPrint("TimetableService: Successfully loaded and cached \(timetables.count) timetables for \(routeId)")
+            DebugConfig.debugPrint("TimetableService: Successfully loaded \(timetables.count) timetables for \(routeId)")
             return timetables
-
         } catch {
-            DebugConfig.debugError("TimetableService: Failed to parse PDF for \(routeId)", error: error)
+            DebugConfig.debugError("TimetableService: Failed to load JSON for \(routeId)", error: error)
             return []
         }
     }
@@ -99,15 +77,13 @@ actor TimetableService {
         cachedTimetables[routeId] != nil
     }
 
-    func clearCache() async {
+    func clearCache() {
         cachedTimetables.removeAll()
-        await TimetableCacheService.shared.clearAllCache()
-        DebugConfig.debugPrint("TimetableService: All caches cleared")
+        DebugConfig.debugPrint("TimetableService: Cache cleared")
     }
 
-    func clearCacheForRoute(routeId: String) async {
+    func clearCacheForRoute(routeId: String) {
         cachedTimetables.removeValue(forKey: routeId)
-        await TimetableCacheService.shared.clearRouteCache(routeId: routeId)
         DebugConfig.debugPrint("TimetableService: Cleared cache for route \(routeId)")
     }
 

@@ -46,7 +46,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import org.json.JSONArray
+import com.github.bfollon.intersego.services.PolylineLoader
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -175,7 +175,7 @@ private fun RouteOsmMapView(
 
     // Load road-following polyline from bundled assets; falls back to empty (→ straight line)
     val routePolyline = remember(routeId, currentViewId) {
-        loadPolylineFromAssets(context, routeId, currentViewId)
+        PolylineLoader.load(context, routeId, currentViewId)
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -234,30 +234,6 @@ private fun RouteOsmMapView(
             }
         }
     )
-}
-
-/**
- * Loads a pre-computed road-following polyline from bundled assets.
- * Returns an empty list if the file is missing or cannot be parsed.
- */
-private fun loadPolylineFromAssets(
-    context: Context,
-    routeId: String,
-    viewId: String
-): List<GeoPoint> {
-    return try {
-        val json = context.assets
-            .open("route_polylines/$routeId-$viewId.json")
-            .bufferedReader()
-            .readText()
-        val array = JSONArray(json)
-        (0 until array.length()).map { i ->
-            val pair = array.getJSONArray(i)
-            GeoPoint(pair.getDouble(0), pair.getDouble(1))
-        }
-    } catch (_: Exception) {
-        emptyList()
-    }
 }
 
 private fun addStopOverlays(

@@ -132,22 +132,8 @@ struct RouteMapView: View {
         }
     }
 
-    /// Loads a pre-computed road-following polyline from the app bundle.
-    /// Returns an empty array if the file is missing or cannot be parsed.
     private func loadBundledPolyline(routeId: String, viewId: String) -> [CLLocationCoordinate2D] {
-        guard let url = Bundle.main.url(
-            forResource: "\(routeId)-\(viewId)",
-            withExtension: "json",
-            subdirectory: "RoutePolylines",
-        ),
-            let data = try? Data(contentsOf: url),
-            let pairs = try? JSONDecoder().decode([[Double]].self, from: data)
-        else { return [] }
-
-        return pairs.compactMap { pair in
-            guard pair.count >= 2 else { return nil }
-            return CLLocationCoordinate2D(latitude: pair[0], longitude: pair[1])
-        }
+        PolylineLoader().load(routeId: routeId, viewId: viewId)
     }
 
     /// Adjusts the camera to fit all stops in the current direction.

@@ -17,8 +17,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Feature | Android | iOS | Notes |
 |---|---|---|---|
 | Network monitoring | ✅ | ✅ | |
-| Timetable cache service | ✅ | ✅ | Persistent disk cache (currently inactive — no PDFs to timestamp against; will be repurposed for server-loading) |
+| Timetable cache service | ❌ (removed) | ❌ (removed) | Deleted — always missed (PDF timestamp check vs JSON assets); JSON parsing is fast enough; will be added back for server-based loading |
 | TimetableLoader (JSON-based) | ✅ | ✅ | Reads `assets/timetables/{routeId}.json` (Android) / `Timetables/{routeId}.json` (iOS) from bundle; produces `List<BusTimetable>`; **`resources/timetables/` is source-of-truth for humans only — neither app reads it at runtime; when editing a JSON timetable you MUST update all three copies**: `resources/timetables/`, `android/app/src/main/assets/timetables/`, and `iOS/InterSego/Timetables/`; replaces `buildStaticTimetables()` in migrated parsers; supports trip-level `variantLabel` (fallback for all departures in a trip, overridable per cell); see `docs/TIMETABLE_JSON_REFACTOR.md` |
+| PolylineLoader | ✅ | ✅ | Reads `route_polylines/{routeId}-{viewId}.json` from bundle; decodes `{"version": "1.0", "coordinates": [[lat, lon], ...]}` format; Android: `services/PolylineLoader.kt` (object, kotlinx.serialization); iOS: `Services/PolylineLoader.swift` (struct, Codable); replaces inline `loadPolylineFromAssets`/`loadBundledPolyline` in map views; **when editing a polyline you MUST update all three copies**: `resources/route_polylines/`, `android/app/src/main/assets/route_polylines/`, `iOS/InterSego/RoutePolylines/`; bump `"version"` on every coordinate change |
 | Debug config / logging | ✅ | ✅ | |
 | Boarding notification service | ✅ | ✅ | Node.js/TypeScript server at `server/`; stores boarding events; GET+POST /boardings; 4h TTL; Bearer auth; see `server/docs/API.md` |
 | BoardingService client | ✅ | ✅ | Android: OkHttp object singleton + BuildConfig; iOS: URLSession actor + AppConfig |
@@ -150,11 +151,11 @@ Not yet implemented.
 
 ## Timetable Version Tracking
 
-Each timetable JSON has a top-level `"version"` field (e.g. `"3.4"`). `TimetableLoader` reads this and exposes it via `RouteDataService.getParserVersion()`. `TimetableCacheService` stores the version in `.meta.json` and invalidates the disk cache if it changes.
+Each timetable JSON has a top-level `"version"` field (e.g. `"3.4"`). `TimetableLoader` reads this and exposes it via `RouteDataService.getParserVersion()`.
 
 **When to bump the version:** any change to timetable data — new stops, corrected times, seasonal rule changes, etc. Bump in the JSON file and increment on **both** platforms' copies together.
 
-Note: the disk cache (`TimetableCacheService`) currently always misses because it checks for PDF file timestamps that no longer exist. It will be fixed when server-based loading is added.
+Polyline JSON files (`resources/route_polylines/`) also carry a `"version"` field (starting at `"1.0"`). Bump it whenever coordinates are edited — same discipline as timetable versions.
 
 ## Development Rules
 

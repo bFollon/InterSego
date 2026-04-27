@@ -95,11 +95,8 @@ adb shell pm clear intersegoo
 
 All timetable data is loaded from bundled JSON assets via `TimetableLoader`. There is no network fetch or PDF parsing at runtime.
 
-**Two-Tier Caching** (in `TimetableService`):
-- **Tier 1: Memory cache** — in-process map, cleared on app restart
-- **Tier 2: Bundle JSON** — `assets/timetables/{routeId}.json`, read on every cache miss
-
-The `TimetableCacheService` (persistent disk cache keyed off PDF timestamps) is still present but effectively inactive — it always misses because no PDF files exist on-device. It will be repurposed or removed before server-based loading is added.
+**Single-Tier Caching** (in `TimetableService`):
+- **Tier 1: Memory cache** — in-process map, cleared on app restart; cache miss goes directly to `RouteDataService.parseTimetables()` (JSON bundle read)
 
 ### Service Layer Structure
 
@@ -113,9 +110,11 @@ The `TimetableCacheService` (persistent disk cache keyed off PDF timestamps) is 
 **Timetable Services**:
 - `TimetableLoader` - Reads `assets/timetables/{routeId}.json`, produces `List<BusTimetable>`
 - `RouteDataService` - Coordinator: wraps `TimetableLoader`, maintains stop→route index, exposes route variants/views/entries
-- `TimetableService` - Caching layer over `RouteDataService` (memory cache + helpers)
-- `TimetableCacheService` - Persistent JSON cache (currently inactive; no PDF timestamps to validate against)
+- `TimetableService` - Memory cache + departure helpers over `RouteDataService`
 - `DeparturesService` - Departure queries combining `RouteDataService` + `TimetableService`
+
+**Map Services**:
+- `PolylineLoader` - Reads `assets/route_polylines/{routeId}-{viewId}.json`, produces `List<GeoPoint>`
 
 **Location Services**:
 - `ClosestStopFinderService` - Finds nearest bus stop to user
@@ -214,8 +213,8 @@ app/src/main/java/com/github/bfollon/intersego/
 │   ├── CoordinateCache.kt        # Geocoding cache
 │   ├── TimetableLoader.kt        # Bundle JSON reader → List<BusTimetable>
 │   ├── RouteDataService.kt   # Route metadata coordinator
-│   ├── TimetableService.kt       # Caching layer + departure helpers
-│   ├── TimetableCacheService.kt  # Persistent disk cache (currently inactive)
+│   ├── TimetableService.kt       # Memory cache + departure helpers
+│   ├── PolylineLoader.kt         # Bundle JSON reader → List<GeoPoint>
 │   ├── DeparturesService.kt      # Departure queries
 │   └── ClosestStopFinderService.kt # Nearest stop finder
 ├── ui/
@@ -255,7 +254,6 @@ When completing major features or making significant changes:
 
 ## Known Issues & TODOs
 
-- `TimetableCacheService` persistent cache always misses (checks for PDF files that no longer exist); needs repurposing for JSON version tracking before server-loading work begins
 - `TimetableScreen` exists but has no navigation entry point (dead code)
 
 ## References
