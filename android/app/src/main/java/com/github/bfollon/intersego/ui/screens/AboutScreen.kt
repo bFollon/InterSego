@@ -151,7 +151,7 @@ fun AboutScreen(
             )
 
             Text(
-                text = "La app es completamente gratuita, sin publicidad y así se va a quedar. Ha sido desarrollada como un proyecto personal para ayudar a la comunidad.",
+                text = "Ha sido desarrollada como un proyecto personal para ayudar a la comunidad. La aplicación no rastrea a sus usuarios con fines comerciales.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

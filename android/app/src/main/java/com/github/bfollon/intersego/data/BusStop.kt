@@ -34,7 +34,10 @@ data class BusStop(
                                             // Falls back to [coordinates] when null.
     val routesServed: List<String> = emptyList(),  // List of route IDs that serve this stop
     val stopCode: String? = null,       // Optional official stop code
+    val alternates: List<AlternateLocation> = emptyList(), // Sub-locations for specific departures
 ) {
+    fun alternateLocation(id: String): AlternateLocation? = alternates.find { it.id == id }
+
     val resolvedLatitude: Double?
         get() = coordinates.split(",").getOrNull(0)?.trim()?.toDoubleOrNull()
 

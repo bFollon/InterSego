@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**InterSego** is a bus timetable app for Segovia, Spain. It downloads and parses bus timetable PDFs from Linecar (the local bus company), provides offline caching, and helps users find the nearest bus stop using geolocation.
+**InterSego** is a bus timetable app for Segovia, Spain. It loads bus timetable data from bundled JSON assets, provides offline-first access, and helps users find the nearest bus stop using geolocation.
 
-**Current Status:** Android and iOS implementations at feature parity. Complete end-to-end user flow operational for M4 and M6 routes on both platforms.
+**Current Status:** Android and iOS implementations at feature parity. All 8 routes (M1–M8) operational on both platforms via JSON-based loading.
 
 ## Cross-Platform Feature Tracker
 
@@ -17,11 +17,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Feature | Android | iOS | Notes |
 |---|---|---|---|
 | Network monitoring | ✅ | ✅ | |
-| PDF download service | ✅ | ✅ | |
-| PDF URL scraping (self-healing) | ✅ | ✅ | |
-| PDF cache manager (version checking) | ✅ | ✅ | |
-| Three-tier caching (memory → JSON → PDF) | ✅ | ✅ | |
-| Timetable cache service | ✅ | ✅ | |
+| Timetable cache service | ✅ | ✅ | Persistent disk cache (currently inactive — no PDFs to timestamp against; will be repurposed for server-loading) |
+| TimetableLoader (JSON-based) | ✅ | ✅ | Reads `assets/timetables/{routeId}.json` (Android) / `Timetables/{routeId}.json` (iOS) from bundle; produces `List<BusTimetable>`; **`resources/timetables/` is source-of-truth for humans only — neither app reads it at runtime; when editing a JSON timetable you MUST update all three copies**: `resources/timetables/`, `android/app/src/main/assets/timetables/`, and `iOS/InterSego/Timetables/`; replaces `buildStaticTimetables()` in migrated parsers; supports trip-level `variantLabel` (fallback for all departures in a trip, overridable per cell); see `docs/TIMETABLE_JSON_REFACTOR.md` |
 | Debug config / logging | ✅ | ✅ | |
 | Boarding notification service | ✅ | ✅ | Node.js/TypeScript server at `server/`; stores boarding events; GET+POST /boardings; 4h TTL; Bearer auth; see `server/docs/API.md` |
 | BoardingService client | ✅ | ✅ | Android: OkHttp object singleton + BuildConfig; iOS: URLSession actor + AppConfig |
@@ -30,18 +27,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Monitoring consent UI | ✅ | ✅ (needs Xcode setup) | Dual opt-in modal (error reporting + analytics independently); shown on first launch after splash; default off; re-accessible from Settings |
 | MonitoringPreferencesService | ✅ | ✅ (needs Xcode setup) | Persists 4 UserDefaults/SharedPreferences keys; consent-gated SDK initialization |
 
-### PDF Parsers
+### Route Timetables (all JSON-based via TimetableLoader)
 
-| Parser | Android | iOS | Notes |
+| Route | Android | iOS | Notes |
 |---|---|---|---|
-| M4 (La Lastrilla - El Sotillo) | ✅ (static data) | ✅ (static data) | Hardcoded from PDF (2026-04-15); v2.2; isCircular=true; weekday + Saturday (Jul/Aug only); YEAR_ROUND = JULIO Y AGOSTO buses (run all year, only buses in summer); SCHOOL_ONLY = non-summer buses; SCHOOL_ONLY trips (by Azoguejo departure): regular 14:00 + reverse 07:40*, 08:20*, 14:40*; all other trips are YEAR_ROUND; 07:00 trip PARROQ=07:20, RAFAEL=07:21 (corrected from v2.1); 4 reverse (*) trips per weekday (14:40* and 21:40* skip PARROQ2); DayType changed from WEEKEND to SATURDAY; merged-directions display: RouteView uses tabsLabel="Pasa primero por" + tabs chips (La Lastrilla/El Sotillo) in stop list, mergedDirectionLabel="La Lastrilla · El Sotillo" for NextDeparture (all departures merged, "Sotillo" variantLabel badge on El Sotillo-first trips); AllRoutes/Map dropdowns split L-V into two entries |
-| M6 (Segovia - Torrecaballeros) | ✅ | ✅ | Cluster-based stop estimation; v0.9 (fully static, both platforms); Sat inbound: proper reversal via PlazaToros→LaPista→AndresLaguna→Jardinillos; Sáb has 2 separate entries (Ida/Vuelta) |
-| M1 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-18); v1.6; isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); ★=JUNE_TO_SEPT_ONLY, (*)=YEAR_ROUND, LYV=MON_FRI_ONLY (circularB: Martín Miguel 9:40, Valverde 9:40), #=FRI_ONLY |
-| M2 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-20); v1.0; isCircular=true; weekday only; two circular directions (circularA: Segovia→Valseca outbound view; circularB: Valseca→Segovia return via Los Huertos+Hontanares); 7:25 Valseca bus originates from Valseca (chronologically out of stop order in circularB, accepted as Option A) |
-| M3 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-23); v1.0; Saturday only; linear (Segovia→Navacerrada); Segovia is a 4-stop cluster (Estación de Autobuses, Iglesia Santo Tomás, Frente Bar Norte, Plaza de Toros) with +2 min estimated times |
-| M5 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.0; linear (Segovia→Sto. Domingo de Pirón); weekday + Saturday; partial trips (some weekday services only Segovia–La Higuera); * = Via Roma, *** = Estación de Autobuses |
-| M7 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.4; weekday: 5-stop circular (Segovia→Tabanera 2-stop→Palazuelos→Segovia); Sat/Sun: extended route (Segovia cluster→...→Torrecaballeros); Segovia cluster outbound: 5 sub-stops; inbound: 4 sub-stops; Sunday has SCHOOL_ONLY/SUMMER_ONLY seasonal trips; all shared stops reuse M6 coordinates and clusters: Tabanera (2-stop: Tabanera+Tabanera 2), San Cristóbal (3-stop), Sonsoto (2-stop: Potro+Sonsoto 2), Trescasas (2-stop: Plaza de la constitución+Trescasas 2), Torrecaballeros (3-stop); Valsaín–La Granja feeder deferred to M7-AVE |
-| M8 | ✅ (static data) | ✅ (static data) | Hardcoded from PDF screenshot (2026-03-25); v1.0; linear (Segovia→Valsaín via La Granja); weekday + Saturday + Sunday/Festivos; Segovia cluster all day types: 4 stops (Estación Bus→Iglesia Santo Tomás→Enfrente Bar Norte→Plaza de Toros); C. La Fuencisla is optional (only subset of trips); Saturday has 2 partial trips (outbound 14:30 ends at Ptas. Segovia; inbound 14:50 starts at F. Cristal) |
+| M4 (La Lastrilla - El Sotillo) | ✅ (JSON) | ✅ (JSON) | isCircular=true; weekday + Saturday (Jul/Aug only); YEAR_ROUND = JULIO Y AGOSTO buses; SCHOOL_ONLY = non-summer buses; SCHOOL_ONLY trips: regular 14:00 + reverse 07:40*, 08:20*, 14:40*; 21:40* reverse is YEAR_ROUND; 4 reverse trips use trip-level variantLabel="Sotillo" badge (El Sotillo-first); 14:40* and 21:40* skip PARROQ2 (index 15 of reverse); null at index 11 (paseo-cabanillas) on all non-school regular trips (school-only stop); hotel-av-sotillo + parroquia-sotillo ARE served on Saturday; merged-directions display: tabsLabel="Pasa primero por", mergedDirectionLabel="La Lastrilla · El Sotillo"; TimetableLoader on both platforms; v3.4; timetable in `resources/timetables/m4.json` |
+| M6 (Segovia - Torrecaballeros) | ✅ (JSON) | ✅ (JSON) | Cluster-based stop estimation; v1.1; all cluster-estimated times pre-computed and stored in JSON; 7 variants (outbound/inbound merged regular+extended, circular, sat/sun outbound/inbound); Sat inbound: PlazaToros→LaPista→AndresLaguna→Jardinillos; Sun inbound ends at EstacionAutobuses; circular variant has separate `direction` ("Segovia → Torrecaballeros") from `label` ("Circular"); Sat entries use `viewIds` for single-direction display (no swap); weekday views use `tabGroups` for tab bar; timetable in `resources/timetables/m6.json`; TimetableLoader on both platforms; M6Parser is now a pure stub |
+| M1 | ✅ (JSON) | ✅ (JSON) | isCircular=true; two circular directions (circularA: full outbound via villages + direct return; circularB: direct outbound + return via villages); Saturday: shorter Segovia↔Abades variant; ★=juneToSept (Casino on most trips), (*)=garcillan-gasolinera alternateId (8:40+10:40 in circularB), LYV=monFriOnly (circularB Martín Miguel+Valverde 9:40), #=friOnly (circularA Garcillán 19:50); circularB return uses `poligono-ind-m1-ret`/`poligono-ind-m1-2-ret`+`estacion-autobuses-circ-ret` to prevent departure merge; v1.9; timetable in `resources/timetables/m1.json`; TimetableLoader on both platforms |
+| M2 | ✅ (JSON) | ✅ (JSON) | v1.2; isCircular=true; weekday only; two circular directions (circularA: Segovia→Valseca outbound view; circularB: Valseca→Segovia return via Los Huertos+Hontanares); 7:25 Valseca bus originates from Valseca (chronologically out of stop order in circularB, accepted as Option A); timetable data migrated to `resources/timetables/m2.json`; loaded via TimetableLoader on both platforms |
+| M3 | ✅ (JSON) | ✅ (JSON) | Saturday only; linear (Segovia→Navacerrada); Segovia is a 4-stop cluster (Estación de Autobuses, Iglesia Santo Tomás, Frente Bar Norte, Plaza de Toros) with +2 min estimated times; v1.2; timetable data migrated to `resources/timetables/m3.json`; loaded via TimetableLoader on both platforms |
+| M5 | ✅ (JSON) | ✅ (JSON) | linear (Azoguejo→Sto. Domingo de Pirón); weekday + Saturday; partial trips (some weekday services only Azoguejo–La Higuera); Azoguejo is primary stop; Saturday trips use Estación de Autobuses alternate (alternateLocationId="estacion-autobuses"); v1.3; timetable in `resources/timetables/m5.json`; TimetableLoader on both platforms; AlternateLocation badge in DaySchedule + NextDeparture timeline |
+| M7 | ✅ (JSON) | ✅ (JSON) | weekday: 6-stop circular (Segovia→Tabanera 2-stop→Palazuelos 2-stop→Segovia); Sat/Sun: extended route (Segovia cluster→...→Torrecaballeros); Segovia cluster outbound: 5 sub-stops; inbound: 4 sub-stops; Sunday has schoolOnly/summerOnly seasonal trips; Saturday partial: 13:30 outbound ends at Trescasas; Sunday partial: 20:30/19:30 outbound ends at Trescasas, 20:54/19:54 inbound starts from Sonsoto; circular return uses `estacion-autobuses-circ-ret` to prevent departure merge; v1.6; timetable in `resources/timetables/m7.json`; TimetableLoader on both platforms |
+| M8 | ✅ (JSON) | ✅ (JSON) | linear (Segovia→Valsaín via La Granja); weekday + Saturday + Sunday/Festivos; Segovia cluster all day types: 4 stops (Estación Bus→Iglesia Santo Tomás→Enfrente Bar Norte→Plaza de Toros); C. La Fuencisla is optional (null for trips that skip it); Saturday has 2 partial trips (outbound 14:30 ends at Ptas. Segovia; inbound 14:50 starts at F. Cristal); v1.2; timetable in `resources/timetables/m8.json`; TimetableLoader on both platforms |
 
 ### UI Screens
 
@@ -87,10 +84,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | RouteVariant | ✅ | ✅ | |
 | RouteView | ✅ | ✅ | |
 | SeasonalAvailability | ✅ | ✅ | |
-| PDFVersion | ✅ | ✅ | |
 | RouteType | ✅ | ✅ | |
-| RouteCacheStatus | ✅ | ❌ | Used in PDFCacheManager, not surfaced in UI |
-| UpdateProgressState | ✅ | ❌ | Used in PDFCacheManager, not surfaced in UI |
+| RouteCacheStatus | ✅ | ❌ | Not surfaced in UI |
+| UpdateProgressState | ✅ | ❌ | Not surfaced in UI |
 | ScheduleDate | ✅ | ❌ | Not used in any UI screen |
 
 ## Repository Structure
@@ -112,7 +108,8 @@ InterSego/
 │   └── InterSego.xcodeproj/    # Xcode project
 └── resources/                   # Shared resources across platforms
     ├── Icons/                  # App launcher icons
-    └── Route display/          # Route visualization assets
+    ├── Route display/          # Route visualization assets
+    └── timetables/             # Shared JSON timetable files (source of truth for migrated routes)
 ```
 
 ## Platform Implementations
@@ -122,9 +119,8 @@ InterSego/
 **Technology Stack:**
 - Jetpack Compose + Material3 for UI
 - Kotlin Coroutines for async operations
-- iText7 for PDF parsing
 - OkHttp for HTTP networking
-- Strategy Pattern for PDF parsing
+- JSON-based timetable loading via `TimetableLoader`
 
 See `android/CLAUDE.md` for detailed Android development guide.
 
@@ -133,20 +129,10 @@ See `android/CLAUDE.md` for detailed Android development guide.
 **Technology Stack:**
 - SwiftUI with default iOS styling
 - Swift actors for thread safety
-- PDFKit for PDF parsing
 - URLSession for HTTP networking
-- Strategy Pattern for PDF parsing
+- JSON-based timetable loading via `TimetableLoader`
 
 **Build:** Open `iOS/InterSego.xcodeproj` in Xcode. Deployment target: iOS 17.0.
-
-#### PDFKit vs iText7 parsing differences
-
-PDFKit (iOS) and iText7 (Android) extract PDF text differently. Known artifacts in M6:
-
-- **Line swapping:** PDFKit sometimes returns two adjacent time rows in reversed order. Fixed by `reorderSwappedLines()` in `M6Parser`.
-- **Cell splitting:** Differently-formatted cells (e.g. highlighted departure cells like `**21:20`) are read as separate text blocks and may be attached to a later line (e.g. `**21:20 SÁBADOS`). Fixed by `preprocessLines()` in `M6Parser`, which splits mixed time+keyword lines and backward-merges orphaned leading times into their correct row.
-
-When porting parsers from Android or debugging parsing issues on iOS, always check for these two artifacts first.
 
 ### Web (Future)
 Not yet implemented.
@@ -156,22 +142,19 @@ Not yet implemented.
 **Linecar Bus Company Website:**
 - URL: https://www.linecar.es/metropolitano/segovia/
 - Contains: Bus route PDFs (schedules), route information
-- Format: PDF files (e.g., `M4.pdf`, `M5-septiembre-2024.pdf`)
 - Update frequency: Irregular (seasonal changes, service updates)
 
 **Data Strategy:**
-- PDFs are scraped and cached locally
-- Self-healing URL system re-scrapes when PDFs return 404
-- Offline-first architecture with persistent caching
+- Timetable data is pre-extracted into `resources/timetables/{routeId}.json` and bundled with each app
+- Next milestone: load JSON from a remote server instead of bundle assets
 
-## Parser Cache Versioning
+## Timetable Version Tracking
 
-Both platforms implement parser-version–aware cache invalidation. Each parser declares `capabilities.version` (e.g. `"1.4"`). This version is written to `TimetableCache/<routeId>.meta.json` alongside the PDF timestamp. On next load, if the stored version doesn't match the current parser version the JSON cache is discarded and the route is re-parsed from scratch.
+Each timetable JSON has a top-level `"version"` field (e.g. `"3.4"`). `TimetableLoader` reads this and exposes it via `RouteDataService.getParserVersion()`. `TimetableCacheService` stores the version in `.meta.json` and invalidates the disk cache if it changes.
 
-**When to bump the parser version:** any time a code change affects the parsed output — bug fixes, new stops, corrected coordinates, timetable corrections, etc. Increment the version string in the parser's `capabilities` to force all existing devices to re-parse on next launch. Always bump on **both** platforms together.
+**When to bump the version:** any change to timetable data — new stops, corrected times, seasonal rule changes, etc. Bump in the JSON file and increment on **both** platforms' copies together.
 
-**Android:** implemented in `TimetableCacheService` (stores/checks `parserVersion` in `.meta.json`) via `PDFProcessingService.getParserVersion()`.
-**iOS:** implemented in `TimetableCacheService` (same `.meta.json` contract).
+Note: the disk cache (`TimetableCacheService`) currently always misses because it checks for PDF file timestamps that no longer exist. It will be fixed when server-based loading is added.
 
 ## Development Rules
 
@@ -207,3 +190,42 @@ Open `iOS/InterSego.xcodeproj` in Xcode, build and run.
 ## License
 
 GPL-v3 (see source file headers)
+
+<!-- code-review-graph MCP tools -->
+## MCP Tools: code-review-graph
+
+**IMPORTANT: This project has a knowledge graph. ALWAYS use the
+code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
+the codebase.** The graph is faster, cheaper (fewer tokens), and gives
+you structural context (callers, dependents, test coverage) that file
+scanning cannot.
+
+### When to use graph tools FIRST
+
+- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
+- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
+- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
+- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
+- **Architecture questions**: `get_architecture_overview` + `list_communities`
+
+Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+
+### Key Tools
+
+| Tool | Use when |
+|------|----------|
+| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
+| `get_review_context` | Need source snippets for review — token-efficient |
+| `get_impact_radius` | Understanding blast radius of a change |
+| `get_affected_flows` | Finding which execution paths are impacted |
+| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
+| `semantic_search_nodes` | Finding functions/classes by name or keyword |
+| `get_architecture_overview` | Understanding high-level codebase structure |
+| `refactor_tool` | Planning renames, finding dead code |
+
+### Workflow
+
+1. The graph auto-updates on file changes (via hooks).
+2. Use `detect_changes` for code review.
+3. Use `get_affected_flows` to understand impact.
+4. Use `query_graph` pattern="tests_for" to check coverage.

@@ -98,12 +98,27 @@ object BusStopRegistry {
         coordinates = "40.944234, -4.110012"
     )
 
-    /** M4, M6 */
+    /** M4, M5, M6 */
     val azoguejo = BusStop(
         id = "azoguejo",
         name = "Azoguejo",
         area = "Segovia capital",
-        coordinates = "40.948502, -4.115979"
+        coordinates = "40.948502, -4.115979",
+        alternates = listOf(
+            AlternateLocation(
+                id = "estacion-autobuses",
+                name = "Estación de Autobuses",
+                coordinates = "40.944768, -4.121823"
+            )
+        )
+    )
+
+    /** M7 weekday circular — return arrival at Estación; distinct ID prevents departure merge with outbound position */
+    val estacionAutobusesCircRet = BusStop(
+        id = "estacion-autobuses-circ-ret",
+        name = "Estación de Autobuses",
+        area = "Segovia capital",
+        coordinates = "40.944768, -4.121823"
     )
 
     /** M4, M6 */
@@ -156,6 +171,22 @@ object BusStopRegistry {
         coordinates = "40.957554, -4.206457"
     )
 
+    /** M1 circularB return leg — distinct ID prevents departure merge with outbound position */
+    val poligonoIndM1Ret = BusStop(
+        id = "poligono-ind-m1-ret",
+        name = "Polígono Industrial",
+        area = "Valverde del Majano",
+        coordinates = "40.957976, -4.198156"
+    )
+
+    /** M1 circularB return leg — distinct ID prevents departure merge with outbound position */
+    val poligonoIndM1BRet = BusStop(
+        id = "poligono-ind-m1-2-ret",
+        name = "Polígono Industrial 2",
+        area = "Valverde del Majano",
+        coordinates = "40.957554, -4.206457"
+    )
+
     /** M1 only */
     val valverdeMajano = BusStop(
         id = "valverde-majano",
@@ -185,7 +216,14 @@ object BusStopRegistry {
         id = "garcillan",
         name = "Garcillán",
         area = "Garcillán",
-        coordinates = "40.976809, -4.264724"
+        coordinates = "40.976809, -4.264724",
+        alternates = listOf(
+            AlternateLocation(
+                id = "garcillan-gasolinera",
+                name = "Garcillán (gasolinera)",
+                coordinates = "40.9745, -4.2638"
+            )
+        )
     )
 
     /** M2 only */
@@ -584,7 +622,7 @@ object BusStopRegistry {
 
     private val byId: Map<String, BusStop> by lazy {
         listOf(
-            estacionAutobuses, iglesiaStTomas, frenteBarNorte, plazaDeToros,
+            estacionAutobuses, estacionAutobusesCircRet, iglesiaStTomas, frenteBarNorte, plazaDeToros,
             hospitalSegovia, jardinillos, andresLaguna, laPista, hermanitas,
             azoguejo, delicias, montecorredores,
             casinoUnion, poligonoIndM1, poligonoIndM1B, valverdeMajano,

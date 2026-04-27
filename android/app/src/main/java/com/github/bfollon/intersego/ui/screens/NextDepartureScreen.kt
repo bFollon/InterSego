@@ -126,7 +126,7 @@ import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.DeparturesService
-import com.github.bfollon.intersego.services.PDFProcessingService
+import com.github.bfollon.intersego.services.RouteDataService
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteLoadedData
 import com.github.bfollon.intersego.services.StaticMapService
@@ -188,7 +188,7 @@ fun NextDepartureScreen(
     onDaySchedule: (routeId: String, direction: String, variantLabel: String?, overrideDayType: DayType?, mergedDirectionLabel: String?) -> Unit = { _, _, _, _, _ -> }
 ) {
     val context = LocalContext.current
-    val pdfService = remember { PDFProcessingService(context) }
+    val pdfService = remember { RouteDataService(context) }
     val timetableService = remember { TimetableService(context) }
 
     var loadedRoutes by remember { mutableStateOf<List<RouteLoadedData>>(emptyList()) }

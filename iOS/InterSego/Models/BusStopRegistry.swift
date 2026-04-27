@@ -96,17 +96,32 @@ enum BusStopRegistry {
         coordinates: "40.944234, -4.110012"
     )
 
-    /// M4, M6
+    /// M4, M5, M6
     static let azoguejo = BusStop(
         id: "azoguejo",
         name: "Azoguejo",
         area: "Segovia capital",
-        coordinates: "40.948502, -4.115979"
+        coordinates: "40.948502, -4.115979",
+        alternates: [
+            AlternateLocation(
+                id: "estacion-autobuses",
+                name: "Estación de Autobuses",
+                coordinates: "40.944768, -4.121823"
+            )
+        ]
     )
     
+    /// M7 weekday circular — return arrival at Estación; distinct ID prevents departure merge with outbound position
+    static let estacionAutobusesCircRet = BusStop(
+        id: "estacion-autobuses-circ-ret",
+        name: "Estación de Autobuses",
+        area: "Segovia capital",
+        coordinates: "40.944768, -4.121823"
+    )
+
     /// M4
     static let azoguejoEndStop = BusStop(
-        id: "azoguejo-end-stop",
+        id: "azoguejo-endStop",
         name: "Azoguejo",
         area: "Segovia capital",
         coordinates: "40.948502, -4.115979"
@@ -183,7 +198,30 @@ enum BusStopRegistry {
         id: "garcillan",
         name: "Garcillán",
         area: "Garcillán",
-        coordinates: "40.976809, -4.264724"
+        coordinates: "40.976809, -4.264724",
+        alternates: [
+            AlternateLocation(
+                id: "garcillan-gasolinera",
+                name: "Garcillán (gasolinera)",
+                coordinates: "40.9745, -4.2638"
+            )
+        ]
+    )
+
+    /// M1 circularB return leg — distinct ID prevents departure merge with outbound position
+    static let poligonoIndM1Ret = BusStop(
+        id: "poligono-ind-m1-ret",
+        name: "Polígono Industrial",
+        area: "Valverde del Majano",
+        coordinates: "40.957976, -4.198156"
+    )
+
+    /// M1 circularB return leg — distinct ID prevents departure merge with outbound position
+    static let poligonoIndM1BRet = BusStop(
+        id: "poligono-ind-m1-2-ret",
+        name: "Polígono Industrial 2",
+        area: "Valverde del Majano",
+        coordinates: "40.957554, -4.206457"
     )
 
     /// M2 only

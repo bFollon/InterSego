@@ -93,11 +93,9 @@ import androidx.navigation.navArgument
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.RouteType
-import com.github.bfollon.intersego.repositories.PDFURLRepository
 import com.github.bfollon.intersego.services.CoordinateCache
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.NetworkMonitor
-import com.github.bfollon.intersego.services.PDFCacheManager
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -197,14 +195,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             .build()
     }
 
-    /**
-     * Get list of known bus routes for update checking
-     * Based on actual routes available on Linecar website
-     * Routes: M1-M8 (no M9, M10, M11, M12 exist)
-     */
     fun getKnownRoutes(): List<BusRoute> {
-        // Metropolitan routes M1-M8
-        // URLs will be resolved dynamically via PDFURLRepository
         return listOf(
             BusRoute(
                 id = "M1",
@@ -212,7 +203,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 name = "Garcillán - Valverde del Manjano",
                 origin = "Segovia",
                 destination = "Área Metropolitana",
-                pdfURL = "", // Will be resolved by PDFURLRepository
+                pdfURL = "",
                 routeType = RouteType.URBAN,
                 isCircular = true
             ),
@@ -281,11 +272,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 pdfURL = "",
                 routeType = RouteType.URBAN
             )
-        ).map { route ->
-            // Resolve PDF URLs from PDFURLRepository
-            val pdfUrlRepository = PDFURLRepository.getInstance(this)
-            route.copy(pdfURL = pdfUrlRepository.getURL(route.id))
-        }
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -324,10 +311,6 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         // (ImageLoaderFactory only works on Application, not Activity, so we set explicitly)
         Coil.setImageLoader(newImageLoader())
 
-        // Initialize PDF Cache Manager
-        val pdfCacheManager = PDFCacheManager.getInstance(this)
-        pdfCacheManager.initialize()
-
         // Create notification channel for bus departure reminders
         com.github.bfollon.intersego.services.ReminderService.createNotificationChannel(this)
 
@@ -338,21 +321,6 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
             // Perform async initialization in LaunchedEffect
             LaunchedEffect(Unit) {
-                DebugConfig.debugPrint("🌐 Initializing PDF URLs...")
-                val pdfUrlRepository = PDFURLRepository.getInstance(this@MainActivity)
-                val success = pdfUrlRepository.initializeURLs()
-                if (success) {
-                    DebugConfig.debugPrint("✅ PDF URLs initialized successfully")
-                    DebugConfig.debugPrint(pdfUrlRepository.getStatus())
-                } else {
-                    DebugConfig.debugWarn("⚠️ PDF URL initialization failed, using fallback URLs")
-                }
-
-                // Check for PDF updates (respects 24-hour limit)
-                DebugConfig.debugPrint("🔍 Checking for PDF updates...")
-                val allRoutes = getKnownRoutes()
-                pdfCacheManager.checkForUpdatesIfNeeded(allRoutes)
-
                 // Mark initialization as complete
                 DebugConfig.debugPrint("🔧 Setting isInitialized = true...")
                 isInitialized = true
@@ -522,23 +490,23 @@ fun AppNavigation() {
         activity.getKnownRoutes()
     }
 
-    // Create PDFProcessingService for dynamic parser queries
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 About to create PDFProcessingService...")
-    val pdfProcessingService = remember {
-        com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Inside remember block - creating PDFProcessingService...")
+    // Create RouteDataService for dynamic parser queries
+    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 About to create RouteDataService...")
+    val routeDataService = remember {
+        com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Inside remember block - creating RouteDataService...")
         try {
-            val service = com.github.bfollon.intersego.services.PDFProcessingService(activity)
-            com.github.bfollon.intersego.services.DebugConfig.debugPrint("✅ PDFProcessingService created successfully")
+            val service = com.github.bfollon.intersego.services.RouteDataService(activity)
+            com.github.bfollon.intersego.services.DebugConfig.debugPrint("✅ RouteDataService created successfully")
             service
         } catch (e: Exception) {
-            com.github.bfollon.intersego.services.DebugConfig.debugError("❌ Failed to create PDFProcessingService", e)
+            com.github.bfollon.intersego.services.DebugConfig.debugError("❌ Failed to create RouteDataService", e)
             throw e
         }
     }
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 PDFProcessingService variable assigned")
+    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 RouteDataService variable assigned")
 
     // Force service initialization and log available routes
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${pdfProcessingService.getSupportedRoutes()}")
+    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${routeDataService.getSupportedRoutes()}")
 
     // --- Reminder service ---
     val reminderService = remember {
@@ -636,7 +604,7 @@ fun AppNavigation() {
                         landingBoardingError = "No se pudo encontrar la parada."
                         return@launch
                     }
-                    val routeIds = pdfProcessingService.getRoutesForStop(stop.id)
+                    val routeIds = routeDataService.getRoutesForStop(stop.id)
                     val cal = java.util.Calendar.getInstance()
                     val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
                     val todayDayTypes = when (dayOfWeek) {
@@ -905,7 +873,7 @@ fun AppNavigation() {
         composable("route_selection") {
             RouteSelectionScreen(
                 routes = routes,
-                pdfProcessingService = pdfProcessingService,
+                routeDataService = routeDataService,
                 onRouteSelected = { route ->
                     AnalyticsService.track("route_selected", mapOf("route" to route.id))
                     navController.navigate("route_stops/${route.id}")
@@ -926,19 +894,19 @@ fun AppNavigation() {
             }
 
             val views = remember(routeId, todayDayType) {
-                val todayViews = pdfProcessingService.getRouteViews(routeId, todayDayType)
+                val todayViews = routeDataService.getRouteViews(routeId, todayDayType)
                 if (todayViews.isNotEmpty()) todayViews
                 else {
                     // No service today — fall back to any available day type so stops are still shown.
                     // NextDepartureScreen handles looking up to 7 days ahead for the actual departure.
                     listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-                        .firstNotNullOfOrNull { dt -> pdfProcessingService.getRouteViews(routeId, dt).takeIf { it.isNotEmpty() } }
+                        .firstNotNullOfOrNull { dt -> routeDataService.getRouteViews(routeId, dt).takeIf { it.isNotEmpty() } }
                         ?: emptyList()
                 }
             }
 
             val entries = remember(routeId) {
-                pdfProcessingService.getRouteEntries(routeId)
+                routeDataService.getRouteEntries(routeId)
             }
             val showAllRoutes = entries.size > 1 || views.isEmpty()
 
@@ -986,8 +954,8 @@ fun AppNavigation() {
                             java.util.Calendar.SUNDAY -> DayType.SUNDAY
                             else -> DayType.WEEKDAY
                         }
-                        pdfProcessingService.getSupportedRoutes()
-                            .flatMap { pdfProcessingService.getRouteViews(it, dayType) }
+                        routeDataService.getSupportedRoutes()
+                            .flatMap { routeDataService.getRouteViews(it, dayType) }
                             .flatMap { it.stops }
                             .find { it.stop.id == stopId }
                             ?.stop
@@ -1031,8 +999,8 @@ fun AppNavigation() {
                             java.util.Calendar.SUNDAY -> DayType.SUNDAY
                             else -> DayType.WEEKDAY
                         }
-                        pdfProcessingService.getSupportedRoutes()
-                            .flatMap { pdfProcessingService.getRouteViews(it, dayType) }
+                        routeDataService.getSupportedRoutes()
+                            .flatMap { routeDataService.getRouteViews(it, dayType) }
                             .flatMap { it.stops }
                             .find { it.stop.id == stopId }
                             ?.stop
@@ -1073,7 +1041,7 @@ fun AppNavigation() {
             }
 
             val views = remember(routeId) {
-                pdfProcessingService.getRouteViews(routeId, todayDayType)
+                routeDataService.getRouteViews(routeId, todayDayType)
             }
 
             RouteMapScreen(
@@ -1103,7 +1071,7 @@ fun AppNavigation() {
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val routeEntries = remember(routeId) {
-                pdfProcessingService.getRouteEntries(routeId)
+                routeDataService.getRouteEntries(routeId)
             }
             var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
                 mutableStateOf(routeEntries.firstOrNull { it.isActiveToday }?.id ?: routeEntries.firstOrNull()?.id ?: "")
@@ -1154,7 +1122,7 @@ fun AppNavigation() {
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val routeEntries = remember(routeId) {
-                pdfProcessingService.getRouteEntries(routeId)
+                routeDataService.getRouteEntries(routeId)
             }
             var selectedEntryId by androidx.compose.runtime.saveable.rememberSaveable {
                 mutableStateOf(initialEntryId ?: routeEntries.firstOrNull { it.isActiveToday }?.id ?: routeEntries.firstOrNull()?.id ?: "")
@@ -1234,7 +1202,7 @@ fun AppNavigation() {
 
             val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
                 .firstNotNullOfOrNull { dayType ->
-                    pdfProcessingService.getRouteViews(routeId, dayType)
+                    routeDataService.getRouteViews(routeId, dayType)
                         .flatMap { it.stops }
                         .find { it.stop.id == stopId }
                         ?.stop

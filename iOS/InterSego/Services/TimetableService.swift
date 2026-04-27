@@ -22,7 +22,7 @@ import Foundation
 /// Implements three-tier caching pattern:
 /// 1. Memory cache (fastest)
 /// 2. Persistent cache via TimetableCacheService (fast)
-/// 3. PDF parsing via PDFProcessingService (slowest, source of truth)
+/// 3. PDF parsing via RouteDataService (slowest, source of truth)
 actor TimetableService {
     static let shared = TimetableService()
 
@@ -31,8 +31,8 @@ actor TimetableService {
     private init() {}
 
     func loadTimetables(routeId: String, forceRefresh: Bool = false) async -> [BusTimetable] {
-        let isDebugParser = await PDFProcessingService.shared.isDebugParser(routeId: routeId)
-        let parserVersion = await PDFProcessingService.shared.getParserVersion(routeId: routeId)
+        let isDebugParser = await RouteDataService.shared.isDebugParser(routeId: routeId)
+        let parserVersion = await RouteDataService.shared.getParserVersion(routeId: routeId)
         let shouldForceRefresh = forceRefresh || isDebugParser
 
         if isDebugParser {
@@ -60,7 +60,7 @@ actor TimetableService {
         DebugConfig.debugPrint("TimetableService: Parsing PDF for route \(routeId)")
 
         do {
-            let timetables = try await PDFProcessingService.shared.parseTimetables(routeId: routeId)
+            let timetables = try await RouteDataService.shared.parseTimetables(routeId: routeId)
 
             cachedTimetables[routeId] = timetables
             await TimetableCacheService.shared.saveTimetablesToCache(routeId: routeId, timetables: timetables, parserVersion: parserVersion)

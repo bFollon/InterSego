@@ -56,13 +56,13 @@ struct DeparturesData {
 /// Used by both NextDepartureView (for live departures) and DirectionPickerView
 /// (for listing available directions).
 actor DeparturesService {
-    private let pdfService: PDFProcessingService
+    private let pdfService: RouteDataService
     private let timetableService: TimetableService
 
     nonisolated static let shared = DeparturesService()
 
     private init() {
-        self.pdfService = PDFProcessingService.shared
+        self.pdfService = RouteDataService.shared
         self.timetableService = TimetableService.shared
     }
 

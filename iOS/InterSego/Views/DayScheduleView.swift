@@ -208,6 +208,7 @@ struct DayScheduleView: View {
                             }()
                             DayScheduleTimelineRow(
                                 departure: departure,
+                                stop: stop,
                                 selectedVariantLabel: selectedVariantLabel,
                                 isFirst: index == 0,
                                 isLast: index == items.count - 1 && markerIndex <= items.count - 1,
@@ -520,6 +521,7 @@ private struct DayScheduleBellButton: View {
 
 private struct DayScheduleTimelineRow: View {
     let departure: DepartureTime
+    let stop: BusStop
     let selectedVariantLabel: String?
     let isFirst: Bool
     let isLast: Bool
@@ -551,6 +553,16 @@ private struct DayScheduleTimelineRow: View {
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(Color(.systemGray5))
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            }
+
+                            if let altName = departure.alternateLocationName(in: stop) {
+                                Text(altName)
+                                    .font(.caption2)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.orange.opacity(0.15))
+                                    .foregroundColor(.orange)
                                     .clipShape(RoundedRectangle(cornerRadius: 4))
                             }
 
