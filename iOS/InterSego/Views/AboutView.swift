@@ -14,7 +14,6 @@ struct AboutView: View {
     @Environment(\.openURL) private var openURL
     @State private var showBugReport: Bool = false
     @State private var showNoConsentAlert: Bool = false
-    @State private var showMonitoringConsent: Bool = false
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -267,15 +266,12 @@ struct AboutView: View {
         .sheet(isPresented: $showBugReport) {
             BugReportView()
         }
-        .sheet(isPresented: $showMonitoringConsent, onDismiss: {
-            if MonitoringPreferencesService.shared.hasUserOptedIn() {
+        .alert("Informes de error desactivados", isPresented: $showNoConsentAlert) {
+            Button("Activar informes de error") {
+                MonitoringPreferencesService.shared.setMonitoringEnabled(true)
+                ErrorReportingService.shared.initialize()
                 showBugReport = true
             }
-        }) {
-            MonitoringConsentView(isPresented: $showMonitoringConsent)
-        }
-        .alert("Informes de error desactivados", isPresented: $showNoConsentAlert) {
-            Button("Activar informes de error") { showMonitoringConsent = true }
             Button("Enviar por email") {
                 if let url = makeMailtoURL(subject: "Reporte de error - InterSego", body: "") {
                     openURL(url)

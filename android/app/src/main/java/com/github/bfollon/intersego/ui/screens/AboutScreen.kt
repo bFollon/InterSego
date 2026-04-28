@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
+import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +78,6 @@ fun AboutScreen(
     val versionCode = packageInfo.longVersionCode
     val (showBugReportSheet, setShowBugReportSheet) = remember { mutableStateOf(false) }
     val (showNoConsentDialog, setShowNoConsentDialog) = remember { mutableStateOf(false) }
-    val (showMonitoringConsent, setShowMonitoringConsent) = remember { mutableStateOf(false) }
 
     if (showBugReportSheet) {
         BugReportSheet(
@@ -93,7 +93,9 @@ fun AboutScreen(
             confirmButton = {
                 TextButton(onClick = {
                     setShowNoConsentDialog(false)
-                    setShowMonitoringConsent(true)
+                    MonitoringPreferencesService.setMonitoringEnabled(true)
+                    ErrorReportingService.initialize(context)
+                    setShowBugReportSheet(true)
                 }) {
                     Text("Activar informes")
                 }
@@ -112,16 +114,6 @@ fun AboutScreen(
         )
     }
 
-    if (showMonitoringConsent) {
-        MonitoringConsentScreen(
-            onDismiss = {
-                setShowMonitoringConsent(false)
-                if (MonitoringPreferencesService.hasUserOptedIn()) {
-                    setShowBugReportSheet(true)
-                }
-            }
-        )
-    }
 
     Column(
         modifier = Modifier
