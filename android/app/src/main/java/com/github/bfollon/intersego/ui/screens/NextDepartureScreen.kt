@@ -32,6 +32,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -861,6 +862,16 @@ fun NextDepartureScreen(
                                 modifier = Modifier.padding(horizontal = 16.dp)
                             )
                         }
+                    }
+
+                    item {
+                        val pdfRoutes = if (selectedRouteId != null)
+                            loadedRoutes.filter { it.route.id == selectedRouteId }
+                        else loadedRoutes
+                        PDFLinksFooter(
+                            routes = pdfRoutes.map { it.route },
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                        )
                     }
 
                     item { Spacer(modifier = Modifier.height(32.dp)) }
@@ -1910,6 +1921,45 @@ private fun BoardingButton(
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 4.dp)
             )
+        }
+    }
+}
+
+// ============================================================================
+// PDF LINKS FOOTER
+// ============================================================================
+
+@Composable
+private fun PDFLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val validRoutes = routes.filter { it.pdfURL.isNotEmpty() }
+    if (validRoutes.isEmpty()) return
+
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            validRoutes.forEach { route ->
+                TextButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(route.pdfURL))
+                        context.startActivity(intent)
+                    },
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text(
+                        text = "Ver PDF oficial · Línea ${route.number} ↗",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
     }
 }

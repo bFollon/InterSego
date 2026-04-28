@@ -10,7 +10,8 @@
     "destination": "Valsaín",
     "routeType": "URBAN",
     "isCircular": false,
-    "displayOrder": 8
+    "displayOrder": 8,
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M8.pdf"
   },
 
   "stops": [

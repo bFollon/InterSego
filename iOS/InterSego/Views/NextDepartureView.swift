@@ -507,6 +507,9 @@ struct NextDepartureView: View {
                     .padding(.top, 24)
                 }
 
+                PDFLinksFooter(routes: activeRoutesData.map(\.route))
+                    .padding(.horizontal, 16).padding(.top, 20)
+
                 Spacer(minLength: 32)
             }
         }
@@ -1388,6 +1391,35 @@ private struct BoardingButton: View {
         .buttonStyle(.borderedProminent)
         .disabled(confirmed || isLoading)
         .opacity(!isActive && !confirmed ? 0.5 : 1.0)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+// MARK: - PDF Links Footer
+
+private struct PDFLinksFooter: View {
+    let routes: [BusRoute]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(routes.filter { !$0.pdfURL.isEmpty }, id: \.id) { route in
+                if let url = URL(string: route.pdfURL) {
+                    Link(destination: url) {
+                        Label("PDF oficial · Línea \(route.number)", systemImage: "doc.fill")
+                            .font(.caption)
+                            .foregroundStyle(.tint)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

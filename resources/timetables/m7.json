@@ -10,7 +10,8 @@
     "destination": "Torrecaballeros",
     "routeType": "URBAN",
     "isCircular": false,
-    "displayOrder": 7
+    "displayOrder": 7,
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf"
   },
 
   "stops": [

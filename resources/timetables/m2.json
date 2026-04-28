@@ -10,7 +10,8 @@
     "destination": "Valseca",
     "routeType": "URBAN",
     "isCircular": true,
-    "displayOrder": 2
+    "displayOrder": 2,
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/09/M2-septiembre-2024.pdf"
   },
 
   "stops": [

@@ -10,7 +10,8 @@
     "destination": "Área Metropolitana",
     "routeType": "URBAN",
     "isCircular": true,
-    "displayOrder": 1
+    "displayOrder": 1,
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M1.pdf"
   },
 
   "stops": [

@@ -74,7 +74,8 @@ class TimetableLoader(private val context: Context) {
         val destination: String,
         val routeType: String,
         val isCircular: Boolean,
-        val displayOrder: Int
+        val displayOrder: Int,
+        val pdfUrl: String = ""
     )
 
     @Serializable
@@ -233,7 +234,7 @@ class TimetableLoader(private val context: Context) {
             name = r.name,
             origin = r.origin,
             destination = r.destination,
-            pdfURL = "",
+            pdfURL = r.pdfUrl,
             routeType = type,
             isCircular = r.isCircular
         )
@@ -256,7 +257,7 @@ class TimetableLoader(private val context: Context) {
                             name = r.name,
                             origin = r.origin,
                             destination = r.destination,
-                            pdfURL = "",
+                            pdfURL = r.pdfUrl,
                             routeType = type,
                             isCircular = r.isCircular
                         ),
