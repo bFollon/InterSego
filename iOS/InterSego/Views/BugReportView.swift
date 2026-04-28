@@ -11,7 +11,6 @@ import SwiftUI
 
 struct BugReportView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     @State private var name: String = ""
     @State private var email: String = ""
@@ -172,13 +171,6 @@ struct BugReportView: View {
             if success {
                 submitted = true
             } else {
-                let encodedSubject = "Reporte de error - InterSego"
-                    .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                let encodedBody = description
-                    .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                if let mailURL = URL(string: "mailto:bfollon.dev@icloud.com?subject=\(encodedSubject)&body=\(encodedBody)") {
-                    openURL(mailURL)
-                }
                 dismiss()
             }
         }

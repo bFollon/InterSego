@@ -13,6 +13,8 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @State private var showBugReport: Bool = false
+    @State private var showNoConsentAlert: Bool = false
+    @State private var showMonitoringConsent: Bool = false
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -177,7 +179,13 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         VStack(spacing: 12) {
-                            Button(action: { showBugReport = true }) {
+                            Button(action: {
+                                if MonitoringPreferencesService.shared.hasUserOptedIn() {
+                                    showBugReport = true
+                                } else {
+                                    showNoConsentAlert = true
+                                }
+                            }) {
                                 HStack {
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundColor(.orange)
@@ -258,6 +266,24 @@ struct AboutView: View {
         }
         .sheet(isPresented: $showBugReport) {
             BugReportView()
+        }
+        .sheet(isPresented: $showMonitoringConsent, onDismiss: {
+            if MonitoringPreferencesService.shared.hasUserOptedIn() {
+                showBugReport = true
+            }
+        }) {
+            MonitoringConsentView(isPresented: $showMonitoringConsent)
+        }
+        .alert("Informes de error desactivados", isPresented: $showNoConsentAlert) {
+            Button("Activar informes de error") { showMonitoringConsent = true }
+            Button("Enviar por email") {
+                if let url = makeMailtoURL(subject: "Reporte de error - InterSego", body: "") {
+                    openURL(url)
+                }
+            }
+            Button("Cancelar", role: .cancel) { }
+        } message: {
+            Text("Los informes de error están desactivados. Puedes activarlos para enviar el informe directamente, o reportar el error por email.")
         }
     }
 

@@ -39,9 +39,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
+import com.github.bfollon.intersego.services.MonitoringPreferencesService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,16 +76,49 @@ fun AboutScreen(
     val versionName = packageInfo.versionName ?: "Unknown"
     val versionCode = packageInfo.longVersionCode
     val (showBugReportSheet, setShowBugReportSheet) = remember { mutableStateOf(false) }
+    val (showNoConsentDialog, setShowNoConsentDialog) = remember { mutableStateOf(false) }
+    val (showMonitoringConsent, setShowMonitoringConsent) = remember { mutableStateOf(false) }
 
     if (showBugReportSheet) {
         BugReportSheet(
-            onDismiss = { setShowBugReportSheet(false) },
-            onFallbackToEmail = { description ->
-                setShowBugReportSheet(false)
-                openEmail(context, makeMailtoUrl(
-                    subject = "Reporte de error - InterSego",
-                    body = description
-                ))
+            onDismiss = { setShowBugReportSheet(false) }
+        )
+    }
+
+    if (showNoConsentDialog) {
+        AlertDialog(
+            onDismissRequest = { setShowNoConsentDialog(false) },
+            title = { Text("Informes de error desactivados") },
+            text = { Text("Los informes de error están desactivados. Puedes activarlos para enviar el informe directamente, o reportar el error por email.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    setShowNoConsentDialog(false)
+                    setShowMonitoringConsent(true)
+                }) {
+                    Text("Activar informes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    setShowNoConsentDialog(false)
+                    openEmail(context, makeMailtoUrl(
+                        subject = "Reporte de error - InterSego",
+                        body = ""
+                    ))
+                }) {
+                    Text("Enviar por email")
+                }
+            }
+        )
+    }
+
+    if (showMonitoringConsent) {
+        MonitoringConsentScreen(
+            onDismiss = {
+                setShowMonitoringConsent(false)
+                if (MonitoringPreferencesService.hasUserOptedIn()) {
+                    setShowBugReportSheet(true)
+                }
             }
         )
     }
@@ -285,7 +319,13 @@ fun AboutScreen(
                 ContactCard(
                     label = "Reportar error",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = Color(0xFFFF9800)) },
-                    onClick = { setShowBugReportSheet(true) }
+                    onClick = {
+                        if (MonitoringPreferencesService.hasUserOptedIn()) {
+                            setShowBugReportSheet(true)
+                        } else {
+                            setShowNoConsentDialog(true)
+                        }
+                    }
                 )
 
                 ContactCard(

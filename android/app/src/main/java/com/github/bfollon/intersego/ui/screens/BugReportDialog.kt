@@ -18,7 +18,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.services.ErrorReportingService
@@ -27,8 +26,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BugReportSheet(
-    onDismiss: () -> Unit,
-    onFallbackToEmail: (description: String) -> Unit
+    onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -163,7 +161,7 @@ fun BugReportSheet(
                             if (success) {
                                 submitted = true
                             } else {
-                                onFallbackToEmail(description)
+                                onDismiss()
                             }
                         }
                     },
