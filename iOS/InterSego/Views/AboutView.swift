@@ -12,6 +12,7 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @State private var showBugReport: Bool = false
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -176,26 +177,22 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         VStack(spacing: 12) {
-                            if let errorURL = makeMailtoURL(
-                                subject: "Error en InterSego",
-                                body: "Hola,\n\nHe encontrado un error en los horarios mostrados en la app.\n\nDetalles del error:\n\n\nLa información correcta es:\n\n\nGracias."
-                            ) {
-                                Link(destination: errorURL) {
-                                    HStack {
-                                        Image(systemName: "exclamationmark.triangle")
-                                            .foregroundColor(.orange)
-                                        Text("Reportar error")
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                    .padding()
-                                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                                    .cornerRadius(8)
+                            Button(action: { showBugReport = true }) {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle")
+                                        .foregroundColor(.orange)
+                                    Text("Reportar error")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.secondary)
+                                        .font(.caption)
                                 }
+                                .padding()
+                                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                                .cornerRadius(8)
                             }
+                            .buttonStyle(PlainButtonStyle())
 
                             if let feedbackURL = makeMailtoURL(
                                 subject: "Sugerencias y mejoras - InterSego",
@@ -258,6 +255,9 @@ struct AboutView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showBugReport) {
+            BugReportView()
         }
     }
 

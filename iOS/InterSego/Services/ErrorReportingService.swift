@@ -60,4 +60,27 @@ class ErrorReportingService {
         SentrySDK.capture(message: message)
         DebugConfig.debugPrint("ErrorReportingService: captured message: \(message)")
     }
+
+    /// Submit user feedback (bug report) to BugSink.
+    /// Safe to call even if Sentry is not initialized.
+    func submitFeedback(name: String, email: String, message: String) {
+        let userName = name.isEmpty ? "Anonymous" : name
+        let userEmail = email.isEmpty ? "not provided" : email
+
+        let fullMessage = """
+        === User Bug Report ===
+        Name: \(userName)
+        Email: \(userEmail)
+
+        Message:
+        \(message)
+        """
+
+        let event = Event()
+        event.message = SentryMessage(formatted: fullMessage)
+        event.fingerprint = ["user-bug-report", String(message.hashValue)]
+        SentrySDK.capture(event: event)
+
+        DebugConfig.debugPrint("ErrorReportingService: submitted user feedback")
+    }
 }

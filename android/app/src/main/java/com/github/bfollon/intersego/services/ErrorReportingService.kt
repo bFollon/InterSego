@@ -64,6 +64,33 @@ object ErrorReportingService {
         DebugConfig.debugPrint("ErrorReportingService: captured message: $message")
     }
 
+    /**
+     * Submit user feedback (bug report) to BugSink.
+     * Safe to call even if Sentry is not initialized.
+     */
+    fun submitFeedback(name: String, email: String, message: String) {
+        val userName = name.ifBlank { "Anonymous" }
+        val userEmail = email.ifBlank { "not provided" }
+
+        val messageHash = message.hashCode().toString()
+
+        Sentry.configureScope { scope ->
+            scope.fingerprint = listOf("user-bug-report", messageHash)
+        }
+
+        val fullMessage = buildString {
+            appendLine("=== User Bug Report ===")
+            appendLine("Name: $userName")
+            appendLine("Email: $userEmail")
+            appendLine()
+            appendLine("Message:")
+            appendLine(message)
+        }
+
+        Sentry.captureMessage(fullMessage, io.sentry.SentryLevel.WARNING)
+        DebugConfig.debugPrint("ErrorReportingService: submitted user feedback")
+    }
+
     private fun isDebugBuild(): Boolean {
         return try {
             val buildConfigClass = Class.forName("com.github.bfollon.intersego.BuildConfig")

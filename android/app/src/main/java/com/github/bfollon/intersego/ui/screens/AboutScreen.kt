@@ -40,6 +40,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +57,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.remember
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
 
@@ -69,6 +70,13 @@ fun AboutScreen(
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val versionName = packageInfo.versionName ?: "Unknown"
     val versionCode = packageInfo.longVersionCode
+    val (showBugReportDialog, setShowBugReportDialog) = remember { mutableStateOf(false) }
+
+    if (showBugReportDialog) {
+        BugReportDialog(
+            onDismiss = { setShowBugReportDialog(false) }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -266,15 +274,7 @@ fun AboutScreen(
                 ContactCard(
                     label = "Reportar error",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = Color(0xFFFF9800)) },
-                    onClick = {
-                        openEmail(
-                            context,
-                            makeMailtoUrl(
-                                subject = "Error en InterSego",
-                                body = "Hola,\n\nHe encontrado un error en los horarios mostrados en la app.\n\nDetalles del error:\n\n\nLa información correcta es:\n\n\nGracias."
-                            )
-                        )
-                    }
+                    onClick = { setShowBugReportDialog(true) }
                 )
 
                 ContactCard(
