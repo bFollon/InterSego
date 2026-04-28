@@ -35,10 +35,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
     onDismiss: () -> Unit
@@ -70,11 +74,12 @@ fun AboutScreen(
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val versionName = packageInfo.versionName ?: "Unknown"
     val versionCode = packageInfo.longVersionCode
-    val (showBugReportDialog, setShowBugReportDialog) = remember { mutableStateOf(false) }
+    val (showBugReportSheet, setShowBugReportSheet) = remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    if (showBugReportDialog) {
-        BugReportDialog(
-            onDismiss = { setShowBugReportDialog(false) }
+    if (showBugReportSheet) {
+        BugReportSheet(
+            onDismiss = { setShowBugReportSheet(false) }
         )
     }
 
@@ -274,7 +279,7 @@ fun AboutScreen(
                 ContactCard(
                     label = "Reportar error",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = Color(0xFFFF9800)) },
-                    onClick = { setShowBugReportDialog(true) }
+                    onClick = { setShowBugReportSheet(true) }
                 )
 
                 ContactCard(
