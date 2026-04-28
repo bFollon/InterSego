@@ -172,7 +172,7 @@ Polyline JSON files (`resources/route_polylines/`) also carry a `"version"` fiel
 - NEVER push anything to the remote repository unless explicitly asked
 
 ### Code Style
-- GPL-v3 license headers on all source files
+- Source-available license headers on all source files
 - Use each platform's default styling (Material 3 on Android, system defaults on iOS)
 - Prefer platform-native solutions over cross-platform libraries
 
@@ -191,7 +191,7 @@ Open `iOS/InterSego.xcodeproj` in Xcode, build and run.
 
 ## License
 
-GPL-v3 (see source file headers)
+Source available — see `LICENSE` and source file headers. Redistribution and commercial use prohibited without written permission.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

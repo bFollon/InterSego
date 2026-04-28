@@ -236,14 +236,14 @@ app/src/main/java/com/github/bfollon/intersego/
 
 ### Adding a New Service
 1. Create service class in `services/` package
-2. Add GPL-v3 license header
+2. Add source-available license header (see existing files for format)
 3. Use `DebugConfig` for logging
 4. Initialize in `MainActivity.onCreate()` if needed
 
 ### Adding a New Data Model
 1. Create data class in `data/` package
 2. Add `@Serializable` annotation (Kotlin Serialization)
-3. Add GPL-v3 license header
+3. Add source-available license header (see existing files for format)
 
 ### Development Best Practices
 

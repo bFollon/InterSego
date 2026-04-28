@@ -1,18 +1,10 @@
 /*
- * Copyright (C) 2025  Bruno Follon (@bFollon)
+ * InterSego - Bus Timetable App for Segovia
+ * Copyright (C) 2025 Bruno Follon (@bFollon)
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * Source available for transparency and audit purposes only.
+ * Redistribution and commercial use are prohibited without explicit written permission.
+ * Inquiries: bfollon.dev@icloud.com
  */
 
 import SwiftUI
@@ -119,7 +111,7 @@ struct AboutView: View {
                             .font(.headline)
                             .foregroundColor(.primary)
 
-                        Text("El proyecto es de código abierto (GPL-v3) y está disponible en GitHub:")
+                        Text("El código fuente está disponible en GitHub para consulta y auditoría:")
                             .font(.body)
                             .foregroundColor(.secondary)
 
