@@ -75,11 +75,17 @@ fun AboutScreen(
     val versionName = packageInfo.versionName ?: "Unknown"
     val versionCode = packageInfo.longVersionCode
     val (showBugReportSheet, setShowBugReportSheet) = remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (showBugReportSheet) {
         BugReportSheet(
-            onDismiss = { setShowBugReportSheet(false) }
+            onDismiss = { setShowBugReportSheet(false) },
+            onFallbackToEmail = { description ->
+                setShowBugReportSheet(false)
+                openEmail(context, makeMailtoUrl(
+                    subject = "Reporte de error - InterSego",
+                    body = description
+                ))
+            }
         )
     }
 

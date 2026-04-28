@@ -10,8 +10,11 @@
 package com.github.bfollon.intersego.services
 
 import android.content.Context
+import com.github.bfollon.intersego.BuildConfig
 import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Service for error reporting via Bugsink (Sentry-compatible).
@@ -35,7 +38,7 @@ object ErrorReportingService {
         SentryAndroid.init(context) { options ->
             options.dsn = Secrets.sentryDsn
             options.isDebug = false
-            options.environment = if (isDebugBuild()) "debug" else "production"
+            options.environment = if (BuildConfig.DEBUG) "debug" else "production"
         }
 
         DebugConfig.debugPrint("ErrorReportingService: Sentry initialized")
@@ -66,37 +69,36 @@ object ErrorReportingService {
 
     /**
      * Submit user feedback (bug report) to BugSink.
-     * Safe to call even if Sentry is not initialized.
+     * Returns false if the user has not opted into error reporting — caller should fall back to email.
      */
-    fun submitFeedback(name: String, email: String, message: String) {
-        val userName = name.ifBlank { "Anonymous" }
-        val userEmail = email.ifBlank { "not provided" }
-
-        val messageHash = message.hashCode().toString()
-
-        Sentry.configureScope { scope ->
-            scope.fingerprint = listOf("user-bug-report", messageHash)
+    suspend fun submitFeedback(name: String, email: String, message: String): Boolean {
+        if (!MonitoringPreferencesService.hasUserOptedIn()) {
+            DebugConfig.debugPrint("ErrorReportingService: submitFeedback skipped (user has not opted in)")
+            return false
         }
 
-        val fullMessage = buildString {
-            appendLine("=== User Bug Report ===")
-            appendLine("Name: $userName")
-            appendLine("Email: $userEmail")
-            appendLine()
-            appendLine("Message:")
-            appendLine(message)
-        }
+        return withContext(Dispatchers.IO) {
+            val userName = name.ifBlank { "Anonymous" }
+            val userEmail = email.ifBlank { "not provided" }
 
-        Sentry.captureMessage(fullMessage, io.sentry.SentryLevel.WARNING)
-        DebugConfig.debugPrint("ErrorReportingService: submitted user feedback")
-    }
+            val messageHash = message.hashCode().toString()
 
-    private fun isDebugBuild(): Boolean {
-        return try {
-            val buildConfigClass = Class.forName("com.github.bfollon.intersego.BuildConfig")
-            buildConfigClass.getField("DEBUG").getBoolean(null)
-        } catch (_: Exception) {
-            false
+            Sentry.configureScope { scope ->
+                scope.fingerprint = listOf("user-bug-report", messageHash)
+            }
+
+            val fullMessage = buildString {
+                appendLine("=== User Bug Report ===")
+                appendLine("Name: $userName")
+                appendLine("Email: $userEmail")
+                appendLine()
+                appendLine("Message:")
+                appendLine(message)
+            }
+
+            Sentry.captureMessage(fullMessage, io.sentry.SentryLevel.WARNING)
+            DebugConfig.debugPrint("ErrorReportingService: submitted user feedback")
+            true
         }
     }
 }

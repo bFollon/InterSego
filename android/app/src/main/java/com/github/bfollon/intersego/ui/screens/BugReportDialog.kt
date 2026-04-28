@@ -18,14 +18,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.services.ErrorReportingService
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BugReportSheet(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onFallbackToEmail: (description: String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -35,6 +38,7 @@ fun BugReportSheet(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
@@ -149,13 +153,19 @@ fun BugReportSheet(
                         }
                         errorMessage = null
                         isSubmitting = true
-                        ErrorReportingService.submitFeedback(
-                            name = name,
-                            email = email,
-                            message = description
-                        )
-                        submitted = true
-                        isSubmitting = false
+                        scope.launch {
+                            val success = ErrorReportingService.submitFeedback(
+                                name = name,
+                                email = email,
+                                message = description
+                            )
+                            isSubmitting = false
+                            if (success) {
+                                submitted = true
+                            } else {
+                                onFallbackToEmail(description)
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isSubmitting

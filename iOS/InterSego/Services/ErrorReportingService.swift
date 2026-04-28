@@ -62,8 +62,13 @@ class ErrorReportingService {
     }
 
     /// Submit user feedback (bug report) to BugSink.
-    /// Safe to call even if Sentry is not initialized.
-    func submitFeedback(name: String, email: String, message: String) {
+    /// Returns false if the user has not opted into error reporting — caller should fall back to email.
+    func submitFeedback(name: String, email: String, message: String) async -> Bool {
+        guard MonitoringPreferencesService.shared.hasUserOptedIn() else {
+            DebugConfig.debugPrint("ErrorReportingService: submitFeedback skipped (user has not opted in)")
+            return false
+        }
+
         let userName = name.isEmpty ? "Anonymous" : name
         let userEmail = email.isEmpty ? "not provided" : email
 
@@ -82,5 +87,6 @@ class ErrorReportingService {
         SentrySDK.capture(event: event)
 
         DebugConfig.debugPrint("ErrorReportingService: submitted user feedback")
+        return true
     }
 }
