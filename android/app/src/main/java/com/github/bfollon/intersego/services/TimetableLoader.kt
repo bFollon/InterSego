@@ -19,6 +19,7 @@ package com.github.bfollon.intersego.services
 
 import android.content.Context
 import com.github.bfollon.intersego.data.AlternateLocation
+import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
@@ -27,6 +28,7 @@ import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteTab
 import com.github.bfollon.intersego.data.RouteVariant
 import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.data.RouteType
 import com.github.bfollon.intersego.data.RouteViewStop
 import com.github.bfollon.intersego.data.SeasonalAvailability
 import com.github.bfollon.intersego.data.SwapAction
@@ -57,10 +59,22 @@ class TimetableLoader(private val context: Context) {
     private data class TimetableFile(
         val routeId: String,
         val version: String,
+        val route: JsonRoute,
         val stops: List<JsonStop>,
         val variants: List<JsonVariant>,
         val routeDisplay: JsonRouteDisplay,
         val timetables: List<JsonTimetableSection>
+    )
+
+    @Serializable
+    private data class JsonRoute(
+        val number: String,
+        val name: String,
+        val origin: String,
+        val destination: String,
+        val routeType: String,
+        val isCircular: Boolean,
+        val displayOrder: Int
     )
 
     @Serializable
@@ -209,6 +223,50 @@ class TimetableLoader(private val context: Context) {
     fun getVersion(routeId: String): String = loadFile(routeId).version
 
     fun loadBusStopsById(routeId: String): Map<String, BusStop> = stopsIndex(loadFile(routeId))
+
+    fun loadRoute(routeId: String): BusRoute {
+        val r = loadFile(routeId).route
+        val type = if (r.routeType == "INTERURBAN") RouteType.INTERURBAN else RouteType.URBAN
+        return BusRoute(
+            id = routeId.uppercase(),
+            number = r.number,
+            name = r.name,
+            origin = r.origin,
+            destination = r.destination,
+            pdfURL = "",
+            routeType = type,
+            isCircular = r.isCircular
+        )
+    }
+
+    /** Scans all timetable assets and returns routes sorted by displayOrder. */
+    fun loadAllRoutes(): List<BusRoute> {
+        val files = context.assets.list("timetables") ?: return emptyList()
+        return files
+            .filter { it.endsWith(".json") }
+            .mapNotNull { filename ->
+                val routeId = filename.removeSuffix(".json").uppercase()
+                runCatching { loadFile(routeId) }.getOrNull()?.let { file ->
+                    val r = file.route
+                    val type = if (r.routeType == "INTERURBAN") RouteType.INTERURBAN else RouteType.URBAN
+                    Pair(
+                        BusRoute(
+                            id = routeId,
+                            number = r.number,
+                            name = r.name,
+                            origin = r.origin,
+                            destination = r.destination,
+                            pdfURL = "",
+                            routeType = type,
+                            isCircular = r.isCircular
+                        ),
+                        r.displayOrder
+                    )
+                }
+            }
+            .sortedBy { it.second }
+            .map { it.first }
+    }
 
     // MARK: - Route structure helpers
 

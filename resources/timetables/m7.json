@@ -3,6 +3,16 @@
   "version": "1.0",
   "source": "Linecar M7 PDF, 2026-03-25",
 
+  "route": {
+    "number": "M7",
+    "name": "Tabanera - Palazuelos",
+    "origin": "Segovia",
+    "destination": "Torrecaballeros",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 7
+  },
+
   "stops": [
     { "id": "estacion-autobuses",           "name": "Estación de Autobuses",      "lat": 40.944768, "lon": -4.121823 },
     { "id": "estacion-autobuses-circ-ret",  "name": "Estación de Autobuses",      "lat": 40.944768, "lon": -4.121823 },

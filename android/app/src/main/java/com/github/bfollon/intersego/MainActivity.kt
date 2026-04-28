@@ -92,10 +92,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.DayType
-import com.github.bfollon.intersego.data.RouteType
 import com.github.bfollon.intersego.services.CoordinateCache
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.NetworkMonitor
+import com.github.bfollon.intersego.services.TimetableLoader
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -195,85 +195,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             .build()
     }
 
-    fun getKnownRoutes(): List<BusRoute> {
-        return listOf(
-            BusRoute(
-                id = "M1",
-                number = "M1",
-                name = "Garcillán - Valverde del Manjano",
-                origin = "Segovia",
-                destination = "Área Metropolitana",
-                pdfURL = "",
-                routeType = RouteType.URBAN,
-                isCircular = true
-            ),
-            BusRoute(
-                id = "M2",
-                number = "M2",
-                name = "Hontanares - Valseca",
-                origin = "Segovia",
-                destination = "Valseca",
-                pdfURL = "",
-                routeType = RouteType.URBAN,
-                isCircular = true
-            ),
-            BusRoute(
-                id = "M3",
-                number = "M3",
-                name = "La Granja - Navacerrada",
-                origin = "Segovia",
-                destination = "Navacerrada",
-                pdfURL = "",
-                routeType = RouteType.URBAN
-            ),
-            BusRoute(
-                id = "M4",
-                number = "M4",
-                name = "La Lastrilla - El Sotillo",
-                origin = "La Lastrilla",
-                destination = "El Sotillo",
-                pdfURL = "",
-                routeType = RouteType.URBAN,
-                isCircular = true
-            ),
-            BusRoute(
-                id = "M5",
-                number = "M5",
-                name = "Espirdo - Sto. Domingo de Pirón",
-                origin = "Segovia",
-                destination = "Sto. Domingo de Pirón",
-                pdfURL = "",
-                routeType = RouteType.URBAN
-            ),
-            BusRoute(
-                id = "M6",
-                number = "M6",
-                name = "San Cristóbal - Torrecaballeros",
-                origin = "Segovia",
-                destination = "Torrecaballeros",
-                pdfURL = "",
-                routeType = RouteType.URBAN
-            ),
-            BusRoute(
-                id = "M7",
-                number = "M7",
-                name = "Tabanera - Palazuelos",
-                origin = "Segovia",
-                destination = "Torrecaballeros",
-                pdfURL = "",
-                routeType = RouteType.URBAN
-            ),
-            BusRoute(
-                id = "M8",
-                number = "M8",
-                name = "La Granja - Valsaín",
-                origin = "Segovia",
-                destination = "Valsaín",
-                pdfURL = "",
-                routeType = RouteType.URBAN
-            )
-        )
-    }
+    fun getKnownRoutes(): List<BusRoute> = TimetableLoader(this).loadAllRoutes()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

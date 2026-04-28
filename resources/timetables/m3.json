@@ -3,6 +3,16 @@
   "version": "1.2",
   "source": "Linecar M3 PDF, 2026-03-23",
 
+  "route": {
+    "number": "M3",
+    "name": "La Granja - Navacerrada",
+    "origin": "Segovia",
+    "destination": "Navacerrada",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 3
+  },
+
   "stops": [
     { "id": "estacion-autobuses",  "name": "Estación de Autobuses",     "lat": 40.944768, "lon": -4.121823 },
     { "id": "iglesia-sto-tomas",   "name": "Iglesia Santo Tomás",        "lat": 40.941935, "lon": -4.118070 },

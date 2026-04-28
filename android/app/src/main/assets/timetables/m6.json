@@ -3,6 +3,16 @@
   "version": "1.1",
   "source": "Linecar M6 PDF (static data, fully hardcoded — live PDF parsing abandoned in favour of JSON)",
 
+  "route": {
+    "number": "M6",
+    "name": "San Cristóbal - Torrecaballeros",
+    "origin": "Segovia",
+    "destination": "Torrecaballeros",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 6
+  },
+
   "stops": [
     { "id": "estacion-autobuses",  "name": "Estación de Autobuses",              "lat": 40.944768, "lon": -4.121823 },
     { "id": "andres-laguna",       "name": "Andrés Laguna",                       "lat": 40.939106, "lon": -4.115582 },

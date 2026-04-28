@@ -3,6 +3,16 @@
   "version": "1.4",
   "source": "Linecar M5 PDF, 2026-03-25",
 
+  "route": {
+    "number": "M5",
+    "name": "Espirdo - Sto. Domingo de Pirón",
+    "origin": "Segovia",
+    "destination": "Sto. Domingo de Pirón",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 5
+  },
+
   "stops": [
     {
       "id": "azoguejo",

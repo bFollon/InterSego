@@ -3,6 +3,16 @@
   "version": "1.0",
   "source": "Linecar M4 PDF, 2026-04-15",
 
+  "route": {
+    "number": "M4",
+    "name": "La Lastrilla - El Sotillo",
+    "origin": "La Lastrilla",
+    "destination": "El Sotillo",
+    "routeType": "URBAN",
+    "isCircular": true,
+    "displayOrder": 4
+  },
+
   "stops": [
     { "id": "azoguejo",                 "name": "Azoguejo",                          "lat": 40.948502, "lon": -4.115979 },
     { "id": "azoguejo-endStop",         "name": "Azoguejo",                          "lat": 40.948502, "lon": -4.115979 },

@@ -33,10 +33,21 @@ struct TimetableLoader {
     private struct TimetableFile: Decodable {
         let routeId: String
         let version: String
+        let route: JsonRoute
         let stops: [JsonStop]
         let variants: [JsonVariant]
         let routeDisplay: JsonRouteDisplay
         let timetables: [JsonTimetableSection]
+    }
+
+    private struct JsonRoute: Decodable {
+        let number: String
+        let name: String
+        let origin: String
+        let destination: String
+        let routeType: String
+        let isCircular: Bool
+        let displayOrder: Int
     }
 
     private struct JsonStop: Decodable {
@@ -222,6 +233,49 @@ struct TimetableLoader {
     func loadBusStopsById(_ routeId: String) throws -> [String: BusStop] {
         let file = try loadFile(routeId)
         return stopsIndex(file)
+    }
+
+    func loadRoute(_ routeId: String) throws -> BusRoute {
+        let file = try loadFile(routeId)
+        let r = file.route
+        let type: RouteType = r.routeType == "INTERURBAN" ? .interurban : .urban
+        return BusRoute(
+            id: routeId.uppercased(),
+            number: r.number,
+            name: r.name,
+            origin: r.origin,
+            destination: r.destination,
+            pdfURL: "",
+            routeType: type,
+            isCircular: r.isCircular
+        )
+    }
+
+    /// Scans all timetable JSON files in the bundle and returns routes sorted by displayOrder.
+    func loadAllRoutes() -> [BusRoute] {
+        guard let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Timetables") else {
+            return []
+        }
+        return urls
+            .compactMap { url -> (BusRoute, Int)? in
+                let routeId = url.deletingPathExtension().lastPathComponent.uppercased()
+                guard let file = try? loadFile(routeId) else { return nil }
+                let r = file.route
+                let type: RouteType = r.routeType == "INTERURBAN" ? .interurban : .urban
+                let route = BusRoute(
+                    id: routeId,
+                    number: r.number,
+                    name: r.name,
+                    origin: r.origin,
+                    destination: r.destination,
+                    pdfURL: "",
+                    routeType: type,
+                    isCircular: r.isCircular
+                )
+                return (route, r.displayOrder)
+            }
+            .sorted { $0.1 < $1.1 }
+            .map { $0.0 }
     }
 
     // MARK: - Route structure helpers

@@ -3,6 +3,16 @@
   "version": "1.0",
   "source": "Linecar M1 PDF screenshot, 2026-03-18",
 
+  "route": {
+    "number": "M1",
+    "name": "Garcillán - Valverde del Majano",
+    "origin": "Segovia",
+    "destination": "Área Metropolitana",
+    "routeType": "URBAN",
+    "isCircular": true,
+    "displayOrder": 1
+  },
+
   "stops": [
     { "id": "estacion-autobuses",           "name": "Estación de Autobuses",  "lat": 40.944768, "lon": -4.121823 },
     { "id": "estacion-autobuses-circ-ret",  "name": "Estación de Autobuses",  "lat": 40.944768, "lon": -4.121823 },

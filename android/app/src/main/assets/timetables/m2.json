@@ -3,6 +3,16 @@
   "version": "1.2",
   "source": "Linecar M2 PDF, 2026-03-20",
 
+  "route": {
+    "number": "M2",
+    "name": "Hontanares - Valseca",
+    "origin": "Segovia",
+    "destination": "Valseca",
+    "routeType": "URBAN",
+    "isCircular": true,
+    "displayOrder": 2
+  },
+
   "stops": [
     { "id": "estacion-autobuses", "name": "Estación de Autobuses", "lat": 40.944768, "lon": -4.121823 },
     { "id": "casino-union",       "name": "Casino",                 "lat": 40.965154, "lon": -4.209251 },
