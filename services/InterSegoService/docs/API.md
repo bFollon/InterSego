@@ -261,8 +261,10 @@ As an alternative to the HTTP endpoint, send `SIGHUP` to the server process to t
 
 ```bash
 # With pm2
-pm2 send intersego-server SIGHUP
+pm2 sendSignal SIGHUP intersego-server
 
-# Directly
+# Directly (use pm2 pid to find the PID)
+kill -HUP $(pm2 pid intersego-server)
+# or
 kill -HUP <pid>
 ```

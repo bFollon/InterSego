@@ -30,7 +30,7 @@ app.register(boardingsRoutes);
 app.register(timetablesRoutes);
 
 // Re-read timetable files from disk without restarting the process.
-// Usage: kill -HUP <pid>  or  pm2 send intersego-server SIGHUP
+// Usage: kill -HUP <pid>  or  pm2 sendSignal SIGHUP intersego-server
 process.on('SIGHUP', () => {
   reloadTimetables();
 });
