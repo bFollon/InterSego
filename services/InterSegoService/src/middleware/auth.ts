@@ -16,6 +16,12 @@
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
+function checkBearer(request: FastifyRequest, expected: string | undefined): boolean {
+  const auth = request.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) return false;
+  return auth.slice(7) === expected;
+}
+
 /**
  * Fastify preHandler that enforces Bearer token authentication.
  *
@@ -26,17 +32,23 @@ export async function requireApiKey(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const auth = request.headers.authorization;
-
-  if (!auth?.startsWith('Bearer ')) {
+  if (!checkBearer(request, process.env.API_KEY)) {
     reply.status(401).send({ error: 'Unauthorized' });
-    return;
   }
+}
 
-  const token = auth.slice(7);
-
-  if (token !== process.env.API_KEY) {
+/**
+ * Fastify preHandler for admin-only operations (e.g. timetable reload).
+ *
+ * Uses a separate RELOAD_KEY that never leaves the server — not bundled into
+ * app binaries — so operator-level actions are not accessible to app users
+ * even if the app's API_KEY is extracted from the binary.
+ */
+export async function requireReloadKey(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<void> {
+  if (!checkBearer(request, process.env.RELOAD_KEY)) {
     reply.status(401).send({ error: 'Unauthorized' });
-    return;
   }
 }

@@ -78,7 +78,8 @@ server/
 │   ├── middleware/
 │   │   └── auth.ts           # Bearer token enforcement
 │   └── routes/
-│       └── boardings.ts      # POST /boardings, GET /boardings
+│       ├── boardings.ts      # POST /boardings, GET /boardings
+│       └── timetables.ts     # GET /api/timetables, GET /api/timetables/:routeId, POST /api/timetables/reload
 ├── data/
 │   └── boardings.json        # Runtime persistence (gitignored)
 ├── docs/

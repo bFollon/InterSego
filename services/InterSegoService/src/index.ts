@@ -18,6 +18,7 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import { initDb } from './db/index.js';
 import { boardingsRoutes } from './routes/boardings.js';
+import { reloadTimetables, timetablesRoutes } from './routes/timetables.js';
 
 const app = Fastify({ logger: true });
 
@@ -26,10 +27,22 @@ app.get('/health', async (_request, reply) => {
 });
 
 app.register(boardingsRoutes);
+app.register(timetablesRoutes);
+
+// Re-read timetable files from disk without restarting the process.
+// Usage: kill -HUP <pid>  or  pm2 send intersego-server SIGHUP
+process.on('SIGHUP', () => {
+  reloadTimetables();
+});
 
 async function start(): Promise<void> {
   if (!process.env.API_KEY) {
     console.error('Fatal: API_KEY environment variable is not set. Refusing to start.');
+    process.exit(1);
+  }
+
+  if (!process.env.RELOAD_KEY) {
+    console.error('Fatal: RELOAD_KEY environment variable is not set. Refusing to start.');
     process.exit(1);
   }
 
