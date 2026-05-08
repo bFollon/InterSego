@@ -74,6 +74,7 @@ class TimetableLoader(private val context: Context) {
     private data class JsonStop(
         val id: String,
         val name: String,
+        val area: String? = null,
         val lat: Double,
         val lon: Double,
         val alternates: List<JsonAlternate> = emptyList()
@@ -274,6 +275,7 @@ class TimetableLoader(private val context: Context) {
     private fun buildBusStop(jsonStop: JsonStop): BusStop = BusStop(
         id = jsonStop.id,
         name = jsonStop.name,
+        area = jsonStop.area,
         coordinates = "${jsonStop.lat}, ${jsonStop.lon}",
         alternates = jsonStop.alternates.map {
             AlternateLocation(id = it.id, name = it.name, coordinates = "${it.lat}, ${it.lon}")

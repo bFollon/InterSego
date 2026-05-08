@@ -2,7 +2,6 @@
   "routeId": "M3",
   "version": "1.2",
   "source": "Linecar M3 PDF, 2026-03-23",
-
   "route": {
     "number": "M3",
     "name": "La Granja - Navacerrada",
@@ -13,29 +12,101 @@
     "displayOrder": 3,
     "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf"
   },
-
   "stops": [
-    { "id": "estacion-autobuses",  "name": "Estación de Autobuses",     "lat": 40.944768, "lon": -4.121823 },
-    { "id": "iglesia-sto-tomas",   "name": "Iglesia Santo Tomás",        "lat": 40.941935, "lon": -4.118070 },
-    { "id": "frente-bar-norte",    "name": "Frente Bar Norte",           "lat": 40.937206, "lon": -4.113999 },
-    { "id": "plaza-de-toros",      "name": "Plaza de Toros",             "lat": 40.942093, "lon": -4.107603 },
-    { "id": "urb-carrascalejo",    "name": "Urb. Carrascalejo",          "lat": 40.922847, "lon": -4.078270 },
-    { "id": "parque-robledo",      "name": "Parque Robledo",             "lat": 40.910111, "lon": -4.058750 },
-    { "id": "la-granja",           "name": "La Granja (Pta de Segovia)", "lat": 40.901389, "lon": -4.003333 },
-    { "id": "valsain-pradera",     "name": "Valsain (La Pradera)",       "lat": 40.877500, "lon": -4.019444 },
-    { "id": "boca-del-asno",       "name": "Boca del Asno",              "lat": 40.844128, "lon": -4.025668 },
-    { "id": "puente-mosquitos",    "name": "Puente de los Mosquitos",    "lat": 40.823325, "lon": -4.017340 },
-    { "id": "navacerrada",         "name": "Navacerrada",                "lat": 40.780833, "lon": -4.008056 }
+    {
+      "id": "estacion-autobuses",
+      "name": "Estación de Autobuses",
+      "area": "Segovia capital",
+      "lat": 40.944768,
+      "lon": -4.121823
+    },
+    {
+      "id": "iglesia-sto-tomas",
+      "name": "Iglesia Santo Tomás",
+      "area": "Segovia capital",
+      "lat": 40.941935,
+      "lon": -4.11807
+    },
+    {
+      "id": "frente-bar-norte",
+      "name": "Frente Bar Norte",
+      "area": "Segovia capital",
+      "lat": 40.937206,
+      "lon": -4.113999
+    },
+    {
+      "id": "plaza-de-toros",
+      "name": "Plaza de Toros",
+      "area": "Segovia capital",
+      "lat": 40.942093,
+      "lon": -4.107603
+    },
+    {
+      "id": "urb-carrascalejo",
+      "name": "Urb. Carrascalejo",
+      "area": "Carrascalejo",
+      "lat": 40.922847,
+      "lon": -4.07827
+    },
+    {
+      "id": "parque-robledo",
+      "name": "Parque Robledo",
+      "area": "Robledo",
+      "lat": 40.910111,
+      "lon": -4.05875
+    },
+    {
+      "id": "la-granja",
+      "name": "La Granja (Pta de Segovia)",
+      "area": "La Granja",
+      "lat": 40.901389,
+      "lon": -4.003333
+    },
+    {
+      "id": "valsain-pradera",
+      "name": "Valsain (La Pradera)",
+      "area": "Valsaín",
+      "lat": 40.8775,
+      "lon": -4.019444
+    },
+    {
+      "id": "boca-del-asno",
+      "name": "Boca del Asno",
+      "area": "Valsaín",
+      "lat": 40.844128,
+      "lon": -4.025668
+    },
+    {
+      "id": "puente-mosquitos",
+      "name": "Puente de los Mosquitos",
+      "area": "Navacerrada",
+      "lat": 40.823325,
+      "lon": -4.01734
+    },
+    {
+      "id": "navacerrada",
+      "name": "Navacerrada",
+      "area": "Navacerrada",
+      "lat": 40.780833,
+      "lon": -4.008056
+    }
   ],
-
   "variants": [
     {
       "id": "regular",
       "label": "Segovia → Navacerrada",
       "stopSequence": [
-        "estacion-autobuses", "iglesia-sto-tomas", "frente-bar-norte", "plaza-de-toros",
-        "urb-carrascalejo", "parque-robledo", "la-granja", "valsain-pradera",
-        "boca-del-asno", "puente-mosquitos", "navacerrada"
+        "estacion-autobuses",
+        "iglesia-sto-tomas",
+        "frente-bar-norte",
+        "plaza-de-toros",
+        "urb-carrascalejo",
+        "parque-robledo",
+        "la-granja",
+        "valsain-pradera",
+        "boca-del-asno",
+        "puente-mosquitos",
+        "navacerrada"
       ],
       "swapTargetId": "reverse"
     },
@@ -43,14 +114,21 @@
       "id": "reverse",
       "label": "Navacerrada → Segovia",
       "stopSequence": [
-        "navacerrada", "puente-mosquitos", "boca-del-asno", "valsain-pradera",
-        "la-granja", "parque-robledo", "urb-carrascalejo",
-        "plaza-de-toros", "frente-bar-norte", "iglesia-sto-tomas", "estacion-autobuses"
+        "navacerrada",
+        "puente-mosquitos",
+        "boca-del-asno",
+        "valsain-pradera",
+        "la-granja",
+        "parque-robledo",
+        "urb-carrascalejo",
+        "plaza-de-toros",
+        "frente-bar-norte",
+        "iglesia-sto-tomas",
+        "estacion-autobuses"
       ],
       "swapTargetId": "regular"
     }
   ],
-
   "routeDisplay": {
     "type": "swap",
     "entries": [
@@ -62,22 +140,77 @@
       }
     ]
   },
-
   "timetables": [
     {
       "variantId": "regular",
       "dayType": "saturday",
       "trips": [
-        { "departures": [830,  832,  834,  836,  840,  846,  850,  854,  859,  909,  920]  },
-        { "departures": [1600, 1602, 1604, 1606, 1610, 1616, 1620, 1624, 1629, 1639, 1650] }
+        {
+          "departures": [
+            830,
+            832,
+            834,
+            836,
+            840,
+            846,
+            850,
+            854,
+            859,
+            909,
+            920
+          ]
+        },
+        {
+          "departures": [
+            1600,
+            1602,
+            1604,
+            1606,
+            1610,
+            1616,
+            1620,
+            1624,
+            1629,
+            1639,
+            1650
+          ]
+        }
       ]
     },
     {
       "variantId": "reverse",
       "dayType": "saturday",
       "trips": [
-        { "departures": [930,  942,  952,  956,  959,  1003, 1009, 1014, 1016, 1018, 1020] },
-        { "departures": [1700, 1712, 1722, 1726, 1729, 1733, 1739, 1744, 1746, 1748, 1750] }
+        {
+          "departures": [
+            930,
+            942,
+            952,
+            956,
+            959,
+            1003,
+            1009,
+            1014,
+            1016,
+            1018,
+            1020
+          ]
+        },
+        {
+          "departures": [
+            1700,
+            1712,
+            1722,
+            1726,
+            1729,
+            1733,
+            1739,
+            1744,
+            1746,
+            1748,
+            1750
+          ]
+        }
       ]
     }
   ]

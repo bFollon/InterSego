@@ -48,7 +48,10 @@ object TimetableCacheService {
 
     private val pendingUpdates = Collections.synchronizedSet(mutableSetOf<String>())
 
-    private val routes = listOf("m1", "m2", "m3", "m4", "m5", "m6", "m7", "m7-ave", "m8")
+    private fun bundleRouteIds(context: Context): List<String> =
+        (context.assets.list("timetables") ?: emptyArray())
+            .filter { it.endsWith(".json") }
+            .map { it.removeSuffix(".json") }
 
     fun cacheFile(context: Context, routeId: String): File =
         File(context.filesDir, "timetables/${routeId.lowercase()}.json")
@@ -106,8 +109,9 @@ object TimetableCacheService {
      * Safe to call on any dispatcher — internally runs on [Dispatchers.IO].
      */
     suspend fun fetchAllRoutes(context: Context) = coroutineScope {
-        DebugConfig.debugPrint("$TAG: Starting fetch for ${routes.size} routes")
-        routes.map { routeId -> async { fetchRoute(context, routeId) } }.awaitAll()
+        val routeIds = bundleRouteIds(context)
+        DebugConfig.debugPrint("$TAG: Starting fetch for ${routeIds.size} routes")
+        routeIds.map { routeId -> async { fetchRoute(context, routeId) } }.awaitAll()
         DebugConfig.debugPrint("$TAG: Fetch complete, ${pendingUpdates.size} route(s) updated")
     }
 }

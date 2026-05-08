@@ -46,6 +46,7 @@ struct TimetableLoader {
     private struct JsonStop: Decodable {
         let id: String
         let name: String
+        let area: String?
         let lat: Double
         let lon: Double
         let alternates: [JsonAlternate]?
@@ -287,6 +288,7 @@ struct TimetableLoader {
         BusStop(
             id: jsonStop.id,
             name: jsonStop.name,
+            area: jsonStop.area,
             coordinates: "\(jsonStop.lat), \(jsonStop.lon)",
             alternates: (jsonStop.alternates ?? []).map {
                 AlternateLocation(id: $0.id, name: $0.name, coordinates: "\($0.lat), \($0.lon)")

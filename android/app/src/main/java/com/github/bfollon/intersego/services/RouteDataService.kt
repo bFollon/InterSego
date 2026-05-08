@@ -26,14 +26,16 @@ import kotlinx.coroutines.withContext
  */
 class RouteDataService(private val context: Context) {
 
-    private val supportedRoutes = listOf("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M7-AVE", "M8")
+    private val loadedRouteIds: Set<String> by lazy {
+        TimetableLoader(context).loadAllRoutes().map { it.id }.toSet()
+    }
 
     private val stopToRoutes: Map<String, List<String>> by lazy { buildStopToRoutes() }
 
     private fun buildStopToRoutes(): Map<String, List<String>> {
         val index = mutableMapOf<String, MutableList<String>>()
         val loader = TimetableLoader(context)
-        supportedRoutes.forEach { routeId ->
+        loadedRouteIds.forEach { routeId ->
             try {
                 loader.loadRoutesForId(routeId).flatten().forEach { stop ->
                     index.getOrPut(stop.id) { mutableListOf() }.let {
@@ -44,7 +46,7 @@ class RouteDataService(private val context: Context) {
                 DebugConfig.debugError("RouteDataService: Failed to index stops for $routeId", e)
             }
         }
-        DebugConfig.debugPrint("RouteDataService: Initialized with ${supportedRoutes.size} routes, ${index.size} stops indexed")
+        DebugConfig.debugPrint("RouteDataService: Initialized with ${loadedRouteIds.size} routes, ${index.size} stops indexed")
         return index
     }
 
@@ -53,9 +55,9 @@ class RouteDataService(private val context: Context) {
         TimetableLoader(context).load(routeId)
     }
 
-    fun hasParserFor(routeId: String): Boolean = routeId in supportedRoutes
+    fun hasParserFor(routeId: String): Boolean = routeId in loadedRouteIds
 
-    fun getSupportedRoutes(): List<String> = supportedRoutes
+    fun getSupportedRoutes(): List<String> = loadedRouteIds.toList()
 
     fun getRoutesForStop(stopId: String): List<String> = stopToRoutes[stopId]?.sorted() ?: emptyList()
 

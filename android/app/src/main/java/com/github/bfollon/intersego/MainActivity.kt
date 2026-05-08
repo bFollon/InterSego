@@ -960,7 +960,12 @@ fun AppNavigation() {
             }
 
             val views = remember(routeId) {
-                routeDataService.getRouteViews(routeId, todayDayType)
+                routeDataService.getRouteViews(routeId, todayDayType).ifEmpty {
+                    sequenceOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
+                        .map { routeDataService.getRouteViews(routeId, it) }
+                        .firstOrNull { it.isNotEmpty() }
+                        ?: emptyList()
+                }
             }
 
             RouteMapScreen(

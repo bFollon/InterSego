@@ -2,7 +2,6 @@
   "routeId": "M5",
   "version": "1.4",
   "source": "Linecar M5 PDF, 2026-03-25",
-
   "route": {
     "number": "M5",
     "name": "Espirdo - Sto. Domingo de Pirón",
@@ -13,32 +12,77 @@
     "displayOrder": 5,
     "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf"
   },
-
   "stops": [
     {
       "id": "azoguejo",
       "name": "Azoguejo",
+      "area": "Segovia capital",
       "lat": 40.948502,
       "lon": -4.115979,
       "alternates": [
-        { "id": "estacion-autobuses", "name": "Estación de Autobuses", "lat": 40.944768, "lon": -4.121823 }
+        {
+          "id": "estacion-autobuses",
+          "name": "Estación de Autobuses",
+          "lat": 40.944768,
+          "lon": -4.121823
+        }
       ]
     },
-    { "id": "tizneros",            "name": "Tizneros",               "lat": 40.991521, "lon": -4.055240 },
-    { "id": "espirdo",             "name": "Espirdo",                "lat": 40.996957, "lon": -4.073623 },
-    { "id": "la-higuera",          "name": "La Higuera",             "lat": 41.016117, "lon": -4.080770 },
-    { "id": "brieva",              "name": "Brieva",                 "lat": 41.035677, "lon": -4.052387 },
-    { "id": "basardilla",          "name": "Basardilla",             "lat": 41.027220, "lon": -4.025058 },
-    { "id": "sto-domingo-piron",   "name": "Sto. Domingo de Pirón",  "lat": 41.041438, "lon": -3.989562 }
+    {
+      "id": "tizneros",
+      "name": "Tizneros",
+      "area": "Tizneros",
+      "lat": 40.991521,
+      "lon": -4.05524
+    },
+    {
+      "id": "espirdo",
+      "name": "Espirdo",
+      "area": "Espirdo",
+      "lat": 40.996957,
+      "lon": -4.073623
+    },
+    {
+      "id": "la-higuera",
+      "name": "La Higuera",
+      "area": "La Higuera",
+      "lat": 41.016117,
+      "lon": -4.08077
+    },
+    {
+      "id": "brieva",
+      "name": "Brieva",
+      "area": "Brieva",
+      "lat": 41.035677,
+      "lon": -4.052387
+    },
+    {
+      "id": "basardilla",
+      "name": "Basardilla",
+      "area": "Basardilla",
+      "lat": 41.02722,
+      "lon": -4.025058
+    },
+    {
+      "id": "sto-domingo-piron",
+      "name": "Sto. Domingo de Pirón",
+      "area": "Sto. Domingo de Pirón",
+      "lat": 41.041438,
+      "lon": -3.989562
+    }
   ],
-
   "variants": [
     {
       "id": "regular",
       "label": "Azoguejo → Sto. Domingo de Pirón",
       "stopSequence": [
-        "azoguejo", "tizneros", "espirdo", "la-higuera",
-        "brieva", "basardilla", "sto-domingo-piron"
+        "azoguejo",
+        "tizneros",
+        "espirdo",
+        "la-higuera",
+        "brieva",
+        "basardilla",
+        "sto-domingo-piron"
       ],
       "swapTargetId": "reverse"
     },
@@ -46,13 +90,17 @@
       "id": "reverse",
       "label": "Sto. Domingo de Pirón → Azoguejo",
       "stopSequence": [
-        "sto-domingo-piron", "basardilla", "brieva", "la-higuera",
-        "espirdo", "tizneros", "azoguejo"
+        "sto-domingo-piron",
+        "basardilla",
+        "brieva",
+        "la-higuera",
+        "espirdo",
+        "tizneros",
+        "azoguejo"
       ],
       "swapTargetId": "regular"
     }
   ],
-
   "routeDisplay": {
     "type": "swap",
     "entries": [
@@ -70,38 +118,123 @@
       }
     ]
   },
-
   "timetables": [
     {
       "variantId": "regular",
       "dayType": "weekday",
       "trips": [
-        { "departures": [1345, 1400, 1410, 1415, 1425, 1430, 1435] },
-        { "departures": [1515, 1530, 1540, 1545, null, null, null]  },
-        { "departures": [2030, 2045, 2055, 2100, null, null, null]  }
+        {
+          "departures": [
+            1345,
+            1400,
+            1410,
+            1415,
+            1425,
+            1430,
+            1435
+          ]
+        },
+        {
+          "departures": [
+            1515,
+            1530,
+            1540,
+            1545,
+            null,
+            null,
+            null
+          ]
+        },
+        {
+          "departures": [
+            2030,
+            2045,
+            2055,
+            2100,
+            null,
+            null,
+            null
+          ]
+        }
       ]
     },
     {
       "variantId": "reverse",
       "dayType": "weekday",
       "trips": [
-        { "departures": [null, null, 725,  730,  735,  740,  750]   },
-        { "departures": [1000, 1005, 1010, 1020, 1025, 1030, 1040]  },
-        { "departures": [null, null, null, 1545, 1550, 1555, 1605]  }
+        {
+          "departures": [
+            null,
+            null,
+            725,
+            730,
+            735,
+            740,
+            750
+          ]
+        },
+        {
+          "departures": [
+            1000,
+            1005,
+            1010,
+            1020,
+            1025,
+            1030,
+            1040
+          ]
+        },
+        {
+          "departures": [
+            null,
+            null,
+            null,
+            1545,
+            1550,
+            1555,
+            1605
+          ]
+        }
       ]
     },
     {
       "variantId": "regular",
       "dayType": "saturday",
       "trips": [
-        { "departures": [{ "hhmm": 1245, "alternateId": "estacion-autobuses" }, 1300, 1305, 1310, 1320, 1325, 1330] }
+        {
+          "departures": [
+            {
+              "hhmm": 1245,
+              "alternateId": "estacion-autobuses"
+            },
+            1300,
+            1305,
+            1310,
+            1320,
+            1325,
+            1330
+          ]
+        }
       ]
     },
     {
       "variantId": "reverse",
       "dayType": "saturday",
       "trips": [
-        { "departures": [1000, 1005, 1010, 1020, 1025, 1030, { "hhmm": 1040, "alternateId": "estacion-autobuses" }] }
+        {
+          "departures": [
+            1000,
+            1005,
+            1010,
+            1020,
+            1025,
+            1030,
+            {
+              "hhmm": 1040,
+              "alternateId": "estacion-autobuses"
+            }
+          ]
+        }
       ]
     }
   ]

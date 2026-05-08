@@ -23,7 +23,10 @@ actor TimetableCacheService {
     private let session: URLSession
     private var pendingUpdates: Set<String> = []
 
-    private let routes = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m7-ave", "m8"]
+    private var bundleRouteIds: [String] {
+        guard let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Timetables") else { return [] }
+        return urls.map { $0.deletingPathExtension().lastPathComponent.lowercased() }
+    }
 
     private init() {
         let config = URLSessionConfiguration.default
@@ -108,9 +111,10 @@ actor TimetableCacheService {
 
     /// Fetches all routes in parallel. Updated routes are flagged via `hasPendingUpdate(_:)`.
     func fetchAllRoutes() async {
-        DebugConfig.debugPrint("TimetableCacheService: Starting fetch for \(routes.count) routes")
+        let routeIds = bundleRouteIds
+        DebugConfig.debugPrint("TimetableCacheService: Starting fetch for \(routeIds.count) routes")
         await withTaskGroup(of: Void.self) { group in
-            for routeId in routes {
+            for routeId in routeIds {
                 group.addTask { await self.fetchRoute(routeId) }
             }
         }
