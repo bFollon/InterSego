@@ -23,7 +23,6 @@
 		A1000001000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000C /* Assets.xcassets */; };
 		A1000001000000000000000D /* DebugConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* DebugConfig.swift */; };
 		A1000001000000000000000E /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000E /* NetworkMonitor.swift */; };
-		A100000100000000000000A1 /* PolylineLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A1 /* PolylineLoader.swift */; };
 		A10000010000000000000019 /* RouteDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000019 /* RouteDataService.swift */; };
 		A1000001000000000000001A /* TimetableService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001A /* TimetableService.swift */; };
 		A1000001000000000000001B /* BusRouteRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001B /* BusRouteRegistry.swift */; };
@@ -35,8 +34,6 @@
 		A10000010000000000000022 /* LandingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000022 /* LandingView.swift */; };
 		A10000010000000000000023 /* RouteMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000023 /* RouteMapView.swift */; };
 		A10000010000000000000030 /* RoutePolylines in Resources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000030 /* RoutePolylines */; };
-		A1000001000000000000005B /* Timetables in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005B /* Timetables */; };
-		A1000001000000000000005C /* TimetableLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005C /* TimetableLoader.swift */; };
 		A10000010000000000000032 /* ClosestStopService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000032 /* ClosestStopService.swift */; };
 		A10000010000000000000040 /* RouteGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000040 /* RouteGroup.swift */; };
 		A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000041 /* RouteSelectorEntry.swift */; };
@@ -57,13 +54,16 @@
 		A10000010000000000000054 /* DirectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000054 /* DirectionPickerView.swift */; };
 		A10000010000000000000055 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000055 /* SettingsView.swift */; };
 		A10000010000000000000056 /* GuidedModeTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000056 /* GuidedModeTutorialView.swift */; };
-		A1000001000000000000005D /* BugReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005D /* BugReportView.swift */; };
 		A10000010000000000000057 /* MonitoringPreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000057 /* MonitoringPreferencesService.swift */; };
 		A10000010000000000000058 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000058 /* AnalyticsService.swift */; };
 		A10000010000000000000059 /* ErrorReportingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000059 /* ErrorReportingService.swift */; };
 		A1000001000000000000005A /* MonitoringConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005A /* MonitoringConsentView.swift */; };
+		A1000001000000000000005B /* Timetables in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005B /* Timetables */; };
+		A1000001000000000000005C /* TimetableLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005C /* TimetableLoader.swift */; };
+		A1000001000000000000005D /* BugReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005D /* BugReportView.swift */; };
 		A10000010000000000000099 /* TimetableQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000099 /* TimetableQuery.swift */; };
 		A1000001000000000000009A /* AlternateLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000009A /* AlternateLocation.swift */; };
+		A100000100000000000000A1 /* PolylineLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A1 /* PolylineLoader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,7 +81,6 @@
 		A2000001000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000001000000000000000D /* DebugConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugConfig.swift; sourceTree = "<group>"; };
 		A2000001000000000000000E /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
-		A200000100000000000000A1 /* PolylineLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolylineLoader.swift; sourceTree = "<group>"; };
 		A20000010000000000000019 /* RouteDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteDataService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001A /* TimetableService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableService.swift; sourceTree = "<group>"; };
 		A2000001000000000000001B /* BusRouteRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusRouteRegistry.swift; sourceTree = "<group>"; };
@@ -93,9 +92,6 @@
 		A20000010000000000000022 /* LandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingView.swift; sourceTree = "<group>"; };
 		A20000010000000000000023 /* RouteMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteMapView.swift; sourceTree = "<group>"; };
 		A20000010000000000000030 /* RoutePolylines */ = {isa = PBXFileReference; lastKnownFileType = folder; path = RoutePolylines; sourceTree = "<group>"; };
-		A2000001000000000000005B /* Timetables */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Timetables; sourceTree = "<group>"; };
-		A2000001000000000000005C /* TimetableLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableLoader.swift; sourceTree = "<group>"; };
-		A2000001000000000000005D /* BugReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportView.swift; sourceTree = "<group>"; };
 		A20000010000000000000032 /* ClosestStopService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClosestStopService.swift; sourceTree = "<group>"; };
 		A20000010000000000000040 /* RouteGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteGroup.swift; sourceTree = "<group>"; };
 		A20000010000000000000041 /* RouteSelectorEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSelectorEntry.swift; sourceTree = "<group>"; };
@@ -120,8 +116,12 @@
 		A20000010000000000000058 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		A20000010000000000000059 /* ErrorReportingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorReportingService.swift; sourceTree = "<group>"; };
 		A2000001000000000000005A /* MonitoringConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringConsentView.swift; sourceTree = "<group>"; };
+		A2000001000000000000005B /* Timetables */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Timetables; sourceTree = "<group>"; };
+		A2000001000000000000005C /* TimetableLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableLoader.swift; sourceTree = "<group>"; };
+		A2000001000000000000005D /* BugReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportView.swift; sourceTree = "<group>"; };
 		A20000010000000000000099 /* TimetableQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableQuery.swift; sourceTree = "<group>"; };
 		A2000001000000000000009A /* AlternateLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlternateLocation.swift; sourceTree = "<group>"; };
+		A200000100000000000000A1 /* PolylineLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PolylineLoader.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -517,12 +517,12 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.14.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -552,12 +552,12 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.14.0;
+				MARKETING_VERSION = 2.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.github.bfollon.intersego;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
