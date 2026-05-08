@@ -1,0 +1,66 @@
+{
+  "routeId": "M7-AVE",
+  "version": "1.0",
+  "source": "Linecar M7 PDF (AVE variant)",
+
+  "route": {
+    "number": "M7-AVE",
+    "name": "M7 - AVE",
+    "origin": "Valsaín",
+    "destination": "AVE Segovia",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 8
+  },
+
+  "stops": [
+    { "id": "plaza-valsain",           "name": "Plaza",              "lat": 40.878374, "lon": -4.027028 },
+    { "id": "fronton",                 "name": "Frontón",            "lat": 40.875741, "lon": -4.021955 },
+    { "id": "la-pradera",             "name": "La Pradera",         "lat": 40.878114, "lon": -4.018356 },
+    { "id": "fabrica-cristal",        "name": "Fábrica Cristal",    "lat": 40.902789, "lon": -4.006773 },
+    { "id": "piscinas",               "name": "Piscinas",           "lat": 40.909126, "lon": -4.009200 },
+    { "id": "ptas-segovia",           "name": "Ptas. Segovia",      "lat": 40.900325, "lon": -4.009467 },
+    { "id": "palazuelos-parque-cruz", "name": "Cruz del cerro",    "lat": 40.929777,       "lon": -4.056453       },
+    { "id": "palazuelos-iglesia",     "name": "Iglesia",            "lat": 40.931069,       "lon": -4.060652       },
+    { "id": "palazuelos-ermita",      "name": "Ermita",             "lat": 40.931306,       "lon": -4.066204       },
+    { "id": "palazuelos-carrascalejo","name": "Carrascalejo",       "lat": 40.922847, "lon": -4.078270 },
+    { "id": "ave-segovia",            "name": "AVE Segovia",        "lat": 40.910594,       "lon": -4.094579       }
+  ],
+
+  "variants": [
+    {
+      "id": "outbound",
+      "label": "Valsaín → AVE Segovia",
+      "stopSequence": [
+        "plaza-valsain",
+        "fronton",
+        "la-pradera",
+        "fabrica-cristal",
+        "piscinas",
+        "ptas-segovia",
+        "palazuelos-parque-cruz",
+        "palazuelos-iglesia",
+        "palazuelos-ermita",
+        "palazuelos-carrascalejo",
+        "ave-segovia"
+      ]
+    }
+  ],
+
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      { "id": "entry-lv", "label": "Lunes a Viernes", "variantId": "outbound", "dayType": "weekday" }
+    ]
+  },
+
+  "timetables": [
+    {
+      "variantId": "outbound",
+      "dayType": "weekday",
+      "trips": [
+        { "departures": [600, 602, 605, null, null, 610, 614, 621, 622, 630, 645] }
+      ]
+    }
+  ]
+}

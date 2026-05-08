@@ -23,7 +23,7 @@ actor TimetableCacheService {
     private let session: URLSession
     private var pendingUpdates: Set<String> = []
 
-    private let routes = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8"]
+    private let routes = ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m7-ave", "m8"]
 
     private init() {
         let config = URLSessionConfiguration.default

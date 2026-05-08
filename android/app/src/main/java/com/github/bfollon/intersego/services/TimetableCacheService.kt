@@ -48,7 +48,7 @@ object TimetableCacheService {
 
     private val pendingUpdates = Collections.synchronizedSet(mutableSetOf<String>())
 
-    private val routes = listOf("m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8")
+    private val routes = listOf("m1", "m2", "m3", "m4", "m5", "m6", "m7", "m7-ave", "m8")
 
     fun cacheFile(context: Context, routeId: String): File =
         File(context.filesDir, "timetables/${routeId.lowercase()}.json")

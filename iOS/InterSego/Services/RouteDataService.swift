@@ -15,19 +15,21 @@ import Foundation
 actor RouteDataService {
     static let shared = RouteDataService()
 
-    private let supportedRoutes = ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
+    private let loadedRouteIds: Set<String>
     private var stopToRoutes: [String: [String]] = [:]
 
     private init() {
         let loader = TimetableLoader()
-        for routeId in supportedRoutes {
+        let allRoutes = loader.loadAllRoutes()
+        loadedRouteIds = Set(allRoutes.map(\.id))
+        for routeId in loadedRouteIds {
             let allRouteStops = (try? loader.loadRoutesForId(routeId)) ?? []
             let uniqueStopIds = Set(allRouteStops.flatMap { $0 }.map(\.id))
             for stopId in uniqueStopIds {
                 stopToRoutes[stopId, default: []].append(routeId)
             }
         }
-        DebugConfig.debugPrint("RouteDataService: Initialized with \(supportedRoutes.count) routes, \(stopToRoutes.count) stops indexed")
+        DebugConfig.debugPrint("RouteDataService: Initialized with \(loadedRouteIds.count) routes, \(stopToRoutes.count) stops indexed")
     }
 
     func parseTimetables(routeId: String) async throws -> [BusTimetable] {
@@ -36,11 +38,11 @@ actor RouteDataService {
     }
 
     func hasParserFor(routeId: String) -> Bool {
-        supportedRoutes.contains(routeId)
+        loadedRouteIds.contains(routeId)
     }
 
     func getSupportedRoutes() -> [String] {
-        supportedRoutes
+        Array(loadedRouteIds)
     }
 
     func getParserVersion(routeId: String) -> String {

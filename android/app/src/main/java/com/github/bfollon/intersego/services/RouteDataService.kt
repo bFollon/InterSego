@@ -26,7 +26,7 @@ import kotlinx.coroutines.withContext
  */
 class RouteDataService(private val context: Context) {
 
-    private val supportedRoutes = listOf("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8")
+    private val supportedRoutes = listOf("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M7-AVE", "M8")
 
     private val stopToRoutes: Map<String, List<String>> by lazy { buildStopToRoutes() }
 
