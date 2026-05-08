@@ -150,6 +150,12 @@ struct TimetableLoader {
     // MARK: - File loading
 
     private func loadFile(_ routeId: String) throws -> TimetableFile {
+        // Disk cache takes priority over bundle assets.
+        if let cacheURL = TimetableCacheService.cacheURL(for: routeId),
+           FileManager.default.fileExists(atPath: cacheURL.path) {
+            let data = try Data(contentsOf: cacheURL)
+            return try JSONDecoder().decode(TimetableFile.self, from: data)
+        }
         guard let url = Bundle.main.url(
             forResource: routeId.lowercased(),
             withExtension: "json",

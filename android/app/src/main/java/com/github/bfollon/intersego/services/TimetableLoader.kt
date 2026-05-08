@@ -149,10 +149,15 @@ class TimetableLoader(private val context: Context) {
     // MARK: - File loading
 
     private fun loadFile(routeId: String): TimetableFile {
-        val text = context.assets
-            .open("timetables/${routeId.lowercase()}.json")
-            .bufferedReader()
-            .readText()
+        val cacheFile = TimetableCacheService.cacheFile(context, routeId)
+        val text = if (cacheFile.exists()) {
+            cacheFile.readText()
+        } else {
+            context.assets
+                .open("timetables/${routeId.lowercase()}.json")
+                .bufferedReader()
+                .readText()
+        }
         return json.decodeFromString(text)
     }
 

@@ -583,6 +583,11 @@ struct ContentView: View {
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
 
+        // Background timetable refresh — non-blocking, uses disk cache + ETags
+        if NetworkMonitor.shared.isOnline {
+            Task { await TimetableCacheService.shared.fetchAllRoutes() }
+        }
+
         // Analytics: app launch event
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         AnalyticsService.shared.track("app_launch", with: ["version": version, "platform": "ios"])

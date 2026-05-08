@@ -11,9 +11,9 @@ import Foundation
 
 /// App-level configuration constants.
 ///
-/// Update `boardingServerURL` and `boardingAPIKey` once the server is deployed
-/// and the Cloudflare Tunnel domain is known.
+/// Secrets (API key, DSN, analytics) live in `Secrets.swift` (gitignored).
+/// See `Secrets.swift.template` for the full list.
 enum AppConfig {
-    /// Base URL of the boarding notification server (no trailing slash).
+    /// Base URL of the InterSego server (no trailing slash).
     static let boardingServerURL = "https://intersego.bfollon.dev"
 }

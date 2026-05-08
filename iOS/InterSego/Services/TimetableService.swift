@@ -18,6 +18,11 @@ actor TimetableService {
 
     func loadTimetables(routeId: String, forceRefresh: Bool = false) async -> [BusTimetable] {
         let isDebugParser = await RouteDataService.shared.isDebugParser(routeId: routeId)
+        if await TimetableCacheService.shared.hasPendingUpdate(routeId) {
+            await TimetableCacheService.shared.clearPendingUpdate(routeId)
+            cachedTimetables.removeValue(forKey: routeId)
+            DebugConfig.debugPrint("TimetableService: Disk update detected for \(routeId) — clearing memory cache")
+        }
         let shouldForceRefresh = forceRefresh || isDebugParser
 
         if isDebugParser {

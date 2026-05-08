@@ -40,7 +40,7 @@ object BoardingService {
     private val json = Json { ignoreUnknownKeys = true }
 
     private val serverUrl get() = BuildConfig.BOARDING_SERVER_URL
-    private val apiKey get() = BuildConfig.BOARDING_API_KEY
+    private val apiKey get() = BuildConfig.SERVER_API_KEY
 
     /**
      * Submit a boarding event to the server.

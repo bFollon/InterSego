@@ -38,7 +38,7 @@ actor BoardingService {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(AppConfig.boardingAPIKey)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("Bearer \(AppConfig.serverAPIKey)", forHTTPHeaderField: "Authorization")
         urlRequest.setValue("InterSego-iOS/1.0", forHTTPHeaderField: "User-Agent")
 
         do {
@@ -72,7 +72,7 @@ actor BoardingService {
         }
 
         var urlRequest = URLRequest(url: url)
-        urlRequest.setValue("Bearer \(AppConfig.boardingAPIKey)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("Bearer \(AppConfig.serverAPIKey)", forHTTPHeaderField: "Authorization")
         urlRequest.setValue("InterSego-iOS/1.0", forHTTPHeaderField: "User-Agent")
 
         do {

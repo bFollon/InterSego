@@ -69,6 +69,7 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.BusStopRegistry
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.services.BoardingService
+import com.github.bfollon.intersego.services.TimetableCacheService
 import com.github.bfollon.intersego.services.ClosestStopFinderService
 import com.github.bfollon.intersego.services.LocationManager as BusLocationManager
 import com.github.bfollon.intersego.services.TimetableService
@@ -243,6 +244,11 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 // (this also triggers for existing users who pre-date analytics)
                 if (!MonitoringPreferencesService.hasUserMadeAnalyticsChoice()) {
                     showMonitoringConsent = true
+                }
+
+                // Background timetable refresh — non-blocking, uses disk cache + ETags
+                if (NetworkMonitor.isOnline()) {
+                    launch { TimetableCacheService.fetchAllRoutes(this@MainActivity) }
                 }
             }
 

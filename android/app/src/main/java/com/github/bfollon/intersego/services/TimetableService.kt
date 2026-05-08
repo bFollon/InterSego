@@ -20,6 +20,11 @@ class TimetableService(private val context: Context) {
 
     suspend fun loadTimetables(routeId: String, forceRefresh: Boolean = false): List<BusTimetable> {
         val isDebugParser = routeDataService.isDebugParser(routeId)
+        if (TimetableCacheService.hasPendingUpdate(routeId)) {
+            TimetableCacheService.clearPendingUpdate(routeId)
+            cachedTimetables.remove(routeId)
+            DebugConfig.debugPrint("TimetableService: Disk update detected for $routeId — clearing memory cache")
+        }
         val shouldForceRefresh = forceRefresh || isDebugParser
 
         if (isDebugParser) {

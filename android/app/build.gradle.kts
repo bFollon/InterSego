@@ -26,7 +26,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "BOARDING_SERVER_URL", "\"https://intersego.bfollon.dev\"")
-        buildConfigField("String", "BOARDING_API_KEY", "\"${localProperties["boarding.api.key"] ?: ""}\"")
+        buildConfigField("String", "SERVER_API_KEY", "\"${localProperties["server.api.key"] ?: ""}\"")
     }
 
     buildTypes {
