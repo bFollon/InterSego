@@ -92,4 +92,4 @@ server/
 
 ## License
 
-GPL-3.0 — see source file headers.
+Source available — see source file headers. Redistribution and commercial use prohibited without written permission.

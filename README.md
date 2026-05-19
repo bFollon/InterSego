@@ -47,6 +47,6 @@ See [PRIVACY_POLICY.md](PRIVACY_POLICY.md).
 
 ## License
 
-This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
+Source available — see [LICENSE](LICENSE) and source file headers. Redistribution and commercial use prohibited without written permission.
 
 Copyright (C) 2025 Bruno Follon ([@bFollon](https://github.com/bFollon))
