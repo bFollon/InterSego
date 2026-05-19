@@ -58,6 +58,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.github.bfollon.intersego.services.ReminderService
+import com.github.bfollon.intersego.services.RouteDataService
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -229,19 +233,26 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         com.github.bfollon.intersego.services.ReminderService.createNotificationChannel(this)
 
         setContent {
-            // State for tracking initialization - created in composition context
             var isInitialized by remember { mutableStateOf(false) }
             var showMonitoringConsent by remember { mutableStateOf(false) }
 
-            // Perform async initialization in LaunchedEffect
-            LaunchedEffect(Unit) {
-                // Mark initialization as complete
-                DebugConfig.debugPrint("🔧 Setting isInitialized = true...")
-                isInitialized = true
-                DebugConfig.debugPrint("✅ Services initialized - isInitialized = $isInitialized")
+            // Hoist services so the splash covers their initialization
+            val reminderService = remember { ReminderService(this@MainActivity) }
+            val routeDataService = remember { RouteDataService(this@MainActivity) }
+            var routes by remember { mutableStateOf<List<BusRoute>>(emptyList()) }
 
-                // Show privacy consent if user hasn't made an analytics choice yet
-                // (this also triggers for existing users who pre-date analytics)
+            LaunchedEffect(Unit) {
+                withContext(Dispatchers.IO) {
+                    // Mirror iOS initialize(): prune reminders and load route data
+                    reminderService.initialize()
+                    reminderService.pruneExpired()
+                    routes = getKnownRoutes()
+                    routeDataService.getSupportedRoutes()
+                }
+
+                isInitialized = true
+                DebugConfig.debugPrint("✅ Services initialized")
+
                 if (!MonitoringPreferencesService.hasUserMadeAnalyticsChoice()) {
                     showMonitoringConsent = true
                 }
@@ -258,7 +269,11 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                         visible = isInitialized,
                         enter = fadeIn()
                     ) {
-                        AppNavigation()
+                        AppNavigation(
+                            routes = routes,
+                            routeDataService = routeDataService,
+                            reminderService = reminderService
+                        )
                     }
 
                     AnimatedVisibility(
@@ -397,44 +412,14 @@ fun SplashScreen() {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppNavigation() {
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🎯 AppNavigation composing...")
-
+fun AppNavigation(
+    routes: List<BusRoute>,
+    routeDataService: RouteDataService,
+    reminderService: ReminderService,
+) {
     val navController = rememberNavController()
-
-    // Get list of routes once
     val activity = LocalActivity.current as? MainActivity
         ?: error("AppNavigation must be hosted in MainActivity")
-    val routes = remember {
-        activity.getKnownRoutes()
-    }
-
-    // Create RouteDataService for dynamic parser queries
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 About to create RouteDataService...")
-    val routeDataService = remember {
-        com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Inside remember block - creating RouteDataService...")
-        try {
-            val service = com.github.bfollon.intersego.services.RouteDataService(activity)
-            com.github.bfollon.intersego.services.DebugConfig.debugPrint("✅ RouteDataService created successfully")
-            service
-        } catch (e: Exception) {
-            com.github.bfollon.intersego.services.DebugConfig.debugError("❌ Failed to create RouteDataService", e)
-            throw e
-        }
-    }
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 RouteDataService variable assigned")
-
-    // Force service initialization and log available routes
-    com.github.bfollon.intersego.services.DebugConfig.debugPrint("🔧 Checking supported routes: ${routeDataService.getSupportedRoutes()}")
-
-    // --- Reminder service ---
-    val reminderService = remember {
-        com.github.bfollon.intersego.services.ReminderService(activity).also {
-            it.initialize()
-            it.pruneExpired()
-        }
-    }
-    // --- End reminder service ---
 
     // --- About modal state ---
     var showAboutModal by remember { mutableStateOf(false) }
