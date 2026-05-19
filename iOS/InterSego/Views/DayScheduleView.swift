@@ -568,10 +568,10 @@ private struct DayScheduleTimelineRow: View {
                                         .clipShape(RoundedRectangle(cornerRadius: 4))
                                 }
                             }
-                            VStack(alignment: .leading, spacing: 4) {
+                            HStack(alignment: .center, spacing: 8) {
                                 Text(departure.displayString)
                                     .font(.headline)
-                                HStack(spacing: 8) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     if showVariantLabel, let label = departure.variantLabel {
                                         Text(label)
                                             .font(.caption2)
