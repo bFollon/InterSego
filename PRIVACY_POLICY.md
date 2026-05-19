@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Effective date:** March 3, 2026
+**Effective date:** May 19, 2026
 
 Bruno Follon ("the developer") built InterSego as a free application. Its source code is publicly available for transparency, though redistribution and commercial use are not permitted. This page explains what data the app accesses, how it is used, and your choices.
 
@@ -8,31 +8,49 @@ Bruno Follon ("the developer") built InterSego as a free application. Its source
 
 ### Bus Timetable Data
 
-InterSego downloads publicly available PDF timetables from [Linecar's website](https://www.linecar.es/metropolitano/segovia/). These files are cached on your device so the app can work offline. No personal data is sent to Linecar or any third party during this process.
+InterSego fetches bus schedule data from a self-hosted server operated by the developer. This is used to keep timetables up to date without requiring an app update. No personal data is sent during this process — only a route identifier and an ETag for cache validation.
 
 ### Location (Optional)
 
-The app may request access to your device's location to show the bus stop on a map and help you find nearby stops. Location data is used **only on your device** and is never transmitted to any server. You can deny location permission and the app will still function normally — you simply won't see map features.
+The app may request access to your device's location to find nearby stops and show them on a map. Location data is used **only on your device** and is never transmitted to any server. You can deny location permission and the app will still function normally.
 
-### Network Access
+### Live Boarding Confirmations (Optional, User-Initiated)
 
-The app connects to the internet solely to download PDF timetables and check for schedule updates. No personal data, device identifiers, or usage information is transmitted.
+If you tap "Estoy en el autobús", the app posts an anonymous boarding event — containing the route, direction, and a timestamp — to a self-hosted server operated by the developer. This data is used solely to show other users a real-time ETA estimate. It is automatically deleted after 4 hours. No personal data or device identifiers are included.
+
+## Analytics and Error Reporting (Optional, Consent-Gated)
+
+The app includes two optional monitoring features. Both are **disabled by default** and require explicit opt-in via the consent screen shown on first launch. You can change your preferences at any time in Settings.
+
+### Usage Analytics (Aptabase)
+
+If you opt in, the app sends anonymous usage events to a self-hosted Aptabase instance operated by the developer. These events record in-app actions such as:
+
+- App launch
+- Route and stop selections
+- Departures viewed
+- Reminders set
+- Boarding confirmations
+
+No personal information, device identifiers, or location data is included in these events.
+
+### Error Reporting (Bugsink)
+
+If you opt in, the app sends technical error reports to a self-hosted Bugsink instance operated by the developer when a crash or unexpected error occurs. Reports contain stack traces and technical context to help diagnose and fix bugs. No personal information is included.
+
+**Both services are self-hosted by the developer. Your data is not shared with any third-party analytics or advertising companies.**
 
 ## Data the App Does NOT Collect
 
-- No personal information (name, email, phone number)
-- No device identifiers or advertising IDs
-- No usage analytics or telemetry (this may change in a future version — see below)
-- No cookies or tracking technologies
-- No data shared with third parties
-
-## Future Analytics
-
-A future version of the app may include anonymous error tracking and crash reporting to help diagnose and fix bugs. If and when this is added, this privacy policy will be updated before the feature is released. Any analytics will be limited to technical error data and will not include personal information.
+- Personal information (name, email, phone number)
+- Device identifiers or advertising IDs
+- Precise location (location processing happens on-device only)
+- Cookies or tracking technologies
+- Any data shared with third-party companies
 
 ## Data Storage
 
-All data (cached timetables, settings) is stored locally on your device. The app does not use any external databases, cloud storage, or remote accounts. Uninstalling the app removes all stored data.
+Timetable data and app settings are stored locally on your device. Anonymous boarding events sent by you are stored on a self-hosted server for up to 4 hours. If you have opted into analytics or error reporting, those events are retained on self-hosted infrastructure for diagnostic purposes. Uninstalling the app removes all locally stored data.
 
 ## Children's Privacy
 
