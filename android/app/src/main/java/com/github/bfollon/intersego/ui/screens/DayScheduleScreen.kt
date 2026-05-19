@@ -276,7 +276,7 @@ fun DayScheduleScreen(
                         // Insert marker before the first future departure
                         if (index == markerIndex) {
                             item(key = "now_marker") {
-                                NowMarkerRow(timeString = timeString)
+                                NowMarkerRow(timeString = timeString, modifier = Modifier.padding(horizontal = 16.dp))
                             }
                         }
 
