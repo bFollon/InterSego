@@ -2,7 +2,7 @@
 
 **Effective date:** March 3, 2026
 
-Bruno Follon ("the developer") built InterSego as a free, open-source application. This page explains what data the app accesses, how it is used, and your choices.
+Bruno Follon ("the developer") built InterSego as a free application. Its source code is publicly available for transparency, though redistribution and commercial use are not permitted. This page explains what data the app accesses, how it is used, and your choices.
 
 ## Data the App Accesses
 
