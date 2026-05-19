@@ -522,6 +522,10 @@ private struct DayScheduleTimelineRow: View {
     let onBellTap: () -> Void
     var onBellLongPress: () -> Void = {}
 
+    private var showVariantLabel: Bool {
+        departure.shouldShowVariantLabel(selectedVariantLabel: selectedVariantLabel)
+    }
+
     var body: some View {
         let timeOfDay = getDayScheduleTimeOfDay(departure.hour)
 
@@ -533,39 +537,68 @@ private struct DayScheduleTimelineRow: View {
                 // Departure row
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        HStack(spacing: 8) {
-                            Text(departure.displayString)
-                                .font(.headline)
-
-                            let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: selectedVariantLabel)
-
-                            if showLabel, let label = departure.variantLabel {
-                                Text(label)
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color(.systemGray5))
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 8) {
+                                Text(departure.displayString)
+                                    .font(.headline)
+                                if showVariantLabel, let label = departure.variantLabel {
+                                    Text(label)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color(.systemGray5))
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
+                                if let altName = departure.alternateLocationName(in: stop) {
+                                    Text(altName)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange.opacity(0.15))
+                                        .foregroundColor(.orange)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
+                                if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                                    Text(seasonalLabel)
+                                        .font(.caption2)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.accentColor.opacity(0.12))
+                                        .foregroundColor(.accentColor)
+                                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                                }
                             }
-
-                            if let altName = departure.alternateLocationName(in: stop) {
-                                Text(altName)
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.orange.opacity(0.15))
-                                    .foregroundColor(.orange)
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                            }
-
-                            if let seasonalLabel = departure.seasonalAvailability.displayLabel {
-                                Text(seasonalLabel)
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.accentColor.opacity(0.12))
-                                    .foregroundColor(.accentColor)
-                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(departure.displayString)
+                                    .font(.headline)
+                                HStack(spacing: 8) {
+                                    if showVariantLabel, let label = departure.variantLabel {
+                                        Text(label)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color(.systemGray5))
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    }
+                                    if let altName = departure.alternateLocationName(in: stop) {
+                                        Text(altName)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.orange.opacity(0.15))
+                                            .foregroundColor(.orange)
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    }
+                                    if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                                        Text(seasonalLabel)
+                                            .font(.caption2)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.accentColor.opacity(0.12))
+                                            .foregroundColor(.accentColor)
+                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    }
+                                }
                             }
                         }
 

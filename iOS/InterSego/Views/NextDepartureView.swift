@@ -1273,6 +1273,8 @@ private struct DepartureTimeline: View {
                 let timeOfDay = getTimeOfDay(departure.hour)
                 let isFirst = index == 0
                 let isLast = index == departures.count - 1
+                let variantLabel = selectedVariantLabelFor?(tagged)
+                let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: variantLabel)
 
                 HStack(spacing: 16) {
                     TimelineIndicator(isFirst: isFirst, isLast: isLast)
@@ -1282,44 +1284,74 @@ private struct DepartureTimeline: View {
                         // Departure row
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                HStack(spacing: 8) {
-                                    Text(departure.displayString)
-                                        .font(.headline)
-
-                                    if showRouteBadge {
-                                        RouteBadge(number: tagged.routeNumber)
+                                ViewThatFits(in: .horizontal) {
+                                    HStack(spacing: 8) {
+                                        Text(departure.displayString)
+                                            .font(.headline)
+                                        if showRouteBadge {
+                                            RouteBadge(number: tagged.routeNumber)
+                                        }
+                                        if showLabel, let label = departure.variantLabel {
+                                            Text(label)
+                                                .font(.caption2)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color(.systemGray5))
+                                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        }
+                                        if let s = stop, let altName = departure.alternateLocationName(in: s) {
+                                            Text(altName)
+                                                .font(.caption2)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.orange.opacity(0.15))
+                                                .foregroundColor(.orange)
+                                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        }
+                                        if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                                            Text(seasonalLabel)
+                                                .font(.caption2)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.accentColor.opacity(0.12))
+                                                .foregroundColor(.accentColor)
+                                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                                        }
                                     }
-
-                                    let variantLabel = selectedVariantLabelFor?(tagged)
-                                    let showLabel = departure.shouldShowVariantLabel(selectedVariantLabel: variantLabel)
-
-                                    if showLabel, let label = departure.variantLabel {
-                                        Text(label)
-                                            .font(.caption2)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color(.systemGray5))
-                                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                                    }
-
-                                    if let s = stop, let altName = departure.alternateLocationName(in: s) {
-                                        Text(altName)
-                                            .font(.caption2)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.orange.opacity(0.15))
-                                            .foregroundColor(.orange)
-                                            .clipShape(RoundedRectangle(cornerRadius: 4))
-                                    }
-
-                                    if let seasonalLabel = departure.seasonalAvailability.displayLabel {
-                                        Text(seasonalLabel)
-                                            .font(.caption2)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.accentColor.opacity(0.12))
-                                            .foregroundColor(.accentColor)
-                                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(departure.displayString)
+                                            .font(.headline)
+                                        HStack(spacing: 8) {
+                                            if showRouteBadge {
+                                                RouteBadge(number: tagged.routeNumber)
+                                            }
+                                            if showLabel, let label = departure.variantLabel {
+                                                Text(label)
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color(.systemGray5))
+                                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                            }
+                                            if let s = stop, let altName = departure.alternateLocationName(in: s) {
+                                                Text(altName)
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.orange.opacity(0.15))
+                                                    .foregroundColor(.orange)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                            }
+                                            if let seasonalLabel = departure.seasonalAvailability.displayLabel {
+                                                Text(seasonalLabel)
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.accentColor.opacity(0.12))
+                                                    .foregroundColor(.accentColor)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                                            }
+                                        }
                                     }
                                 }
 
