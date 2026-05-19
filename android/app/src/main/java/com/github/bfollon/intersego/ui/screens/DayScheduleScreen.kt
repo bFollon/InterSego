@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -217,12 +218,17 @@ fun DayScheduleScreen(
             else -> {
                 val listState = rememberLazyListState()
 
-                // Auto-scroll to marker
+                // Auto-scroll to center marker in viewport (mirrors iOS scrollTo anchor: .center)
                 LaunchedEffect(markerIndex) {
-                    // Item index in LazyColumn: 1 (header) + items before marker + marker itself
-                    // Each departure before marker contributes 1 item, then marker is at markerIndex + 1
                     val scrollTarget = markerIndex + 1 // +1 for header
                     listState.scrollToItem(scrollTarget)
+                    val layoutInfo = listState.layoutInfo
+                    val viewportHeight = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
+                    val itemInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.index == scrollTarget }
+                    if (itemInfo != null) {
+                        val itemCenter = itemInfo.offset + itemInfo.size / 2
+                        listState.scrollBy((itemCenter - viewportHeight / 2).toFloat())
+                    }
                 }
 
                 // Build flat list of items: header, departures with marker interleaved
