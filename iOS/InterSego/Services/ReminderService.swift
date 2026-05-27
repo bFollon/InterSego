@@ -17,16 +17,29 @@ import UserNotifications
 /// Daily reminders persist until cancelled and are backed by a rolling 7-day batch of
 /// individual UNNotificationRequests with deterministic IDs. Smart-skip: days where the
 /// departure doesn't run (wrong day type or seasonal) are simply not scheduled.
+///
+/// Server sync: each reminder is also registered with the push server (POST /reminders)
+/// so it receives APNs push notifications as a fallback/primary delivery mechanism.
 actor ReminderService {
     static let shared = ReminderService()
 
+    private let session: URLSession
     private let remindersKey = "busReminders_v1"
+    private let deviceTokenKey = "apnsDeviceToken"
     private let leadTimeKey = "reminderLeadTimeMinutes"
     private let dailyLeadTimeKey = "reminderDailyLeadTimeMinutes"
     /// Prefix for daily batch notification identifiers: "daily|<matchKey>|<YYYY-MM-DD>"
     private let dailyPrefix = "daily|"
     private var _reminders: [BusReminder] = []
     private var _initialized = false
+    private var _deviceToken: String?
+
+    private init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 15
+        session = URLSession(configuration: config)
+    }
 
     // MARK: - Initialization
 
@@ -166,6 +179,14 @@ actor ReminderService {
 
         _reminders.append(reminder)
         persist()
+
+        // Best-effort: register with the push server for APNs delivery
+        if let token = currentDeviceToken(),
+           let idx = _reminders.firstIndex(where: { $0.id == reminder.id }),
+           let serverId = await postReminderToServer(reminder, deviceToken: token) {
+            _reminders[idx].serverId = serverId
+            persist()
+        }
     }
 
     // MARK: - Cancellation
@@ -176,6 +197,7 @@ actor ReminderService {
         let matching = _reminders.filter { $0.matchKey == key }
         guard !matching.isEmpty else { return }
 
+        let serverIds = matching.compactMap { $0.serverId }
         let isDaily = matching.first?.isDaily ?? false
         if isDaily {
             cancelDailyBatch(matchKey: key)
@@ -185,11 +207,14 @@ actor ReminderService {
         }
         _reminders.removeAll { $0.matchKey == key }
         persist()
+
+        Task { for sid in serverIds { await self.deleteReminderFromServer(sid) } }
     }
 
     func cancelReminder(id: String) {
         ensureInitialized()
         guard let reminder = _reminders.first(where: { $0.id == id }) else { return }
+        let serverId = reminder.serverId
         if reminder.isDaily {
             cancelDailyBatch(matchKey: reminder.matchKey)
         } else {
@@ -197,6 +222,8 @@ actor ReminderService {
         }
         _reminders.removeAll { $0.id == id }
         persist()
+
+        if let sid = serverId { Task { await self.deleteReminderFromServer(sid) } }
     }
 
     // MARK: - Rescheduling
@@ -434,6 +461,98 @@ actor ReminderService {
         UserDefaults.standard.set(data, forKey: remindersKey)
     }
 
+    // MARK: - APNs token management
+
+    func updateDeviceToken(_ newToken: String) async {
+        let oldToken = UserDefaults.standard.string(forKey: deviceTokenKey)
+        UserDefaults.standard.set(newToken, forKey: deviceTokenKey)
+        _deviceToken = newToken
+
+        if let oldToken, oldToken != newToken {
+            await putTokenUpdate(from: oldToken, to: newToken)
+        }
+        await syncRemindersToServer()
+    }
+
+    // MARK: - Server sync
+
+    private func currentDeviceToken() -> String? {
+        if _deviceToken == nil { _deviceToken = UserDefaults.standard.string(forKey: deviceTokenKey) }
+        return _deviceToken
+    }
+
+    private func syncRemindersToServer() async {
+        guard let token = currentDeviceToken() else { return }
+        ensureInitialized()
+        var dirty = false
+        for i in _reminders.indices where _reminders[i].serverId == nil {
+            if let id = await postReminderToServer(_reminders[i], deviceToken: token) {
+                _reminders[i].serverId = id
+                dirty = true
+            }
+        }
+        if dirty { persist() }
+    }
+
+    private func postReminderToServer(_ reminder: BusReminder, deviceToken: String) async -> String? {
+        let payload = ServerReminderPayload(
+            deviceToken: deviceToken,
+            routeId: reminder.routeId,
+            routeNumber: reminder.routeNumber,
+            stopId: reminder.stopId,
+            stopName: reminder.stopName,
+            direction: reminder.direction,
+            departureHour: reminder.departureHour,
+            departureMinute: reminder.departureMinute,
+            leadMinutes: reminder.leadMinutes,
+            isDaily: reminder.isDaily,
+            dayType: reminder.dayType?.rawValue.lowercased(),
+            seasonalAvailability: reminder.seasonalAvailability?.rawValue
+        )
+        guard let body = try? JSONEncoder().encode(payload) else { return nil }
+        do {
+            let (data, _) = try await serverRequest(method: "POST", path: "/reminders", body: body)
+            return try JSONDecoder().decode(ServerReminderResponse.self, from: data).id
+        } catch {
+            DebugConfig.debugWarn("ReminderService: failed to post reminder to server: \(error)")
+            return nil
+        }
+    }
+
+    private func deleteReminderFromServer(_ serverId: String) async {
+        do {
+            _ = try await serverRequest(method: "DELETE", path: "/reminders/\(serverId)", body: nil)
+        } catch {
+            DebugConfig.debugWarn("ReminderService: failed to delete reminder \(serverId) from server: \(error)")
+        }
+    }
+
+    private func putTokenUpdate(from oldToken: String, to newToken: String) async {
+        guard let body = try? JSONEncoder().encode(["oldToken": oldToken, "newToken": newToken]) else { return }
+        do {
+            _ = try await serverRequest(method: "PUT", path: "/reminders/token", body: body)
+        } catch {
+            DebugConfig.debugWarn("ReminderService: failed to update APNs token on server: \(error)")
+        }
+    }
+
+    private func serverRequest(method: String, path: String, body: Data?) async throws -> (Data, HTTPURLResponse) {
+        guard let url = URL(string: "\(AppConfig.boardingServerURL)\(path)") else {
+            throw ReminderServerError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("Bearer \(AppConfig.serverAPIKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("InterSego-iOS/1.0", forHTTPHeaderField: "User-Agent")
+        if let body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ReminderServerError.invalidResponse }
+        return (data, http)
+    }
+
     // MARK: - Errors
 
     enum ReminderError: LocalizedError {
@@ -451,4 +570,30 @@ actor ReminderService {
             }
         }
     }
+}
+
+// MARK: - Server types (private)
+
+private struct ServerReminderPayload: Encodable {
+    let deviceToken: String
+    let routeId: String
+    let routeNumber: String
+    let stopId: String
+    let stopName: String
+    let direction: String
+    let departureHour: Int
+    let departureMinute: Int
+    let leadMinutes: Int
+    let isDaily: Bool
+    let dayType: String?
+    let seasonalAvailability: String?
+}
+
+private struct ServerReminderResponse: Decodable {
+    let id: String
+}
+
+private enum ReminderServerError: Error {
+    case invalidURL
+    case invalidResponse
 }

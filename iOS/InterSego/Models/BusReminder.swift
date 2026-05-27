@@ -31,12 +31,14 @@ struct BusReminder: Identifiable, Equatable {
     let seasonalAvailability: SeasonalAvailability?
     /// Day type this departure belongs to (used for smart-skip day-of-week check).
     let dayType: DayType?
+    /// Server-assigned UUID returned after a successful POST /reminders. Nil until synced.
+    var serverId: String?
 
     // CodingKeys in the struct body so Swift can synthesize encode(to:)
     enum CodingKeys: String, CodingKey {
         case id, routeId, routeNumber, stopId, stopName, direction
         case departureHour, departureMinute, leadMinutes, fireDate, seasonalNote
-        case isDaily, seasonalAvailability, dayType
+        case isDaily, seasonalAvailability, dayType, serverId
     }
 
     init(
@@ -44,7 +46,7 @@ struct BusReminder: Identifiable, Equatable {
         direction: String, departureHour: Int, departureMinute: Int, leadMinutes: Int,
         fireDate: Date, seasonalNote: String?,
         isDaily: Bool = false, seasonalAvailability: SeasonalAvailability? = nil,
-        dayType: DayType? = nil
+        dayType: DayType? = nil, serverId: String? = nil
     ) {
         self.id = id
         self.routeId = routeId
@@ -60,6 +62,7 @@ struct BusReminder: Identifiable, Equatable {
         self.isDaily = isDaily
         self.seasonalAvailability = seasonalAvailability
         self.dayType = dayType
+        self.serverId = serverId
     }
 
     var departureDisplayString: String {
@@ -98,5 +101,6 @@ extension BusReminder: Codable {
         isDaily = (try? c.decode(Bool.self, forKey: .isDaily)) ?? false
         seasonalAvailability = try? c.decode(SeasonalAvailability.self, forKey: .seasonalAvailability)
         dayType = try? c.decode(DayType.self, forKey: .dayType)
+        serverId = try? c.decode(String.self, forKey: .serverId)
     }
 }

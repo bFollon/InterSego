@@ -745,9 +745,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-        // Temporary: print token so it can be copied for server testing.
-        // Phase 2 will replace this with ReminderService.shared.updateDeviceToken(token).
-        NSLog("🔔 APNs device token: %@", token)
+        Task { await ReminderService.shared.updateDeviceToken(token) }
     }
 
     func application(
