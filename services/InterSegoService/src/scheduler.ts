@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import { Provider, Notification } from 'apn';
+import { ApnsProvider } from './apns.js';
 import {
   getAllReminders, deleteReminder,
   deleteRemindersForToken, updateReminderNextFireAt,
@@ -22,15 +22,14 @@ import {
 import { nextOccurrence } from './reminderLogic.js';
 import type { DeviceReminder } from './types.js';
 
-let provider: Provider;
+let provider: ApnsProvider;
 
 export function initScheduler(): void {
-  provider = new Provider({
-    token: {
-      key: process.env.APNS_KEY_PATH!,
-      keyId: process.env.APNS_KEY_ID!,
-      teamId: process.env.APNS_TEAM_ID!,
-    },
+  provider = new ApnsProvider({
+    keyPath: process.env.APNS_KEY_PATH!,
+    keyId: process.env.APNS_KEY_ID!,
+    teamId: process.env.APNS_TEAM_ID!,
+    bundleId: process.env.APNS_BUNDLE_ID!,
     production: process.env.APNS_PRODUCTION === 'true',
   });
 
@@ -60,7 +59,6 @@ async function tick(): Promise<void> {
 }
 
 async function processReminder(reminder: DeviceReminder, now: Date, windowEnd: Date): Promise<void> {
-  // Compute nextFireAt if missing or null
   if (!reminder.nextFireAt) {
     const next = nextOccurrence(
       reminder.departureHour, reminder.departureMinute, reminder.leadMinutes,
@@ -88,23 +86,22 @@ async function processReminder(reminder: DeviceReminder, now: Date, windowEnd: D
 }
 
 async function sendPush(reminder: DeviceReminder): Promise<void> {
-  const note = new Notification();
-  note.expiry = Math.floor(Date.now() / 1000) + 3600;
-  note.sound = 'default';
-  note.alert = {
-    title: `Línea ${reminder.routeNumber} · ${reminder.stopName}`,
-    body: buildBody(reminder),
-  };
-  note.topic = process.env.APNS_BUNDLE_ID!;
+  const result = await provider.send(
+    {
+      title: `Línea ${reminder.routeNumber} · ${reminder.stopName}`,
+      body: buildBody(reminder),
+      sound: 'default',
+      expiry: Math.floor(Date.now() / 1000) + 3600,
+    },
+    reminder.deviceToken,
+  );
 
-  const result = await provider.send(note, reminder.deviceToken);
   for (const failure of result.failed) {
-    const reason = failure.response?.reason;
-    if (reason === 'BadDeviceToken' || reason === 'Unregistered') {
-      console.warn(`scheduler: removing stale token for reminder ${reminder.id} (${reason})`);
+    if (failure.reason === 'BadDeviceToken' || failure.reason === 'Unregistered') {
+      console.warn(`scheduler: removing stale token for reminder ${reminder.id} (${failure.reason})`);
       await deleteRemindersForToken(reminder.deviceToken);
-    } else if (reason) {
-      console.error(`scheduler: APNs error for reminder ${reminder.id}: ${reason}`);
+    } else {
+      console.error(`scheduler: APNs error for reminder ${reminder.id}: ${failure.reason}`);
     }
   }
 }
