@@ -131,7 +131,7 @@ actor ReminderService {
             break
         }
 
-        let reminder = BusReminder(
+        var reminder = BusReminder(
             id: UUID().uuidString,
             routeId: route.id,
             routeNumber: route.number,
@@ -148,15 +148,13 @@ actor ReminderService {
             dayType: dayType
         )
 
+        guard let token = currentDeviceToken(),
+              let serverId = await postReminderToServer(reminder, deviceToken: token) else {
+            throw ReminderError.serverUnavailable
+        }
+        reminder.serverId = serverId
         _reminders.append(reminder)
         persist()
-
-        if let token = currentDeviceToken(),
-           let idx = _reminders.firstIndex(where: { $0.id == reminder.id }),
-           let serverId = await postReminderToServer(reminder, deviceToken: token) {
-            _reminders[idx].serverId = serverId
-            persist()
-        }
     }
 
     // MARK: - Cancellation
@@ -490,6 +488,7 @@ actor ReminderService {
         case alreadyPassed
         case permissionDenied
         case noUpcomingOccurrence
+        case serverUnavailable
 
         var errorDescription: String? {
             switch self {
@@ -497,6 +496,7 @@ actor ReminderService {
             case .alreadyPassed: return "Este autobús ya ha salido."
             case .permissionDenied: return "Activa las notificaciones en Ajustes para usar esta función."
             case .noUpcomingOccurrence: return "No hay próxima salida disponible en los próximos 30 días."
+            case .serverUnavailable: return "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo."
             }
         }
     }
