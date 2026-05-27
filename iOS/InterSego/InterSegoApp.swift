@@ -735,6 +735,25 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // On first launch, these will be no-ops — the consent modal gates initialization.
         ErrorReportingService.shared.initialize()
         AnalyticsService.shared.initialize()
+        NSLog("🔔 Calling registerForRemoteNotifications")
+        UIApplication.shared.registerForRemoteNotifications()
         return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
+        // Temporary: print token so it can be copied for server testing.
+        // Phase 2 will replace this with ReminderService.shared.updateDeviceToken(token).
+        NSLog("🔔 APNs device token: %@", token)
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        print("APNs registration failed: \(error)")
     }
 }
