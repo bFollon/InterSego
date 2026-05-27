@@ -140,3 +140,15 @@ export function updateReminderNextFireAt(id: string, nextFireAt: string | null):
     await db.write();
   });
 }
+
+export function updateReminderLeadMinutes(id: string, leadMinutes: number): Promise<boolean> {
+  return serialize(async () => {
+    await db.read();
+    const r = db.data.reminders.find((r) => r.id === id);
+    if (!r) return false;
+    r.leadMinutes = leadMinutes;
+    r.nextFireAt = null;
+    await db.write();
+    return true;
+  });
+}

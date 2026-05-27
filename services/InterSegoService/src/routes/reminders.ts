@@ -18,7 +18,7 @@ import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import {
   appendReminder, deleteReminder, deleteRemindersForToken,
-  getRemindersForToken, updateReminderToken,
+  getRemindersForToken, updateReminderLeadMinutes, updateReminderToken,
 } from '../db/index.js';
 import { requireApiKey } from '../middleware/auth.js';
 import type { DeviceReminder, PostReminderBody } from '../types.js';
@@ -71,6 +71,33 @@ export async function remindersRoutes(app: FastifyInstance): Promise<void> {
       };
       await appendReminder(reminder);
       return reply.status(201).send({ id: reminder.id });
+    },
+  );
+
+  /**
+   * PATCH /reminders/:id
+   *
+   * Update the lead time for an existing reminder.
+   * Resets nextFireAt so the scheduler recomputes the fire time on the next tick.
+   */
+  app.patch<{ Params: { id: string }; Body: { leadMinutes: number } }>(
+    '/reminders/:id',
+    {
+      preHandler: requireApiKey,
+      schema: {
+        body: {
+          type: 'object',
+          required: ['leadMinutes'],
+          additionalProperties: false,
+          properties: {
+            leadMinutes: { type: 'integer', minimum: 0, maximum: 120 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const found = await updateReminderLeadMinutes(request.params.id, request.body.leadMinutes);
+      return reply.status(found ? 204 : 404).send();
     },
   );
 

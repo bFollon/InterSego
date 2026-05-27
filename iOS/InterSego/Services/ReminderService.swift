@@ -202,38 +202,44 @@ actor ReminderService {
                 leadMins: newLeadMinutes
             ) else { continue }
 
-            if let sid = reminder.serverId { await deleteReminderFromServer(sid) }
+            if let sid = reminder.serverId {
+                if await patchReminderLeadMinutes(sid, leadMinutes: newLeadMinutes) {
+                    _reminders[i] = BusReminder(
+                        id: reminder.id, routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                        stopId: reminder.stopId, stopName: reminder.stopName, direction: reminder.direction,
+                        departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
+                        leadMinutes: newLeadMinutes, fireDate: newFireDate,
+                        seasonalNote: reminder.seasonalNote, isDaily: false,
+                        seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType,
+                        serverId: sid
+                    )
+                    continue
+                }
+                await deleteReminderFromServer(sid)
+            }
 
-            let updated = BusReminder(
-                id: UUID().uuidString,
-                routeId: reminder.routeId, routeNumber: reminder.routeNumber,
-                stopId: reminder.stopId, stopName: reminder.stopName,
-                direction: reminder.direction,
+            var updated = BusReminder(
+                id: UUID().uuidString, routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                stopId: reminder.stopId, stopName: reminder.stopName, direction: reminder.direction,
                 departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
                 leadMinutes: newLeadMinutes, fireDate: newFireDate,
                 seasonalNote: reminder.seasonalNote, isDaily: false,
                 seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
             )
-            _reminders[i] = updated
-
             if let token = currentDeviceToken(),
                let serverId = await postReminderToServer(updated, deviceToken: token) {
-                _reminders[i].serverId = serverId
+                updated.serverId = serverId
             }
+            _reminders[i] = updated
         }
         persist()
     }
 
-    /// Reschedules all daily reminders to use [newLeadMinutes].
-    /// Deletes the old server registration and posts a new one.
     func rescheduleDaily(newLeadMinutes: Int) async {
         ensureInitialized()
 
         for i in _reminders.indices where _reminders[i].isDaily {
             let reminder = _reminders[i]
-
-            if let sid = reminder.serverId { await deleteReminderFromServer(sid) }
-
             let newFireDate = nextOccurrence(
                 dayType: reminder.dayType,
                 seasonalAvailability: reminder.seasonalAvailability,
@@ -241,22 +247,35 @@ actor ReminderService {
                 leadMins: newLeadMinutes
             ) ?? reminder.fireDate.addingTimeInterval(Double(reminder.leadMinutes - newLeadMinutes) * 60)
 
-            let updated = BusReminder(
-                id: reminder.id,
-                routeId: reminder.routeId, routeNumber: reminder.routeNumber,
-                stopId: reminder.stopId, stopName: reminder.stopName,
-                direction: reminder.direction,
+            if let sid = reminder.serverId {
+                if await patchReminderLeadMinutes(sid, leadMinutes: newLeadMinutes) {
+                    _reminders[i] = BusReminder(
+                        id: reminder.id, routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                        stopId: reminder.stopId, stopName: reminder.stopName, direction: reminder.direction,
+                        departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
+                        leadMinutes: newLeadMinutes, fireDate: newFireDate,
+                        seasonalNote: reminder.seasonalNote, isDaily: true,
+                        seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType,
+                        serverId: sid
+                    )
+                    continue
+                }
+                await deleteReminderFromServer(sid)
+            }
+
+            var updated = BusReminder(
+                id: reminder.id, routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                stopId: reminder.stopId, stopName: reminder.stopName, direction: reminder.direction,
                 departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
                 leadMinutes: newLeadMinutes, fireDate: newFireDate,
                 seasonalNote: reminder.seasonalNote, isDaily: true,
                 seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
             )
-            _reminders[i] = updated
-
             if let token = currentDeviceToken(),
                let serverId = await postReminderToServer(updated, deviceToken: token) {
-                _reminders[i].serverId = serverId
+                updated.serverId = serverId
             }
+            _reminders[i] = updated
         }
         persist()
     }
@@ -455,6 +474,17 @@ actor ReminderService {
             _ = try await serverRequest(method: "DELETE", path: "/reminders/\(serverId)", body: nil)
         } catch {
             DebugConfig.debugWarn("ReminderService: failed to delete reminder \(serverId) from server: \(error)")
+        }
+    }
+
+    private func patchReminderLeadMinutes(_ serverId: String, leadMinutes: Int) async -> Bool {
+        guard let body = try? JSONEncoder().encode(["leadMinutes": leadMinutes]) else { return false }
+        do {
+            let (_, http) = try await serverRequest(method: "PATCH", path: "/reminders/\(serverId)", body: body)
+            return http.statusCode == 204
+        } catch {
+            DebugConfig.debugWarn("ReminderService: failed to patch lead minutes for \(serverId): \(error)")
+            return false
         }
     }
 
