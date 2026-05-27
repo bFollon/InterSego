@@ -66,6 +66,47 @@ export interface BoardingEvent {
 
 export interface DbSchema {
   boardings: BoardingEvent[];
+  reminders: DeviceReminder[];
+}
+
+export type DayType =
+  | 'weekday' | 'saturday' | 'sunday' | 'weekend' | 'holiday';
+
+export type SeasonalAvailability =
+  | 'YEAR_ROUND' | 'SCHOOL_ONLY' | 'SUMMER_ONLY'
+  | 'JUNE_TO_SEPT_ONLY' | 'MON_FRI_ONLY' | 'FRI_ONLY';
+
+export interface DeviceReminder {
+  id: string;
+  deviceToken: string;
+  routeId: string;
+  routeNumber: string;
+  stopId: string;
+  stopName: string;
+  direction: string;
+  departureHour: number;
+  departureMinute: number;
+  leadMinutes: number;
+  isDaily: boolean;
+  dayType: DayType | null;
+  seasonalAvailability: SeasonalAvailability | null;
+  createdAt: string;
+  nextFireAt: string | null;
+}
+
+export interface PostReminderBody {
+  deviceToken: string;
+  routeId: string;
+  routeNumber: string;
+  stopId: string;
+  stopName: string;
+  direction: string;
+  departureHour: number;
+  departureMinute: number;
+  leadMinutes: number;
+  isDaily: boolean;
+  dayType: DayType | null;
+  seasonalAvailability: SeasonalAvailability | null;
 }
 
 export interface PostBoardingBody {

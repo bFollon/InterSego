@@ -18,7 +18,9 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import { initDb } from './db/index.js';
 import { boardingsRoutes } from './routes/boardings.js';
+import { remindersRoutes } from './routes/reminders.js';
 import { reloadTimetables, timetablesRoutes } from './routes/timetables.js';
+import { initScheduler } from './scheduler.js';
 
 const app = Fastify({ logger: true });
 
@@ -27,6 +29,7 @@ app.get('/health', async (_request, reply) => {
 });
 
 app.register(boardingsRoutes);
+app.register(remindersRoutes);
 app.register(timetablesRoutes);
 
 // Re-read timetable files from disk without restarting the process.
@@ -36,14 +39,12 @@ process.on('SIGHUP', () => {
 });
 
 async function start(): Promise<void> {
-  if (!process.env.API_KEY) {
-    console.error('Fatal: API_KEY environment variable is not set. Refusing to start.');
-    process.exit(1);
-  }
-
-  if (!process.env.RELOAD_KEY) {
-    console.error('Fatal: RELOAD_KEY environment variable is not set. Refusing to start.');
-    process.exit(1);
+  const required = ['API_KEY', 'RELOAD_KEY', 'APNS_KEY_PATH', 'APNS_KEY_ID', 'APNS_TEAM_ID', 'APNS_BUNDLE_ID'];
+  for (const key of required) {
+    if (!process.env[key]) {
+      console.error(`Fatal: ${key} environment variable is not set. Refusing to start.`);
+      process.exit(1);
+    }
   }
 
   await initDb();
@@ -52,6 +53,7 @@ async function start(): Promise<void> {
   const host = process.env.HOST ?? '0.0.0.0';
 
   await app.listen({ port, host });
+  initScheduler();
 }
 
 start().catch((err) => {

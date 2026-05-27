@@ -18,13 +18,13 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { BoardingEvent, DbSchema } from '../types.js';
+import type { BoardingEvent, DbSchema, DeviceReminder } from '../types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, '../../data/boardings.json');
 
 const adapter = new JSONFile<DbSchema>(dbPath);
-const defaultData: DbSchema = { boardings: [] };
+const defaultData: DbSchema = { boardings: [], reminders: [] };
 const db = new Low<DbSchema>(adapter, defaultData);
 
 /**
@@ -47,6 +47,11 @@ function serialize<T>(fn: () => Promise<T>): Promise<T> {
 /** Read the DB file once at startup to surface any I/O errors early. */
 export async function initDb(): Promise<void> {
   await db.read();
+  // Migration: existing installs have boardings.json without the reminders key.
+  if (!db.data.reminders) {
+    db.data.reminders = [];
+    await db.write();
+  }
 }
 
 /** Append a boarding event and flush to disk atomically. */
@@ -72,5 +77,66 @@ export function getActiveboardings(): Promise<BoardingEvent[]> {
       await db.write();
     }
     return active;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Reminders
+// ---------------------------------------------------------------------------
+
+export function appendReminder(reminder: DeviceReminder): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.reminders.push(reminder);
+    await db.write();
+  });
+}
+
+export function getRemindersForToken(token: string): Promise<DeviceReminder[]> {
+  return serialize(async () => {
+    await db.read();
+    return db.data.reminders.filter((r) => r.deviceToken === token);
+  });
+}
+
+export function getAllReminders(): Promise<DeviceReminder[]> {
+  return serialize(async () => {
+    await db.read();
+    return [...db.data.reminders];
+  });
+}
+
+export function deleteReminder(id: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.reminders = db.data.reminders.filter((r) => r.id !== id);
+    await db.write();
+  });
+}
+
+export function deleteRemindersForToken(token: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.reminders = db.data.reminders.filter((r) => r.deviceToken !== token);
+    await db.write();
+  });
+}
+
+export function updateReminderToken(oldToken: string, newToken: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.reminders.forEach((r) => {
+      if (r.deviceToken === oldToken) r.deviceToken = newToken;
+    });
+    await db.write();
+  });
+}
+
+export function updateReminderNextFireAt(id: string, nextFireAt: string | null): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const r = db.data.reminders.find((r) => r.id === id);
+    if (r) r.nextFireAt = nextFireAt;
+    await db.write();
   });
 }
