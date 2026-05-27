@@ -408,7 +408,12 @@ actor ReminderService {
     private func fetchRemindersFromServer(token: String) async -> [ServerDeviceReminder]? {
         do {
             let (data, http) = try await serverRequest(method: "GET", path: "/reminders/device/\(token)", body: nil)
-            guard (200 ... 299).contains(http.statusCode) else { return nil }
+            guard (200 ... 299).contains(http.statusCode) else {
+                ErrorReportingService.shared.captureMessage(
+                    "GET /reminders/device: unexpected status \(http.statusCode)"
+                )
+                return nil
+            }
             return try JSONDecoder().decode([ServerDeviceReminder].self, from: data)
         } catch {
             DebugConfig.debugWarn("ReminderService: failed to fetch reminders from server: \(error)")
@@ -461,7 +466,13 @@ actor ReminderService {
         )
         guard let body = try? JSONEncoder().encode(payload) else { return nil }
         do {
-            let (data, _) = try await serverRequest(method: "POST", path: "/reminders", body: body)
+            let (data, http) = try await serverRequest(method: "POST", path: "/reminders", body: body)
+            guard http.statusCode == 201 else {
+                ErrorReportingService.shared.captureMessage(
+                    "POST /reminders: unexpected status \(http.statusCode) (route: \(reminder.routeId), stop: \(reminder.stopId))"
+                )
+                return nil
+            }
             return try JSONDecoder().decode(ServerReminderResponse.self, from: data).id
         } catch {
             DebugConfig.debugWarn("ReminderService: failed to post reminder to server: \(error)")
