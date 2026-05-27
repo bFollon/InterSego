@@ -147,6 +147,7 @@ struct RemindersView: View {
     // MARK: - Data
 
     private func loadData() async {
+        await ReminderService.shared.refreshFromServer()
         async let r = ReminderService.shared.getReminders()
         async let l = ReminderService.shared.getDefaultLeadMinutes()
         async let dl = ReminderService.shared.getDailyLeadMinutes()

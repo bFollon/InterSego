@@ -12,14 +12,14 @@ import UserNotifications
 
 /// Manages bus departure reminders (one-off and daily).
 ///
-/// One-off reminders are scheduled for the next future occurrence of the departure,
-/// considering day type and seasonal availability — not just today.
-/// Daily reminders persist until cancelled and are backed by a rolling 7-day batch of
-/// individual UNNotificationRequests with deterministic IDs. Smart-skip: days where the
-/// departure doesn't run (wrong day type or seasonal) are simply not scheduled.
+/// Delivery is handled exclusively by the push server (APNs). No local
+/// UNNotificationRequests are scheduled — that avoids the 64-notification iOS cap,
+/// prevents duplicate notifications, and removes the 7-day expiry limitation.
 ///
-/// Server sync: each reminder is also registered with the push server (POST /reminders)
-/// so it receives APNs push notifications as a fallback/primary delivery mechanism.
+/// This service owns:
+///   - The in-memory + persisted reminder list (source of truth for the bell UI)
+///   - APNs device token storage and rotation
+///   - Server registration (POST/DELETE/PUT /reminders)
 actor ReminderService {
     static let shared = ReminderService()
 
@@ -28,8 +28,6 @@ actor ReminderService {
     private let deviceTokenKey = "apnsDeviceToken"
     private let leadTimeKey = "reminderLeadTimeMinutes"
     private let dailyLeadTimeKey = "reminderDailyLeadTimeMinutes"
-    /// Prefix for daily batch notification identifiers: "daily|<matchKey>|<YYYY-MM-DD>"
-    private let dailyPrefix = "daily|"
     private var _reminders: [BusReminder] = []
     private var _initialized = false
     private var _deviceToken: String?
@@ -98,25 +96,9 @@ actor ReminderService {
     func pruneExpired() {
         ensureInitialized()
         let now = Date()
-        let expiredIds = _reminders.filter { !$0.isDaily && $0.fireDate < now }.map { $0.id }
-        guard !expiredIds.isEmpty else { return }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: expiredIds)
+        guard _reminders.contains(where: { !$0.isDaily && $0.fireDate < now }) else { return }
         _reminders.removeAll { !$0.isDaily && $0.fireDate < now }
         persist()
-    }
-
-    func replenishDailyReminders() async {
-        ensureInitialized()
-        let dailyReminders = _reminders.filter { $0.isDaily }
-        guard !dailyReminders.isEmpty else { return }
-
-        let center = UNUserNotificationCenter.current()
-        let pendingRequests = await center.pendingNotificationRequests()
-        let pendingIds = Set(pendingRequests.map { $0.identifier })
-
-        for reminder in dailyReminders {
-            await scheduleMissingBatchDays(for: reminder, pendingIds: pendingIds, center: center)
-        }
     }
 
     // MARK: - Scheduling
@@ -128,7 +110,6 @@ actor ReminderService {
         ensureInitialized()
         let leadMins = isDaily ? getDailyLeadMinutes() : getDefaultLeadMinutes()
 
-        // Find the next future occurrence of this departure (respects day type + seasonal)
         guard let fireDate = nextOccurrence(
             dayType: dayType,
             seasonalAvailability: departure.seasonalAvailability,
@@ -137,7 +118,7 @@ actor ReminderService {
             throw ReminderError.noUpcomingOccurrence
         }
 
-        // Request notification permission if needed
+        // Permission is required for APNs push delivery
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         switch settings.authorizationStatus {
@@ -167,20 +148,9 @@ actor ReminderService {
             dayType: dayType
         )
 
-        if isDaily {
-            try await scheduleDailyBatch(for: reminder, center: center)
-        } else {
-            let cal = Calendar.current
-            let content = buildNotificationContent(reminder: reminder)
-            let triggerComponents = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
-            try await center.add(UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger))
-        }
-
         _reminders.append(reminder)
         persist()
 
-        // Best-effort: register with the push server for APNs delivery
         if let token = currentDeviceToken(),
            let idx = _reminders.firstIndex(where: { $0.id == reminder.id }),
            let serverId = await postReminderToServer(reminder, deviceToken: token) {
@@ -198,13 +168,6 @@ actor ReminderService {
         guard !matching.isEmpty else { return }
 
         let serverIds = matching.compactMap { $0.serverId }
-        let isDaily = matching.first?.isDaily ?? false
-        if isDaily {
-            cancelDailyBatch(matchKey: key)
-        } else {
-            let ids = matching.map { $0.id }
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
-        }
         _reminders.removeAll { $0.matchKey == key }
         persist()
 
@@ -215,11 +178,6 @@ actor ReminderService {
         ensureInitialized()
         guard let reminder = _reminders.first(where: { $0.id == id }) else { return }
         let serverId = reminder.serverId
-        if reminder.isDaily {
-            cancelDailyBatch(matchKey: reminder.matchKey)
-        } else {
-            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
-        }
         _reminders.removeAll { $0.id == id }
         persist()
 
@@ -229,82 +187,52 @@ actor ReminderService {
     // MARK: - Rescheduling
 
     /// Reschedules all one-off reminders to use [newLeadMinutes].
-    /// For each reminder:
-    ///   1. If a valid future fire date exists with the new lead → reschedule normally.
-    ///   2. If the bus still runs but the lead time can't fit (fire time already passed) → fire immediately (~10s).
-    ///   3. If no upcoming occurrence at all → leave the reminder unchanged.
+    /// Deletes the old server registration and posts a new one.
+    /// Reminders with no upcoming occurrence within 30 days are left unchanged.
     func rescheduleOneOff(newLeadMinutes: Int) async {
         ensureInitialized()
-        let center = UNUserNotificationCenter.current()
 
         for i in _reminders.indices where !_reminders[i].isDaily {
             let reminder = _reminders[i]
-
-            if let newFireDate = nextOccurrence(
+            guard let newFireDate = nextOccurrence(
                 dayType: reminder.dayType,
                 seasonalAvailability: reminder.seasonalAvailability,
                 hour: reminder.departureHour, minute: reminder.departureMinute,
                 leadMins: newLeadMinutes
-            ) {
-                // Normal reschedule: cancel old, schedule at new time
-                center.removePendingNotificationRequests(withIdentifiers: [reminder.id])
-                let updated = BusReminder(
-                    id: UUID().uuidString,
-                    routeId: reminder.routeId, routeNumber: reminder.routeNumber,
-                    stopId: reminder.stopId, stopName: reminder.stopName,
-                    direction: reminder.direction,
-                    departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
-                    leadMinutes: newLeadMinutes, fireDate: newFireDate,
-                    seasonalNote: reminder.seasonalNote, isDaily: false,
-                    seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
-                )
-                let cal = Calendar.current
-                let content = buildNotificationContent(reminder: updated)
-                let triggerComponents = cal.dateComponents([.year, .month, .day, .hour, .minute], from: newFireDate)
-                let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComponents, repeats: false)
-                try? await center.add(UNNotificationRequest(identifier: updated.id, content: content, trigger: trigger))
-                _reminders[i] = updated
+            ) else { continue }
 
-            } else if nextOccurrence(
-                dayType: reminder.dayType,
-                seasonalAvailability: reminder.seasonalAvailability,
-                hour: reminder.departureHour, minute: reminder.departureMinute,
-                leadMins: 0
-            ) != nil {
-                // Bus still runs but the lead-adjusted fire time has passed — notify immediately
-                center.removePendingNotificationRequests(withIdentifiers: [reminder.id])
-                let immediateFireDate = Date().addingTimeInterval(10)
-                let updated = BusReminder(
-                    id: UUID().uuidString,
-                    routeId: reminder.routeId, routeNumber: reminder.routeNumber,
-                    stopId: reminder.stopId, stopName: reminder.stopName,
-                    direction: reminder.direction,
-                    departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
-                    leadMinutes: newLeadMinutes, fireDate: immediateFireDate,
-                    seasonalNote: reminder.seasonalNote, isDaily: false,
-                    seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
-                )
-                let content = buildNotificationContent(reminder: updated)
-                let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
-                try? await center.add(UNNotificationRequest(identifier: updated.id, content: content, trigger: trigger))
-                _reminders[i] = updated
+            if let sid = reminder.serverId { await deleteReminderFromServer(sid) }
+
+            let updated = BusReminder(
+                id: UUID().uuidString,
+                routeId: reminder.routeId, routeNumber: reminder.routeNumber,
+                stopId: reminder.stopId, stopName: reminder.stopName,
+                direction: reminder.direction,
+                departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
+                leadMinutes: newLeadMinutes, fireDate: newFireDate,
+                seasonalNote: reminder.seasonalNote, isDaily: false,
+                seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
+            )
+            _reminders[i] = updated
+
+            if let token = currentDeviceToken(),
+               let serverId = await postReminderToServer(updated, deviceToken: token) {
+                _reminders[i].serverId = serverId
             }
-            // else: no upcoming occurrence — leave the reminder untouched
         }
         persist()
     }
 
     /// Reschedules all daily reminders to use [newLeadMinutes].
-    /// Cancels the existing 7-day batch and replaces it with a fresh one at the new lead time.
+    /// Deletes the old server registration and posts a new one.
     func rescheduleDaily(newLeadMinutes: Int) async {
         ensureInitialized()
-        let center = UNUserNotificationCenter.current()
 
         for i in _reminders.indices where _reminders[i].isDaily {
             let reminder = _reminders[i]
-            cancelDailyBatch(matchKey: reminder.matchKey)
 
-            // Compute a representative fire date (used for display in the list)
+            if let sid = reminder.serverId { await deleteReminderFromServer(sid) }
+
             let newFireDate = nextOccurrence(
                 dayType: reminder.dayType,
                 seasonalAvailability: reminder.seasonalAvailability,
@@ -322,70 +250,14 @@ actor ReminderService {
                 seasonalNote: reminder.seasonalNote, isDaily: true,
                 seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
             )
-            try? await scheduleDailyBatch(for: updated, center: center)
             _reminders[i] = updated
+
+            if let token = currentDeviceToken(),
+               let serverId = await postReminderToServer(updated, deviceToken: token) {
+                _reminders[i].serverId = serverId
+            }
         }
         persist()
-    }
-
-    // MARK: - Daily batch helpers
-
-    private func scheduleDailyBatch(for reminder: BusReminder, center: UNUserNotificationCenter) async throws {
-        let pendingRequests = await center.pendingNotificationRequests()
-        let pendingIds = Set(pendingRequests.map { $0.identifier })
-        try await scheduleMissingBatchDays(for: reminder, pendingIds: pendingIds, center: center, throwing: true)
-    }
-
-    private func scheduleMissingBatchDays(
-        for reminder: BusReminder,
-        pendingIds: Set<String>,
-        center: UNUserNotificationCenter,
-        throwing: Bool = false
-    ) async {
-        let cal = Calendar.current
-        let now = Date()
-        let totalMins = reminder.departureHour * 60 + reminder.departureMinute - reminder.leadMinutes
-        let formatter = dailyDateFormatter()
-
-        for daysAhead in 0 ..< 7 {
-            guard let targetDay = cal.date(byAdding: .day, value: daysAhead, to: now) else { continue }
-
-            let weekday = cal.component(.weekday, from: targetDay)
-            let month = cal.component(.month, from: targetDay)
-
-            // Smart-skip: check day type and seasonal availability
-            if let dt = reminder.dayType, !dayTypeMatches(dt, weekday: weekday) { continue }
-            if let seasonal = reminder.seasonalAvailability,
-               !seasonal.runsIn(month: month, weekday: weekday) { continue }
-
-            var comps = cal.dateComponents([.year, .month, .day], from: targetDay)
-            comps.hour = totalMins / 60
-            comps.minute = totalMins % 60
-            comps.second = 0
-            guard let fireDate = cal.date(from: comps), fireDate > now else { continue }
-
-            let dateString = formatter.string(from: targetDay)
-            let notifId = "\(dailyPrefix)\(reminder.matchKey)|\(dateString)"
-            guard !pendingIds.contains(notifId) else { continue }
-
-            let content = buildNotificationContent(reminder: reminder)
-            let triggerComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComps, repeats: false)
-            let request = UNNotificationRequest(identifier: notifId, content: content, trigger: trigger)
-            try? await center.add(request)
-        }
-    }
-
-    private func cancelDailyBatch(matchKey: String) {
-        let cal = Calendar.current
-        let now = Date()
-        let formatter = dailyDateFormatter()
-        var ids: [String] = []
-        for offset in -2 ... 30 {
-            guard let date = cal.date(byAdding: .day, value: offset, to: now) else { continue }
-            ids.append("\(dailyPrefix)\(matchKey)|\(formatter.string(from: date))")
-        }
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
     }
 
     // MARK: - Next occurrence
@@ -435,25 +307,6 @@ actor ReminderService {
         }
     }
 
-    // MARK: - Shared helpers
-
-    private func buildNotificationContent(reminder: BusReminder) -> UNMutableNotificationContent {
-        let content = UNMutableNotificationContent()
-        content.title = "Línea \(reminder.routeNumber) · \(reminder.stopName)"
-        var body = "Sale en \(reminder.leadMinutes) min — \(reminder.departureDisplayString)"
-        if let note = reminder.seasonalNote { body += " (\(note))" }
-        content.body = body
-        content.sound = .default
-        return content
-    }
-
-    private func dailyDateFormatter() -> DateFormatter {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        return f
-    }
-
     // MARK: - Persistence
 
     private func persist() {
@@ -471,6 +324,9 @@ actor ReminderService {
         if let oldToken, oldToken != newToken {
             await putTokenUpdate(from: oldToken, to: newToken)
         }
+        // Pull server state first so orphaned/restored reminders are adopted locally,
+        // then push any local reminders that never made it to the server.
+        await mergeFromServer(token: newToken)
         await syncRemindersToServer()
     }
 
@@ -492,6 +348,80 @@ actor ReminderService {
             }
         }
         if dirty { persist() }
+    }
+
+    /// Syncs the local reminder list against the server for the current device token.
+    /// Safe to call any time (e.g. on reminders screen open).
+    func refreshFromServer() async {
+        guard let token = currentDeviceToken() else { return }
+        await mergeFromServer(token: token)
+    }
+
+    /// Fetches the server's list for [token] and reconciles it with the local list:
+    /// - If a server reminder matches a local one by matchKey but has no serverId → links it.
+    /// - If a server reminder has no local counterpart at all → adopts it (reinstall recovery).
+    /// - If a server reminder matches a local one that already has a serverId → skips it.
+    private func mergeFromServer(token: String) async {
+        guard let serverReminders = await fetchRemindersFromServer(token: token) else { return }
+        ensureInitialized()
+        let knownServerIds = Set(_reminders.compactMap { $0.serverId })
+        var dirty = false
+        for sr in serverReminders {
+            guard !knownServerIds.contains(sr.id) else { continue }
+            let key = BusReminder.matchKey(
+                routeId: sr.routeId, stopId: sr.stopId, direction: sr.direction,
+                hour: sr.departureHour, minute: sr.departureMinute
+            )
+            if let idx = _reminders.firstIndex(where: { $0.matchKey == key && $0.serverId == nil }) {
+                _reminders[idx].serverId = sr.id
+                dirty = true
+            } else if !_reminders.contains(where: { $0.matchKey == key }) {
+                if let reminder = toLocalReminder(sr) {
+                    _reminders.append(reminder)
+                    dirty = true
+                }
+            }
+        }
+        if dirty { persist() }
+    }
+
+    private func fetchRemindersFromServer(token: String) async -> [ServerDeviceReminder]? {
+        do {
+            let (data, http) = try await serverRequest(method: "GET", path: "/reminders/device/\(token)", body: nil)
+            guard (200 ... 299).contains(http.statusCode) else { return nil }
+            return try JSONDecoder().decode([ServerDeviceReminder].self, from: data)
+        } catch {
+            DebugConfig.debugWarn("ReminderService: failed to fetch reminders from server: \(error)")
+            return nil
+        }
+    }
+
+    private func toLocalReminder(_ s: ServerDeviceReminder) -> BusReminder? {
+        let dayType = s.dayType.flatMap { DayType(rawValue: $0.uppercased()) }
+        let seasonal = s.seasonalAvailability.flatMap { SeasonalAvailability(rawValue: $0) }
+
+        let fireDate: Date
+        if let str = s.nextFireAt, let date = ISO8601DateFormatter().date(from: str) {
+            fireDate = date
+        } else if let computed = nextOccurrence(
+            dayType: dayType, seasonalAvailability: seasonal,
+            hour: s.departureHour, minute: s.departureMinute, leadMins: s.leadMinutes
+        ) {
+            fireDate = computed
+        } else {
+            return nil
+        }
+
+        return BusReminder(
+            id: UUID().uuidString,
+            routeId: s.routeId, routeNumber: s.routeNumber,
+            stopId: s.stopId, stopName: s.stopName, direction: s.direction,
+            departureHour: s.departureHour, departureMinute: s.departureMinute,
+            leadMinutes: s.leadMinutes, fireDate: fireDate,
+            seasonalNote: seasonal.flatMap { $0.displayLabel },
+            isDaily: s.isDaily, seasonalAvailability: seasonal,
+            dayType: dayType, serverId: s.id
+        )
     }
 
     private func postReminderToServer(_ reminder: BusReminder, deviceToken: String) async -> String? {
@@ -573,6 +503,22 @@ actor ReminderService {
 }
 
 // MARK: - Server types (private)
+
+private struct ServerDeviceReminder: Decodable {
+    let id: String
+    let routeId: String
+    let routeNumber: String
+    let stopId: String
+    let stopName: String
+    let direction: String
+    let departureHour: Int
+    let departureMinute: Int
+    let leadMinutes: Int
+    let isDaily: Bool
+    let dayType: String?
+    let seasonalAvailability: String?
+    let nextFireAt: String?
+}
 
 private struct ServerReminderPayload: Encodable {
     let deviceToken: String
