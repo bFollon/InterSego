@@ -44,6 +44,9 @@ actor ReminderService {
     func initialize() {
         guard !_initialized else { return }
         _initialized = true
+        // Clear any local UNNotificationRequests left over from the pre-server-push version.
+        // Safe to call unconditionally — this version never schedules local notifications.
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         guard let data = UserDefaults.standard.data(forKey: remindersKey),
               let decoded = try? JSONDecoder().decode([BusReminder].self, from: data)
         else { return }
