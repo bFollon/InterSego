@@ -133,8 +133,8 @@
       "lon": -4.021688
     },
     {
-      "id": "torrecaballeros-3",
-      "name": "Torrecaballeros 3",
+      "id": "aldehuela",
+      "name": "Aldehuela",
       "area": "Torrecaballeros",
       "lat": 40.999144,
       "lon": -4.020855
@@ -203,7 +203,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "swapTargetId": "inbound",
       "extendedSectionLabel": "Ruta extendida",
@@ -217,7 +217,7 @@
       "id": "inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
@@ -265,7 +265,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3",
+        "aldehuela",
         "delicias",
         "azoguejo"
       ],
@@ -292,7 +292,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "departureLabel": "Sábado"
     },
@@ -300,7 +300,7 @@
       "id": "saturday-inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
@@ -342,7 +342,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "swapTargetId": "sunday-inbound",
       "departureLabel": "Domingo"
@@ -351,7 +351,7 @@
       "id": "sunday-inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
