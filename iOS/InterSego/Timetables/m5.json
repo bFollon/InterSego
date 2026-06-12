@@ -1,6 +1,6 @@
 {
   "routeId": "M5",
-  "version": "1.4",
+  "version": "1.5",
   "source": "Linecar M5 PDF, 2026-03-25",
   "route": {
     "number": "M5",
@@ -18,15 +18,14 @@
       "name": "Azoguejo",
       "area": "Segovia capital",
       "lat": 40.948502,
-      "lon": -4.115979,
-      "alternates": [
-        {
-          "id": "estacion-autobuses",
-          "name": "Estación de Autobuses",
-          "lat": 40.944768,
-          "lon": -4.121823
-        }
-      ]
+      "lon": -4.115979
+    },
+    {
+      "id": "estacion-autobuses",
+      "name": "Estación de Autobuses",
+      "area": "Segovia capital",
+      "lat": 40.944768,
+      "lon": -4.121823
     },
     {
       "id": "tizneros",
@@ -99,6 +98,34 @@
         "azoguejo"
       ],
       "swapTargetId": "regular"
+    },
+    {
+      "id": "saturday-outbound",
+      "label": "Estación de Autobuses → Sto. Domingo de Pirón",
+      "stopSequence": [
+        "estacion-autobuses",
+        "tizneros",
+        "espirdo",
+        "la-higuera",
+        "brieva",
+        "basardilla",
+        "sto-domingo-piron"
+      ],
+      "swapTargetId": "saturday-inbound"
+    },
+    {
+      "id": "saturday-inbound",
+      "label": "Sto. Domingo de Pirón → Estación de Autobuses",
+      "stopSequence": [
+        "sto-domingo-piron",
+        "basardilla",
+        "brieva",
+        "la-higuera",
+        "espirdo",
+        "tizneros",
+        "estacion-autobuses"
+      ],
+      "swapTargetId": "saturday-outbound"
     }
   ],
   "routeDisplay": {
@@ -113,7 +140,7 @@
       {
         "id": "entry-sabado",
         "label": "Sábados",
-        "variantId": "regular",
+        "variantId": "saturday-outbound",
         "dayType": "saturday"
       }
     ]
@@ -198,15 +225,12 @@
       ]
     },
     {
-      "variantId": "regular",
+      "variantId": "saturday-outbound",
       "dayType": "saturday",
       "trips": [
         {
           "departures": [
-            {
-              "hhmm": 1245,
-              "alternateId": "estacion-autobuses"
-            },
+            1245,
             1300,
             1305,
             1310,
@@ -218,7 +242,7 @@
       ]
     },
     {
-      "variantId": "reverse",
+      "variantId": "saturday-inbound",
       "dayType": "saturday",
       "trips": [
         {
@@ -229,10 +253,7 @@
             1020,
             1025,
             1030,
-            {
-              "hhmm": 1040,
-              "alternateId": "estacion-autobuses"
-            }
+            1040
           ]
         }
       ]
