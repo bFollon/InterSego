@@ -292,6 +292,37 @@ fun AboutScreen(
         HorizontalDivider()
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Map Data Section
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = "Datos del mapa",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Text(
+                text = "Los mapas de la app utilizan datos de © OpenStreetMap contributors, disponibles bajo la licencia Open Data Commons Open Database License (ODbL):",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Button(
+                onClick = { openUrl(context, "https://www.openstreetmap.org/copyright") },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF7EBC6A),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "OpenStreetMap — Copyright y licencia", fontWeight = FontWeight.Medium)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Contact & Feedback Section
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(

@@ -1269,77 +1269,98 @@ private fun StopMapTile(
         }
     }
 
-    Layout(
-        content = {
-            tileUrls.forEach { url ->
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(url)
-                        .crossfade(true)
-                        .addHeader("User-Agent", "InterSego/1.0 (Android; bus timetable app for Segovia)")
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds
-                )
-            }
-
-            Canvas(modifier = Modifier) {
-                val cx = size.width / 2f
-                val cy = size.height / 2f
-                val pinHeight = 32.dp.toPx()
-                val pinRadius = 11.dp.toPx()
-                val dotRadius = 4.dp.toPx()
-                val strokeWidth = 2.5f.dp.toPx()
-
-                val tipY = cy
-                val bulbY = tipY - pinHeight + pinRadius
-
-                val path = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(cx - pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
-                    lineTo(cx, tipY)
-                    lineTo(cx + pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
-                    close()
-                }
-                drawPath(path, color = pinColor)
-                drawPath(path, color = Color.White, style = Stroke(width = strokeWidth))
-
-                drawCircle(color = pinColor, radius = pinRadius, center = Offset(cx, bulbY))
-                drawCircle(color = Color.White, radius = pinRadius, center = Offset(cx, bulbY), style = Stroke(width = strokeWidth))
-                drawCircle(color = Color.White, radius = dotRadius, center = Offset(cx, bulbY))
-            }
-        },
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(2f)
             .clip(MaterialTheme.shapes.medium)
-    ) { measurables, constraints ->
-        val viewportW = constraints.maxWidth
-        val viewportH = constraints.maxHeight
-        val tileSize = viewportW
+    ) {
+        Layout(
+            content = {
+                tileUrls.forEach { url ->
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(url)
+                            .crossfade(true)
+                            .addHeader("User-Agent", "InterSego/1.0 (Android; bus timetable app for Segovia)")
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillBounds
+                    )
+                }
 
-        val markerGridX = tileSize + (mapData.markerX / 256f * tileSize).toInt()
-        val markerGridY = tileSize + (mapData.markerY / 256f * tileSize).toInt()
+                Canvas(modifier = Modifier) {
+                    val cx = size.width / 2f
+                    val cy = size.height / 2f
+                    val pinHeight = 32.dp.toPx()
+                    val pinRadius = 11.dp.toPx()
+                    val dotRadius = 4.dp.toPx()
+                    val strokeWidth = 2.5f.dp.toPx()
 
-        val offsetX = viewportW / 2 - markerGridX
-        val offsetY = viewportH / 2 - markerGridY
+                    val tipY = cy
+                    val bulbY = tipY - pinHeight + pinRadius
 
-        val tileConstraints = androidx.compose.ui.unit.Constraints.fixed(tileSize, tileSize)
-        val tilePlaceables = measurables.take(9).map { it.measure(tileConstraints) }
-        val pinPlaceable = measurables.last().measure(
-            androidx.compose.ui.unit.Constraints.fixed(viewportW, viewportH)
-        )
+                    val path = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(cx - pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
+                        lineTo(cx, tipY)
+                        lineTo(cx + pinRadius * 0.45f, bulbY + pinRadius * 0.7f)
+                        close()
+                    }
+                    drawPath(path, color = pinColor)
+                    drawPath(path, color = Color.White, style = Stroke(width = strokeWidth))
 
-        layout(viewportW, viewportH) {
-            tilePlaceables.forEachIndexed { i, placeable ->
-                val col = i % 3
-                val row = i / 3
-                placeable.place(
-                    x = col * tileSize + offsetX,
-                    y = row * tileSize + offsetY
-                )
+                    drawCircle(color = pinColor, radius = pinRadius, center = Offset(cx, bulbY))
+                    drawCircle(color = Color.White, radius = pinRadius, center = Offset(cx, bulbY), style = Stroke(width = strokeWidth))
+                    drawCircle(color = Color.White, radius = dotRadius, center = Offset(cx, bulbY))
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        ) { measurables, constraints ->
+            val viewportW = constraints.maxWidth
+            val viewportH = constraints.maxHeight
+            val tileSize = viewportW
+
+            val markerGridX = tileSize + (mapData.markerX / 256f * tileSize).toInt()
+            val markerGridY = tileSize + (mapData.markerY / 256f * tileSize).toInt()
+
+            val offsetX = viewportW / 2 - markerGridX
+            val offsetY = viewportH / 2 - markerGridY
+
+            val tileConstraints = androidx.compose.ui.unit.Constraints.fixed(tileSize, tileSize)
+            val tilePlaceables = measurables.take(9).map { it.measure(tileConstraints) }
+            val pinPlaceable = measurables.last().measure(
+                androidx.compose.ui.unit.Constraints.fixed(viewportW, viewportH)
+            )
+
+            layout(viewportW, viewportH) {
+                tilePlaceables.forEachIndexed { i, placeable ->
+                    val col = i % 3
+                    val row = i / 3
+                    placeable.place(
+                        x = col * tileSize + offsetX,
+                        y = row * tileSize + offsetY
+                    )
+                }
+                pinPlaceable.place(0, 0)
             }
-            pinPlaceable.place(0, 0)
         }
+
+        // OSM attribution, required by the OpenStreetMap tile usage policy
+        Text(
+            text = "OpenStreetMap",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .background(Color.Black.copy(alpha = 0.45f))
+                .clickable {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://www.openstreetmap.org/copyright"))
+                    )
+                }
+                .padding(horizontal = 4.dp, vertical = 1.dp)
+        )
     }
 }
 

@@ -9,6 +9,10 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +35,10 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import android.content.Context
 import androidx.compose.foundation.layout.Box
@@ -73,6 +80,7 @@ fun RouteMapScreen(
     onBack: () -> Unit,
     onStopSelected: (BusStop, String) -> Unit
 ) {
+    val context = LocalContext.current
     var currentViewId by remember(initialViewId) { mutableStateOf(initialViewId) }
     val currentView = views.find { it.id == currentViewId } ?: views.first()
 
@@ -147,6 +155,23 @@ fun RouteMapScreen(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+
+                // OSM attribution, required by the OpenStreetMap tile usage policy
+                Text(
+                    text = "OpenStreetMap",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .clickable {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://www.openstreetmap.org/copyright"))
+                            )
+                        }
+                        .padding(horizontal = 4.dp, vertical = 1.dp)
+                )
             }
         }
     }
