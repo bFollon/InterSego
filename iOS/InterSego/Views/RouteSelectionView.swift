@@ -14,15 +14,6 @@ struct RouteSelectionView: View {
     let supportedRoutes: Set<String>
     let onRouteSelected: (BusRoute) -> Void
 
-    private var sortedRoutes: [BusRoute] {
-        routes.sorted { a, b in
-            let aAvailable = supportedRoutes.contains(a.id)
-            let bAvailable = supportedRoutes.contains(b.id)
-            if aAvailable != bAvailable { return aAvailable }
-            return a.number < b.number
-        }
-    }
-
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -34,7 +25,7 @@ struct RouteSelectionView: View {
                     .padding(.bottom, 4)
 
                 LazyVStack(spacing: 12) {
-                    ForEach(sortedRoutes) { route in
+                    ForEach(routes) { route in
                         let isAvailable = supportedRoutes.contains(route.id)
                         RouteCardView(route: route, isAvailable: isAvailable)
                             .contentShape(RoundedRectangle(cornerRadius: 12))

@@ -74,6 +74,7 @@ import com.github.bfollon.intersego.data.BusStopRegistry
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.TimetableCacheService
+import com.github.bfollon.intersego.services.PolylineCacheService
 import com.github.bfollon.intersego.services.ClosestStopFinderService
 import com.github.bfollon.intersego.services.LocationManager as BusLocationManager
 import com.github.bfollon.intersego.services.TimetableService
@@ -257,9 +258,10 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     showMonitoringConsent = true
                 }
 
-                // Background timetable refresh — non-blocking, uses disk cache + ETags
+                // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
                 if (NetworkMonitor.isOnline()) {
                     launch { TimetableCacheService.fetchAllRoutes(this@MainActivity) }
+                    launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
                 }
             }
 

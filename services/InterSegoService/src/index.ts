@@ -18,6 +18,7 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import { initDb } from './db/index.js';
 import { boardingsRoutes } from './routes/boardings.js';
+import { reloadPolylines, polylinesRoutes } from './routes/polylines.js';
 import { remindersRoutes } from './routes/reminders.js';
 import { reloadTimetables, timetablesRoutes } from './routes/timetables.js';
 import { initScheduler } from './scheduler.js';
@@ -31,11 +32,13 @@ app.get('/health', async (_request, reply) => {
 app.register(boardingsRoutes);
 app.register(remindersRoutes);
 app.register(timetablesRoutes);
+app.register(polylinesRoutes);
 
-// Re-read timetable files from disk without restarting the process.
+// Re-read timetable and polyline files from disk without restarting the process.
 // Usage: kill -HUP <pid>  or  pm2 sendSignal SIGHUP intersego-server
 process.on('SIGHUP', () => {
   reloadTimetables();
+  reloadPolylines();
 });
 
 async function start(): Promise<void> {

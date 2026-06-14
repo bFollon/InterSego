@@ -70,11 +70,7 @@ fun RouteSelectionScreen(
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                val sortedRoutes = routes.sortedWith(
-                    compareByDescending<BusRoute> { routeDataService.hasParserFor(it.id) }
-                        .thenBy { it.number }
-                )
-                items(sortedRoutes) { route ->
+                items(routes) { route ->
                     val isAvailable = routeDataService.hasParserFor(route.id)
                     RouteCard(
                         route = route,

@@ -25,9 +25,15 @@ object PolylineLoader {
 
     fun load(context: Context, routeId: String, viewId: String): List<GeoPoint> {
         return try {
-            val text = context.assets
-                .open("route_polylines/$routeId-$viewId.json")
-                .bufferedReader().readText()
+            val id = "$routeId-$viewId"
+            val cacheFile = PolylineCacheService.cacheFile(context, id)
+            val text = if (cacheFile.exists()) {
+                cacheFile.readText()
+            } else {
+                context.assets
+                    .open("route_polylines/$id.json")
+                    .bufferedReader().readText()
+            }
             val file = json.decodeFromString<PolylineFile>(text)
             file.coordinates.mapNotNull { pair ->
                 if (pair.size >= 2) GeoPoint(pair[0], pair[1]) else null
