@@ -581,9 +581,10 @@ struct ContentView: View {
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
 
-        // Background timetable refresh — non-blocking, uses disk cache + ETags
+        // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
         if NetworkMonitor.shared.isOnline {
             Task { await TimetableCacheService.shared.fetchAllRoutes() }
+            Task { await PolylineCacheService.shared.fetchAllPolylines() }
         }
 
         // Analytics: app launch event

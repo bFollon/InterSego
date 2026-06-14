@@ -255,9 +255,103 @@ curl -X POST https://<host>/api/timetables/reload \
 
 ---
 
+## GET /api/polylines
+
+Returns a JSON object mapping every polyline id to its polyline data.
+
+```bash
+curl https://<host>/api/polylines \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+### Caching
+
+The response includes an `ETag` header. Send the value back in subsequent requests via `If-None-Match` to receive a `304 Not Modified` when nothing has changed.
+
+### Response 200
+
+```json
+{
+  "m1-circulara": { "version": "1.0", "coordinates": [[40.944672, -4.121719], ...] },
+  "m7-ave-outbound": { "version": "1.0", "coordinates": [[40.95, -4.11], ...] }
+}
+```
+
+### Response 304
+
+No body. The cached copy is still current.
+
+### Errors
+
+| Status | Condition |
+|---|---|
+| 401 | Missing or invalid Authorization header |
+
+---
+
+## GET /api/polylines/:id
+
+Returns the polyline JSON for a single route view. Ids are case-insensitive (`m1-circulara` and `M1-circularA` both work) and combine the route id and view id as `{routeId}-{viewId}`.
+
+```bash
+curl https://<host>/api/polylines/m1-circulara \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+### Caching
+
+Same ETag / `If-None-Match` behaviour as the all-polylines endpoint, scoped to this polyline's content.
+
+### Response 200
+
+The polyline object (the full contents of the corresponding JSON file).
+
+```json
+{ "version": "1.0", "coordinates": [[40.944672, -4.121719], ...] }
+```
+
+### Response 304
+
+No body. The cached copy is still current.
+
+### Errors
+
+| Status | Condition |
+|---|---|
+| 401 | Missing or invalid Authorization header |
+| 404 | No polyline file found for the given id |
+
+---
+
+## POST /api/polylines/reload
+
+Re-reads all polyline files from disk and replaces the in-memory cache. Use after editing or dropping in a new JSON file — no server restart needed.
+
+```bash
+curl -X POST https://<host>/api/polylines/reload \
+  -H "Authorization: Bearer <RELOAD_KEY>"
+```
+
+### Response 200
+
+```json
+{
+  "reloaded": 32,
+  "polylines": ["m1-circulara", "m1-circularb", "..."]
+}
+```
+
+### Errors
+
+| Status | Condition |
+|---|---|
+| 401 | Missing or invalid Authorization header |
+
+---
+
 ## Reloading via SIGHUP
 
-As an alternative to the HTTP endpoint, send `SIGHUP` to the server process to trigger the same reload:
+As an alternative to the HTTP endpoints, send `SIGHUP` to the server process to reload both the timetable and polyline caches:
 
 ```bash
 # With pm2

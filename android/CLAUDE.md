@@ -109,12 +109,14 @@ All timetable data is loaded from bundled JSON assets via `TimetableLoader`. The
 
 **Timetable Services**:
 - `TimetableLoader` - Reads `assets/timetables/{routeId}.json`, produces `List<BusTimetable>`
+- `TimetableCacheService` - Fetches per-route JSON from server, disk cache + ETag, hot-swap flag for `TimetableService`
 - `RouteDataService` - Coordinator: wraps `TimetableLoader`, maintains stop→route index, exposes route variants/views/entries
 - `TimetableService` - Memory cache + departure helpers over `RouteDataService`
 - `DeparturesService` - Departure queries combining `RouteDataService` + `TimetableService`
 
 **Map Services**:
-- `PolylineLoader` - Reads `assets/route_polylines/{routeId}-{viewId}.json`, produces `List<GeoPoint>`
+- `PolylineLoader` - Reads `assets/route_polylines/{routeId}-{viewId}.json` (disk cache first), produces `List<GeoPoint>`
+- `PolylineCacheService` - Fetches each `{routeId}-{viewId}` polyline from server, disk cache + ETag
 
 **Location Services**:
 - `ClosestStopFinderService` - Finds nearest bus stop to user
@@ -212,9 +214,11 @@ app/src/main/java/com/github/bfollon/intersego/
 │   ├── GeocodingService.kt       # Address → coordinates
 │   ├── CoordinateCache.kt        # Geocoding cache
 │   ├── TimetableLoader.kt        # Bundle JSON reader → List<BusTimetable>
+│   ├── TimetableCacheService.kt  # Server fetch + disk cache for timetables
 │   ├── RouteDataService.kt   # Route metadata coordinator
 │   ├── TimetableService.kt       # Memory cache + departure helpers
 │   ├── PolylineLoader.kt         # Bundle JSON reader → List<GeoPoint>
+│   ├── PolylineCacheService.kt   # Server fetch + disk cache for polylines
 │   ├── DeparturesService.kt      # Departure queries
 │   └── ClosestStopFinderService.kt # Nearest stop finder
 ├── ui/
