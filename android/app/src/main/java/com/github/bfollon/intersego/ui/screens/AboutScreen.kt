@@ -155,7 +155,7 @@ fun AboutScreen(
             )
 
             Text(
-                text = "Interurbanos de Segovia",
+                text = "Metropolitanos de Segovia",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center

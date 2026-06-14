@@ -38,7 +38,7 @@ struct LandingView: View {
                         ),
                     )
 
-                Text("Interurbanos de Segovia")
+                Text("Metropolitanos de Segovia")
                     .font(.title2)
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)

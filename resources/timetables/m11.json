@@ -1,0 +1,126 @@
+{
+  "routeId": "M11",
+  "version": "1.0",
+  "source": "infosegovia.com M11 page (Bernuy de Porreros - Segovia), retrieved 2026-06-13",
+  "route": {
+    "number": "M11",
+    "name": "Bernuy de Porreros - Segovia",
+    "origin": "Segovia",
+    "destination": "Bernuy de Porreros",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 12
+  },
+  "stops": [
+    {
+      "id": "estacion-autobuses",
+      "name": "Estación de Autobuses",
+      "area": "Segovia capital",
+      "lat": 40.944768,
+      "lon": -4.121823
+    },
+    {
+      "id": "bernuy-de-porreros",
+      "name": "Bernuy de Porreros",
+      "area": "Bernuy de Porreros",
+      "lat": 40.99924023629327,
+      "lon": -4.1178486022239635
+    }
+  ],
+  "variants": [
+    {
+      "id": "outbound",
+      "label": "Segovia → Bernuy de Porreros",
+      "stopSequence": [
+        "estacion-autobuses",
+        "bernuy-de-porreros"
+      ],
+      "swapTargetId": "inbound"
+    },
+    {
+      "id": "inbound",
+      "label": "Bernuy de Porreros → Segovia",
+      "stopSequence": [
+        "bernuy-de-porreros",
+        "estacion-autobuses"
+      ],
+      "swapTargetId": "outbound"
+    }
+  ],
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      {
+        "id": "entry-lv",
+        "label": "Lunes a Viernes",
+        "variantId": "outbound",
+        "dayType": "weekday"
+      },
+      {
+        "id": "entry-sabado",
+        "label": "Sábados",
+        "variantId": "outbound",
+        "dayType": "saturday"
+      }
+    ]
+  },
+  "timetables": [
+    {
+      "variantId": "outbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [715, 730]
+        },
+        {
+          "departures": [1300, 1315]
+        },
+        {
+          "departures": [1515, 1530]
+        },
+        {
+          "departures": [1830, 1845]
+        },
+        {
+          "departures": [2015, 2030]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [730, 745]
+        },
+        {
+          "departures": [920, 935]
+        },
+        {
+          "departures": [1530, 1545]
+        },
+        {
+          "departures": [2030, 2045]
+        }
+      ]
+    },
+    {
+      "variantId": "outbound",
+      "dayType": "saturday",
+      "trips": [
+        {
+          "departures": [1315, 1330]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "saturday",
+      "trips": [
+        {
+          "departures": [920, 935]
+        }
+      ]
+    }
+  ]
+}

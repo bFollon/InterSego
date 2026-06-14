@@ -1,0 +1,174 @@
+{
+  "routeId": "M10",
+  "version": "1.0",
+  "source": "infosegovia.com M10 page (Fuentemilanos - Segovia), retrieved 2026-06-13",
+  "route": {
+    "number": "M10",
+    "name": "Fuentemilanos - Segovia",
+    "origin": "Segovia",
+    "destination": "Fuentemilanos",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 11
+  },
+  "stops": [
+    {
+      "id": "estacion-autobuses",
+      "name": "Estación de Autobuses",
+      "area": "Segovia capital",
+      "lat": 40.944768,
+      "lon": -4.121823
+    },
+    {
+      "id": "madrona",
+      "name": "Madrona",
+      "area": "Madrona",
+      "lat": 40.89783730539958,
+      "lon": -4.17177015321123
+    },
+    {
+      "id": "fuentemilanos",
+      "name": "Fuentemilanos",
+      "area": "Fuentemilanos",
+      "lat": 40.87472638231594,
+      "lon": -4.227930225891001
+    }
+  ],
+  "variants": [
+    {
+      "id": "outbound",
+      "label": "Segovia → Fuentemilanos",
+      "stopSequence": [
+        "estacion-autobuses",
+        "madrona",
+        "fuentemilanos"
+      ],
+      "swapTargetId": "inbound"
+    },
+    {
+      "id": "inbound",
+      "label": "Fuentemilanos → Segovia",
+      "stopSequence": [
+        "fuentemilanos",
+        "madrona",
+        "estacion-autobuses"
+      ],
+      "swapTargetId": "outbound"
+    }
+  ],
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      {
+        "id": "entry-lv",
+        "label": "Lunes a Viernes",
+        "variantId": "outbound",
+        "dayType": "weekday"
+      },
+      {
+        "id": "entry-sabado",
+        "label": "Sábados",
+        "variantId": "outbound",
+        "dayType": "saturday"
+      },
+      {
+        "id": "entry-domingo",
+        "label": "Domingos y Festivos",
+        "variantId": "outbound",
+        "dayType": "sunday"
+      }
+    ]
+  },
+  "timetables": [
+    {
+      "variantId": "outbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [730, 737, 742]
+        },
+        {
+          "departures": [1100, 1107, 1112]
+        },
+        {
+          "departures": [1400, 1407, 1414]
+        },
+        {
+          "departures": [1630, 1637, 1642]
+        },
+        {
+          "departures": [2000, 2007, 2012]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [658, 703, 710]
+        },
+        {
+          "departures": [858, 903, 910]
+        },
+        {
+          "departures": [1328, 1333, 1340]
+        },
+        {
+          "departures": [1558, 1603, 1610]
+        },
+        {
+          "departures": [1943, 1948, 1955]
+        }
+      ]
+    },
+    {
+      "variantId": "outbound",
+      "dayType": "saturday",
+      "trips": [
+        {
+          "departures": [900, 907, 912]
+        },
+        {
+          "departures": [1800, 1807, 1812]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "saturday",
+      "trips": [
+        {
+          "departures": [1058, 1103, 1110]
+        },
+        {
+          "departures": [1958, 2003, 2010]
+        }
+      ]
+    },
+    {
+      "variantId": "outbound",
+      "dayType": "sunday",
+      "trips": [
+        {
+          "departures": [900, 907, 912]
+        },
+        {
+          "departures": [1800, 1807, 1812]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "sunday",
+      "trips": [
+        {
+          "departures": [1058, 1103, 1110]
+        },
+        {
+          "departures": [1958, 2003, 2010]
+        }
+      ]
+    }
+  ]
+}

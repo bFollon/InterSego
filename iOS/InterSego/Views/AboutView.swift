@@ -45,7 +45,7 @@ struct AboutView: View {
                             )
                             .multilineTextAlignment(.center)
 
-                        Text("Interurbanos de Segovia")
+                        Text("Metropolitanos de Segovia")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)

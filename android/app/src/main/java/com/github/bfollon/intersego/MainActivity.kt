@@ -386,7 +386,7 @@ fun SplashScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Interurbanos de Segovia",
+                    text = "Metropolitanos de Segovia",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant

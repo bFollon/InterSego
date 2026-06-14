@@ -1,0 +1,165 @@
+{
+  "routeId": "M9",
+  "version": "1.0",
+  "source": "infosegovia.com M9 page (Otero de Herreros - Segovia), retrieved 2026-06-13",
+  "route": {
+    "number": "M9",
+    "name": "Otero de Herreros - Segovia",
+    "origin": "Segovia",
+    "destination": "Otero de Herreros",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 10
+  },
+  "stops": [
+    {
+      "id": "estacion-autobuses",
+      "name": "Estación de Autobuses",
+      "area": "Segovia capital",
+      "lat": 40.944768,
+      "lon": -4.121823
+    },
+    {
+      "id": "estacion-ave-hontoria",
+      "name": "Estación AVE Hontoria",
+      "area": "Hontoria",
+      "lat": 40.910594,
+      "lon": -4.094579
+    },
+    {
+      "id": "revenga",
+      "name": "Revenga",
+      "area": "Revenga",
+      "lat": 40.871513984745704,
+      "lon": -4.100954981506853
+    },
+    {
+      "id": "navas-de-riofrio",
+      "name": "Navas de Riofrío",
+      "area": "Navas de Riofrío",
+      "lat": 40.86351823587779,
+      "lon": -4.137836652869765
+    },
+    {
+      "id": "la-losa",
+      "name": "La Losa",
+      "area": "La Losa",
+      "lat": 40.853151769485834,
+      "lon": -4.163511956775119
+    },
+    {
+      "id": "ortigosa-del-monte-1",
+      "name": "Ortigosa del Monte",
+      "area": "Ortigosa del Monte",
+      "lat": 40.83094656745475,
+      "lon": -4.16707323134713
+    },
+    {
+      "id": "ortigosa-del-monte-2",
+      "name": "Ortigosa del Monte",
+      "area": "Ortigosa del Monte",
+      "lat": 40.842651923028114,
+      "lon": -4.175611414819457
+    },
+    {
+      "id": "otero-de-herreros",
+      "name": "Otero de Herreros",
+      "area": "Otero de Herreros",
+      "lat": 40.8094449093488,
+      "lon": -4.204228503621531
+    }
+  ],
+  "variants": [
+    {
+      "id": "outbound",
+      "label": "Segovia → Otero de Herreros",
+      "stopSequence": [
+        "estacion-autobuses",
+        "estacion-ave-hontoria",
+        "revenga",
+        "navas-de-riofrio",
+        "la-losa",
+        "ortigosa-del-monte-1",
+        "ortigosa-del-monte-2",
+        "otero-de-herreros"
+      ],
+      "swapTargetId": "inbound"
+    },
+    {
+      "id": "inbound",
+      "label": "Otero de Herreros → Segovia",
+      "stopSequence": [
+        "otero-de-herreros",
+        "ortigosa-del-monte-2",
+        "ortigosa-del-monte-1",
+        "la-losa",
+        "navas-de-riofrio",
+        "revenga",
+        "estacion-ave-hontoria",
+        "estacion-autobuses"
+      ],
+      "swapTargetId": "outbound"
+    }
+  ],
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      {
+        "id": "entry-lv",
+        "label": "Lunes a Viernes",
+        "variantId": "outbound",
+        "dayType": "weekday"
+      }
+    ]
+  },
+  "timetables": [
+    {
+      "variantId": "outbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [1110, 1115, 1125, 1133, 1138, 1140, 1144, 1152]
+        },
+        {
+          "departures": [1230, 1235, 1245, 1253, 1258, 1300, 1304, 1312]
+        },
+        {
+          "departures": [1400, null, 1410, 1418, 1423, 1425, 1429, 1437]
+        },
+        {
+          "departures": [1615, 1620, 1630, 1638, 1643, 1645, 1649, 1657]
+        },
+        {
+          "departures": [1900, 1905, 1915, 1923, 1928, 1930, 1934, 1942]
+        },
+        {
+          "departures": [2000, 2005, 2015, 2023, 2028, 2030, 2034, 2042]
+        },
+        {
+          "departures": [2145, 2150, 2200, 2208, 2213, 2215, 2219, 2227]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [700, 708, 712, 714, 719, 727, 735, 740]
+        },
+        {
+          "departures": [935, 943, 947, 949, 954, 1002, 1012, 1017]
+        },
+        {
+          "departures": [1320, 1328, 1332, 1334, 1339, 1347, 1357, 1402]
+        },
+        {
+          "departures": [1605, 1613, 1617, 1619, 1624, 1632, 1642, 1647]
+        },
+        {
+          "departures": [2105, 2113, 2117, 2119, 2124, 2132, 2142, 2147]
+        }
+      ]
+    }
+  ]
+}

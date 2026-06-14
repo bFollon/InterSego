@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**InterSego** is a bus timetable app for Segovia, Spain. It loads bus timetable data from bundled JSON assets, provides offline-first access, and helps users find the nearest bus stop using geolocation.
+**InterSego** ("Metropolitanos de Segovia") is a bus timetable app for Segovia, Spain. It loads bus timetable data from bundled JSON assets, provides offline-first access, and helps users find the nearest bus stop using geolocation.
 
 **Current Status:** Android and iOS implementations at feature parity. All 8 routes (M1–M8) operational on both platforms via JSON-based loading.
 
@@ -46,7 +46,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Screen | Android | iOS | Notes |
 |---|---|---|---|
-| Splash screen | ✅ | ✅ | App icon + "InterSego" + "Interurbanos de Segovia", fade transition |
+| Splash screen | ✅ | ✅ | App icon + "InterSego" + "Metropolitanos de Segovia", fade transition |
 | Landing screen (home hub) | ✅ | ✅ | Gradient title + "Líneas de bus" + "Parada más cercana" button cards; permanent root, back from route list returns here |
 | Closest stop button | ✅ | ✅ | Geolocates user, finds nearest stop across all supported routes, navigates to NextDeparture; ties broken by soonest departure; inline error on failure |
 | Route selection | ✅ | ✅ | |
