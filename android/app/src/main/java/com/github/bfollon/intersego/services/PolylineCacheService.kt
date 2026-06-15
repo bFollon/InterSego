@@ -63,7 +63,7 @@ object PolylineCacheService {
     private fun saveEtag(context: Context, id: String, etag: String) =
         prefs(context).edit().putString("etag_${id.lowercase()}", etag).apply()
 
-    private suspend fun fetchPolyline(context: Context, id: String): Boolean =
+    internal suspend fun fetchPolyline(context: Context, id: String): Boolean =
         withContext(Dispatchers.IO) {
             try {
                 val requestBuilder = Request.Builder()

@@ -28,6 +28,24 @@ actor TimetableCacheService {
         return urls.map { $0.deletingPathExtension().lastPathComponent.lowercased() }
     }
 
+    private struct RoutesManifest: Decodable {
+        let routeIds: [String]
+    }
+
+    private struct VariantIdsFile: Decodable {
+        struct Variant: Decodable { let id: String }
+        let variants: [Variant]
+    }
+
+    private func diskCacheRouteIds() -> [String] {
+        guard let cacheDir = Self.cacheDirectory(),
+              let files = try? FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil)
+        else { return [] }
+        return files
+            .filter { $0.pathExtension == "json" }
+            .map { $0.deletingPathExtension().lastPathComponent.lowercased() }
+    }
+
     private init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10
@@ -109,13 +127,58 @@ actor TimetableCacheService {
         }
     }
 
+    /// Fetches the lightweight route manifest (`GET /api/routes`), used to discover
+    /// routes that exist on the server but not yet in the bundle or disk cache.
+    /// Returns `nil` on any failure (offline / error) so callers can fall back to
+    /// the bundle/disk-cache-only route list.
+    private func fetchManifest() async -> [String]? {
+        guard let url = URL(string: "\(AppConfig.boardingServerURL)/api/routes") else { return nil }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(AppConfig.serverAPIKey)", forHTTPHeaderField: "Authorization")
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let http = response as? HTTPURLResponse else { return nil }
+            DebugConfig.debugPrint("TimetableCacheService: GET /api/routes → HTTP \(http.statusCode)")
+            guard http.statusCode == 200 else { return nil }
+            return try JSONDecoder().decode(RoutesManifest.self, from: data).routeIds
+        } catch {
+            DebugConfig.debugError("TimetableCacheService: manifest fetch error", error: error)
+            return nil
+        }
+    }
+
+    /// Fetches the polyline for each of `routeId`'s variants, for a route that was just
+    /// discovered via the manifest and has no bundled/cached polylines yet.
+    private func fetchPolylinesForNewRoute(_ routeId: String) async {
+        guard let cacheURL = Self.cacheURL(for: routeId),
+              let data = try? Data(contentsOf: cacheURL),
+              let file = try? JSONDecoder().decode(VariantIdsFile.self, from: data)
+        else { return }
+        for variant in file.variants {
+            await PolylineCacheService.shared.fetchPolyline("\(routeId.uppercased())-\(variant.id)")
+        }
+    }
+
     /// Fetches all routes in parallel. Updated routes are flagged via `hasPendingUpdate(_:)`.
+    ///
+    /// The route ID list is the union of bundled assets, the disk cache, and the server
+    /// manifest (`fetchManifest`). Routes that are new (server-only, not yet seen on this
+    /// device) also have their polylines fetched once their timetable is downloaded.
     func fetchAllRoutes() async {
-        let routeIds = bundleRouteIds
-        DebugConfig.debugPrint("TimetableCacheService: Starting fetch for \(routeIds.count) routes")
+        let knownIds = Set(bundleRouteIds + diskCacheRouteIds())
+        let manifestIds = (await fetchManifest())?.map { $0.lowercased() } ?? []
+        let allIds = knownIds.union(manifestIds)
+
+        DebugConfig.debugPrint("TimetableCacheService: Starting fetch for \(allIds.count) routes")
         await withTaskGroup(of: Void.self) { group in
-            for routeId in routeIds {
-                group.addTask { await self.fetchRoute(routeId) }
+            for routeId in allIds {
+                group.addTask {
+                    let isNew = !knownIds.contains(routeId)
+                    let updated = await self.fetchRoute(routeId)
+                    if isNew && updated {
+                        await self.fetchPolylinesForNewRoute(routeId)
+                    }
+                }
             }
         }
         DebugConfig.debugPrint("TimetableCacheService: Fetch complete, \(pendingUpdates.count) route(s) updated")

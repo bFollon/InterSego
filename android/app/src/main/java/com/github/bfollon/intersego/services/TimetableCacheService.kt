@@ -17,6 +17,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -43,15 +45,30 @@ object TimetableCacheService {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     private val serverUrl get() = BuildConfig.BOARDING_SERVER_URL
     private val apiKey get() = BuildConfig.SERVER_API_KEY
 
     private val pendingUpdates = Collections.synchronizedSet(mutableSetOf<String>())
 
+    @Serializable
+    private data class RoutesManifest(val routeIds: List<String> = emptyList())
+
+    @Serializable
+    private data class VariantIdOnly(val id: String)
+
+    @Serializable
+    private data class TimetableVariantsFile(val variants: List<VariantIdOnly> = emptyList())
+
     private fun bundleRouteIds(context: Context): List<String> =
         (context.assets.list("timetables") ?: emptyArray())
             .filter { it.endsWith(".json") }
             .map { it.removeSuffix(".json") }
+
+    private fun diskCacheRouteIds(context: Context): List<String> =
+        (File(context.filesDir, "timetables").listFiles { f -> f.extension == "json" } ?: emptyArray())
+            .map { it.nameWithoutExtension }
 
     fun cacheFile(context: Context, routeId: String): File =
         File(context.filesDir, "timetables/${routeId.lowercase()}.json")
@@ -105,13 +122,71 @@ object TimetableCacheService {
         }
 
     /**
+     * Fetches the lightweight route manifest (`GET /api/routes`), used to discover
+     * routes that exist on the server but not yet in the bundle or disk cache.
+     * Returns `null` on any failure (offline / error) so callers can fall back to
+     * the bundle/disk-cache-only route list.
+     */
+    private suspend fun fetchManifest(context: Context): List<String>? =
+        withContext(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url("$serverUrl/api/routes")
+                    .addHeader("Authorization", "Bearer $apiKey")
+                    .build()
+                val response = client.newCall(request).execute()
+                DebugConfig.debugPrint("$TAG: GET /api/routes → HTTP ${response.code}")
+                if (response.code != 200) return@withContext null
+                val body = response.body?.string() ?: return@withContext null
+                json.decodeFromString<RoutesManifest>(body).routeIds
+            } catch (e: Exception) {
+                DebugConfig.debugError("$TAG: manifest fetch error", e)
+                null
+            }
+        }
+
+    /**
+     * Fetches the polyline for each of [routeId]'s variants, for a route that was just
+     * discovered via the manifest and has no bundled/cached polylines yet.
+     */
+    private suspend fun fetchPolylinesForNewRoute(context: Context, routeId: String) {
+        try {
+            val text = cacheFile(context, routeId).readText()
+            val variants = json.decodeFromString<TimetableVariantsFile>(text).variants
+            variants.forEach { variant ->
+                PolylineCacheService.fetchPolyline(context, "${routeId.uppercase()}-${variant.id}")
+            }
+        } catch (e: Exception) {
+            DebugConfig.debugError("$TAG: failed to fetch polylines for new route $routeId", e)
+        }
+    }
+
+    /**
      * Fetches all routes in parallel. Updated routes are flagged via [hasPendingUpdate].
+     *
+     * The route ID list is the union of bundled assets, the disk cache, and the server
+     * manifest ([fetchManifest]). Routes that are new (server-only, not yet seen on this
+     * device) also have their polylines fetched once their timetable is downloaded.
+     *
      * Safe to call on any dispatcher — internally runs on [Dispatchers.IO].
      */
     suspend fun fetchAllRoutes(context: Context) = coroutineScope {
-        val routeIds = bundleRouteIds(context)
-        DebugConfig.debugPrint("$TAG: Starting fetch for ${routeIds.size} routes")
-        routeIds.map { routeId -> async { fetchRoute(context, routeId) } }.awaitAll()
+        val knownIds = (bundleRouteIds(context) + diskCacheRouteIds(context))
+            .map { it.lowercase() }
+            .toSet()
+        val manifestIds = fetchManifest(context)?.map { it.lowercase() } ?: emptyList()
+        val allIds = knownIds + manifestIds
+
+        DebugConfig.debugPrint("$TAG: Starting fetch for ${allIds.size} routes")
+        allIds.map { routeId ->
+            async {
+                val isNew = routeId !in knownIds
+                val updated = fetchRoute(context, routeId)
+                if (isNew && updated) {
+                    fetchPolylinesForNewRoute(context, routeId)
+                }
+            }
+        }.awaitAll()
         DebugConfig.debugPrint("$TAG: Fetch complete, ${pendingUpdates.size} route(s) updated")
     }
 }

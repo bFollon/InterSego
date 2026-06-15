@@ -32,6 +32,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.File
 import java.util.Calendar
 import java.util.Date
 
@@ -238,13 +239,20 @@ class TimetableLoader(private val context: Context) {
         )
     }
 
-    /** Scans all timetable assets and returns routes sorted by displayOrder. */
+    /**
+     * Scans all timetable assets and the disk cache, and returns routes sorted by
+     * displayOrder. Routes that exist only on disk (discovered via the server's
+     * route manifest, see [TimetableCacheService]) are included alongside bundled ones.
+     */
     fun loadAllRoutes(): List<BusRoute> {
-        val files = context.assets.list("timetables") ?: return emptyList()
-        return files
+        val bundleIds = (context.assets.list("timetables") ?: emptyArray())
             .filter { it.endsWith(".json") }
-            .mapNotNull { filename ->
-                val routeId = filename.removeSuffix(".json").uppercase()
+            .map { it.removeSuffix(".json") }
+        val diskIds = (File(context.filesDir, "timetables").listFiles { f -> f.extension == "json" } ?: emptyArray())
+            .map { it.nameWithoutExtension }
+        return (bundleIds + diskIds).distinct()
+            .mapNotNull { id ->
+                val routeId = id.uppercase()
                 runCatching { loadFile(routeId) }.getOrNull()?.let { file ->
                     val r = file.route
                     val type = if (r.routeType == "INTERURBAN") RouteType.INTERURBAN else RouteType.URBAN
