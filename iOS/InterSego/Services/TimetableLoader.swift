@@ -251,14 +251,25 @@ struct TimetableLoader {
         )
     }
 
-    /// Scans all timetable JSON files in the bundle and returns routes sorted by displayOrder.
+    /// Scans all timetable JSON files in the bundle and the disk cache, and returns
+    /// routes sorted by displayOrder. Routes that exist only on disk (discovered via
+    /// the server's route manifest, see `TimetableCacheService`) are included
+    /// alongside bundled ones.
     func loadAllRoutes() -> [BusRoute] {
-        guard let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Timetables") else {
-            return []
+        var routeIds = Set<String>()
+        if let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: "Timetables") {
+            routeIds.formUnion(urls.map { $0.deletingPathExtension().lastPathComponent.uppercased() })
         }
-        return urls
-            .compactMap { url -> (BusRoute, Int)? in
-                let routeId = url.deletingPathExtension().lastPathComponent.uppercased()
+        if let cacheDir = TimetableCacheService.cacheDirectory(),
+           let files = try? FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil) {
+            routeIds.formUnion(
+                files
+                    .filter { $0.pathExtension == "json" }
+                    .map { $0.deletingPathExtension().lastPathComponent.uppercased() }
+            )
+        }
+        return routeIds
+            .compactMap { routeId -> (BusRoute, Int)? in
                 guard let file = try? loadFile(routeId) else { return nil }
                 let r = file.route
                 let type: RouteType = r.routeType == "INTERURBAN" ? .interurban : .urban

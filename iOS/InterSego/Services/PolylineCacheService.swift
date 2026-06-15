@@ -59,7 +59,7 @@ actor PolylineCacheService {
     // MARK: - Fetch
 
     @discardableResult
-    private func fetchPolyline(_ id: String) async -> Bool {
+    func fetchPolyline(_ id: String) async -> Bool {
         guard let url = URL(string: "\(AppConfig.boardingServerURL)/api/polylines/\(id)") else {
             return false
         }
