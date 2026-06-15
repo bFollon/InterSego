@@ -14,18 +14,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.data.FeedbackCategory
 import com.github.bfollon.intersego.services.ErrorReportingService
 import kotlinx.coroutines.launch
 
+/** In-app form for submitting a bug report or suggestion to BugSink. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BugReportSheet(
+fun FeedbackSheet(
+    category: FeedbackCategory,
     onDismiss: () -> Unit
 ) {
     var name by remember { mutableStateOf("") }
@@ -56,18 +60,18 @@ fun BugReportSheet(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.BugReport,
+                        imageVector = if (category == FeedbackCategory.BUG) Icons.Default.BugReport else Icons.Default.Lightbulb,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(48.dp)
                     )
                     Text(
-                        text = "¡Error reportado!",
+                        text = category.successTitle,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Gracias por ayudar a mejorar la app.",
+                        text = category.successBody,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -81,7 +85,7 @@ fun BugReportSheet(
                 }
             } else {
                 Text(
-                    text = "Reportar error",
+                    text = category.title,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -89,7 +93,7 @@ fun BugReportSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Describe el problema que has encontrado:",
+                    text = category.prompt,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -99,8 +103,8 @@ fun BugReportSheet(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Descripción del error") },
-                    placeholder = { Text("¿Qué ha pasado? ¿Cuándo?") },
+                    label = { Text(category.fieldLabel) },
+                    placeholder = { Text(category.fieldPlaceholder) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     maxLines = 5,
@@ -146,7 +150,7 @@ fun BugReportSheet(
                 Button(
                     onClick = {
                         if (description.isBlank()) {
-                            errorMessage = "Por favor, describe el error"
+                            errorMessage = category.emptyFieldError
                             return@Button
                         }
                         errorMessage = null
@@ -155,7 +159,8 @@ fun BugReportSheet(
                             val success = ErrorReportingService.submitFeedback(
                                 name = name,
                                 email = email,
-                                message = description
+                                message = description,
+                                category = category
                             )
                             isSubmitting = false
                             if (success) {
@@ -175,7 +180,7 @@ fun BugReportSheet(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Enviar informe")
+                        Text(category.submitButtonLabel)
                     }
                 }
             }

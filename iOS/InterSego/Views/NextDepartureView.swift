@@ -1424,6 +1424,9 @@ private struct BoardingButton: View {
 private struct PDFLinksFooter: View {
     let routes: [BusRoute]
 
+    @StateObject private var feedback = FeedbackCoordinator()
+    @State private var showFeedbackChoice = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada.")
@@ -1440,11 +1443,26 @@ private struct PDFLinksFooter: View {
                     }
                 }
             }
+
+            Divider()
+
+            Button(action: { showFeedbackChoice = true }) {
+                Label("¿Sugerencias o errores? Cuéntanoslo", systemImage: "bubble.left.and.bubble.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        .confirmationDialog("¿Qué quieres hacer?", isPresented: $showFeedbackChoice, titleVisibility: .visible) {
+            Button("Reportar error") { feedback.trigger(.bug) }
+            Button("Enviar sugerencia") { feedback.trigger(.suggestion) }
+            Button("Cancelar", role: .cancel) {}
+        }
+        .feedbackPresentation(feedback)
     }
 }
 

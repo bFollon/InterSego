@@ -61,9 +61,9 @@ class ErrorReportingService {
         DebugConfig.debugPrint("ErrorReportingService: captured message: \(message)")
     }
 
-    /// Submit user feedback (bug report) to BugSink.
+    /// Submit user feedback (bug report or suggestion) to BugSink.
     /// Returns false if the user has not opted into error reporting — caller should fall back to email.
-    func submitFeedback(name: String, email: String, message: String) async -> Bool {
+    func submitFeedback(name: String, email: String, message: String, category: FeedbackCategory) async -> Bool {
         guard MonitoringPreferencesService.shared.hasUserOptedIn() else {
             DebugConfig.debugPrint("ErrorReportingService: submitFeedback skipped (user has not opted in)")
             return false
@@ -73,7 +73,7 @@ class ErrorReportingService {
         let userEmail = email.isEmpty ? "not provided" : email
 
         let fullMessage = """
-        === User Bug Report ===
+        \(category.bugSinkHeader)
         Name: \(userName)
         Email: \(userEmail)
 
@@ -83,7 +83,7 @@ class ErrorReportingService {
 
         let event = Event()
         event.message = SentryMessage(formatted: fullMessage)
-        event.fingerprint = ["user-bug-report", String(message.hashValue)]
+        event.fingerprint = [category.fingerprintTag, String(message.hashValue)]
         SentrySDK.capture(event: event)
 
         DebugConfig.debugPrint("ErrorReportingService: submitted user feedback")
