@@ -1,0 +1,87 @@
+{
+  "routeId": "M99",
+  "version": "1.0",
+  "source": "TEST FIXTURE - dynamic route discovery, remove before merging to main",
+  "route": {
+    "number": "M99",
+    "name": "Test Route",
+    "origin": "Test Origin",
+    "destination": "Test Destination",
+    "routeType": "URBAN",
+    "isCircular": false,
+    "displayOrder": 99
+  },
+  "stops": [
+    {
+      "id": "m99-stop-a",
+      "name": "Test Stop A",
+      "area": "Test Area",
+      "lat": 40.95,
+      "lon": -4.12
+    },
+    {
+      "id": "m99-stop-b",
+      "name": "Test Stop B",
+      "area": "Test Area",
+      "lat": 40.96,
+      "lon": -4.13
+    }
+  ],
+  "variants": [
+    {
+      "id": "outbound",
+      "label": "Test Stop A → Test Stop B",
+      "stopSequence": [
+        "m99-stop-a",
+        "m99-stop-b"
+      ],
+      "swapTargetId": "inbound"
+    },
+    {
+      "id": "inbound",
+      "label": "Test Stop B → Test Stop A",
+      "stopSequence": [
+        "m99-stop-b",
+        "m99-stop-a"
+      ],
+      "swapTargetId": "outbound"
+    }
+  ],
+  "routeDisplay": {
+    "type": "swap",
+    "entries": [
+      {
+        "id": "entry-lv",
+        "label": "Lunes a Viernes",
+        "variantId": "outbound",
+        "dayType": "weekday"
+      }
+    ]
+  },
+  "timetables": [
+    {
+      "variantId": "outbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [800, 810]
+        },
+        {
+          "departures": [1600, 1610]
+        }
+      ]
+    },
+    {
+      "variantId": "inbound",
+      "dayType": "weekday",
+      "trips": [
+        {
+          "departures": [900, 910]
+        },
+        {
+          "departures": [1700, 1710]
+        }
+      ]
+    }
+  ]
+}
