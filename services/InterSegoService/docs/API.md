@@ -164,6 +164,31 @@ Average the lateness values across all events for a more robust estimate.
 
 ---
 
+## GET /api/routes
+
+Returns the list of all route IDs known to the server. Lightweight manifest endpoint
+used by clients to discover routes that exist on the server but not in their local
+bundle/disk cache — fetched unconditionally on every online launch (no ETag).
+
+```bash
+curl https://<host>/api/routes \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+### Response 200
+
+```json
+{ "routeIds": ["m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "m10", "m11"] }
+```
+
+### Errors
+
+| Status | Condition |
+|---|---|
+| 401 | Missing or invalid Authorization header |
+
+---
+
 ## GET /api/timetables
 
 Returns a JSON array containing the full timetable object for every route.

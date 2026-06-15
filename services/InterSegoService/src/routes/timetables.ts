@@ -71,6 +71,20 @@ export function reloadTimetables(): void {
 
 export async function timetablesRoutes(app: FastifyInstance): Promise<void> {
   /**
+   * GET /api/routes
+   *
+   * Returns the list of all known route IDs. Lightweight manifest used by clients
+   * to discover routes that exist on the server but not in their local bundle/cache.
+   */
+  app.get(
+    '/api/routes',
+    { preHandler: requireApiKey },
+    async (_request, reply) => {
+      return reply.send({ routeIds: [...cache.routes.keys()] });
+    },
+  );
+
+  /**
    * GET /api/timetables
    *
    * Returns a JSON array containing all route timetable objects.
