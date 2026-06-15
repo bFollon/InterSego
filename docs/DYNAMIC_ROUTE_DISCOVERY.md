@@ -1,6 +1,10 @@
 # Dynamic Route Discovery
 
-## Status: Proposed
+## Status: Implemented
+
+All phases below have been implemented on the server, Android, and iOS. See the
+cross-platform feature tracker in the root `CLAUDE.md` ("Dynamic (server-only) route
+discovery") for a summary.
 
 ## Motivation
 
