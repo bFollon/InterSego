@@ -39,11 +39,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,8 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
-import com.github.bfollon.intersego.services.ErrorReportingService
-import com.github.bfollon.intersego.services.MonitoringPreferencesService
+import com.github.bfollon.intersego.data.FeedbackCategory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,44 +72,8 @@ fun AboutScreen(
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val versionName = packageInfo.versionName ?: "Unknown"
     val versionCode = packageInfo.longVersionCode
-    val (showBugReportSheet, setShowBugReportSheet) = remember { mutableStateOf(false) }
-    val (showNoConsentDialog, setShowNoConsentDialog) = remember { mutableStateOf(false) }
-
-    if (showBugReportSheet) {
-        BugReportSheet(
-            onDismiss = { setShowBugReportSheet(false) }
-        )
-    }
-
-    if (showNoConsentDialog) {
-        AlertDialog(
-            onDismissRequest = { setShowNoConsentDialog(false) },
-            title = { Text("Informes de error desactivados") },
-            text = { Text("Los informes de error están desactivados. Puedes activarlos para enviar el informe directamente, o reportar el error por email.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    setShowNoConsentDialog(false)
-                    MonitoringPreferencesService.setMonitoringEnabled(true)
-                    ErrorReportingService.initialize(context)
-                    setShowBugReportSheet(true)
-                }) {
-                    Text("Activar informes")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    setShowNoConsentDialog(false)
-                    openEmail(context, makeMailtoUrl(
-                        subject = "Reporte de error - InterSego",
-                        body = ""
-                    ))
-                }) {
-                    Text("Enviar por email")
-                }
-            }
-        )
-    }
-
+    val feedback = rememberFeedbackCoordinator()
+    FeedbackDialogs(feedback)
 
     Column(
         modifier = Modifier
@@ -342,27 +302,13 @@ fun AboutScreen(
                 ContactCard(
                     label = "Reportar error",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = Color(0xFFFF9800)) },
-                    onClick = {
-                        if (MonitoringPreferencesService.hasUserOptedIn()) {
-                            setShowBugReportSheet(true)
-                        } else {
-                            setShowNoConsentDialog(true)
-                        }
-                    }
+                    onClick = { feedback.trigger(FeedbackCategory.BUG) }
                 )
 
                 ContactCard(
                     label = "Enviar sugerencia",
                     icon = { Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    onClick = {
-                        openEmail(
-                            context,
-                            makeMailtoUrl(
-                                subject = "Sugerencias y mejoras - InterSego",
-                                body = "Me gustaría sugerir..."
-                            )
-                        )
-                    }
+                    onClick = { feedback.trigger(FeedbackCategory.SUGGESTION) }
                 )
             }
         }
@@ -442,18 +388,8 @@ private fun ContactCard(
     }
 }
 
-private fun makeMailtoUrl(subject: String, body: String): String {
-    val encodedSubject = java.net.URLEncoder.encode(subject, "UTF-8").replace("+", "%20")
-    val encodedBody = java.net.URLEncoder.encode(body, "UTF-8").replace("+", "%20")
-    return "mailto:bfollon.dev@icloud.com?subject=$encodedSubject&body=$encodedBody"
-}
-
 private fun openUrl(context: Context, url: String) {
     context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
-}
-
-private fun openEmail(context: Context, mailtoUrl: String) {
-    context.startActivity(Intent(Intent.ACTION_VIEW, mailtoUrl.toUri()))
 }
 
 @Preview(showBackground = true)

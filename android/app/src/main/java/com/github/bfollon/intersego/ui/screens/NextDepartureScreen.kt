@@ -44,6 +44,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.DirectionsBus
@@ -67,6 +68,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -115,6 +117,7 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.data.FeedbackCategory
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.DebugConfig
@@ -1954,6 +1957,10 @@ private fun PDFLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier
     val validRoutes = routes.filter { it.pdfURL.isNotEmpty() }
     if (validRoutes.isEmpty()) return
 
+    val feedback = rememberFeedbackCoordinator()
+    var showFeedbackChoice by remember { mutableStateOf(false) }
+    FeedbackDialogs(feedback)
+
     Surface(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -1979,7 +1986,57 @@ private fun PDFLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier
                     )
                 }
             }
+
+            HorizontalDivider()
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showFeedbackChoice = true }
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Chat,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    text = "¿Sugerencias o errores? Cuéntanoslo",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+
+    if (showFeedbackChoice) {
+        AlertDialog(
+            onDismissRequest = { showFeedbackChoice = false },
+            title = { Text("¿Qué quieres hacer?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = {
+                        showFeedbackChoice = false
+                        feedback.trigger(FeedbackCategory.BUG)
+                    }) {
+                        Text("Reportar error")
+                    }
+                    TextButton(onClick = {
+                        showFeedbackChoice = false
+                        feedback.trigger(FeedbackCategory.SUGGESTION)
+                    }) {
+                        Text("Enviar sugerencia")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showFeedbackChoice = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 

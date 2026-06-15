@@ -12,8 +12,7 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
-    @State private var showBugReport: Bool = false
-    @State private var showNoConsentAlert: Bool = false
+    @StateObject private var feedback = FeedbackCoordinator()
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -178,13 +177,7 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         VStack(spacing: 12) {
-                            Button(action: {
-                                if MonitoringPreferencesService.shared.hasUserOptedIn() {
-                                    showBugReport = true
-                                } else {
-                                    showNoConsentAlert = true
-                                }
-                            }) {
+                            Button(action: { feedback.trigger(.bug) }) {
                                 HStack {
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundColor(.orange)
@@ -201,26 +194,22 @@ struct AboutView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
 
-                            if let feedbackURL = makeMailtoURL(
-                                subject: "Sugerencias y mejoras - InterSego",
-                                body: "Me gustaría sugerir..."
-                            ) {
-                                Link(destination: feedbackURL) {
-                                    HStack {
-                                        Image(systemName: "lightbulb")
-                                            .foregroundColor(.blue)
-                                        Text("Enviar sugerencia")
-                                            .foregroundColor(.primary)
-                                        Spacer()
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                    .padding()
-                                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                                    .cornerRadius(8)
+                            Button(action: { feedback.trigger(.suggestion) }) {
+                                HStack {
+                                    Image(systemName: "lightbulb")
+                                        .foregroundColor(.blue)
+                                    Text("Enviar sugerencia")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.secondary)
+                                        .font(.caption)
                                 }
+                                .padding()
+                                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                                .cornerRadius(8)
                             }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
 
@@ -263,30 +252,7 @@ struct AboutView: View {
                 }
             }
         }
-        .sheet(isPresented: $showBugReport) {
-            BugReportView()
-        }
-        .alert("Informes de error desactivados", isPresented: $showNoConsentAlert) {
-            Button("Activar informes de error") {
-                MonitoringPreferencesService.shared.setMonitoringEnabled(true)
-                ErrorReportingService.shared.initialize()
-                showBugReport = true
-            }
-            Button("Enviar por email") {
-                if let url = makeMailtoURL(subject: "Reporte de error - InterSego", body: "") {
-                    openURL(url)
-                }
-            }
-            Button("Cancelar", role: .cancel) { }
-        } message: {
-            Text("Los informes de error están desactivados. Puedes activarlos para enviar el informe directamente, o reportar el error por email.")
-        }
-    }
-
-    private func makeMailtoURL(subject: String, body: String) -> URL? {
-        let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        return URL(string: "mailto:bfollon.dev@icloud.com?subject=\(encodedSubject)&body=\(encodedBody)")
+        .feedbackPresentation(feedback)
     }
 }
 

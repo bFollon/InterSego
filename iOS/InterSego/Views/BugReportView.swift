@@ -9,7 +9,10 @@
 
 import SwiftUI
 
-struct BugReportView: View {
+/// In-app form for submitting a bug report or suggestion to BugSink.
+struct FeedbackFormView: View {
+    let category: FeedbackCategory
+
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String = ""
@@ -28,7 +31,7 @@ struct BugReportView: View {
                     formView
                 }
             }
-            .navigationTitle("Reportar error")
+            .navigationTitle(category.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -44,12 +47,12 @@ struct BugReportView: View {
     private var formView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Describe el problema que has encontrado:")
+                Text(category.prompt)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Descripción del error")
+                    Text(category.fieldLabel)
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -65,7 +68,7 @@ struct BugReportView: View {
                 }
 
                 if errorMessage != nil && description.isEmpty {
-                    Text("Por favor, describe el error")
+                    Text(category.emptyFieldError)
                         .font(.caption)
                         .foregroundColor(.red)
                 }
@@ -103,7 +106,7 @@ struct BugReportView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .scaleEffect(0.8)
                         } else {
-                            Text("Enviar informe")
+                            Text(category.submitButtonLabel)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -124,15 +127,15 @@ struct BugReportView: View {
         VStack(spacing: 20) {
             Spacer()
 
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: "\(category.icon).fill")
                 .font(.system(size: 48))
                 .foregroundColor(.blue)
 
-            Text("¡Error reportado!")
+            Text(category.successTitle)
                 .font(.title2)
                 .fontWeight(.bold)
 
-            Text("Gracias por ayudar a mejorar la app.")
+            Text(category.successBody)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -165,7 +168,8 @@ struct BugReportView: View {
             let success = await ErrorReportingService.shared.submitFeedback(
                 name: name,
                 email: email,
-                message: description
+                message: description,
+                category: category
             )
             isSubmitting = false
             if success {
@@ -178,5 +182,5 @@ struct BugReportView: View {
 }
 
 #Preview {
-    BugReportView()
+    FeedbackFormView(category: .bug)
 }

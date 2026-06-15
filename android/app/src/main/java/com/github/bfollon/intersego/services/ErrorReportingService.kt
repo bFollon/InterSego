@@ -11,6 +11,7 @@ package com.github.bfollon.intersego.services
 
 import android.content.Context
 import com.github.bfollon.intersego.BuildConfig
+import com.github.bfollon.intersego.data.FeedbackCategory
 import io.sentry.Sentry
 import io.sentry.android.core.SentryAndroid
 import kotlinx.coroutines.Dispatchers
@@ -68,10 +69,10 @@ object ErrorReportingService {
     }
 
     /**
-     * Submit user feedback (bug report) to BugSink.
+     * Submit user feedback (bug report or suggestion) to BugSink.
      * Returns false if the user has not opted into error reporting — caller should fall back to email.
      */
-    suspend fun submitFeedback(name: String, email: String, message: String): Boolean {
+    suspend fun submitFeedback(name: String, email: String, message: String, category: FeedbackCategory): Boolean {
         if (!MonitoringPreferencesService.hasUserOptedIn()) {
             DebugConfig.debugPrint("ErrorReportingService: submitFeedback skipped (user has not opted in)")
             return false
@@ -84,11 +85,11 @@ object ErrorReportingService {
             val messageHash = message.hashCode().toString()
 
             Sentry.configureScope { scope ->
-                scope.fingerprint = listOf("user-bug-report", messageHash)
+                scope.fingerprint = listOf(category.fingerprintTag, messageHash)
             }
 
             val fullMessage = buildString {
-                appendLine("=== User Bug Report ===")
+                appendLine(category.bugSinkHeader)
                 appendLine("Name: $userName")
                 appendLine("Email: $userEmail")
                 appendLine()
