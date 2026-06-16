@@ -54,7 +54,7 @@ sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
 aptabase = { module = "com.github.aptabase:aptabase-kotlin", version.ref = "aptabase" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-messaging-ktx = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

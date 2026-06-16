@@ -30,14 +30,14 @@ const postReminderSchema = {
   body: {
     type: 'object',
     required: [
-      'deviceToken', 'platform', 'routeId', 'routeNumber', 'stopId', 'stopName',
+      'deviceToken', 'routeId', 'routeNumber', 'stopId', 'stopName',
       'direction', 'departureHour', 'departureMinute', 'leadMinutes',
       'isDaily', 'dayType', 'seasonalAvailability',
     ],
     additionalProperties: false,
     properties: {
       deviceToken:          { type: 'string', minLength: 1, maxLength: 512 },
-      platform:             { type: 'string', enum: ['ios', 'android'] },
+      platform:             { type: 'string', enum: ['ios', 'android'], default: 'ios' },
       routeId:              { type: 'string', minLength: 1, maxLength: 16 },
       routeNumber:          { type: 'string', minLength: 1, maxLength: 16 },
       stopId:               { type: 'string', minLength: 1, maxLength: 128 },

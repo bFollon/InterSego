@@ -35,6 +35,11 @@
             android:name="io.sentry.auto-init"
             android:value="false" />
 
+        <!-- Route FCM background notifications to our high-importance channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="bus_reminders" />
+
         <!-- Coil ImageLoaderFactory for OSM tile compliance -->
         <meta-data
             android:name="coil.factory"

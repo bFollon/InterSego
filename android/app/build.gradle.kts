@@ -109,7 +109,7 @@ dependencies {
     implementation(libs.aptabase)
 
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
