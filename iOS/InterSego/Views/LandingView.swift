@@ -139,12 +139,7 @@ struct LandingView: View {
                                 .lineLimit(1)
                         }
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(alertColor(primary.severity))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(alertColor(primary.severity).opacity(0.12))
-                    .clipShape(Capsule())
+                    .buttonStyle(AlertPillButtonStyle(color: alertColor(primary.severity)))
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -180,6 +175,19 @@ struct LandingView: View {
         case "warning":  return "exclamationmark.circle.fill"
         default:         return "info.circle.fill"
         }
+    }
+}
+
+private struct AlertPillButtonStyle: ButtonStyle {
+    let color: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(color)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(color.opacity(configuration.isPressed ? 0.2 : 0.12))
+            .clipShape(Capsule())
     }
 }
 
