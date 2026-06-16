@@ -30,13 +30,14 @@ const postReminderSchema = {
   body: {
     type: 'object',
     required: [
-      'deviceToken', 'routeId', 'routeNumber', 'stopId', 'stopName',
+      'deviceToken', 'platform', 'routeId', 'routeNumber', 'stopId', 'stopName',
       'direction', 'departureHour', 'departureMinute', 'leadMinutes',
       'isDaily', 'dayType', 'seasonalAvailability',
     ],
     additionalProperties: false,
     properties: {
-      deviceToken:          { type: 'string', minLength: 64, maxLength: 64, pattern: '^[0-9a-f]+$' },
+      deviceToken:          { type: 'string', minLength: 1, maxLength: 512 },
+      platform:             { type: 'string', enum: ['ios', 'android'] },
       routeId:              { type: 'string', minLength: 1, maxLength: 16 },
       routeNumber:          { type: 'string', minLength: 1, maxLength: 16 },
       stopId:               { type: 'string', minLength: 1, maxLength: 128 },
@@ -146,7 +147,7 @@ export async function remindersRoutes(app: FastifyInstance): Promise<void> {
   /**
    * PUT /reminders/token
    *
-   * Update all reminders from an old APNs token to a new one (token rotation).
+   * Update all reminders from an old device token to a new one (APNs / FCM token rotation).
    */
   app.put<{ Body: { oldToken: string; newToken: string } }>(
     '/reminders/token',

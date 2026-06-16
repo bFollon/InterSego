@@ -40,7 +40,9 @@ data class BusReminder(
     /** Seasonal availability stored so the receiver can skip non-running days. */
     val seasonalAvailability: SeasonalAvailability? = null,
     /** Day type this departure belongs to (used for smart-skip day-of-week check). */
-    val dayType: DayType? = null
+    val dayType: DayType? = null,
+    /** Server-assigned UUID returned by POST /reminders, used to delete from server on cancel. */
+    val serverId: String? = null,
 ) {
     val departureDisplayString: String
         get() = "%02d:%02d".format(departureHour, departureMinute)

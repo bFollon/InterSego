@@ -42,7 +42,11 @@ process.on('SIGHUP', () => {
 });
 
 async function start(): Promise<void> {
-  const required = ['API_KEY', 'RELOAD_KEY', 'APNS_KEY_PATH', 'APNS_KEY_ID', 'APNS_TEAM_ID', 'APNS_BUNDLE_ID'];
+  const required = [
+    'API_KEY', 'RELOAD_KEY',
+    'APNS_KEY_PATH', 'APNS_KEY_ID', 'APNS_TEAM_ID', 'APNS_BUNDLE_ID',
+    'FCM_SERVICE_ACCOUNT_PATH', 'FCM_PROJECT_ID',
+  ];
   for (const key of required) {
     if (!process.env[key]) {
       console.error(`Fatal: ${key} environment variable is not set. Refusing to start.`);

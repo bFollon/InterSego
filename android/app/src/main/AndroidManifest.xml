@@ -39,6 +39,13 @@
         <meta-data
             android:name="coil.factory"
             android:value="intersego.MainActivity" />
+        <service
+            android:name=".services.FcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         <receiver
             android:name=".services.ReminderBroadcastReceiver"
             android:exported="false" />

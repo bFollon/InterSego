@@ -15,6 +15,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import { ApnsProvider } from './apns.js';
+import { sendFcm } from './fcm.js';
 import {
   getAllReminders, deleteReminder,
   deleteRemindersForToken, updateReminderNextFireAt,
@@ -86,10 +87,29 @@ async function processReminder(reminder: DeviceReminder, now: Date, windowEnd: D
 }
 
 async function sendPush(reminder: DeviceReminder): Promise<void> {
+  const notification = {
+    title: `Línea ${reminder.routeNumber} · ${reminder.stopName}`,
+    body: buildBody(reminder),
+  };
+
+  if (reminder.platform === 'android') {
+    const result = await sendFcm(notification, reminder.deviceToken);
+    if (result.failed) {
+      if (result.reason === 'UNREGISTERED' || result.reason === 'INVALID_ARGUMENT') {
+        console.warn(`scheduler: removing stale FCM token for reminder ${reminder.id} (${result.reason})`);
+        await deleteRemindersForToken(reminder.deviceToken);
+      } else {
+        console.error(`scheduler: FCM error for reminder ${reminder.id}: ${result.reason}`);
+      }
+    }
+    return;
+  }
+
+  // iOS — APNs
   const result = await provider.send(
     {
-      title: `Línea ${reminder.routeNumber} · ${reminder.stopName}`,
-      body: buildBody(reminder),
+      title: notification.title,
+      body: notification.body,
       sound: 'default',
       expiry: Math.floor(Date.now() / 1000) + 3600,
     },
@@ -98,7 +118,7 @@ async function sendPush(reminder: DeviceReminder): Promise<void> {
 
   for (const failure of result.failed) {
     if (failure.reason === 'BadDeviceToken' || failure.reason === 'Unregistered') {
-      console.warn(`scheduler: removing stale token for reminder ${reminder.id} (${failure.reason})`);
+      console.warn(`scheduler: removing stale APNs token for reminder ${reminder.id} (${failure.reason})`);
       await deleteRemindersForToken(reminder.deviceToken);
     } else {
       console.error(`scheduler: APNs error for reminder ${reminder.id}: ${failure.reason}`);

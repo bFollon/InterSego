@@ -18,6 +18,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
+import com.github.bfollon.intersego.BuildConfig
 import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
@@ -26,10 +27,20 @@ import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
 import com.github.bfollon.intersego.data.matchesCalendarDay
 import java.time.Month
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.util.Calendar
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 /**
  * Manages bus departure reminders (one-off and daily).
@@ -51,6 +62,12 @@ class ReminderService(private val context: Context) {
         const val KEY_LEAD_TIME = "reminder_lead_time_minutes"
         const val KEY_DAILY_LEAD_TIME = "reminder_daily_lead_time_minutes"
         const val KEY_ALARM_COUNTER = "alarm_request_counter"
+
+        private val httpClient = OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
+            .build()
 
         /** Creates the notification channel. Call from MainActivity.onCreate(). */
         fun createNotificationChannel(context: Context) {
@@ -184,6 +201,8 @@ class ReminderService(private val context: Context) {
         scheduleAlarm(reminder)
         _reminders.add(reminder)
         persist()
+        val savedReminder = _reminders.last()
+        CoroutineScope(Dispatchers.IO).launch { postReminderToServer(savedReminder) }
         return ScheduleResult.Success(reminder)
     }
 
@@ -229,15 +248,23 @@ class ReminderService(private val context: Context) {
 
     fun cancelReminder(routeId: String, stopId: String, direction: String, hour: Int, minute: Int) {
         val key = BusReminder.matchKey(routeId, stopId, direction, hour, minute)
+        val serverIds = _reminders.filter { it.matchKey == key }.mapNotNull { it.serverId }
         _reminders.filter { it.matchKey == key }.forEach { cancelAlarm(it.id) }
         _reminders.removeAll { it.matchKey == key }
         persist()
+        serverIds.forEach { sid ->
+            CoroutineScope(Dispatchers.IO).launch { deleteReminderFromServer(sid) }
+        }
     }
 
     fun cancelReminder(id: String) {
+        val serverId = _reminders.find { it.id == id }?.serverId
         cancelAlarm(id)
         _reminders.removeAll { it.id == id }
         persist()
+        serverId?.let { sid ->
+            CoroutineScope(Dispatchers.IO).launch { deleteReminderFromServer(sid) }
+        }
     }
 
     // MARK: - Rescheduling
@@ -305,6 +332,82 @@ class ReminderService(private val context: Context) {
             _reminders[i] = updatedReminder
         }
         persist()
+    }
+
+    // MARK: - Server sync (best effort; AlarmManager fallback fires regardless)
+
+    private fun getFcmToken(): String? =
+        context.getSharedPreferences("fcm_prefs", Context.MODE_PRIVATE)
+            .getString("fcm_token", null)
+
+    private suspend fun postReminderToServer(reminder: BusReminder) {
+        val token = getFcmToken() ?: return
+        val body = JSONObject().apply {
+            put("deviceToken", token)
+            put("platform", "android")
+            put("routeId", reminder.routeId)
+            put("routeNumber", reminder.routeNumber)
+            put("stopId", reminder.stopId)
+            put("stopName", reminder.stopName)
+            put("direction", reminder.direction)
+            put("departureHour", reminder.departureHour)
+            put("departureMinute", reminder.departureMinute)
+            put("leadMinutes", reminder.leadMinutes)
+            put("isDaily", reminder.isDaily)
+            put("dayType", reminder.dayType?.name?.lowercase())
+            put("seasonalAvailability", reminder.seasonalAvailability?.name)
+        }.toString().toRequestBody("application/json".toMediaType())
+
+        val request = Request.Builder()
+            .url("${BuildConfig.BOARDING_SERVER_URL}/reminders")
+            .addHeader("Authorization", "Bearer ${BuildConfig.SERVER_API_KEY}")
+            .post(body)
+            .build()
+
+        val serverId = try {
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return
+                JSONObject(response.body?.string() ?: return).optString("id").takeIf { it.isNotEmpty() }
+            }
+        } catch (_: Exception) {
+            return
+        } ?: return
+
+        withContext(Dispatchers.Main) {
+            val idx = _reminders.indexOfFirst { it.id == reminder.id }
+            if (idx >= 0) {
+                _reminders[idx] = _reminders[idx].copy(serverId = serverId)
+                persist()
+            }
+        }
+    }
+
+    private fun deleteReminderFromServer(serverId: String) {
+        val request = Request.Builder()
+            .url("${BuildConfig.BOARDING_SERVER_URL}/reminders/$serverId")
+            .addHeader("Authorization", "Bearer ${BuildConfig.SERVER_API_KEY}")
+            .delete()
+            .build()
+        try {
+            httpClient.newCall(request).execute().close()
+        } catch (_: Exception) { }
+    }
+
+    fun syncTokenToServer(oldToken: String?, newToken: String) {
+        if (oldToken == null || oldToken == newToken) return
+        val body = JSONObject()
+            .put("oldToken", oldToken)
+            .put("newToken", newToken)
+            .toString()
+            .toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url("${BuildConfig.BOARDING_SERVER_URL}/reminders/token")
+            .addHeader("Authorization", "Bearer ${BuildConfig.SERVER_API_KEY}")
+            .put(body)
+            .build()
+        try {
+            httpClient.newCall(request).execute().close()
+        } catch (_: Exception) { }
     }
 
     // MARK: - AlarmManager internals
