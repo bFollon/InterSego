@@ -144,6 +144,7 @@ struct LandingView: View {
                         .background(alertColor(primary.severity).opacity(0.12))
                         .clipShape(Capsule())
                     }
+                    .buttonStyle(.plain)
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
