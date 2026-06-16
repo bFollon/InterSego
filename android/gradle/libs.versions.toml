@@ -20,6 +20,8 @@ mockk = "1.13.13"
 sentry = "8.13.2"
 aptabase = "0.0.8"
 google-services = "4.4.4"
+playServicesLocation = "21.0.1"
+firebaseBom = "34.14.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,10 +52,13 @@ mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
 aptabase = { module = "com.github.aptabase:aptabase-kotlin", version.ref = "aptabase" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 
