@@ -138,13 +138,13 @@ struct LandingView: View {
                                 .font(.caption.weight(.semibold))
                                 .lineLimit(1)
                         }
-                        .foregroundColor(alertColor(primary.severity))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(alertColor(primary.severity).opacity(0.12))
-                        .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .foregroundStyle(alertColor(primary.severity))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(alertColor(primary.severity).opacity(0.12))
+                    .clipShape(Capsule())
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
