@@ -25,13 +25,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,11 +53,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.bfollon.intersego.data.ServiceAlert
 
 private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
 private val GreenBorder = Color(0xFF34C759).copy(alpha = 0.3f)
@@ -73,7 +79,9 @@ fun LandingScreen(
     closestStopError: String? = null,
     isBoardingBus: Boolean = false,
     boardingBusConfirmed: Boolean = false,
-    boardingBusError: String? = null
+    boardingBusError: String? = null,
+    activeAlerts: List<ServiceAlert> = emptyList(),
+    onShowAlertDetail: () -> Unit = {},
 ) {
     val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
 
@@ -84,7 +92,16 @@ fun LandingScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         TopAppBar(
-            title = { },
+            title = {
+                val primary = alertsSortedBySeverity(activeAlerts).firstOrNull()
+                if (primary != null) {
+                    AlertPill(
+                        alert = primary,
+                        extraCount = activeAlerts.size - 1,
+                        onClick = onShowAlertDetail,
+                    )
+                }
+            },
             actions = {
                 IconButton(onClick = onShowSettings) {
                     Icon(
@@ -317,6 +334,57 @@ private fun BusLineIcon(size: Int) {
     Canvas(modifier = Modifier.size(size.dp)) {
         drawBusLineIcon(color)
     }
+}
+
+private fun alertsSortedBySeverity(alerts: List<ServiceAlert>): List<ServiceAlert> {
+    val order = mapOf("critical" to 0, "warning" to 1, "info" to 2)
+    return alerts.sortedBy { order[it.severity] ?: 3 }
+}
+
+@Composable
+private fun AlertPill(
+    alert: ServiceAlert,
+    extraCount: Int,
+    onClick: () -> Unit,
+) {
+    val color = alertColor(alert.severity)
+    val icon = alertIcon(alert.severity)
+    val label = if (extraCount > 0) "${alert.title} (+$extraCount)" else alert.title
+
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(color.copy(alpha = 0.12f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+private fun alertColor(severity: String): Color = when (severity) {
+    "critical" -> Color(0xFFB00020)
+    "warning"  -> Color(0xFFE65100)
+    else       -> Color(0xFF1565C0)
+}
+
+private fun alertIcon(severity: String): ImageVector = when (severity) {
+    "critical", "warning" -> Icons.Default.Warning
+    else                  -> Icons.Default.Info
 }
 
 private fun DrawScope.drawBusLineIcon(color: Color) {

@@ -21,6 +21,8 @@ struct LandingView: View {
     let isBoardingBus: Bool
     let boardingBusConfirmed: Bool
     let boardingBusError: String?
+    let activeAlerts: [ServiceAlert]
+    let onShowAlertDetail: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -126,12 +128,56 @@ struct LandingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
         .toolbar {
+            if let primary = sortedAlerts.first {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: onShowAlertDetail) {
+                        HStack(spacing: 4) {
+                            Image(systemName: alertIconName(primary.severity))
+                                .font(.caption.weight(.semibold))
+                            Text(alertPillLabel(primary))
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                        .foregroundColor(alertColor(primary.severity))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(alertColor(primary.severity).opacity(0.12))
+                        .clipShape(Capsule())
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onShowSettings) {
                     Image(systemName: "gear")
                         .foregroundColor(.secondary)
                 }
             }
+        }
+    }
+
+    private var sortedAlerts: [ServiceAlert] {
+        let order: [String: Int] = ["critical": 0, "warning": 1, "info": 2]
+        return activeAlerts.sorted { (order[$0.severity] ?? 3) < (order[$1.severity] ?? 3) }
+    }
+
+    private func alertPillLabel(_ alert: ServiceAlert) -> String {
+        let extra = activeAlerts.count - 1
+        return extra > 0 ? "\(alert.title) (+\(extra))" : alert.title
+    }
+
+    private func alertColor(_ severity: String) -> Color {
+        switch severity {
+        case "critical": return .red
+        case "warning":  return .orange
+        default:         return .blue
+        }
+    }
+
+    private func alertIconName(_ severity: String) -> String {
+        switch severity {
+        case "critical": return "exclamationmark.triangle.fill"
+        case "warning":  return "exclamationmark.circle.fill"
+        default:         return "info.circle.fill"
         }
     }
 }

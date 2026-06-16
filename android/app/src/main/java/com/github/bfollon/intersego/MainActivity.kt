@@ -60,12 +60,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.github.bfollon.intersego.data.ServiceAlert
+import com.github.bfollon.intersego.services.AlertService
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextButton
 import com.github.bfollon.intersego.data.BoardingRequest
@@ -98,6 +103,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import com.github.bfollon.intersego.ui.screens.AboutScreen
@@ -436,6 +443,14 @@ fun AppNavigation(
     // --- About modal state ---
     var showAboutModal by remember { mutableStateOf(false) }
     // --- End about modal state ---
+
+    // --- Service alerts state ---
+    var activeAlerts by remember { mutableStateOf<List<ServiceAlert>>(emptyList()) }
+    var showAlertDetail by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        activeAlerts = AlertService.fetchActiveAlerts()
+    }
+    // --- End service alerts state ---
 
     // --- Closest stop state ---
     val coroutineScope = rememberCoroutineScope()
@@ -782,7 +797,9 @@ fun AppNavigation(
                 closestStopError = closestStopError,
                 isBoardingBus = isSearchingBoardingStop || landingBoardingSubmitting,
                 boardingBusConfirmed = landingBoardingConfirmed,
-                boardingBusError = landingBoardingError
+                boardingBusError = landingBoardingError,
+                activeAlerts = activeAlerts,
+                onShowAlertDetail = { showAlertDetail = true },
             )
         }
 
@@ -1154,5 +1171,120 @@ fun AppNavigation(
         ) {
             AboutScreen(onDismiss = { showAboutModal = false })
         }
+    }
+
+    if (showAlertDetail) {
+        ModalBottomSheet(
+            onDismissRequest = { showAlertDetail = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            AlertDetailSheet(alerts = activeAlerts)
+        }
+    }
+}
+
+@Composable
+private fun AlertDetailSheet(alerts: List<ServiceAlert>) {
+    val sorted = alerts.sortedBy { mapOf("critical" to 0, "warning" to 1, "info" to 2)[it.severity] ?: 3 }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = "Avisos de servicio",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+
+        sorted.forEachIndexed { index, alert ->
+            AlertDetailCard(alert)
+            if (index < sorted.lastIndex) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AlertDetailCard(alert: ServiceAlert) {
+    val color = when (alert.severity) {
+        "critical" -> androidx.compose.ui.graphics.Color(0xFFB00020)
+        "warning"  -> androidx.compose.ui.graphics.Color(0xFFE65100)
+        else       -> MaterialTheme.colorScheme.primary
+    }
+    val severityLabel = when (alert.severity) {
+        "critical" -> "URGENTE"
+        "warning"  -> "AVISO"
+        else       -> "INFORMACIÓN"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color.copy(alpha = 0.08f), shape = RoundedCornerShape(12.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (alert.severity == "info") Icons.Default.Info else Icons.Default.Warning,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(severityLabel, style = MaterialTheme.typography.labelSmall, color = color)
+        }
+
+        Text(alert.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+
+        Text(
+            text = alert.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        val dateRange = formatAlertDateRange(alert.startsAt, alert.endsAt)
+        if (dateRange.isNotEmpty()) {
+            Text(
+                text = dateRange,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        val routes = alert.affectedRoutes
+        if (!routes.isNullOrEmpty()) {
+            Text(
+                text = "Líneas: ${routes.joinToString(", ")}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private fun formatAlertDateRange(startsAt: String, endsAt: String): String {
+    return try {
+        val fmt = java.time.format.DateTimeFormatter.ofPattern(
+            "d MMM yyyy", java.util.Locale("es", "ES")
+        )
+        val start = java.time.Instant.parse(startsAt)
+            .atZone(java.time.ZoneId.of("Europe/Madrid"))
+            .toLocalDate()
+        val end = java.time.Instant.parse(endsAt)
+            .atZone(java.time.ZoneId.of("Europe/Madrid"))
+            .toLocalDate()
+        "${start.format(fmt)} – ${end.format(fmt)}"
+    } catch (_: Exception) {
+        ""
     }
 }

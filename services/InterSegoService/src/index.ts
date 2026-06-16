@@ -17,6 +17,7 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import { initDb } from './db/index.js';
+import { alertsRoutes } from './routes/alerts.js';
 import { boardingsRoutes } from './routes/boardings.js';
 import { reloadPolylines, polylinesRoutes } from './routes/polylines.js';
 import { remindersRoutes } from './routes/reminders.js';
@@ -29,6 +30,7 @@ app.get('/health', async (_request, reply) => {
   return reply.send({ status: 'ok' });
 });
 
+app.register(alertsRoutes);
 app.register(boardingsRoutes);
 app.register(remindersRoutes);
 app.register(timetablesRoutes);

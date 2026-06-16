@@ -18,13 +18,13 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { BoardingEvent, DbSchema, DeviceReminder } from '../types.js';
+import type { BoardingEvent, DbSchema, DeviceReminder, ServiceAlert } from '../types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, '../../data/boardings.json');
 
 const adapter = new JSONFile<DbSchema>(dbPath);
-const defaultData: DbSchema = { boardings: [], reminders: [] };
+const defaultData: DbSchema = { boardings: [], reminders: [], alerts: [] };
 const db = new Low<DbSchema>(adapter, defaultData);
 
 /**
@@ -50,6 +50,11 @@ export async function initDb(): Promise<void> {
   // Migration: existing installs have boardings.json without the reminders key.
   if (!db.data.reminders) {
     db.data.reminders = [];
+    await db.write();
+  }
+  // Migration: existing installs may not have the alerts key.
+  if (!db.data.alerts) {
+    db.data.alerts = [];
     await db.write();
   }
   // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
@@ -159,5 +164,49 @@ export function updateReminderLeadMinutes(id: string, leadMinutes: number): Prom
     r.nextFireAt = null;
     await db.write();
     return true;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Alerts
+// ---------------------------------------------------------------------------
+
+export function getActiveAlerts(): Promise<ServiceAlert[]> {
+  return serialize(async () => {
+    await db.read();
+    const now = new Date().toISOString();
+    return db.data.alerts.filter((a) => a.startsAt <= now && a.endsAt > now);
+  });
+}
+
+export function getAllAlerts(): Promise<ServiceAlert[]> {
+  return serialize(async () => {
+    await db.read();
+    return [...db.data.alerts];
+  });
+}
+
+export function appendAlert(alert: ServiceAlert): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.alerts.push(alert);
+    await db.write();
+  });
+}
+
+export function deleteAlert(id: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.alerts = db.data.alerts.filter((a) => a.id !== id);
+    await db.write();
+  });
+}
+
+export function markAlertBroadcastSent(id: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const a = db.data.alerts.find((a) => a.id === id);
+    if (a) a.broadcastSent = true;
+    await db.write();
   });
 }

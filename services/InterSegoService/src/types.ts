@@ -67,6 +67,27 @@ export interface BoardingEvent {
 export interface DbSchema {
   boardings: BoardingEvent[];
   reminders: DeviceReminder[];
+  alerts: ServiceAlert[];
+}
+
+export interface ServiceAlert {
+  id: string;
+  title: string;
+  message: string;
+  severity: 'info' | 'warning' | 'critical';
+  affectedRoutes?: string[];
+  startsAt: string;
+  endsAt: string;
+  broadcastSent: boolean;
+}
+
+export interface PostAlertBody {
+  title: string;
+  message: string;
+  severity: 'info' | 'warning' | 'critical';
+  affectedRoutes?: string[];
+  startsAt: string;
+  endsAt: string;
 }
 
 export type DayType =
