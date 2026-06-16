@@ -79,6 +79,7 @@ export type SeasonalAvailability =
 export interface DeviceReminder {
   id: string;
   deviceToken: string;
+  platform: 'ios' | 'android';
   routeId: string;
   routeNumber: string;
   stopId: string;
@@ -96,6 +97,7 @@ export interface DeviceReminder {
 
 export interface PostReminderBody {
   deviceToken: string;
+  platform: 'ios' | 'android';
   routeId: string;
   routeNumber: string;
   stopId: string;

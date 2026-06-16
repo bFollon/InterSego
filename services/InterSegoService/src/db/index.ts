@@ -52,6 +52,15 @@ export async function initDb(): Promise<void> {
     db.data.reminders = [];
     await db.write();
   }
+  // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
+  let migrated = false;
+  db.data.reminders.forEach((r) => {
+    if (!(r as DeviceReminder).platform) {
+      (r as DeviceReminder).platform = 'ios';
+      migrated = true;
+    }
+  });
+  if (migrated) await db.write();
 }
 
 /** Append a boarding event and flush to disk atomically. */

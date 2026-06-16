@@ -4,7 +4,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.10"
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.services)
+
 }
 
 val localProperties = Properties().apply {
@@ -92,7 +94,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     // Location services
-    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation(libs.play.services.location)
 
     // Image loading
     implementation(libs.coil.compose)
@@ -105,6 +107,9 @@ dependencies {
 
     // Analytics (Aptabase self-hosted)
     implementation(libs.aptabase)
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)

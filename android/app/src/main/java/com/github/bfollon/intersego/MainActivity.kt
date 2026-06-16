@@ -126,8 +126,10 @@ import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
+import com.google.firebase.messaging.FirebaseMessaging
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
+import androidx.core.content.edit
 
 /**
  * Main activity for InterSego.
@@ -232,6 +234,14 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
         // Create notification channel for bus departure reminders
         com.github.bfollon.intersego.services.ReminderService.createNotificationChannel(this)
+
+        // Ensure FCM token is stored on first launch (onNewToken only fires on rotation,
+        // not when a token already exists from a previous install).
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                getSharedPreferences("fcm_prefs", MODE_PRIVATE)
+                    .edit { putString("fcm_token", token) }
+            }
 
         setContent {
             var isInitialized by remember { mutableStateOf(false) }

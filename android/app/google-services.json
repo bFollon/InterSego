@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "913397129321",
+    "project_id": "intersego-b4e66",
+    "storage_bucket": "intersego-b4e66.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:913397129321:android:529fbeed2e50bc5e3942f8",
+        "android_client_info": {
+          "package_name": "com.github.bfollon.intersego"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3VfmX1L737GiMl9f-e29nAlE_HtdjHKA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
