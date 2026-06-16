@@ -19,6 +19,7 @@ kotest = "5.9.1"
 mockk = "1.13.13"
 sentry = "8.13.2"
 aptabase = "0.0.8"
+google-services = "4.4.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -54,4 +55,5 @@ aptabase = { module = "com.github.aptabase:aptabase-kotlin", version.ref = "apta
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
 

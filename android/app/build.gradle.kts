@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("org.jetbrains.kotlin.plugin.serialization") version "2.2.10"
+    alias(libs.plugins.google.services)
+
 }
 
 val localProperties = Properties().apply {
@@ -105,6 +107,8 @@ dependencies {
 
     // Analytics (Aptabase self-hosted)
     implementation(libs.aptabase)
+
+    implementation(platform("com.google.firebase:firebase-bom:34.14.1"))
 
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
