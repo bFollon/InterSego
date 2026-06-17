@@ -749,7 +749,7 @@ private struct AlertDetailSheet: View {
                 Text("Avisos de servicio")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .padding(.top, 8)
+                    .padding(.top, 48)
 
                 ForEach(sortedAlerts) { alert in
                     AlertDetailCard(alert: alert)

@@ -26,6 +26,35 @@ struct LandingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                if let primary = sortedAlerts.first {
+                    Button(action: onShowAlertDetail) {
+                        HStack(spacing: 4) {
+                            Image(systemName: alertIconName(primary.severity))
+                                .font(.caption.weight(.semibold))
+                            Text(alertPillLabel(primary))
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(alertColor(primary.severity))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(alertColor(primary.severity).opacity(0.12))
+                    .clipShape(Capsule())
+                } else {
+                    Text(" ")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .opacity(0)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 8)
+
             Spacer()
 
             VStack(spacing: 8) {
@@ -128,24 +157,6 @@ struct LandingView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
         .toolbar {
-            if let primary = sortedAlerts.first {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: onShowAlertDetail) {
-                        HStack(spacing: 4) {
-                            Image(systemName: alertIconName(primary.severity))
-                                .font(.caption.weight(.semibold))
-                            Text(alertPillLabel(primary))
-                                .font(.caption.weight(.semibold))
-                                .lineLimit(1)
-                        }
-                        .foregroundColor(alertColor(primary.severity))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(alertColor(primary.severity).opacity(0.12))
-                        .clipShape(Capsule())
-                    }
-                }
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onShowSettings) {
                     Image(systemName: "gear")
