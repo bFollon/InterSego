@@ -57,6 +57,8 @@ struct ContentView: View {
     @State private var routes: [BusRoute] = []
     @State private var supportedRoutes: Set<String> = []
     @State private var navigationPath = NavigationPath()
+    @State private var activeAlerts: [ServiceAlert] = []
+    @State private var showAlertDetail = false
     @State private var isSearchingClosestStop = false
     @State private var closestStopError: String?
     @State private var isSearchingBoardingStop = false
@@ -164,6 +166,8 @@ struct ContentView: View {
                             isBoardingBus: isSearchingBoardingStop || landingBoardingSubmitting,
                             boardingBusConfirmed: landingBoardingConfirmed,
                             boardingBusError: landingBoardingError,
+                            activeAlerts: activeAlerts,
+                            onShowAlertDetail: { showAlertDetail = true },
                         )
                     }
                 }
@@ -235,6 +239,9 @@ struct ContentView: View {
                         initialEntryId: selection.initialEntryId,
                         navigationPath: $navigationPath,
                     )
+                }
+                .sheet(isPresented: $showAlertDetail) {
+                    AlertDetailSheet(alerts: activeAlerts)
                 }
                 .sheet(isPresented: $showAbout) {
                     AboutView()
@@ -581,6 +588,9 @@ struct ContentView: View {
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
 
+        // Fetch active service alerts (fire-and-forget, graceful on failure)
+        activeAlerts = await AlertService.shared.fetchActiveAlerts()
+
         // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
         if NetworkMonitor.shared.isOnline {
             Task { await TimetableCacheService.shared.fetchAllRoutes() }
@@ -720,6 +730,123 @@ private struct NoServiceNearbySheet: View {
         .padding(32)
         .presentationDetents([.height(400)])
         .presentationDragIndicator(.visible)
+    }
+}
+
+// MARK: - Alert Detail Sheet
+
+private struct AlertDetailSheet: View {
+    let alerts: [ServiceAlert]
+
+    private var sortedAlerts: [ServiceAlert] {
+        let order: [String: Int] = ["critical": 0, "warning": 1, "info": 2]
+        return alerts.sorted { (order[$0.severity] ?? 3) < (order[$1.severity] ?? 3) }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                Text("Avisos de servicio")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .padding(.top, 48)
+
+                ForEach(sortedAlerts) { alert in
+                    AlertDetailCard(alert: alert)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+        }
+        .presentationDragIndicator(.visible)
+        .presentationDetents([.medium, .large])
+    }
+}
+
+private struct AlertDetailCard: View {
+    let alert: ServiceAlert
+
+    private var color: Color {
+        switch alert.severity {
+        case "critical": return .red
+        case "warning":  return .orange
+        default:         return .blue
+        }
+    }
+
+    private var iconName: String {
+        switch alert.severity {
+        case "critical": return "exclamationmark.triangle.fill"
+        case "warning":  return "exclamationmark.circle.fill"
+        default:         return "info.circle.fill"
+        }
+    }
+
+    private var severityLabel: String {
+        switch alert.severity {
+        case "critical": return "Urgente"
+        case "warning":  return "Aviso"
+        default:         return "Información"
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: iconName)
+                    .font(.caption.weight(.semibold))
+                Text(severityLabel.uppercased())
+                    .font(.caption.weight(.semibold))
+                    .tracking(0.5)
+            }
+            .foregroundColor(color)
+
+            Text(alert.title)
+                .font(.headline)
+
+            Text(alert.message)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                    .font(.caption)
+                Text("\(formatDate(alert.startsAt)) – \(formatDate(alert.endsAt))")
+                    .font(.caption)
+            }
+            .foregroundColor(.secondary)
+
+            if let routes = alert.affectedRoutes, !routes.isEmpty {
+                HStack(spacing: 4) {
+                    Text("Líneas:")
+                        .font(.caption.weight(.semibold))
+                    Text(routes.joined(separator: ", "))
+                        .font(.caption)
+                }
+                .foregroundColor(.secondary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(color.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    private func formatDate(_ iso: String) -> String {
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let date = parser.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+        guard let date else { return iso }
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "es_ES")
+        fmt.dateStyle = .medium
+        fmt.timeStyle = .none
+        return fmt.string(from: date)
     }
 }
 
