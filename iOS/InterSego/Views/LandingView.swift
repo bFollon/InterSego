@@ -193,19 +193,6 @@ struct LandingView: View {
     }
 }
 
-private struct AlertPillButtonStyle: ButtonStyle {
-    let color: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(color.opacity(configuration.isPressed ? 0.2 : 0.12))
-            .clipShape(Capsule())
-    }
-}
-
 private struct HorizontalCard<Icon: View>: View {
     let label: String
     var labelColor: Color = .accentColor
