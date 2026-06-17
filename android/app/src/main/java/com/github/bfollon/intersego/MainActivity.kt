@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -111,6 +112,7 @@ import com.github.bfollon.intersego.ui.screens.AboutScreen
 import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
+import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
 import com.github.bfollon.intersego.ui.screens.RouteMapScreen
 import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
@@ -242,12 +244,13 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         // Create notification channel for bus departure reminders
         com.github.bfollon.intersego.services.ReminderService.createNotificationChannel(this)
 
-        // Ensure FCM token is stored on first launch (onNewToken only fires on rotation,
-        // not when a token already exists from a previous install).
+        // Ensure FCM token is stored and registered on first launch (onNewToken only fires
+        // on rotation, not when a token already exists from a previous install).
         FirebaseMessaging.getInstance().token
             .addOnSuccessListener { token ->
                 getSharedPreferences("fcm_prefs", MODE_PRIVATE)
                     .edit { putString("fcm_token", token) }
+                CoroutineScope(Dispatchers.IO).launch { DeviceTokenService.register(token) }
             }
 
         setContent {

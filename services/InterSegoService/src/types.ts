@@ -64,10 +64,17 @@ export interface BoardingEvent {
   expiresAt: string;
 }
 
+export interface RegisteredDevice {
+  token: string;
+  platform: 'ios' | 'android';
+  updatedAt: string;
+}
+
 export interface DbSchema {
   boardings: BoardingEvent[];
   reminders: DeviceReminder[];
   alerts: ServiceAlert[];
+  devices: RegisteredDevice[];
 }
 
 export interface ServiceAlert {

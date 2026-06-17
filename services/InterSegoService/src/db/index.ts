@@ -18,13 +18,13 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { BoardingEvent, DbSchema, DeviceReminder, ServiceAlert } from '../types.js';
+import type { BoardingEvent, DbSchema, DeviceReminder, RegisteredDevice, ServiceAlert } from '../types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, '../../data/boardings.json');
 
 const adapter = new JSONFile<DbSchema>(dbPath);
-const defaultData: DbSchema = { boardings: [], reminders: [], alerts: [] };
+const defaultData: DbSchema = { boardings: [], reminders: [], alerts: [], devices: [] };
 const db = new Low<DbSchema>(adapter, defaultData);
 
 /**
@@ -55,6 +55,11 @@ export async function initDb(): Promise<void> {
   // Migration: existing installs may not have the alerts key.
   if (!db.data.alerts) {
     db.data.alerts = [];
+    await db.write();
+  }
+  // Migration: existing installs may not have the devices key.
+  if (!db.data.devices) {
+    db.data.devices = [];
     await db.write();
   }
   // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
@@ -207,6 +212,49 @@ export function markAlertBroadcastSent(id: string): Promise<void> {
     await db.read();
     const a = db.data.alerts.find((a) => a.id === id);
     if (a) a.broadcastSent = true;
+    await db.write();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Devices
+// ---------------------------------------------------------------------------
+
+export function upsertDevice(token: string, platform: 'ios' | 'android'): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const existing = db.data.devices.find((d) => d.token === token);
+    if (existing) {
+      existing.platform = platform;
+      existing.updatedAt = new Date().toISOString();
+    } else {
+      db.data.devices.push({ token, platform, updatedAt: new Date().toISOString() });
+    }
+    await db.write();
+  });
+}
+
+export function getAllDevices(): Promise<RegisteredDevice[]> {
+  return serialize(async () => {
+    await db.read();
+    return [...db.data.devices];
+  });
+}
+
+export function deleteDevice(token: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.devices = db.data.devices.filter((d) => d.token !== token);
+    await db.write();
+  });
+}
+
+/** Remove devices not seen in the last `maxAgeDays` days. */
+export function pruneStaleDevices(maxAgeDays = 90): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const cutoff = new Date(Date.now() - maxAgeDays * 86_400_000).toISOString();
+    db.data.devices = db.data.devices.filter((d) => d.updatedAt >= cutoff);
     await db.write();
   });
 }

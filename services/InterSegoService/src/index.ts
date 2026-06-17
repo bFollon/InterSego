@@ -17,8 +17,10 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import { initDb } from './db/index.js';
+import { initAlertBroadcaster } from './alertBroadcaster.js';
 import { alertsRoutes } from './routes/alerts.js';
 import { boardingsRoutes } from './routes/boardings.js';
+import { devicesRoutes } from './routes/devices.js';
 import { reloadPolylines, polylinesRoutes } from './routes/polylines.js';
 import { remindersRoutes } from './routes/reminders.js';
 import { reloadTimetables, timetablesRoutes } from './routes/timetables.js';
@@ -32,6 +34,7 @@ app.get('/health', async (_request, reply) => {
 
 app.register(alertsRoutes);
 app.register(boardingsRoutes);
+app.register(devicesRoutes);
 app.register(remindersRoutes);
 app.register(timetablesRoutes);
 app.register(polylinesRoutes);
@@ -63,6 +66,7 @@ async function start(): Promise<void> {
 
   await app.listen({ port, host });
   initScheduler();
+  initAlertBroadcaster();
 }
 
 start().catch((err) => {

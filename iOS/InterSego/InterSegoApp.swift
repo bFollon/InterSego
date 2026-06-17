@@ -872,6 +872,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
         Task { await ReminderService.shared.updateDeviceToken(token) }
+        Task { await DeviceTokenService.shared.registerToken(token, platform: "ios") }
     }
 
     func application(
