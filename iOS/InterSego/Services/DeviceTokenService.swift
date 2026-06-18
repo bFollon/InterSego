@@ -20,9 +20,11 @@ actor DeviceTokenService {
         session = URLSession(configuration: config)
     }
 
-    func registerToken(_ token: String, platform: String) async {
+    func registerToken(_ token: String, platform: String, minSeverity: String? = nil) async {
         guard let url = URL(string: "\(AppConfig.boardingServerURL)/device-tokens") else { return }
-        guard let body = try? JSONSerialization.data(withJSONObject: ["token": token, "platform": platform]) else { return }
+        var payload: [String: String] = ["token": token, "platform": platform]
+        payload["minSeverity"] = minSeverity ?? NotificationPreferencesService.shared.getAlertMinSeverity()
+        guard let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("Bearer \(AppConfig.serverAPIKey)", forHTTPHeaderField: "Authorization")

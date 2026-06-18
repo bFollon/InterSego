@@ -16,6 +16,8 @@
 
 import type { FastifyInstance } from 'fastify';
 import { deleteDevice, upsertDevice } from '../db/index.js';
+
+const SEVERITIES = ['none', 'info', 'warning', 'critical'];
 import { requireApiKey } from '../middleware/auth.js';
 
 const deleteDeviceTokenSchema = {
@@ -34,18 +36,25 @@ const postDeviceTokenSchema = {
     required: ['token', 'platform'],
     additionalProperties: false,
     properties: {
-      token:    { type: 'string', minLength: 1 },
-      platform: { type: 'string', enum: ['ios', 'android'] },
+      token:       { type: 'string', minLength: 1 },
+      platform:    { type: 'string', enum: ['ios', 'android'] },
+      minSeverity: { type: 'string', enum: SEVERITIES, nullable: true },
     },
   },
 } as const;
 
+type PostDeviceTokenBody = {
+  token: string;
+  platform: 'ios' | 'android';
+  minSeverity?: 'none' | 'info' | 'warning' | 'critical' | null;
+};
+
 export async function devicesRoutes(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: { token: string; platform: 'ios' | 'android' } }>(
+  app.post<{ Body: PostDeviceTokenBody }>(
     '/device-tokens',
     { preHandler: requireApiKey, schema: postDeviceTokenSchema },
     async (request, reply) => {
-      await upsertDevice(request.body.token, request.body.platform);
+      await upsertDevice(request.body.token, request.body.platform, request.body.minSeverity ?? 'info');
       return reply.status(204).send();
     },
   );

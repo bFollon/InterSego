@@ -131,10 +131,12 @@ import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
 import com.github.bfollon.intersego.ui.screens.MonitoringConsentScreen
+import com.github.bfollon.intersego.ui.screens.NotificationConsentScreen
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
+import com.github.bfollon.intersego.services.NotificationPreferencesService
 import com.google.firebase.messaging.FirebaseMessaging
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -250,12 +252,13 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             .addOnSuccessListener { token ->
                 getSharedPreferences("fcm_prefs", MODE_PRIVATE)
                     .edit { putString("fcm_token", token) }
-                CoroutineScope(Dispatchers.IO).launch { DeviceTokenService.register(token) }
+                CoroutineScope(Dispatchers.IO).launch { DeviceTokenService.register(token, this@MainActivity) }
             }
 
         setContent {
             var isInitialized by remember { mutableStateOf(false) }
             var showMonitoringConsent by remember { mutableStateOf(false) }
+            var showNotificationConsent by remember { mutableStateOf(false) }
 
             // Hoist services so the splash covers their initialization
             val reminderService = remember { ReminderService(this@MainActivity) }
@@ -276,6 +279,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
                 if (!MonitoringPreferencesService.hasUserMadeAnalyticsChoice()) {
                     showMonitoringConsent = true
+                }
+                if (!NotificationPreferencesService.hasUserMadeNotificationChoice(this@MainActivity)) {
+                    showNotificationConsent = true
                 }
 
                 // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
@@ -308,6 +314,10 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     if (showMonitoringConsent) {
                         MonitoringConsentScreen(
                             onDismiss = { showMonitoringConsent = false }
+                        )
+                    } else if (showNotificationConsent) {
+                        NotificationConsentScreen(
+                            onDismiss = { showNotificationConsent = false }
                         )
                     }
                 }

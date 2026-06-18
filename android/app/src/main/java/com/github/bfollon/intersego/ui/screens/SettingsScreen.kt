@@ -10,6 +10,7 @@
 package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,15 +31,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
+import com.github.bfollon.intersego.services.NotificationPreferencesService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+private data class SeverityOption(val value: String, val label: String)
+private val severityOptions = listOf(
+    SeverityOption("info",     "Todas"),
+    SeverityOption("warning",  "Solo importantes"),
+    SeverityOption("critical", "Solo críticas"),
+    SeverityOption("none",     "Desactivadas"),
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var guidedModeEnabled by remember {
         mutableStateOf(GuidedModePrefs.isGuidedModeEnabled())
     }
@@ -47,6 +63,9 @@ fun SettingsScreen(
     }
     var analyticsEnabled by remember {
         mutableStateOf(MonitoringPreferencesService.hasUserOptedInToAnalytics())
+    }
+    var alertMinSeverity by remember {
+        mutableStateOf(NotificationPreferencesService.getAlertMinSeverity(context))
     }
 
     Scaffold(
@@ -72,6 +91,62 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
+            // Section: Notificaciones
+            Text(
+                text = "Notificaciones",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+            )
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "Alertas de servicio",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 8.dp)
+                    )
+                    severityOptions.forEachIndexed { index, option ->
+                        val onSelect = {
+                            alertMinSeverity = option.value
+                            NotificationPreferencesService.saveChoice(context, option.value)
+                            val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
+                            val token = prefs.getString("fcm_token", null)
+                            if (token != null) {
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    DeviceTokenService.register(token, context, option.value)
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = onSelect)
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            RadioButton(
+                                selected = alertMinSeverity == option.value,
+                                onClick = onSelect
+                            )
+                            Text(
+                                text = option.label,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        if (index < severityOptions.lastIndex) {
+                            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Section: Modo guiado
             Text(
                 text = "Modo guiado",

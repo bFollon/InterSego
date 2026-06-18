@@ -67,6 +67,7 @@ export interface BoardingEvent {
 export interface RegisteredDevice {
   token: string;
   platform: 'ios' | 'android';
+  minSeverity: 'none' | 'info' | 'warning' | 'critical';
   updatedAt: string;
 }
 

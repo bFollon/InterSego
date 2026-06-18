@@ -25,6 +25,13 @@ import {
 } from './db/index.js';
 import type { ServiceAlert } from './types.js';
 
+const SEVERITY_RANK: Record<string, number> = { info: 1, warning: 2, critical: 3 };
+
+function meetsThreshold(alertSeverity: string, deviceMinSeverity: string): boolean {
+  if (deviceMinSeverity === 'none') return false;
+  return (SEVERITY_RANK[alertSeverity] ?? 0) >= (SEVERITY_RANK[deviceMinSeverity] ?? 0);
+}
+
 let apnsProvider: ApnsProvider;
 let ticking = false;
 
@@ -82,11 +89,15 @@ async function broadcastTickInner(): Promise<void> {
 
   if (pending.length === 0) return;
 
-  const devices = await getAllDevices();
-  const iosTokens     = devices.filter((d) => d.platform === 'ios').map((d) => d.token);
-  const androidTokens = devices.filter((d) => d.platform === 'android').map((d) => d.token);
+  const allDevices = await getAllDevices();
 
   for (const alert of pending) {
+    const iosTokens = allDevices
+      .filter((d) => d.platform === 'ios' && meetsThreshold(alert.severity, d.minSeverity))
+      .map((d) => d.token);
+    const androidTokens = allDevices
+      .filter((d) => d.platform === 'android' && meetsThreshold(alert.severity, d.minSeverity))
+      .map((d) => d.token);
     await broadcastToIos(alert, iosTokens);
     await broadcastToAndroid(alert, androidTokens);
     await markAlertBroadcastSent(alert.id);

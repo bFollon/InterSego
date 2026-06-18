@@ -62,6 +62,15 @@ export async function initDb(): Promise<void> {
     db.data.devices = [];
     await db.write();
   }
+  // Migration: backfill minSeverity for devices registered before severity preference was added.
+  let devicesMigrated = false;
+  db.data.devices.forEach((d) => {
+    if (!(d as RegisteredDevice).minSeverity) {
+      (d as RegisteredDevice).minSeverity = 'info';
+      devicesMigrated = true;
+    }
+  });
+  if (devicesMigrated) await db.write();
   // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
   let migrated = false;
   db.data.reminders.forEach((r) => {
@@ -220,15 +229,20 @@ export function markAlertBroadcastSent(id: string): Promise<void> {
 // Devices
 // ---------------------------------------------------------------------------
 
-export function upsertDevice(token: string, platform: 'ios' | 'android'): Promise<void> {
+export function upsertDevice(
+  token: string,
+  platform: 'ios' | 'android',
+  minSeverity: 'none' | 'info' | 'warning' | 'critical' = 'info',
+): Promise<void> {
   return serialize(async () => {
     await db.read();
     const existing = db.data.devices.find((d) => d.token === token);
     if (existing) {
       existing.platform = platform;
+      existing.minSeverity = minSeverity;
       existing.updatedAt = new Date().toISOString();
     } else {
-      db.data.devices.push({ token, platform, updatedAt: new Date().toISOString() });
+      db.data.devices.push({ token, platform, minSeverity, updatedAt: new Date().toISOString() });
     }
     await db.write();
   });

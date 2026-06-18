@@ -9,15 +9,42 @@
 
 import SwiftUI
 
+private let alertSeverityOptions: [(value: String, label: String)] = [
+    ("info",     "Todas"),
+    ("warning",  "Solo importantes"),
+    ("critical", "Solo críticas"),
+    ("none",     "Desactivadas"),
+]
+
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var guidedModeEnabled = GuidedModePrefs.isGuidedModeEnabled()
     @State private var errorsEnabled = MonitoringPreferencesService.shared.hasUserOptedIn()
     @State private var analyticsEnabled = MonitoringPreferencesService.shared.hasUserOptedInToAnalytics()
+    @State private var alertMinSeverity = NotificationPreferencesService.shared.getAlertMinSeverity()
 
     var body: some View {
         NavigationStack {
             List {
+                Section(header: Text("Notificaciones")) {
+                    Picker("Alertas de servicio", selection: Binding(
+                        get: { alertMinSeverity },
+                        set: { newValue in
+                            alertMinSeverity = newValue
+                            NotificationPreferencesService.shared.saveChoice(minSeverity: newValue)
+                            if let token = UserDefaults.standard.string(forKey: "apnsDeviceToken") {
+                                Task { await DeviceTokenService.shared.registerToken(token, platform: "ios", minSeverity: newValue) }
+                            }
+                        }
+                    )) {
+                        ForEach(alertSeverityOptions, id: \.value) { option in
+                            Text(option.label).tag(option.value)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+
                 Section(header: Text("Modo guiado")) {
                     Toggle(
                         "Mostrar selector de dirección",

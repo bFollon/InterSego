@@ -9,6 +9,7 @@
 
 package com.github.bfollon.intersego.services
 
+import android.content.Context
 import com.github.bfollon.intersego.BuildConfig
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -27,12 +28,16 @@ object DeviceTokenService {
         .writeTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    fun register(token: String) {
+    fun register(token: String, context: Context? = null, minSeverity: String? = null) {
         val serverUrl = BuildConfig.BOARDING_SERVER_URL
         val apiKey = BuildConfig.SERVER_API_KEY
+        val severity = minSeverity
+            ?: context?.let { NotificationPreferencesService.getAlertMinSeverity(it) }
+            ?: "info"
         val body = JSONObject().apply {
             put("token", token)
             put("platform", "android")
+            put("minSeverity", severity)
         }.toString().toRequestBody("application/json".toMediaType())
         val request = Request.Builder()
             .url("$serverUrl/device-tokens")
