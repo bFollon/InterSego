@@ -113,9 +113,8 @@ async function broadcastTickInner(): Promise<void> {
 }
 
 async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment: 'sandbox' | 'production'): Promise<void> {
-  const production = environment === 'production';
-  console.log(`alertBroadcaster: sending to APNs ${environment} endpoint (production=${production}) for ${tokens.length} token(s)`);
-  const provider = new ApnsProvider({ ...apnsBaseConfig, production });
+  const provider = new ApnsProvider({ ...apnsBaseConfig, production: environment === 'production' });
+  console.log(`alertBroadcaster: sending to APNs ${environment} endpoint (${provider.host}) for ${tokens.length} token(s)`);
   for (const token of tokens) {
     const result = await provider.send(
       {

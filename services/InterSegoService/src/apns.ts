@@ -54,7 +54,7 @@ export interface ApnsNotification {
 export class ApnsProvider {
   private readonly config: ApnsConfig;
   private readonly key: Buffer;
-  private readonly host: string;
+  readonly host: string;
   private jwt = '';
   private jwtIssuedAt = 0;
   private session: http2.ClientHttp2Session | null = null;
