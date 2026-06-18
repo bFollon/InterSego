@@ -100,7 +100,7 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
 
   // Admin — force an immediate broadcast tick (useful for testing)
   app.post(
-    '/admin/broadcast',
+    '/admin/alerts/broadcast',
     { preHandler: requireReloadKey },
     async (_request, reply) => {
       triggerBroadcast().catch((err) => console.error('admin/broadcast error:', err));
