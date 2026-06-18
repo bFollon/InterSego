@@ -99,6 +99,7 @@ async function broadcastTickInner(): Promise<void> {
     const androidTokens = allDevices
       .filter((d) => d.platform === 'android' && meetsThreshold(alert.severity, d.minSeverity))
       .map((d) => d.token);
+    console.log(`alertBroadcaster: broadcasting alert "${alert.id}" — iOS production=${iosProductionTokens.length} sandbox=${iosSandboxTokens.length} android=${androidTokens.length}`);
     if (iosProductionTokens.length > 0) await broadcastToIos(alert, iosProductionTokens, 'production');
     if (iosSandboxTokens.length > 0)    await broadcastToIos(alert, iosSandboxTokens, 'sandbox');
     await broadcastToAndroid(alert, androidTokens);
@@ -112,7 +113,9 @@ async function broadcastTickInner(): Promise<void> {
 }
 
 async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment: 'sandbox' | 'production'): Promise<void> {
-  const provider = new ApnsProvider({ ...apnsBaseConfig, production: environment === 'production' });
+  const production = environment === 'production';
+  console.log(`alertBroadcaster: sending to APNs ${environment} endpoint (production=${production}) for ${tokens.length} token(s)`);
+  const provider = new ApnsProvider({ ...apnsBaseConfig, production });
   for (const token of tokens) {
     const result = await provider.send(
       {
@@ -123,11 +126,15 @@ async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment
       },
       token,
     );
+    if (result.failed.length === 0) {
+      console.log(`alertBroadcaster: APNs ${environment} delivery OK for ${token.slice(0, 8)}…`);
+    }
     for (const failure of result.failed) {
       if (failure.reason === 'BadDeviceToken' || failure.reason === 'Unregistered') {
+        console.warn(`alertBroadcaster: removing stale iOS token ${token.slice(0, 8)}… (${failure.reason})`);
         await deleteDevice(failure.device);
       } else {
-        console.error(`alertBroadcaster: APNs error for ${token.slice(0, 8)}…: ${failure.reason}`);
+        console.error(`alertBroadcaster: APNs ${environment} error for ${token.slice(0, 8)}…: ${failure.reason}`);
       }
     }
   }
