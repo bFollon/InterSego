@@ -374,6 +374,163 @@ curl -X POST https://<host>/api/polylines/reload \
 
 ---
 
+## GET /alerts
+
+Returns all currently active alerts. No authentication required — apps poll this at startup.
+
+```bash
+curl https://<host>/alerts
+```
+
+### Response 200
+
+```json
+[
+  {
+    "id": "8af8bd1a-a451-4e42-9a41-9aa817e79523",
+    "title": "Huelga de transportes",
+    "message": "Los autobuses pueden tener retrasos hoy.",
+    "severity": "warning",
+    "affectedRoutes": ["M1", "M3"],
+    "startsAt": "2026-06-18T08:00:00.000Z",
+    "endsAt": "2026-06-18T20:00:00.000Z"
+  }
+]
+```
+
+`severity` is one of `info`, `warning`, `critical`. `affectedRoutes` is omitted when all routes are affected.
+
+---
+
+## POST /admin/alerts
+
+Create a service alert. Requires `RELOAD_KEY`.
+
+Timestamps accept UTC (`Z`), explicit offset (`+02:00`), or naive local time (interpreted as `Europe/Madrid`).
+
+### Request body
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `title` | string | ✅ | Short title (max 256 chars) |
+| `message` | string | ✅ | Full description (max 1024 chars) |
+| `severity` | string | ✅ | `info`, `warning`, or `critical` |
+| `startsAt` | string | ✅ | ISO 8601 timestamp — when alert becomes active |
+| `endsAt` | string | ✅ | ISO 8601 timestamp — when alert expires |
+| `affectedRoutes` | string[] | ❌ | Route IDs affected; omit for all routes |
+
+```bash
+curl -X POST https://<host>/admin/alerts \
+  -H "Authorization: Bearer <RELOAD_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Huelga de transportes",
+    "message": "Los autobuses pueden tener retrasos hoy.",
+    "severity": "warning",
+    "affectedRoutes": ["M1", "M3"],
+    "startsAt": "2026-06-18T08:00:00",
+    "endsAt": "2026-06-18T20:00:00"
+  }'
+```
+
+### Response 201
+
+```json
+{ "id": "8af8bd1a-a451-4e42-9a41-9aa817e79523" }
+```
+
+---
+
+## DELETE /admin/alerts/:id
+
+Delete an alert by ID. Requires `RELOAD_KEY`.
+
+```bash
+curl -X DELETE https://<host>/admin/alerts/8af8bd1a-a451-4e42-9a41-9aa817e79523 \
+  -H "Authorization: Bearer <RELOAD_KEY>"
+```
+
+### Response 204
+
+No body.
+
+---
+
+## GET /admin/alerts
+
+List all alerts — active, future, and expired. Requires `RELOAD_KEY`.
+
+```bash
+curl https://<host>/admin/alerts \
+  -H "Authorization: Bearer <RELOAD_KEY>"
+```
+
+### Response 200
+
+Array of `ServiceAlert` objects including the internal `broadcastSent` flag.
+
+---
+
+## POST /admin/alerts/broadcast
+
+Force an immediate alert broadcast tick. Useful for testing — normally the broadcaster runs every 5 minutes. Requires `RELOAD_KEY`.
+
+```bash
+curl -X POST https://<host>/admin/alerts/broadcast \
+  -H "Authorization: Bearer <RELOAD_KEY>"
+```
+
+### Response 202
+
+```json
+{ "message": "broadcast triggered" }
+```
+
+The tick runs in the background. Check server logs for delivery results.
+
+---
+
+## POST /device-tokens
+
+Register or update a device token for alert push broadcasts. Called by both platforms at app launch and when the token rotates. Requires `API_KEY`.
+
+### Request body
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `token` | string | ✅ | FCM token (Android) or APNs hex token (iOS) |
+| `platform` | string | ✅ | `ios` or `android` |
+| `minSeverity` | string | ❌ | Minimum alert severity to receive: `info` (default), `warning`, `critical`, or `none` |
+| `environment` | string | ❌ | iOS only: `sandbox` (dev/TestFlight) or `production` (App Store). Used to route to the correct APNs endpoint. |
+
+```bash
+curl -X POST https://<host>/device-tokens \
+  -H "Authorization: Bearer <API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{ "token": "abc123...", "platform": "ios", "environment": "sandbox", "minSeverity": "info" }'
+```
+
+### Response 204
+
+No body.
+
+---
+
+## DELETE /device-tokens/:token
+
+Remove a device token (e.g. on uninstall or explicit opt-out). Requires `API_KEY`.
+
+```bash
+curl -X DELETE https://<host>/device-tokens/abc123... \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+### Response 204
+
+No body.
+
+---
+
 ## Reloading via SIGHUP
 
 As an alternative to the HTTP endpoints, send `SIGHUP` to the server process to reload both the timetable and polyline caches:

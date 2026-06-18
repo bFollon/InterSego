@@ -650,6 +650,20 @@ private fun AlertBanner(
 | `POST` | `/admin/alerts` | `RELOAD_KEY` | Create an alert |
 | `DELETE` | `/admin/alerts/:id` | `RELOAD_KEY` | Delete an alert |
 | `GET` | `/admin/alerts` | `RELOAD_KEY` | List all alerts (active + future + expired) |
+| `POST` | `/admin/alerts/broadcast` | `RELOAD_KEY` | Force an immediate broadcast tick (testing) |
+
+### Timestamps
+
+`startsAt` / `endsAt` accept UTC (`Z`), explicit offset (`+02:00`), or naive local time with no suffix — naive timestamps are interpreted as `Europe/Madrid` and normalised to UTC before storage.
+
+### APNs environment routing
+
+The broadcaster maintains separate APNs keys for sandbox and production:
+
+- `APNS_KEY_PATH` / `APNS_KEY_ID` — production key (App Store builds)
+- `APNS_SANDBOX_KEY_PATH` / `APNS_SANDBOX_KEY_ID` — sandbox key (dev/debug builds); falls back to production key if not set
+
+Each device registers with an `environment` field (`sandbox` or `production`) via `POST /device-tokens`. The broadcaster routes to the matching APNs endpoint per device, so both build types coexist on the same server without env var changes. Same per-device routing applies to the reminder scheduler.
 
 ---
 
@@ -674,6 +688,8 @@ only needed for broadcast.
 export interface RegisteredDevice {
   token: string;
   platform: 'ios' | 'android';
+  environment?: 'sandbox' | 'production'; // iOS only; routes to correct APNs endpoint
+  minSeverity: 'none' | 'info' | 'warning' | 'critical';
   updatedAt: string;
 }
 ```
