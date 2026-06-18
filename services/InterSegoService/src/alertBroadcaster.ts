@@ -32,17 +32,16 @@ function meetsThreshold(alertSeverity: string, deviceMinSeverity: string): boole
   return (SEVERITY_RANK[alertSeverity] ?? 0) >= (SEVERITY_RANK[deviceMinSeverity] ?? 0);
 }
 
-let apnsProvider: ApnsProvider;
+let apnsBaseConfig: { keyPath: string; keyId: string; teamId: string; bundleId: string };
 let ticking = false;
 
 export function initAlertBroadcaster(): void {
-  apnsProvider = new ApnsProvider({
-    keyPath:    process.env.APNS_KEY_PATH!,
-    keyId:      process.env.APNS_KEY_ID!,
-    teamId:     process.env.APNS_TEAM_ID!,
-    bundleId:   process.env.APNS_BUNDLE_ID!,
-    production: process.env.APNS_PRODUCTION === 'true',
-  });
+  apnsBaseConfig = {
+    keyPath:  process.env.APNS_KEY_PATH!,
+    keyId:    process.env.APNS_KEY_ID!,
+    teamId:   process.env.APNS_TEAM_ID!,
+    bundleId: process.env.APNS_BUNDLE_ID!,
+  };
 
   broadcastTick();
   setInterval(broadcastTick, 5 * 60_000);
@@ -92,13 +91,16 @@ async function broadcastTickInner(): Promise<void> {
   const allDevices = await getAllDevices();
 
   for (const alert of pending) {
-    const iosTokens = allDevices
-      .filter((d) => d.platform === 'ios' && meetsThreshold(alert.severity, d.minSeverity))
-      .map((d) => d.token);
+    const iosDevices = allDevices.filter(
+      (d) => d.platform === 'ios' && meetsThreshold(alert.severity, d.minSeverity),
+    );
+    const iosProductionTokens = iosDevices.filter((d) => d.environment !== 'sandbox').map((d) => d.token);
+    const iosSandboxTokens    = iosDevices.filter((d) => d.environment === 'sandbox').map((d) => d.token);
     const androidTokens = allDevices
       .filter((d) => d.platform === 'android' && meetsThreshold(alert.severity, d.minSeverity))
       .map((d) => d.token);
-    await broadcastToIos(alert, iosTokens);
+    if (iosProductionTokens.length > 0) await broadcastToIos(alert, iosProductionTokens, 'production');
+    if (iosSandboxTokens.length > 0)    await broadcastToIos(alert, iosSandboxTokens, 'sandbox');
     await broadcastToAndroid(alert, androidTokens);
     await markAlertBroadcastSent(alert.id);
   }
@@ -109,9 +111,10 @@ async function broadcastTickInner(): Promise<void> {
   );
 }
 
-async function broadcastToIos(alert: ServiceAlert, tokens: string[]): Promise<void> {
+async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment: 'sandbox' | 'production'): Promise<void> {
+  const provider = new ApnsProvider({ ...apnsBaseConfig, production: environment === 'production' });
   for (const token of tokens) {
-    const result = await apnsProvider.send(
+    const result = await provider.send(
       {
         title:  alert.title,
         body:   alert.message,

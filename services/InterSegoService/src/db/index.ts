@@ -69,6 +69,11 @@ export async function initDb(): Promise<void> {
       (d as RegisteredDevice).minSeverity = 'info';
       devicesMigrated = true;
     }
+    // Migration: backfill environment for iOS devices registered before per-environment APNs routing.
+    if (d.platform === 'ios' && !(d as RegisteredDevice).environment) {
+      (d as RegisteredDevice).environment = 'production';
+      devicesMigrated = true;
+    }
   });
   if (devicesMigrated) await db.write();
   // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
@@ -233,6 +238,7 @@ export function upsertDevice(
   token: string,
   platform: 'ios' | 'android',
   minSeverity: 'none' | 'info' | 'warning' | 'critical' = 'info',
+  environment?: 'sandbox' | 'production',
 ): Promise<void> {
   return serialize(async () => {
     await db.read();
@@ -240,9 +246,14 @@ export function upsertDevice(
     if (existing) {
       existing.platform = platform;
       existing.minSeverity = minSeverity;
+      if (environment) existing.environment = environment;
       existing.updatedAt = new Date().toISOString();
     } else {
-      db.data.devices.push({ token, platform, minSeverity, updatedAt: new Date().toISOString() });
+      db.data.devices.push({
+        token, platform, minSeverity,
+        ...(environment ? { environment } : {}),
+        updatedAt: new Date().toISOString(),
+      });
     }
     await db.write();
   });

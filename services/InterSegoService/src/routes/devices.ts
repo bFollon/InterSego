@@ -39,6 +39,7 @@ const postDeviceTokenSchema = {
       token:       { type: 'string', minLength: 1 },
       platform:    { type: 'string', enum: ['ios', 'android'] },
       minSeverity: { type: 'string', enum: SEVERITIES, nullable: true },
+      environment: { type: 'string', enum: ['sandbox', 'production'], nullable: true },
     },
   },
 } as const;
@@ -47,6 +48,7 @@ type PostDeviceTokenBody = {
   token: string;
   platform: 'ios' | 'android';
   minSeverity?: 'none' | 'info' | 'warning' | 'critical' | null;
+  environment?: 'sandbox' | 'production' | null;
 };
 
 export async function devicesRoutes(app: FastifyInstance): Promise<void> {
@@ -54,7 +56,12 @@ export async function devicesRoutes(app: FastifyInstance): Promise<void> {
     '/device-tokens',
     { preHandler: requireApiKey, schema: postDeviceTokenSchema },
     async (request, reply) => {
-      await upsertDevice(request.body.token, request.body.platform, request.body.minSeverity ?? 'info');
+      await upsertDevice(
+        request.body.token,
+        request.body.platform,
+        request.body.minSeverity ?? 'info',
+        request.body.environment ?? undefined,
+      );
       return reply.status(204).send();
     },
   );

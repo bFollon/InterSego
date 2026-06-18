@@ -67,6 +67,8 @@ export interface BoardingEvent {
 export interface RegisteredDevice {
   token: string;
   platform: 'ios' | 'android';
+  /** iOS only: 'sandbox' for dev/TestFlight builds, 'production' for App Store. Ignored for Android. */
+  environment?: 'sandbox' | 'production';
   minSeverity: 'none' | 'info' | 'warning' | 'critical';
   updatedAt: string;
 }
