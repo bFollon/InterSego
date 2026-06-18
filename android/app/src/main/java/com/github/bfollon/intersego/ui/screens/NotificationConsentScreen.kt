@@ -15,15 +15,11 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,14 +32,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,24 +49,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private data class SeverityOption(val value: String, val title: String, val subtitle: String)
-
-private val severityOptions = listOf(
-    SeverityOption("info",     "Todas",              "Informativas, advertencias y críticas"),
-    SeverityOption("warning",  "Solo importantes",   "Advertencias y alertas críticas"),
-    SeverityOption("critical", "Solo críticas",      "Únicamente interrupciones graves del servicio"),
-    SeverityOption("none",     "Desactivar alertas", "No recibir notificaciones de alertas"),
-)
-
 @Composable
 fun NotificationConsentScreen(onDismiss: () -> Unit) {
     val context = LocalContext.current
-    var selectedSeverity by remember { mutableStateOf("info") }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        val effectiveSeverity = if (granted) selectedSeverity else "none"
+        val effectiveSeverity = if (granted) "info" else "none"
         NotificationPreferencesService.saveChoice(context, effectiveSeverity)
         val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
         val token = prefs.getString("fcm_token", null)
@@ -98,12 +79,12 @@ fun NotificationConsentScreen(onDismiss: () -> Unit) {
             }
         }
         // Already granted (Android < 13 or permission already accepted)
-        NotificationPreferencesService.saveChoice(context, selectedSeverity)
+        NotificationPreferencesService.saveChoice(context, "info")
         val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
         val token = prefs.getString("fcm_token", null)
         if (token != null) {
             CoroutineScope(Dispatchers.IO).launch {
-                DeviceTokenService.register(token, context, selectedSeverity)
+                DeviceTokenService.register(token, context, "info")
             }
         }
         onDismiss()
@@ -161,47 +142,6 @@ fun NotificationConsentScreen(onDismiss: () -> Unit) {
 
                 HorizontalDivider()
 
-                Text(
-                    text = "¿Qué alertas de servicio quieres recibir?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Column {
-                    severityOptions.forEachIndexed { index, option ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedSeverity = option.value }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            RadioButton(
-                                selected = selectedSeverity == option.value,
-                                onClick = { selectedSeverity = option.value }
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = option.title,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = option.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        if (index < severityOptions.lastIndex) {
-                            HorizontalDivider(modifier = Modifier.padding(start = 48.dp))
-                        }
-                    }
-                }
-
-                HorizontalDivider()
-
                 Button(
                     onClick = { activate() },
                     modifier = Modifier.fillMaxWidth(),
@@ -223,7 +163,7 @@ fun NotificationConsentScreen(onDismiss: () -> Unit) {
                 }
 
                 Text(
-                    text = "Puedes cambiarlo en Ajustes cuando quieras",
+                    text = "Puedes personalizar qué alertas recibir en Ajustes",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

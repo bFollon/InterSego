@@ -9,11 +9,11 @@
 
 import SwiftUI
 
-private let alertSeverityOptions: [(value: String, label: String)] = [
-    ("info",     "Todas"),
-    ("warning",  "Solo importantes"),
-    ("critical", "Solo críticas"),
-    ("none",     "Desactivadas"),
+private let alertSeverityOptions: [(value: String, label: String, description: String)] = [
+    ("info",     "Todas",            "Informativas, advertencias e interrupciones graves"),
+    ("warning",  "Solo importantes", "Advertencias y alertas críticas"),
+    ("critical", "Solo críticas",    "Únicamente interrupciones graves del servicio"),
+    ("none",     "Desactivadas",     "Sin notificaciones de alertas"),
 ]
 
 struct SettingsView: View {
@@ -22,11 +22,23 @@ struct SettingsView: View {
     @State private var errorsEnabled = MonitoringPreferencesService.shared.hasUserOptedIn()
     @State private var analyticsEnabled = MonitoringPreferencesService.shared.hasUserOptedInToAnalytics()
     @State private var alertMinSeverity = NotificationPreferencesService.shared.getAlertMinSeverity()
+    @State private var showHowItWorks = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section(header: Text("Notificaciones")) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Configura qué notificaciones quieres recibir.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        Button(action: { showHowItWorks = true }) {
+                            Label("¿Cómo funciona?", systemImage: "questionmark.circle")
+                                .font(.subheadline)
+                        }
+                    }
+                    .padding(.vertical, 4)
+
                     Picker("Alertas de servicio", selection: Binding(
                         get: { alertMinSeverity },
                         set: { newValue in
@@ -41,8 +53,7 @@ struct SettingsView: View {
                             Text(option.label).tag(option.value)
                         }
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
 
                 Section(header: Text("Modo guiado")) {
@@ -119,6 +130,51 @@ struct SettingsView: View {
                     Button("Cerrar") { dismiss() }
                 }
             }
+            .sheet(isPresented: $showHowItWorks) {
+                AlertLevelsSheet()
+            }
         }
+    }
+}
+
+private struct AlertLevelsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private let levels: [(icon: String, color: Color, title: String, description: String)] = [
+        ("bell.fill",                     .blue,   "Todas",            "Informativas, advertencias e interrupciones graves"),
+        ("exclamationmark.triangle.fill", .orange, "Solo importantes", "Advertencias y alertas críticas"),
+        ("exclamationmark.octagon.fill",  .red,    "Solo críticas",    "Únicamente interrupciones graves del servicio"),
+        ("bell.slash",                    .gray,   "Desactivadas",     "Sin notificaciones de alertas"),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(levels, id: \.title) { level in
+                    HStack(spacing: 14) {
+                        Image(systemName: level.icon)
+                            .foregroundColor(level.color)
+                            .font(.title3)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(level.title)
+                                .fontWeight(.semibold)
+                            Text(level.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+            .navigationTitle("Niveles de alerta")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cerrar") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }

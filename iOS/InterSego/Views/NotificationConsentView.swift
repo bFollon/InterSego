@@ -12,14 +12,6 @@ import UserNotifications
 
 struct NotificationConsentView: View {
     @Binding var isPresented: Bool
-    @State private var selectedSeverity = "info"
-
-    private let options: [(value: String, title: String, subtitle: String)] = [
-        ("info",     "Todas",              "Informativas, advertencias y críticas"),
-        ("warning",  "Solo importantes",   "Advertencias y alertas críticas"),
-        ("critical", "Solo críticas",      "Únicamente interrupciones graves del servicio"),
-        ("none",     "Desactivar alertas", "No recibir notificaciones de alertas"),
-    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -44,40 +36,6 @@ struct NotificationConsentView: View {
 
             Divider()
 
-            Text("¿Qué alertas de servicio quieres recibir?")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-
-            VStack(spacing: 0) {
-                ForEach(options, id: \.value) { option in
-                    Button(action: { selectedSeverity = option.value }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: selectedSeverity == option.value ? "largecircle.fill.circle" : "circle")
-                                .foregroundColor(selectedSeverity == option.value ? .blue : .secondary)
-                                .font(.system(size: 20))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(option.title)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
-                                Text(option.subtitle)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 4)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    if option.value != options.last?.value {
-                        Divider().padding(.leading, 36)
-                    }
-                }
-            }
-
-            Divider()
-
             Button(action: activate) {
                 Text("Activar notificaciones")
                     .fontWeight(.medium)
@@ -97,7 +55,7 @@ struct NotificationConsentView: View {
             }
             .buttonStyle(PlainButtonStyle())
 
-            Text("Puedes cambiarlo en Ajustes cuando quieras")
+            Text("Puedes personalizar qué alertas recibir en Ajustes")
                 .font(.caption2)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -110,7 +68,7 @@ struct NotificationConsentView: View {
         Task {
             let center = UNUserNotificationCenter.current()
             let status = await center.notificationSettings().authorizationStatus
-            var effectiveSeverity = selectedSeverity
+            var effectiveSeverity = "info"
             if status == .notDetermined {
                 let granted = (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
                 if !granted { effectiveSeverity = "none" }
