@@ -26,12 +26,13 @@ import type { DeviceReminder } from './types.js';
 let provider: ApnsProvider;
 
 export function initScheduler(): void {
+  const production = process.env.APNS_PRODUCTION === 'true';
   provider = new ApnsProvider({
-    keyPath: process.env.APNS_KEY_PATH!,
-    keyId: process.env.APNS_KEY_ID!,
-    teamId: process.env.APNS_TEAM_ID!,
-    bundleId: process.env.APNS_BUNDLE_ID!,
-    production: process.env.APNS_PRODUCTION === 'true',
+    keyPath:    production ? process.env.APNS_KEY_PATH!         : (process.env.APNS_SANDBOX_KEY_PATH ?? process.env.APNS_KEY_PATH!),
+    keyId:      production ? process.env.APNS_KEY_ID!           : (process.env.APNS_SANDBOX_KEY_ID   ?? process.env.APNS_KEY_ID!),
+    teamId:     process.env.APNS_TEAM_ID!,
+    bundleId:   process.env.APNS_BUNDLE_ID!,
+    production,
   });
 
   tick();

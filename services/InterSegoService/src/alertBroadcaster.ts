@@ -32,15 +32,18 @@ function meetsThreshold(alertSeverity: string, deviceMinSeverity: string): boole
   return (SEVERITY_RANK[alertSeverity] ?? 0) >= (SEVERITY_RANK[deviceMinSeverity] ?? 0);
 }
 
-let apnsBaseConfig: { keyPath: string; keyId: string; teamId: string; bundleId: string };
+type ApnsConfig = { keyPath: string; keyId: string; teamId: string; bundleId: string };
+let apnsProductionConfig: ApnsConfig;
+let apnsSandboxConfig: ApnsConfig;
 let ticking = false;
 
 export function initAlertBroadcaster(): void {
-  apnsBaseConfig = {
-    keyPath:  process.env.APNS_KEY_PATH!,
-    keyId:    process.env.APNS_KEY_ID!,
-    teamId:   process.env.APNS_TEAM_ID!,
-    bundleId: process.env.APNS_BUNDLE_ID!,
+  const shared = { teamId: process.env.APNS_TEAM_ID!, bundleId: process.env.APNS_BUNDLE_ID! };
+  apnsProductionConfig = { ...shared, keyPath: process.env.APNS_KEY_PATH!, keyId: process.env.APNS_KEY_ID! };
+  apnsSandboxConfig    = {
+    ...shared,
+    keyPath: process.env.APNS_SANDBOX_KEY_PATH ?? process.env.APNS_KEY_PATH!,
+    keyId:   process.env.APNS_SANDBOX_KEY_ID   ?? process.env.APNS_KEY_ID!,
   };
 
   broadcastTick();
@@ -117,7 +120,8 @@ async function broadcastTickInner(): Promise<void> {
 }
 
 async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment: 'sandbox' | 'production'): Promise<void> {
-  const provider = new ApnsProvider({ ...apnsBaseConfig, production: environment === 'production' });
+  const config = environment === 'production' ? apnsProductionConfig : apnsSandboxConfig;
+  const provider = new ApnsProvider({ ...config, production: environment === 'production' });
   console.log(`alertBroadcaster: sending to APNs ${environment} endpoint (${provider.host}) for ${tokens.length} token(s)`);
   for (const token of tokens) {
     const result = await provider.send(
