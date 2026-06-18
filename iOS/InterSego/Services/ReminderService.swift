@@ -452,6 +452,8 @@ actor ReminderService {
     private func postReminderToServer(_ reminder: BusReminder, deviceToken: String) async -> String? {
         let payload = ServerReminderPayload(
             deviceToken: deviceToken,
+            platform: "ios",
+            environment: await DeviceTokenService.shared.apnsEnvironment,
             routeId: reminder.routeId,
             routeNumber: reminder.routeNumber,
             stopId: reminder.stopId,
@@ -566,6 +568,8 @@ private struct ServerDeviceReminder: Decodable {
 
 private struct ServerReminderPayload: Encodable {
     let deviceToken: String
+    let platform: String
+    let environment: String
     let routeId: String
     let routeNumber: String
     let stopId: String

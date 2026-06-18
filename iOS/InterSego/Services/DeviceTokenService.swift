@@ -35,7 +35,7 @@ actor DeviceTokenService {
         _ = try? await session.data(for: request)
     }
 
-    private var apnsEnvironment: String {
+    var apnsEnvironment: String {
         #if DEBUG
         return "sandbox"
         #else

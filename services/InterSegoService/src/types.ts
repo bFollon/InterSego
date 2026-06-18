@@ -111,6 +111,8 @@ export interface DeviceReminder {
   id: string;
   deviceToken: string;
   platform: 'ios' | 'android';
+  /** iOS only: 'sandbox' for dev/TestFlight builds, 'production' for App Store. Ignored for Android. */
+  environment?: 'sandbox' | 'production';
   routeId: string;
   routeNumber: string;
   stopId: string;
@@ -129,6 +131,7 @@ export interface DeviceReminder {
 export interface PostReminderBody {
   deviceToken: string;
   platform: 'ios' | 'android';
+  environment?: 'sandbox' | 'production';
   routeId: string;
   routeNumber: string;
   stopId: string;

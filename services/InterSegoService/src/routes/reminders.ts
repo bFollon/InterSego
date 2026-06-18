@@ -38,6 +38,7 @@ const postReminderSchema = {
     properties: {
       deviceToken:          { type: 'string', minLength: 1, maxLength: 512 },
       platform:             { type: 'string', enum: ['ios', 'android'], default: 'ios' },
+      environment:          { type: 'string', enum: ['sandbox', 'production'], nullable: true },
       routeId:              { type: 'string', minLength: 1, maxLength: 16 },
       routeNumber:          { type: 'string', minLength: 1, maxLength: 16 },
       stopId:               { type: 'string', minLength: 1, maxLength: 128 },

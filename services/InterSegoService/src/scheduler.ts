@@ -23,17 +23,18 @@ import {
 import { nextOccurrence } from './reminderLogic.js';
 import type { DeviceReminder } from './types.js';
 
-let provider: ApnsProvider;
+type ApnsConfig = { keyPath: string; keyId: string; teamId: string; bundleId: string };
+let apnsProductionConfig: ApnsConfig;
+let apnsSandboxConfig: ApnsConfig;
 
 export function initScheduler(): void {
-  const production = process.env.APNS_PRODUCTION === 'true';
-  provider = new ApnsProvider({
-    keyPath:    production ? process.env.APNS_KEY_PATH!         : (process.env.APNS_SANDBOX_KEY_PATH ?? process.env.APNS_KEY_PATH!),
-    keyId:      production ? process.env.APNS_KEY_ID!           : (process.env.APNS_SANDBOX_KEY_ID   ?? process.env.APNS_KEY_ID!),
-    teamId:     process.env.APNS_TEAM_ID!,
-    bundleId:   process.env.APNS_BUNDLE_ID!,
-    production,
-  });
+  const shared = { teamId: process.env.APNS_TEAM_ID!, bundleId: process.env.APNS_BUNDLE_ID! };
+  apnsProductionConfig = { ...shared, keyPath: process.env.APNS_KEY_PATH!, keyId: process.env.APNS_KEY_ID! };
+  apnsSandboxConfig    = {
+    ...shared,
+    keyPath: process.env.APNS_SANDBOX_KEY_PATH ?? process.env.APNS_KEY_PATH!,
+    keyId:   process.env.APNS_SANDBOX_KEY_ID   ?? process.env.APNS_KEY_ID!,
+  };
 
   tick();
   setInterval(tick, 60_000);
@@ -107,6 +108,9 @@ async function sendPush(reminder: DeviceReminder): Promise<void> {
   }
 
   // iOS — APNs
+  const environment = reminder.environment ?? 'production';
+  const config = environment === 'production' ? apnsProductionConfig : apnsSandboxConfig;
+  const provider = new ApnsProvider({ ...config, production: environment === 'production' });
   const result = await provider.send(
     {
       title: notification.title,

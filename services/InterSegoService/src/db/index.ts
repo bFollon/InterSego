@@ -76,6 +76,15 @@ export async function initDb(): Promise<void> {
     }
   });
   if (devicesMigrated) await db.write();
+  // Migration: backfill environment for iOS reminders registered before per-environment APNs routing.
+  let remindersMigrated = false;
+  db.data.reminders.forEach((r) => {
+    if (r.platform === 'ios' && !(r as DeviceReminder).environment) {
+      (r as DeviceReminder).environment = 'production';
+      remindersMigrated = true;
+    }
+  });
+  if (remindersMigrated) await db.write();
   // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
   let migrated = false;
   db.data.reminders.forEach((r) => {
