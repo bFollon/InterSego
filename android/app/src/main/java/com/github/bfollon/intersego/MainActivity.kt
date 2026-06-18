@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -111,6 +112,7 @@ import com.github.bfollon.intersego.ui.screens.AboutScreen
 import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
+import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
 import com.github.bfollon.intersego.ui.screens.RouteMapScreen
 import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
@@ -129,10 +131,12 @@ import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
 import com.github.bfollon.intersego.ui.screens.MonitoringConsentScreen
+import com.github.bfollon.intersego.ui.screens.NotificationConsentScreen
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
+import com.github.bfollon.intersego.services.NotificationPreferencesService
 import com.google.firebase.messaging.FirebaseMessaging
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -242,17 +246,19 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         // Create notification channel for bus departure reminders
         com.github.bfollon.intersego.services.ReminderService.createNotificationChannel(this)
 
-        // Ensure FCM token is stored on first launch (onNewToken only fires on rotation,
-        // not when a token already exists from a previous install).
+        // Ensure FCM token is stored and registered on first launch (onNewToken only fires
+        // on rotation, not when a token already exists from a previous install).
         FirebaseMessaging.getInstance().token
             .addOnSuccessListener { token ->
                 getSharedPreferences("fcm_prefs", MODE_PRIVATE)
                     .edit { putString("fcm_token", token) }
+                CoroutineScope(Dispatchers.IO).launch { DeviceTokenService.register(token, this@MainActivity) }
             }
 
         setContent {
             var isInitialized by remember { mutableStateOf(false) }
             var showMonitoringConsent by remember { mutableStateOf(false) }
+            var showNotificationConsent by remember { mutableStateOf(false) }
 
             // Hoist services so the splash covers their initialization
             val reminderService = remember { ReminderService(this@MainActivity) }
@@ -273,6 +279,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
                 if (!MonitoringPreferencesService.hasUserMadeAnalyticsChoice()) {
                     showMonitoringConsent = true
+                }
+                if (!NotificationPreferencesService.hasUserMadeNotificationChoice(this@MainActivity)) {
+                    showNotificationConsent = true
                 }
 
                 // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
@@ -305,6 +314,10 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     if (showMonitoringConsent) {
                         MonitoringConsentScreen(
                             onDismiss = { showMonitoringConsent = false }
+                        )
+                    } else if (showNotificationConsent) {
+                        NotificationConsentScreen(
+                            onDismiss = { showNotificationConsent = false }
                         )
                     }
                 }

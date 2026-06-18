@@ -10,6 +10,7 @@
 package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,20 +26,50 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
+import com.github.bfollon.intersego.services.NotificationPreferencesService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
+private data class SeverityOption(val value: String, val label: String, val description: String)
+private val severityOptions = listOf(
+    SeverityOption("info",     "Todas",            "Informativas, advertencias e interrupciones graves"),
+    SeverityOption("warning",  "Solo importantes", "Advertencias y alertas críticas"),
+    SeverityOption("critical", "Solo críticas",    "Únicamente interrupciones graves del servicio"),
+    SeverityOption("none",     "Desactivadas",     "Sin notificaciones de alertas"),
+)
+
+private data class SeverityLevel(
+    val icon: ImageVector,
+    val color: Color,
+    val label: String,
+    val description: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var guidedModeEnabled by remember {
         mutableStateOf(GuidedModePrefs.isGuidedModeEnabled())
     }
@@ -48,6 +79,10 @@ fun SettingsScreen(
     var analyticsEnabled by remember {
         mutableStateOf(MonitoringPreferencesService.hasUserOptedInToAnalytics())
     }
+    var alertMinSeverity by remember {
+        mutableStateOf(NotificationPreferencesService.getAlertMinSeverity(context))
+    }
+    var showHowItWorks by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -72,6 +107,104 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
+            // Section: Notificaciones
+            Text(
+                text = "Notificaciones",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+            )
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showHowItWorks = true }
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "Configura qué notificaciones quieres recibir.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "¿Cómo funciona?",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    HorizontalDivider()
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    var expanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Alertas de servicio",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = severityOptions.find { it.value == alertMinSeverity }?.label ?: "",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            severityOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label) },
+                                    onClick = {
+                                        expanded = false
+                                        alertMinSeverity = option.value
+                                        NotificationPreferencesService.saveChoice(context, option.value)
+                                        val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
+                                        val token = prefs.getString("fcm_token", null)
+                                        if (token != null) {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                DeviceTokenService.register(token, context, option.value)
+                                            }
+                                        }
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                )
+                            }
+                        }
+                    }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Section: Modo guiado
             Text(
                 text = "Modo guiado",
@@ -130,7 +263,6 @@ fun SettingsScreen(
                         }
                     )
                     HorizontalDivider()
-                    // Restart callout
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -150,6 +282,65 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
+                    }
+                }
+            }
+        }
+    }
+
+    if (showHowItWorks) {
+        val levels = listOf(
+            SeverityLevel(Icons.Default.Notifications,    MaterialTheme.colorScheme.primary,            "Todas",            "Informativas, advertencias e interrupciones graves"),
+            SeverityLevel(Icons.Default.Warning,          Color(0xFFF59E0BL),                           "Solo importantes", "Advertencias y alertas críticas"),
+            SeverityLevel(Icons.Default.Error,            MaterialTheme.colorScheme.error,              "Solo críticas",    "Únicamente interrupciones graves del servicio"),
+            SeverityLevel(Icons.Default.NotificationsOff, MaterialTheme.colorScheme.onSurfaceVariant,   "Desactivadas",     "Sin notificaciones de alertas"),
+        )
+        ModalBottomSheet(
+            onDismissRequest = { showHowItWorks = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "Niveles de alerta",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                levels.forEachIndexed { index, level ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = level.icon,
+                            contentDescription = null,
+                            tint = level.color,
+                            modifier = Modifier.size(26.dp)
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = level.label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = level.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    if (index < levels.lastIndex) {
+                        HorizontalDivider()
                     }
                 }
             }

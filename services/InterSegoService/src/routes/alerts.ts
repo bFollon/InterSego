@@ -16,14 +16,27 @@
 
 import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
+import { DateTime } from 'luxon';
+import { triggerBroadcast } from '../alertBroadcaster.js';
 import { appendAlert, deleteAlert, getActiveAlerts, getAllAlerts } from '../db/index.js';
 import { requireReloadKey } from '../middleware/auth.js';
 import type { PostAlertBody, ServiceAlert } from '../types.js';
 
 const SEVERITIES = ['info', 'warning', 'critical'] as const;
 
-/** ISO 8601 UTC timestamp: e.g. 2026-06-16T08:00:00Z or 2026-06-16T08:00:00.000Z */
-const ISO8601_UTC = '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$';
+/**
+ * Accept naive local timestamps (e.g. "2026-06-18T11:47:00"), UTC ("...Z"),
+ * or explicit offset ("...+02:00"). Naive timestamps are interpreted as
+ * Europe/Madrid and normalised to UTC before storage.
+ */
+const ISO8601_FLEXIBLE = '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$';
+
+function toUtcIso(input: string): string {
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(input)) {
+    return new Date(input).toISOString();
+  }
+  return DateTime.fromISO(input, { zone: 'Europe/Madrid' }).toUTC().toISO()!;
+}
 
 const postAlertSchema = {
   body: {
@@ -35,8 +48,8 @@ const postAlertSchema = {
       message:        { type: 'string', minLength: 1, maxLength: 1024 },
       severity:       { type: 'string', enum: [...SEVERITIES] },
       affectedRoutes: { type: 'array', items: { type: 'string' }, nullable: true },
-      startsAt:       { type: 'string', pattern: ISO8601_UTC },
-      endsAt:         { type: 'string', pattern: ISO8601_UTC },
+      startsAt:       { type: 'string', pattern: ISO8601_FLEXIBLE },
+      endsAt:         { type: 'string', pattern: ISO8601_FLEXIBLE },
     },
   },
 } as const;
@@ -58,6 +71,8 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
         id: randomUUID(),
         broadcastSent: false,
         ...request.body,
+        startsAt: toUtcIso(request.body.startsAt),
+        endsAt:   toUtcIso(request.body.endsAt),
       };
       await appendAlert(alert);
       return reply.status(201).send({ id: alert.id });
@@ -80,6 +95,16 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: requireReloadKey },
     async (_request, reply) => {
       return reply.send(await getAllAlerts());
+    },
+  );
+
+  // Admin — force an immediate broadcast tick (useful for testing)
+  app.post(
+    '/admin/alerts/broadcast',
+    { preHandler: requireReloadKey },
+    async (_request, reply) => {
+      triggerBroadcast().catch((err) => console.error('admin/broadcast error:', err));
+      return reply.status(202).send({ message: 'broadcast triggered' });
     },
   );
 }

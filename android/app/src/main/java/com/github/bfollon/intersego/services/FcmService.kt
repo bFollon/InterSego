@@ -23,6 +23,7 @@ class FcmService : FirebaseMessagingService() {
         prefs.edit().putString("fcm_token", token).apply()
         CoroutineScope(Dispatchers.IO).launch {
             ReminderService(applicationContext).syncTokenToServer(oldToken, token)
+            DeviceTokenService.register(token, applicationContext)
         }
     }
 

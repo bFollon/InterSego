@@ -64,10 +64,20 @@ export interface BoardingEvent {
   expiresAt: string;
 }
 
+export interface RegisteredDevice {
+  token: string;
+  platform: 'ios' | 'android';
+  /** iOS only: 'sandbox' for dev/TestFlight builds, 'production' for App Store. Ignored for Android. */
+  environment?: 'sandbox' | 'production';
+  minSeverity: 'none' | 'info' | 'warning' | 'critical';
+  updatedAt: string;
+}
+
 export interface DbSchema {
   boardings: BoardingEvent[];
   reminders: DeviceReminder[];
   alerts: ServiceAlert[];
+  devices: RegisteredDevice[];
 }
 
 export interface ServiceAlert {
@@ -101,6 +111,8 @@ export interface DeviceReminder {
   id: string;
   deviceToken: string;
   platform: 'ios' | 'android';
+  /** iOS only: 'sandbox' for dev/TestFlight builds, 'production' for App Store. Ignored for Android. */
+  environment?: 'sandbox' | 'production';
   routeId: string;
   routeNumber: string;
   stopId: string;
@@ -119,6 +131,7 @@ export interface DeviceReminder {
 export interface PostReminderBody {
   deviceToken: string;
   platform: 'ios' | 'android';
+  environment?: 'sandbox' | 'production';
   routeId: string;
   routeNumber: string;
   stopId: string;

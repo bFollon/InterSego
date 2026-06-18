@@ -18,13 +18,13 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { BoardingEvent, DbSchema, DeviceReminder, ServiceAlert } from '../types.js';
+import type { BoardingEvent, DbSchema, DeviceReminder, RegisteredDevice, ServiceAlert } from '../types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = path.resolve(__dirname, '../../data/boardings.json');
 
 const adapter = new JSONFile<DbSchema>(dbPath);
-const defaultData: DbSchema = { boardings: [], reminders: [], alerts: [] };
+const defaultData: DbSchema = { boardings: [], reminders: [], alerts: [], devices: [] };
 const db = new Low<DbSchema>(adapter, defaultData);
 
 /**
@@ -57,6 +57,34 @@ export async function initDb(): Promise<void> {
     db.data.alerts = [];
     await db.write();
   }
+  // Migration: existing installs may not have the devices key.
+  if (!db.data.devices) {
+    db.data.devices = [];
+    await db.write();
+  }
+  // Migration: backfill minSeverity for devices registered before severity preference was added.
+  let devicesMigrated = false;
+  db.data.devices.forEach((d) => {
+    if (!(d as RegisteredDevice).minSeverity) {
+      (d as RegisteredDevice).minSeverity = 'info';
+      devicesMigrated = true;
+    }
+    // Migration: backfill environment for iOS devices registered before per-environment APNs routing.
+    if (d.platform === 'ios' && !(d as RegisteredDevice).environment) {
+      (d as RegisteredDevice).environment = 'production';
+      devicesMigrated = true;
+    }
+  });
+  if (devicesMigrated) await db.write();
+  // Migration: backfill environment for iOS reminders registered before per-environment APNs routing.
+  let remindersMigrated = false;
+  db.data.reminders.forEach((r) => {
+    if (r.platform === 'ios' && !(r as DeviceReminder).environment) {
+      (r as DeviceReminder).environment = 'production';
+      remindersMigrated = true;
+    }
+  });
+  if (remindersMigrated) await db.write();
   // Migration: backfill platform for reminders created before FCM support (all existing are iOS).
   let migrated = false;
   db.data.reminders.forEach((r) => {
@@ -207,6 +235,60 @@ export function markAlertBroadcastSent(id: string): Promise<void> {
     await db.read();
     const a = db.data.alerts.find((a) => a.id === id);
     if (a) a.broadcastSent = true;
+    await db.write();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Devices
+// ---------------------------------------------------------------------------
+
+export function upsertDevice(
+  token: string,
+  platform: 'ios' | 'android',
+  minSeverity: 'none' | 'info' | 'warning' | 'critical' = 'info',
+  environment?: 'sandbox' | 'production',
+): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const existing = db.data.devices.find((d) => d.token === token);
+    if (existing) {
+      existing.platform = platform;
+      existing.minSeverity = minSeverity;
+      if (environment) existing.environment = environment;
+      existing.updatedAt = new Date().toISOString();
+    } else {
+      db.data.devices.push({
+        token, platform, minSeverity,
+        ...(environment ? { environment } : {}),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    await db.write();
+  });
+}
+
+export function getAllDevices(): Promise<RegisteredDevice[]> {
+  return serialize(async () => {
+    await db.read();
+    return [...db.data.devices];
+  });
+}
+
+export function deleteDevice(token: string): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.devices = db.data.devices.filter((d) => d.token !== token);
+    await db.write();
+  });
+}
+
+/** Remove devices not seen in the last `maxAgeDays` days. */
+export function pruneStaleDevices(maxAgeDays = 90): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const cutoff = new Date(Date.now() - maxAgeDays * 86_400_000).toISOString();
+    db.data.devices = db.data.devices.filter((d) => d.updatedAt >= cutoff);
     await db.write();
   });
 }

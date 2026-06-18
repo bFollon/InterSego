@@ -51,6 +51,7 @@ struct ContentView: View {
     @State private var isInitialized = false
     @State private var showSplash = true
     @State private var showMonitoringConsent = false
+    @State private var showNotificationConsent = false
     @State private var showAbout = false
     @State private var showReminders = false
     @State private var showSettings = false
@@ -309,6 +310,20 @@ struct ContentView: View {
                     .ignoresSafeArea()
 
                 MonitoringConsentView(isPresented: $showMonitoringConsent)
+                    .frame(maxWidth: 500)
+                    .background(Color(uiColor: .systemBackground))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(radius: 20)
+                    .padding(40)
+            } else if showNotificationConsent {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+
+                NotificationConsentView(isPresented: $showNotificationConsent)
                     .frame(maxWidth: 500)
                     .background(Color(uiColor: .systemBackground))
                     .cornerRadius(16)
@@ -606,6 +621,9 @@ struct ContentView: View {
         if !MonitoringPreferencesService.shared.hasUserMadeAnalyticsChoice() {
             showMonitoringConsent = true
         }
+        if !NotificationPreferencesService.shared.hasUserMadeNotificationChoice() {
+            showNotificationConsent = true
+        }
     }
 }
 
@@ -872,6 +890,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     ) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
         Task { await ReminderService.shared.updateDeviceToken(token) }
+        Task { await DeviceTokenService.shared.registerToken(token, platform: "ios") }
     }
 
     func application(
