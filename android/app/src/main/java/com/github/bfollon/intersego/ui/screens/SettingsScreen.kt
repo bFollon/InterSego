@@ -119,23 +119,27 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(16.dp),
                 elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Configura qué notificaciones quieres recibir.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "¿Cómo funciona?",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                Column {
+                    Column(
                         modifier = Modifier
+                            .fillMaxWidth()
                             .clickable { showHowItWorks = true }
-                            .padding(vertical = 2.dp)
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "Configura qué notificaciones quieres recibir.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "¿Cómo funciona?",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                     HorizontalDivider()
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
                     var expanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
                         expanded = expanded,
@@ -194,6 +198,7 @@ fun SettingsScreen(
                                 )
                             }
                         }
+                    }
                     }
                 }
             }

@@ -33,7 +33,7 @@ struct SettingsView: View {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         Button(action: { showHowItWorks = true }) {
-                            Label("¿Cómo funciona?", systemImage: "questionmark.circle")
+                            Text("¿Cómo funciona?")
                                 .font(.subheadline)
                         }
                     }
