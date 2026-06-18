@@ -47,6 +47,10 @@ export function initAlertBroadcaster(): void {
   setInterval(broadcastTick, 5 * 60_000);
 }
 
+export async function triggerBroadcast(): Promise<void> {
+  return broadcastTick();
+}
+
 async function broadcastTick(): Promise<void> {
   if (ticking) return;
   ticking = true;

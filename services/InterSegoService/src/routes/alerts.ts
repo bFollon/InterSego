@@ -17,6 +17,7 @@
 import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { DateTime } from 'luxon';
+import { triggerBroadcast } from '../alertBroadcaster.js';
 import { appendAlert, deleteAlert, getActiveAlerts, getAllAlerts } from '../db/index.js';
 import { requireReloadKey } from '../middleware/auth.js';
 import type { PostAlertBody, ServiceAlert } from '../types.js';
@@ -94,6 +95,16 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: requireReloadKey },
     async (_request, reply) => {
       return reply.send(await getAllAlerts());
+    },
+  );
+
+  // Admin — force an immediate broadcast tick (useful for testing)
+  app.post(
+    '/admin/broadcast',
+    { preHandler: requireReloadKey },
+    async (_request, reply) => {
+      triggerBroadcast().catch((err) => console.error('admin/broadcast error:', err));
+      return reply.status(202).send({ message: 'broadcast triggered' });
     },
   );
 }
