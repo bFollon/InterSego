@@ -481,11 +481,28 @@ Array of alerts:
 
 ## DELETE /admin/alerts/:id
 
-Delete an alert by ID. Requires `RELOAD_KEY`.
+Delete a single alert by ID. Requires `RELOAD_KEY`.
 
 ```bash
 curl -X DELETE https://<host>/admin/alerts/8af8bd1a-a451-4e42-9a41-9aa817e79523 \
   -H "Authorization: Bearer <RELOAD_KEY>"
+```
+
+### Response 204
+
+No body.
+
+---
+
+## DELETE /admin/alerts
+
+Delete multiple alerts in a single call. Requires `RELOAD_KEY`. Body is a JSON array of alert IDs (minimum 1).
+
+```bash
+curl -X DELETE https://<host>/admin/alerts \
+  -H "Authorization: Bearer <RELOAD_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '["8af8bd1a-a451-4e42-9a41-9aa817e79523", "c3e2f9a0-1234-4abc-9def-56789abcdef0"]'
 ```
 
 ### Response 204

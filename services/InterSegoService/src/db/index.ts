@@ -239,6 +239,16 @@ export function deleteAlert(id: string): Promise<void> {
   });
 }
 
+/** Delete multiple alerts by id in a single read-write cycle. */
+export function deleteAlerts(ids: string[]): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    const idSet = new Set(ids);
+    db.data.alerts = db.data.alerts.filter((a) => !idSet.has(a.id));
+    await db.write();
+  });
+}
+
 export function markAlertBroadcastSent(id: string): Promise<void> {
   return serialize(async () => {
     await db.read();
