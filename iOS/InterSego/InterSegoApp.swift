@@ -830,7 +830,7 @@ private struct AlertDetailCard: View {
             HStack(spacing: 4) {
                 Image(systemName: "calendar")
                     .font(.caption)
-                Text("\(formatDate(alert.startsAt)) – \(formatDate(alert.endsAt))")
+                Text(formatDateRange(alert.startsAt, alert.endsAt))
                     .font(.caption)
             }
             .foregroundColor(.secondary)
@@ -855,16 +855,36 @@ private struct AlertDetailCard: View {
         )
     }
 
-    private func formatDate(_ iso: String) -> String {
-        let parser = ISO8601DateFormatter()
-        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let date = parser.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
-        guard let date else { return iso }
-        let fmt = DateFormatter()
-        fmt.locale = Locale(identifier: "es_ES")
-        fmt.dateStyle = .medium
-        fmt.timeStyle = .none
-        return fmt.string(from: date)
+    private func formatDateRange(_ startIso: String, _ endIso: String) -> String {
+        func parse(_ iso: String) -> Date? {
+            let parser = ISO8601DateFormatter()
+            parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return parser.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
+        }
+        guard let start = parse(startIso), let end = parse(endIso) else {
+            return "\(startIso) – \(endIso)"
+        }
+
+        let madrid = TimeZone(identifier: "Europe/Madrid")!
+        var calendar = Calendar.current
+        calendar.timeZone = madrid
+
+        let dateFmt = DateFormatter()
+        dateFmt.locale = Locale(identifier: "es_ES")
+        dateFmt.timeZone = madrid
+        dateFmt.dateStyle = .medium
+        dateFmt.timeStyle = .none
+
+        let timeFmt = DateFormatter()
+        timeFmt.locale = Locale(identifier: "es_ES")
+        timeFmt.timeZone = madrid
+        timeFmt.dateFormat = "HH:mm"
+
+        if calendar.isDate(start, inSameDayAs: end) {
+            return "\(dateFmt.string(from: start)), \(timeFmt.string(from: start)) – \(timeFmt.string(from: end))"
+        } else {
+            return "\(dateFmt.string(from: start)) \(timeFmt.string(from: start)) – \(dateFmt.string(from: end)) \(timeFmt.string(from: end))"
+        }
     }
 }
 

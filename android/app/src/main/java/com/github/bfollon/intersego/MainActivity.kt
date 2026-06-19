@@ -1287,16 +1287,18 @@ private fun AlertDetailCard(alert: ServiceAlert) {
 
 private fun formatAlertDateRange(startsAt: String, endsAt: String): String {
     return try {
-        val fmt = java.time.format.DateTimeFormatter.ofPattern(
+        val zone = java.time.ZoneId.of("Europe/Madrid")
+        val dateFmt = java.time.format.DateTimeFormatter.ofPattern(
             "d MMM yyyy", java.util.Locale("es", "ES")
         )
-        val start = java.time.Instant.parse(startsAt)
-            .atZone(java.time.ZoneId.of("Europe/Madrid"))
-            .toLocalDate()
-        val end = java.time.Instant.parse(endsAt)
-            .atZone(java.time.ZoneId.of("Europe/Madrid"))
-            .toLocalDate()
-        "${start.format(fmt)} – ${end.format(fmt)}"
+        val timeFmt = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        val start = java.time.Instant.parse(startsAt).atZone(zone)
+        val end = java.time.Instant.parse(endsAt).atZone(zone)
+        if (start.toLocalDate() == end.toLocalDate()) {
+            "${start.format(dateFmt)}, ${start.format(timeFmt)} – ${end.format(timeFmt)}"
+        } else {
+            "${start.format(dateFmt)} ${start.format(timeFmt)} – ${end.format(dateFmt)} ${end.format(timeFmt)}"
+        }
     } catch (_: Exception) {
         ""
     }
