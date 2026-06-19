@@ -222,6 +222,15 @@ export function appendAlert(alert: ServiceAlert): Promise<void> {
   });
 }
 
+/** Append multiple alerts in a single read-write cycle. */
+export function appendAlerts(alerts: ServiceAlert[]): Promise<void> {
+  return serialize(async () => {
+    await db.read();
+    db.data.alerts.push(...alerts);
+    await db.write();
+  });
+}
+
 export function deleteAlert(id: string): Promise<void> {
   return serialize(async () => {
     await db.read();

@@ -404,11 +404,15 @@ curl https://<host>/alerts
 
 ## POST /admin/alerts
 
-Create a service alert. Requires `RELOAD_KEY`.
+Create one or more service alerts in a single call. Requires `RELOAD_KEY`.
+
+Accepts either a single alert object, or a JSON array of alert objects (written atomically in one batch).
 
 Timestamps accept UTC (`Z`), explicit offset (`+02:00`), or naive local time (interpreted as `Europe/Madrid`).
 
 ### Request body
+
+A single alert object, or an array of these:
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -433,10 +437,44 @@ curl -X POST https://<host>/admin/alerts \
   }'
 ```
 
+Array form (e.g. two separate time windows on the same day):
+
+```bash
+curl -X POST https://<host>/admin/alerts \
+  -H "Authorization: Bearer <RELOAD_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {
+      "title": "Huelga de transportes.",
+      "message": "Los autobuses pueden sufrir retrasos hoy.",
+      "affectedRoutes": [],
+      "severity": "warning",
+      "startsAt": "2026-07-06T05:00:00",
+      "endsAt": "2026-07-06T09:30:00"
+    },
+    {
+      "title": "Huelga de transportes.",
+      "message": "Los autobuses pueden sufrir retrasos hoy.",
+      "affectedRoutes": [],
+      "severity": "warning",
+      "startsAt": "2026-07-06T14:00:00",
+      "endsAt": "2026-07-06T17:00:00"
+    }
+  ]'
+```
+
 ### Response 201
+
+Single alert:
 
 ```json
 { "id": "8af8bd1a-a451-4e42-9a41-9aa817e79523" }
+```
+
+Array of alerts:
+
+```json
+{ "ids": ["8af8bd1a-a451-4e42-9a41-9aa817e79523", "c3e2f9a0-1234-4abc-9def-56789abcdef0"] }
 ```
 
 ---

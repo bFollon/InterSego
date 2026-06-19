@@ -18,7 +18,7 @@ import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { DateTime } from 'luxon';
 import { triggerBroadcast } from '../alertBroadcaster.js';
-import { appendAlert, deleteAlert, getActiveAlerts, getAllAlerts } from '../db/index.js';
+import { appendAlerts, deleteAlert, getActiveAlerts, getAllAlerts } from '../db/index.js';
 import { requireReloadKey } from '../middleware/auth.js';
 import type { PostAlertBody, ServiceAlert } from '../types.js';
 
@@ -38,19 +38,23 @@ function toUtcIso(input: string): string {
   return DateTime.fromISO(input, { zone: 'Europe/Madrid' }).toUTC().toISO()!;
 }
 
+const alertObjectSchema = {
+  type: 'object',
+  required: ['title', 'message', 'severity', 'startsAt', 'endsAt'],
+  additionalProperties: false,
+  properties: {
+    title:          { type: 'string', minLength: 1, maxLength: 256 },
+    message:        { type: 'string', minLength: 1, maxLength: 1024 },
+    severity:       { type: 'string', enum: [...SEVERITIES] },
+    affectedRoutes: { type: 'array', items: { type: 'string' }, nullable: true },
+    startsAt:       { type: 'string', pattern: ISO8601_FLEXIBLE },
+    endsAt:         { type: 'string', pattern: ISO8601_FLEXIBLE },
+  },
+} as const;
+
 const postAlertSchema = {
   body: {
-    type: 'object',
-    required: ['title', 'message', 'severity', 'startsAt', 'endsAt'],
-    additionalProperties: false,
-    properties: {
-      title:          { type: 'string', minLength: 1, maxLength: 256 },
-      message:        { type: 'string', minLength: 1, maxLength: 1024 },
-      severity:       { type: 'string', enum: [...SEVERITIES] },
-      affectedRoutes: { type: 'array', items: { type: 'string' }, nullable: true },
-      startsAt:       { type: 'string', pattern: ISO8601_FLEXIBLE },
-      endsAt:         { type: 'string', pattern: ISO8601_FLEXIBLE },
-    },
+    oneOf: [alertObjectSchema, { type: 'array', items: alertObjectSchema, minItems: 1 }],
   },
 } as const;
 
@@ -62,20 +66,25 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(alerts.map(({ broadcastSent: _, ...a }) => a));
   });
 
-  // Admin — create an alert
-  app.post<{ Body: PostAlertBody }>(
+  // Admin — create one alert, or an array of alerts in a single call
+  app.post<{ Body: PostAlertBody | PostAlertBody[] }>(
     '/admin/alerts',
     { preHandler: requireReloadKey, schema: postAlertSchema },
     async (request, reply) => {
-      const alert: ServiceAlert = {
+      const bodies = Array.isArray(request.body) ? request.body : [request.body];
+      const alerts: ServiceAlert[] = bodies.map((body) => ({
         id: randomUUID(),
         broadcastSent: false,
-        ...request.body,
-        startsAt: toUtcIso(request.body.startsAt),
-        endsAt:   toUtcIso(request.body.endsAt),
-      };
-      await appendAlert(alert);
-      return reply.status(201).send({ id: alert.id });
+        ...body,
+        startsAt: toUtcIso(body.startsAt),
+        endsAt:   toUtcIso(body.endsAt),
+      }));
+      await appendAlerts(alerts);
+      return reply.status(201).send(
+        Array.isArray(request.body)
+          ? { ids: alerts.map((a) => a.id) }
+          : { id: alerts[0].id },
+      );
     },
   );
 
