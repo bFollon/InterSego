@@ -72,6 +72,7 @@
 		A100000100000000000000A7 /* DeviceTokenService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A7 /* DeviceTokenService.swift */; };
 		A100000100000000000000A8 /* NotificationPreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A8 /* NotificationPreferencesService.swift */; };
 		A100000100000000000000A9 /* NotificationConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A9 /* NotificationConsentView.swift */; };
+		A100000100000000000000AA /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000AA /* ReviewPromptService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -139,6 +140,7 @@
 		A200000100000000000000A7 /* DeviceTokenService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceTokenService.swift; sourceTree = "<group>"; };
 		A200000100000000000000A8 /* NotificationPreferencesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPreferencesService.swift; sourceTree = "<group>"; };
 		A200000100000000000000A9 /* NotificationConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationConsentView.swift; sourceTree = "<group>"; };
+		A200000100000000000000AA /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -228,6 +230,7 @@
 				A20000010000000000000058 /* AnalyticsService.swift */,
 				A20000010000000000000059 /* ErrorReportingService.swift */,
 				A200000100000000000000A5 /* FeedbackCoordinator.swift */,
+				A200000100000000000000AA /* ReviewPromptService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -410,6 +413,7 @@
 				A1000001000000000000009A /* AlternateLocation.swift in Sources */,
 				A100000100000000000000A4 /* FeedbackCategory.swift in Sources */,
 				A100000100000000000000A5 /* FeedbackCoordinator.swift in Sources */,
+				A100000100000000000000AA /* ReviewPromptService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
