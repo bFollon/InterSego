@@ -107,10 +107,15 @@ async function broadcastTickInner(): Promise<void> {
       .filter((d) => d.platform === 'android' && meetsThreshold(alert.severity, d.minSeverity))
       .map((d) => d.token);
     console.log(`alertBroadcaster: broadcasting alert "${alert.id}" — iOS production=${iosProductionTokens.length} sandbox=${iosSandboxTokens.length} android=${androidTokens.length}`);
-    if (iosProductionTokens.length > 0) await broadcastToIos(alert, iosProductionTokens, 'production');
-    if (iosSandboxTokens.length > 0)    await broadcastToIos(alert, iosSandboxTokens, 'sandbox');
-    await broadcastToAndroid(alert, androidTokens);
-    await markAlertBroadcastSent(alert.id);
+    let hadTransientError = false;
+    if (iosProductionTokens.length > 0) hadTransientError ||= await broadcastToIos(alert, iosProductionTokens, 'production');
+    if (iosSandboxTokens.length > 0)    hadTransientError ||= await broadcastToIos(alert, iosSandboxTokens, 'sandbox');
+    hadTransientError ||= await broadcastToAndroid(alert, androidTokens);
+    if (hadTransientError) {
+      console.warn(`alertBroadcaster: skipping broadcastSent mark for "${alert.id}" — transient errors, will retry on next tick`);
+    } else {
+      await markAlertBroadcastSent(alert.id);
+    }
   }
 
   // Weekly stale-device prune (runs on every tick but the DB op is cheap)
@@ -119,7 +124,8 @@ async function broadcastTickInner(): Promise<void> {
   );
 }
 
-async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment: 'sandbox' | 'production'): Promise<void> {
+async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment: 'sandbox' | 'production'): Promise<boolean> {
+  let hadTransientError = false;
   const config = environment === 'production' ? apnsProductionConfig : apnsSandboxConfig;
   const provider = new ApnsProvider({ ...config, production: environment === 'production' });
   console.log(`alertBroadcaster: sending to APNs ${environment} endpoint (${provider.host}) for ${tokens.length} token(s)`);
@@ -142,12 +148,15 @@ async function broadcastToIos(alert: ServiceAlert, tokens: string[], environment
         await deleteDevice(failure.device);
       } else {
         console.error(`alertBroadcaster: APNs ${environment} error for ${token.slice(0, 8)}…: ${failure.reason}`);
+        hadTransientError = true;
       }
     }
   }
+  return hadTransientError;
 }
 
-async function broadcastToAndroid(alert: ServiceAlert, tokens: string[]): Promise<void> {
+async function broadcastToAndroid(alert: ServiceAlert, tokens: string[]): Promise<boolean> {
+  let hadTransientError = false;
   for (const token of tokens) {
     const result = await sendFcm({ title: alert.title, body: alert.message }, token);
     if (result.failed) {
@@ -155,7 +164,9 @@ async function broadcastToAndroid(alert: ServiceAlert, tokens: string[]): Promis
         await deleteDevice(token);
       } else {
         console.error(`alertBroadcaster: FCM error for ${token.slice(0, 12)}…: ${result.reason}`);
+        hadTransientError = true;
       }
     }
   }
+  return hadTransientError;
 }
