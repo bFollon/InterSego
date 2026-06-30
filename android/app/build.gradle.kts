@@ -96,6 +96,9 @@ dependencies {
     // Location services
     implementation(libs.play.services.location)
 
+    // In-app review (Google Play)
+    implementation(libs.play.review.ktx)
+
     // Image loading
     implementation(libs.coil.compose)
 

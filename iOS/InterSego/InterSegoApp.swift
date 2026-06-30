@@ -341,6 +341,15 @@ struct ContentView: View {
                 showSplash = false
             }
         }
+        .onAppear {
+            ReviewPromptService.shared.startSession()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            ReviewPromptService.shared.startSession()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            ReviewPromptService.shared.cancelSession()
+        }
     }
 
     private struct RouteStopsContainer: View {
@@ -879,6 +888,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // On first launch, these will be no-ops — the consent modal gates initialization.
         ErrorReportingService.shared.initialize()
         AnalyticsService.shared.initialize()
+        ReviewPromptService.shared.recordAppLaunch()
         NSLog("🔔 Calling registerForRemoteNotifications")
         UIApplication.shared.registerForRemoteNotifications()
         return true

@@ -16,4 +16,11 @@ import Foundation
 enum AppConfig {
     /// Base URL of the InterSego server (no trailing slash).
     static let boardingServerURL = "https://intersego.bfollon.dev"
+
+    enum ReviewPrompt {
+        static let minimumLaunchCount = 3
+        static let minimumDaysSinceFirstLaunch = 3
+        static let minimumSessionDuration: TimeInterval = 10
+        static let daysBetweenPrompts = 90
+    }
 }
