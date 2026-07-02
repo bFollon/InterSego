@@ -18,7 +18,7 @@ import { randomUUID } from 'crypto';
 import type { FastifyInstance } from 'fastify';
 import { DateTime } from 'luxon';
 import { triggerBroadcast } from '../alertBroadcaster.js';
-import { appendAlerts, deleteAlert, getActiveAlerts, getAllAlerts } from '../db/index.js';
+import { appendAlerts, deleteAlert, deleteAlerts, getActiveAlerts, getAllAlerts } from '../db/index.js';
 import { requireReloadKey } from '../middleware/auth.js';
 import type { PostAlertBody, ServiceAlert } from '../types.js';
 
@@ -58,6 +58,10 @@ const postAlertSchema = {
   },
 } as const;
 
+const deleteAlertsSchema = {
+  body: { type: 'array', items: { type: 'string' }, minItems: 1 },
+} as const;
+
 export async function alertsRoutes(app: FastifyInstance): Promise<void> {
   // Public — no auth; apps poll this at startup.
   // broadcastSent is an internal server field — strip it from the public response.
@@ -94,6 +98,16 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: requireReloadKey },
     async (request, reply) => {
       await deleteAlert(request.params.id);
+      return reply.status(204).send();
+    },
+  );
+
+  // Admin — delete multiple alerts by id in a single call
+  app.delete<{ Body: string[] }>(
+    '/admin/alerts',
+    { preHandler: requireReloadKey, schema: deleteAlertsSchema },
+    async (request, reply) => {
+      await deleteAlerts(request.body);
       return reply.status(204).send();
     },
   );

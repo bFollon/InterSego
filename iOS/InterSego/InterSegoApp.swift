@@ -341,6 +341,15 @@ struct ContentView: View {
                 showSplash = false
             }
         }
+        .onAppear {
+            ReviewPromptService.shared.startSession()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            ReviewPromptService.shared.startSession()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            ReviewPromptService.shared.cancelSession()
+        }
     }
 
     private struct RouteStopsContainer: View {
@@ -603,8 +612,8 @@ struct ContentView: View {
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
 
-        // Fetch active service alerts (fire-and-forget, graceful on failure)
-        activeAlerts = await AlertService.shared.fetchActiveAlerts()
+        // Fetch active service alerts — detached so it can't block the splash-to-landing transition
+        Task { activeAlerts = await AlertService.shared.fetchActiveAlerts() }
 
         // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
         if NetworkMonitor.shared.isOnline {
@@ -899,6 +908,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // On first launch, these will be no-ops — the consent modal gates initialization.
         ErrorReportingService.shared.initialize()
         AnalyticsService.shared.initialize()
+        ReviewPromptService.shared.recordAppLaunch()
         NSLog("🔔 Calling registerForRemoteNotifications")
         UIApplication.shared.registerForRemoteNotifications()
         return true

@@ -151,7 +151,7 @@ async function broadcastToAndroid(alert: ServiceAlert, tokens: string[]): Promis
   for (const token of tokens) {
     const result = await sendFcm({ title: alert.title, body: alert.message }, token);
     if (result.failed) {
-      if (result.reason === 'UNREGISTERED' || result.reason === 'INVALID_ARGUMENT') {
+      if (result.reason === 'UNREGISTERED' || result.reason === 'INVALID_ARGUMENT' || result.reason === 'NOT_FOUND') {
         await deleteDevice(token);
       } else {
         console.error(`alertBroadcaster: FCM error for ${token.slice(0, 12)}…: ${result.reason}`);

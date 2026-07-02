@@ -137,6 +137,7 @@ import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 import com.github.bfollon.intersego.services.NotificationPreferencesService
+import com.github.bfollon.intersego.services.ReviewPromptService
 import com.google.firebase.messaging.FirebaseMessaging
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
@@ -228,6 +229,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "unknown"
         } catch (_: Exception) { "unknown" }
         AnalyticsService.track("app_launch", mapOf("version" to appVersion, "platform" to "android"))
+
+        // Review prompt: record launch
+        ReviewPromptService.recordAppLaunch(this)
 
         // Initialize caches and cleanup expired entries
         CoordinateCache.initialize(this)
@@ -323,6 +327,16 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ReviewPromptService.startSession(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        ReviewPromptService.cancelSession()
     }
 }
 

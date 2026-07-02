@@ -21,6 +21,7 @@ sentry = "8.13.2"
 aptabase = "0.0.8"
 google-services = "4.4.4"
 playServicesLocation = "21.0.1"
+playReview = "2.0.2"
 firebaseBom = "34.14.1"
 
 [libraries]
@@ -53,6 +54,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 sentry-android = { module = "io.sentry:sentry-android", version.ref = "sentry" }
 aptabase = { module = "com.github.aptabase:aptabase-kotlin", version.ref = "aptabase" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+play-review-ktx = { group = "com.google.android.play", name = "review-ktx", version.ref = "playReview" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging" }
 

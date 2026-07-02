@@ -21,11 +21,19 @@ struct ServiceAlert: Identifiable, Codable {
 
 actor AlertService {
     static let shared = AlertService()
-    private init() {}
+
+    private let session: URLSession
+
+    private init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 15
+        session = URLSession(configuration: config)
+    }
 
     func fetchActiveAlerts() async -> [ServiceAlert] {
         guard let url = URL(string: "\(AppConfig.boardingServerURL)/alerts") else { return [] }
-        guard let (data, _) = try? await URLSession.shared.data(from: url) else { return [] }
+        guard let (data, _) = try? await session.data(from: url) else { return [] }
         return (try? JSONDecoder().decode([ServiceAlert].self, from: data)) ?? []
     }
 }
