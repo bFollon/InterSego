@@ -1,6 +1,6 @@
 {
   "routeId": "M4",
-  "version": "1.0",
+  "version": "1.1",
   "source": "Linecar M4 PDF, 2026-04-15",
   "route": {
     "number": "M4",
@@ -214,6 +214,7 @@
       "dayType": "weekday",
       "trips": [
         {
+          "season": "schoolOnly",
           "departures": [
             700,
             703,
@@ -274,6 +275,7 @@
           ]
         },
         {
+          "season": "schoolOnly",
           "departures": [
             1010,
             1013,
@@ -334,6 +336,7 @@
           ]
         },
         {
+          "season": "schoolOnly",
           "departures": [
             1240,
             1243,
@@ -374,7 +377,6 @@
           ]
         },
         {
-          "season": "schoolOnly",
           "departures": [
             1400,
             1403,
@@ -435,6 +437,7 @@
           ]
         },
         {
+          "season": "schoolOnly",
           "departures": [
             1700,
             1703,
@@ -495,6 +498,7 @@
           ]
         },
         {
+          "season": "schoolOnly",
           "departures": [
             1940,
             1943,
@@ -555,6 +559,7 @@
           ]
         },
         {
+          "season": "schoolOnly",
           "departures": [
             2110,
             2113,
@@ -581,7 +586,6 @@
       "dayType": "weekday",
       "trips": [
         {
-          "season": "schoolOnly",
           "variantLabel": "Sotillo",
           "departures": [
             740,
@@ -604,7 +608,6 @@
           ]
         },
         {
-          "season": "schoolOnly",
           "variantLabel": "Sotillo",
           "departures": [
             820,
@@ -627,7 +630,6 @@
           ]
         },
         {
-          "season": "schoolOnly",
           "variantLabel": "Sotillo",
           "departures": [
             1440,
@@ -650,6 +652,7 @@
           ]
         },
         {
+          "season": "schoolOnly",
           "variantLabel": "Sotillo",
           "departures": [
             2140,
