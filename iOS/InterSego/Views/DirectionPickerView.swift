@@ -134,68 +134,64 @@ struct DirectionPickerView: View {
         loading = true
         error = nil
 
-        do {
-            let departuresService = DeparturesService.shared
-            let allRoutes = BusRouteRegistry.knownRoutes()
-            let departuresData = await departuresService.loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId)
+        let departuresService = DeparturesService.shared
+        let allRoutes = BusRouteRegistry.knownRoutes()
+        let departuresData = await departuresService.loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId)
 
-            // Build direction groups from the loaded routes
-            var groups: [RouteDirectionGroup] = []
-            for routeData in departuresData.routes {
-                // If this route uses mergedDirectionLabel (e.g. M4 circular), collapse to a
-                // single option using the primary view — triggering auto-advance below.
-                if let primaryMergedView = routeData.views.first(where: { $0.mergedDirectionLabel != nil }) {
-                    let option = DirectionOption(
-                        routeId: routeData.route.id,
-                        route: routeData.route,
-                        direction: primaryMergedView.direction ?? "",
-                        viewId: primaryMergedView.id
-                    )
-                    groups.append(RouteDirectionGroup(route: routeData.route, directions: [option]))
-                    continue
-                }
+        // Build direction groups from the loaded routes
+        var groups: [RouteDirectionGroup] = []
+        for routeData in departuresData.routes {
+            // If this route uses mergedDirectionLabel (e.g. M4 circular), collapse to a
+            // single option using the primary view — triggering auto-advance below.
+            if let primaryMergedView = routeData.views.first(where: { $0.mergedDirectionLabel != nil }) {
+                let option = DirectionOption(
+                    routeId: routeData.route.id,
+                    route: routeData.route,
+                    direction: primaryMergedView.direction,
+                    viewId: primaryMergedView.id
+                )
+                groups.append(RouteDirectionGroup(route: routeData.route, directions: [option]))
+                continue
+            }
 
-                // Normal flow: one option per distinct direction serving this stop
-                var validDirections = Set<String>()
-                var directionViewMap: [String: String] = [:]
+            // Normal flow: one option per distinct direction serving this stop
+            var validDirections = Set<String>()
+            var directionViewMap: [String: String] = [:]
 
-                for t in routeData.timetables where t.stopId == stop.id {
-                    guard let direction = t.direction else { continue }
-                    validDirections.insert(direction)
-                }
+            for t in routeData.timetables where t.stopId == stop.id {
+                guard let direction = t.direction else { continue }
+                validDirections.insert(direction)
+            }
 
-                for direction in validDirections {
-                    if let view = routeData.views.first(where: { $0.direction == direction }) {
-                        directionViewMap[direction] = view.id
-                    }
-                }
-
-                if !validDirections.isEmpty {
-                    let dirOptions = validDirections
-                        .compactMap { direction -> DirectionOption? in
-                            guard let viewId = directionViewMap[direction] else { return nil }
-                            return DirectionOption(
-                                routeId: routeData.route.id,
-                                route: routeData.route,
-                                direction: direction,
-                                viewId: viewId
-                            )
-                        }
-                        .sorted { $0.direction < $1.direction }
-
-                    if !dirOptions.isEmpty {
-                        groups.append(RouteDirectionGroup(route: routeData.route, directions: dirOptions))
-                    }
+            for direction in validDirections {
+                if let view = routeData.views.first(where: { $0.direction == direction }) {
+                    directionViewMap[direction] = view.id
                 }
             }
 
-            directionGroups = groups
+            if !validDirections.isEmpty {
+                let dirOptions = validDirections
+                    .compactMap { direction -> DirectionOption? in
+                        guard let viewId = directionViewMap[direction] else { return nil }
+                        return DirectionOption(
+                            routeId: routeData.route.id,
+                            route: routeData.route,
+                            direction: direction,
+                            viewId: viewId
+                        )
+                    }
+                    .sorted { $0.direction < $1.direction }
 
-            if groups.isEmpty {
-                error = "No hay salidas disponibles para esta parada."
+                if !dirOptions.isEmpty {
+                    groups.append(RouteDirectionGroup(route: routeData.route, directions: dirOptions))
+                }
             }
-        } catch {
-            self.error = "No se pudieron cargar las direcciones disponibles."
+        }
+
+        directionGroups = groups
+
+        if groups.isEmpty {
+            error = "No hay salidas disponibles para esta parada."
         }
 
         loading = false

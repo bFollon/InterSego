@@ -143,7 +143,7 @@ private struct StopCandidate {
 /// Bridges CLLocationManager callbacks to async/await. Must run on MainActor
 /// so delegate callbacks are delivered on the correct thread.
 @MainActor
-private final class LocationCoordinator: NSObject, CLLocationManagerDelegate {
+private final class LocationCoordinator: NSObject, @preconcurrency CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var continuation: CheckedContinuation<CLLocation, Error>?
 
