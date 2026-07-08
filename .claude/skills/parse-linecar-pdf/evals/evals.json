@@ -1,0 +1,49 @@
+{
+  "skill_name": "parse-linecar-pdf",
+  "evals": [
+    {
+      "id": 0,
+      "name": "m3-clean-audit",
+      "prompt": "Can you check if the M3 timetable still matches the current Linecar PDF? Just want to make sure nothing's drifted.",
+      "expected_output": "M3 has no seasonal footnotes in its PDF (Pattern D in season-schema.md). A correct run downloads/renders the live PDF, reads it carefully (including all footnote text), compares against resources/timetables/m3.json, and concludes no changes are needed (or reports only genuine, specific drift if the live PDF actually changed) rather than inventing a fix or seasonal tag that isn't there.",
+      "files": [],
+      "expectations": [
+        "Downloaded and rendered the actual M3 PDF from linecar.es rather than relying purely on memory or assumption",
+        "Read the PDF's footnote/legend text before concluding whether M3 has seasonal restrictions",
+        "Correctly concluded M3 has no seasonal restrictions (or reported specific genuine drift if the live PDF has changed) rather than inventing a season tag that isn't there",
+        "Did not modify resources/timetables/m3.json (or any bundle copy) in place -- any proposed change was documented as a diff for review, not applied to the repo",
+        "Did not create a git commit"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "m2-circular-missing-trip",
+      "prompt": "Audit M2's circularB variant — I want to make sure we're not missing any weekday trips compared to the PDF.",
+      "expected_output": "M2 is a circular route (circularA/circularB, isCircular=true). A correct run must, before proposing any new trip be added to circularB, check whether that trip's stop times are already fully represented in circularA (same physical bus, printed in both direction tables) -- using the diff_variants.py script or equivalent manual cross-check -- and must not propose adding a trip that duplicates an existing circularA row.",
+      "files": [],
+      "expectations": [
+        "Downloaded and rendered the actual M2 PDF from linecar.es",
+        "Explicitly cross-checked any candidate circularB trip against circularA before proposing it as an addition (e.g. via diff_variants.py or an equivalent stopId-to-time comparison)",
+        "Did not propose adding any trip to circularB that duplicates an existing circularA trip (same physical bus printed in both direction tables)",
+        "Did not modify resources/timetables/m2.json in place",
+        "Did not create a git commit"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "m7-wrong-departure-report",
+      "prompt": "A user says the M7 Sunday afternoon departure times look off — some trips that should only run in summer seem to be showing year-round.",
+      "expected_output": "The user did not say 'PDF' or 'check the timetable file' explicitly, but this is a season-tag transcription question. A correct run should recognize this as likely a data/transcription issue (not a code bug), download and closely read the live M7 PDF's footnote legend (periodo lectivo / vacaciones escolares pattern), and compare the actual season tags in resources/timetables/m7.json against what the PDF's legend says, rather than jumping straight into Kotlin/Swift filtering-logic code. Ground truth (confirmed real bug, found in iteration 1 of this eval, unfixed as of iteration 2 -- see references/lessons-learned.md Case 3): the season tags themselves are correct, but ext-inbound's Sunday schoolOnly/summerOnly trip has its departures array shifted one physical stop late -- index 5 (trescasas) is null when the PDF shows trescasas=20:55/19:55 school/summer, and the real value is instead sitting on index 6 (sonsoto-2). A run that only checks 'does a season tag exist and does the headline time look plausible' will conclude everything is fine and MISS this -- that is the exact failure mode from iteration 1. A correct run must build a full PDF-column-to-JSON-index table for this trip and notice the mismatch.",
+      "files": [],
+      "expectations": [
+        "Recognized the report as a likely data/transcription issue rather than assuming it's purely a code bug in the season-filtering logic",
+        "Downloaded and rendered the actual M7 PDF from linecar.es",
+        "Read the PDF's Sunday footnote legend (periodo lectivo / vacaciones escolares pattern) before concluding what's wrong",
+        "Verified every populated value in ext-inbound's Sunday schoolOnly/summerOnly trip against its exact named PDF column (not just the season tag and headline time), per references/partial-trip-anchors.md",
+        "Correctly identified that ext-inbound's Sunday partial trip is mis-anchored one physical stop late (trescasas/index 5 is null when the PDF has a value there; the real value sits on sonsoto-2/index 6 instead)",
+        "Did not modify resources/timetables/m7.json in place",
+        "Did not create a git commit"
+      ]
+    }
+  ]
+}

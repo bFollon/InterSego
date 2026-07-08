@@ -28,6 +28,18 @@ These are concrete enough to be worth a full read the first time you use this sk
 
 **Takeaway**: for circular routes specifically, "missing from the JSON" is not the same claim as "missing from the data model." Always check the other direction's variant before concluding a trip needs to be added. See `circular-route-duplicates.md` for the concrete method.
 
-## Common thread across both cases
+## Case 3: M7 — partial-trip stop mis-anchored one physical stop late (found during this skill's first eval round)
 
-In both cases, the *first* instinct (trust a single read of the PDF, transcribe literally) produced a plausible-looking but wrong result, and the actual bug was only caught through a second pass — either a closer re-read (Case 1) or an explicit cross-check against related data (Case 2). Build that second pass into the workflow by default rather than treating it as optional extra diligence.
+**Symptom reported (synthetic eval prompt, phrased like a real user report)**: "M7 Sunday afternoon departure times look off — some trips that should only run in summer seem to be showing year-round."
+
+**What happened**: two independent investigations ran the same task — one following this skill's workflow, one with no skill at all. Both correctly downloaded the live PDF, read the Sunday footnote legend in full, and confirmed the season tags (`schoolOnly`/`summerOnly`) matched the PDF's "PERIODO LECTIVO"/"VACACIONES ESCOLARES ESTIVALES" pattern. The skill-following investigation stopped there and concluded no bug existed, stating the times "match the PDF's populated cells." The no-skill investigation kept going: it built a full stop-by-stop table of the PDF's inbound partial trip and compared every value to its exact JSON index, and found that `resources/timetables/m7.json`'s `ext-inbound` Sunday `schoolOnly`/`summerOnly` trip had its first real value on the wrong stop — `trescasas` (the trip's real starting stop per the PDF) was null, and the value was instead sitting one stop later, on `sonsoto-2`.
+
+**Root cause**: the JSON models `trescasas`/`sonsoto` as cluster pairs (`trescasas-2`+`trescasas`, `sonsoto-2`+`sonsoto`) to give finer-grained estimated times than the PDF's single named column per stop. A transcription error placed this partial trip's null/value boundary one cluster too late. The result read as entirely plausible — correct season tag, a headline time in the right ballpark, numbers climbing steadily — which is exactly why "does it have a season tag and does the first time look right" isn't a sufficient check.
+
+**How it was actually caught**: not by re-reading the legend more carefully (both investigations read it identically and correctly) — by building a complete PDF-column-to-JSON-index table for the *entire* trip and noticing that two unrelated, non-clustered anchors later in the same trip (`tabanera`, `palazuelos`) matched their JSON indices exactly, which made the mismatch at `trescasas`/`sonsoto` impossible to explain away as approximation noise.
+
+**Takeaway**: for partial trips (trips with a run of nulls at either end) and for any trip touching a cluster-modeled stop, verify every populated value against its exact named PDF column — not just whether a season tag exists and whether the trip's overall shape looks right. See `partial-trip-anchors.md` for the concrete method this skill now requires.
+
+## Common thread across all three cases
+
+In all three cases, the *first* instinct (trust a single read of the PDF, transcribe/verify at a surface level) produced a plausible-looking but wrong result, and the actual bug was only caught through a second, more granular pass — a closer re-read (Case 1), an explicit cross-check against related data (Case 2), or a full index-by-index verification (Case 3). Build that second pass into the workflow by default rather than treating it as optional extra diligence.

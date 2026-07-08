@@ -5,7 +5,7 @@ description: Parse or audit Linecar bus timetable PDFs (linecar.es) against this
 
 # Parsing Linecar PDFs into InterSego's timetable JSON
 
-> **Status: scaffold.** This skill captures the hard-won knowledge from a real debugging session (fixing bugs on routes M4 and M1) but hasn't been iterated on with test cases/evals yet. Treat the workflow below as a strong starting point, not gospel — if something doesn't fit a new route's PDF layout, adapt it and consider updating this file afterward.
+> **Status: iterating.** This skill captures hard-won knowledge from real debugging sessions (routes M4, M1, and M7) and has been through one round of with-skill-vs-baseline evals. Treat the workflow below as a strong starting point, not gospel — if something doesn't fit a new route's PDF layout, adapt it and consider updating this file afterward.
 
 ## Why this skill exists
 
@@ -26,19 +26,29 @@ Both use the same reading discipline (see below); transcription just has more su
 4. **Cross-check every ambiguous cell with a second, tighter crop.** If a symbol, shading, or number is even slightly unclear at first read, don't guess — crop tighter and re-read. This was the single biggest source of error in the M4 investigation.
 5. **Understand the seasonal/footnote conventions for THIS PDF.** Don't assume — every route's PDF can use different symbols for the same underlying concept, and some PDFs have no seasonal restrictions at all. Read `references/season-schema.md` for the JSON schema and the footnote patterns seen so far (M4, M1, M6/M7 style legends) before interpreting a new PDF's symbols.
 6. **If the route is circular (`isCircular: true` with two direction variants, e.g. `circularA`/`circularB` linked by `swapTargetId`), check for duplicate trips before adding anything.** The PDF very often prints the same physical bus's full loop twice — once per direction table, in reverse column order. Read `references/circular-route-duplicates.md` and use `scripts/diff_variants.py` before writing a new trip into a second-direction variant.
-7. **Apply the JSON edit**, then sync and finish per `references/workflow-checklist.md` (byte-identical sync to Android/iOS bundles, version bump, CLAUDE.md tracker update, commit discipline).
+7. **For partial trips (ones that start/end mid-route) and any route with cluster-modeled sub-stops (consecutive `stopSequence` entries like `trescasas-2`/`trescasas` representing one physical PDF column), verify every populated value against its exact named PDF column — not just the season tag and headline time.** A trip can have a correct season tag and a plausible-looking first departure while still having every value shifted one physical stop from where it belongs, because cluster estimates make a shifted trip look internally consistent. Read `references/partial-trip-anchors.md` before concluding a partial or cluster-touching trip is correct — this is a real bug this skill previously missed (see the M7 case in `references/lessons-learned.md`).
+8. **Apply the JSON edit**, then sync and finish per `references/workflow-checklist.md` (byte-identical sync to Android/iOS bundles, version bump, CLAUDE.md tracker update, commit discipline).
 
 ## Quick reference
 
 - Season JSON field + string keys: `references/season-schema.md`
 - Circular-route duplicate detection: `references/circular-route-duplicates.md`
+- Partial-trip / cluster-stop index verification: `references/partial-trip-anchors.md`
 - Sync / version / tracker / commit mechanics: `references/workflow-checklist.md`
 - What went wrong before (concrete case studies): `references/lessons-learned.md`
 
-## To finish this skill (for the next session)
+## Status
 
-This scaffold is missing the eval/iteration loop the skill-creator process normally does:
-- No test cases yet (`evals/evals.json`) — good candidates: "audit M3 against its PDF" (should find nothing, exercises the negative case), "audit M1 circularB for missing trips" (should reproduce catching the missing-trip-but-not-duplicating bug), a synthetic new-route transcription.
-- No description-triggering optimization pass yet.
-- `scripts/render_pdf.sh` and `scripts/diff_variants.py` are drafted below but not yet battle-tested across all 8 routes — only exercised on M4 and M1 this session.
-- Worth deciding whether this skill should also cover stop/polyline data drift (out of scope for now — this scaffold is season-tag and trip-completeness focused, since that's what the two real bugs were).
+Two eval iterations done (`evals/evals.json`, 3 test cases run with-skill vs. no-skill each time —
+see `parse-linecar-pdf-workspace/iteration-1/benchmark.md` and `iteration-2/benchmark.md`).
+Iteration 1 found a real gap: the with-skill run on the M7 case missed a real, currently-shipped
+data bug (a partial-trip stop mis-anchored one physical stop late) that the no-skill baseline caught
+by doing a more rigorous per-index check. Iteration 2 added workflow step 7 and
+`references/partial-trip-anchors.md` to close that gap, re-ran all three with-skill cases, and
+confirmed: M7 now correctly finds and precisely localizes the same bug (with a control check on the
+mirror direction), and M2/M3 held at 100% with no regression. User-reviewed and approved both
+iterations. The M7 bug itself is a confirmed, still-unfixed real defect in `resources/timetables/m7.json`
+(`ext-inbound`, Sunday `schoolOnly`/`summerOnly` trip) — see `references/lessons-learned.md` Case 3
+for the exact fix. Still not done: description-triggering optimization pass; broader battle-testing
+of `scripts/render_pdf.sh` / `scripts/diff_variants.py` across all 8+ routes (only exercised on M1,
+M2, M3, M4, M7 so far).
