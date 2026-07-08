@@ -1,6 +1,6 @@
 {
   "routeId": "M7",
-  "version": "1.0",
+  "version": "1.1",
   "source": "Linecar M7 PDF, 2026-03-25",
   "route": {
     "number": "M7",
@@ -154,8 +154,8 @@
       "lon": -4.021688
     },
     {
-      "id": "torrecaballeros-3",
-      "name": "Torrecaballeros 3",
+      "id": "aldehuela",
+      "name": "Aldehuela",
       "area": "Torrecaballeros",
       "lat": 40.999144,
       "lon": -4.020855
@@ -203,7 +203,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "swapTargetId": "ext-inbound"
     },
@@ -211,7 +211,7 @@
       "id": "ext-inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
@@ -814,9 +814,9 @@
             null,
             null,
             null,
-            null,
-            2054,
             2055,
+            2057,
+            2058,
             2100,
             2101,
             2102,
@@ -837,9 +837,9 @@
             null,
             null,
             null,
-            null,
-            1954,
             1955,
+            1957,
+            1958,
             2000,
             2001,
             2002,
