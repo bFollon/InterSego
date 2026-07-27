@@ -21,6 +21,7 @@ import { initAlertBroadcaster } from './alertBroadcaster.js';
 import { alertsRoutes } from './routes/alerts.js';
 import { boardingsRoutes } from './routes/boardings.js';
 import { devicesRoutes } from './routes/devices.js';
+import { reloadHolidays, holidaysRoutes } from './routes/holidays.js';
 import { reloadPolylines, polylinesRoutes } from './routes/polylines.js';
 import { remindersRoutes } from './routes/reminders.js';
 import { reloadTimetables, timetablesRoutes } from './routes/timetables.js';
@@ -38,12 +39,14 @@ app.register(devicesRoutes);
 app.register(remindersRoutes);
 app.register(timetablesRoutes);
 app.register(polylinesRoutes);
+app.register(holidaysRoutes);
 
-// Re-read timetable and polyline files from disk without restarting the process.
+// Re-read timetable, polyline, and holiday files from disk without restarting the process.
 // Usage: kill -HUP <pid>  or  pm2 sendSignal SIGHUP intersego-server
 process.on('SIGHUP', () => {
   reloadTimetables();
   reloadPolylines();
+  reloadHolidays();
 });
 
 async function start(): Promise<void> {

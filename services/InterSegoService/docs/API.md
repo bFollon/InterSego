@@ -374,6 +374,69 @@ curl -X POST https://<host>/api/polylines/reload \
 
 ---
 
+## GET /api/holidays
+
+Returns a JSON array containing every known year's holiday calendar (the full contents of each `resources/holidays/{year}.json` file). Used to resolve `DayType.holiday` for a given date on the client — see `docs/HOLIDAY_CALENDAR.md` in the repo root.
+
+```bash
+curl https://<host>/api/holidays \
+  -H "Authorization: Bearer <API_KEY>"
+```
+
+### Caching
+
+The response includes an `ETag` header. Send the value back in subsequent requests via `If-None-Match` to receive a `304 Not Modified` when nothing has changed.
+
+### Response 200
+
+```json
+[
+  {
+    "version": "1.0",
+    "year": 2026,
+    "holidays": [
+      { "date": "2026-01-01", "name": "Año Nuevo", "scope": "national" },
+      { "date": "2026-06-29", "name": "San Pedro", "scope": "local" }
+    ]
+  }
+]
+```
+
+### Response 304
+
+No body. The cached copy is still current.
+
+### Errors
+
+| Status | Condition |
+|---|---|
+| 401 | Missing or invalid Authorization header |
+
+---
+
+## POST /api/holidays/reload
+
+Re-reads all holiday files from disk and replaces the in-memory cache. Use after editing or dropping in a new year's JSON file — no server restart needed.
+
+```bash
+curl -X POST https://<host>/api/holidays/reload \
+  -H "Authorization: Bearer <RELOAD_KEY>"
+```
+
+### Response 200
+
+```json
+{ "reloaded": 1 }
+```
+
+### Errors
+
+| Status | Condition |
+|---|---|
+| 401 | Missing or invalid Authorization header |
+
+---
+
 ## GET /alerts
 
 Returns all currently active alerts. No authentication required — apps poll this at startup.
@@ -588,7 +651,7 @@ No body.
 
 ## Reloading via SIGHUP
 
-As an alternative to the HTTP endpoints, send `SIGHUP` to the server process to reload both the timetable and polyline caches:
+As an alternative to the HTTP endpoints, send `SIGHUP` to the server process to reload the timetable, polyline, and holiday caches:
 
 ```bash
 # With pm2
