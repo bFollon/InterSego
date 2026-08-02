@@ -73,6 +73,8 @@
 		A100000100000000000000A8 /* NotificationPreferencesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A8 /* NotificationPreferencesService.swift */; };
 		A100000100000000000000A9 /* NotificationConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000A9 /* NotificationConsentView.swift */; };
 		A100000100000000000000AA /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000AA /* ReviewPromptService.swift */; };
+		A1000001000000000000005E /* HolidayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005E /* HolidayService.swift */; };
+		A1000001000000000000005F /* Holidays in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005F /* Holidays */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -142,6 +144,8 @@
 		A200000100000000000000A9 /* NotificationConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationConsentView.swift; sourceTree = "<group>"; };
 		A200000100000000000000AA /* ReviewPromptService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPromptService.swift; sourceTree = "<group>"; };
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2000001000000000000005E /* HolidayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolidayService.swift; sourceTree = "<group>"; };
+		A2000001000000000000005F /* Holidays */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Holidays; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,6 +181,7 @@
 				A2000001000000000000000C /* Assets.xcassets */,
 				A20000010000000000000030 /* RoutePolylines */,
 				A2000001000000000000005B /* Timetables */,
+				A2000001000000000000005F /* Holidays */,
 			);
 			path = InterSego;
 			sourceTree = "<group>";
@@ -219,6 +224,7 @@
 				A20000010000000000000099 /* TimetableQuery.swift */,
 				A200000100000000000000A2 /* TimetableCacheService.swift */,
 				A200000100000000000000A3 /* PolylineCacheService.swift */,
+				A2000001000000000000005E /* HolidayService.swift */,
 				A200000100000000000000A6 /* AlertService.swift */,
 				A200000100000000000000A7 /* DeviceTokenService.swift */,
 				A200000100000000000000A8 /* NotificationPreferencesService.swift */,
@@ -343,6 +349,7 @@
 				A1000001000000000000000C /* Assets.xcassets in Resources */,
 				A10000010000000000000030 /* RoutePolylines in Resources */,
 				A1000001000000000000005B /* Timetables in Resources */,
+				A1000001000000000000005F /* Holidays in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -414,6 +421,7 @@
 				A100000100000000000000A4 /* FeedbackCategory.swift in Sources */,
 				A100000100000000000000A5 /* FeedbackCoordinator.swift in Sources */,
 				A100000100000000000000AA /* ReviewPromptService.swift in Sources */,
+				A1000001000000000000005E /* HolidayService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

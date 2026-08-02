@@ -609,6 +609,8 @@ struct ContentView: View {
         let supported = await RouteDataService.shared.getSupportedRoutes()
         supportedRoutes = Set(supported)
 
+        await HolidayService.shared.initialize()
+
         DebugConfig.debugPrint("InterSego: Initialization complete. \(supportedRoutes.count) routes supported.")
         isInitialized = true
 
@@ -619,6 +621,7 @@ struct ContentView: View {
         if NetworkMonitor.shared.isOnline {
             Task { await TimetableCacheService.shared.fetchAllRoutes() }
             Task { await PolylineCacheService.shared.fetchAllPolylines() }
+            Task { await HolidayService.shared.refresh() }
         }
 
         // Analytics: app launch event
