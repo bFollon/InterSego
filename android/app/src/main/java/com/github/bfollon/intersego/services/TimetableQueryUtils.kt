@@ -92,3 +92,14 @@ object TimetableQueryUtils {
         }
     }
 }
+
+/**
+ * True if this [DayType] applies on [date], consulting the holiday calendar so a reminder
+ * tagged SUNDAY/WEEKEND/HOLIDAY also fires on a non-Sunday festivo, not just a literal Sunday.
+ * Lives here rather than as a `data` package extension to avoid a data→services circular
+ * dependency ([HolidayService] lives in `services`).
+ */
+fun DayType.matchesDate(
+    date: Calendar,
+    isHoliday: (Calendar) -> Boolean = HolidayService::isHoliday
+): Boolean = this in TimetableQueryUtils.dayTypesForDate(date, isHoliday)

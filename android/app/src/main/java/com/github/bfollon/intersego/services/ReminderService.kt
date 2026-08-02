@@ -25,7 +25,6 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.SeasonalAvailability
-import com.github.bfollon.intersego.data.matchesCalendarDay
 import java.time.Month
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -234,7 +233,7 @@ class ReminderService(private val context: Context) {
                 set(Calendar.MILLISECOND, 0)
             }
             val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
-            if (dayType != null && !dayType.matchesCalendarDay(dayOfWeek)) continue
+            if (dayType != null && !dayType.matchesDate(cal)) continue
             if (seasonal != null) {
                 val month = Month.of(cal.get(Calendar.MONTH) + 1)
                 if (!seasonal.runsIn(month, dayOfWeek)) continue

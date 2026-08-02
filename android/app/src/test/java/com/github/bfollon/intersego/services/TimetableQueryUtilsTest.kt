@@ -70,4 +70,26 @@ class TimetableQueryUtilsTest : FunSpec({
             TimetableQueryUtils.primaryDayType(tuesday, isHoliday = { false }) shouldBe DayType.WEEKDAY
         }
     }
+
+    context("DayType.matchesDate") {
+        test("a reminder tagged SUNDAY fires on a non-Sunday festivo") {
+            val festivoTuesday = calendar(2026, 8, 4)
+            DayType.SUNDAY.matchesDate(festivoTuesday, isHoliday = { true }) shouldBe true
+        }
+
+        test("a reminder tagged SUNDAY does not fire on a plain Tuesday") {
+            val tuesday = calendar(2026, 8, 4)
+            DayType.SUNDAY.matchesDate(tuesday, isHoliday = { false }) shouldBe false
+        }
+
+        test("a reminder tagged SATURDAY does not fire on a festivo") {
+            val festivoTuesday = calendar(2026, 8, 4)
+            DayType.SATURDAY.matchesDate(festivoTuesday, isHoliday = { true }) shouldBe false
+        }
+
+        test("a reminder tagged WEEKDAY still fires on a plain weekday") {
+            val tuesday = calendar(2026, 8, 4)
+            DayType.WEEKDAY.matchesDate(tuesday, isHoliday = { false }) shouldBe true
+        }
+    }
 })

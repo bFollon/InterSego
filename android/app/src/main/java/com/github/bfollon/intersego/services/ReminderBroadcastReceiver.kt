@@ -20,7 +20,6 @@ import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.BusReminder
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.SeasonalAvailability
-import com.github.bfollon.intersego.data.matchesCalendarDay
 import java.time.Month
 import java.util.Calendar
 
@@ -54,7 +53,7 @@ class ReminderBroadcastReceiver : BroadcastReceiver() {
         val todayDayOfWeek = today.get(Calendar.DAY_OF_WEEK)
         val todayMonth = Month.of(today.get(Calendar.MONTH) + 1)
 
-        val dayTypeMatches = dayType == null || dayType.matchesCalendarDay(todayDayOfWeek)
+        val dayTypeMatches = dayType == null || dayType.matchesDate(today)
         val seasonalMatches = seasonalAvailability?.runsIn(todayMonth, todayDayOfWeek) != false
         val runsToday = dayTypeMatches && seasonalMatches
 
