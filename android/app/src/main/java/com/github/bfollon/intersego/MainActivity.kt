@@ -81,6 +81,7 @@ import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.TimetableCacheService
 import com.github.bfollon.intersego.services.PolylineCacheService
+import com.github.bfollon.intersego.services.HolidayService
 import com.github.bfollon.intersego.services.ClosestStopFinderService
 import com.github.bfollon.intersego.services.LocationManager as BusLocationManager
 import com.github.bfollon.intersego.services.TimetableService
@@ -277,6 +278,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     reminderService.pruneExpired()
                     routes = getKnownRoutes()
                     routeDataService.getSupportedRoutes()
+                    HolidayService.initialize(this@MainActivity)
                 }
 
                 isInitialized = true
@@ -293,6 +295,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 if (NetworkMonitor.isOnline()) {
                     launch { TimetableCacheService.fetchAllRoutes(this@MainActivity) }
                     launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
+                    launch { HolidayService.refresh(this@MainActivity) }
                 }
             }
 
