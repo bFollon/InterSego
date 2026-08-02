@@ -10,16 +10,6 @@
 import MapKit
 import SwiftUI
 
-// MARK: - Day Type Matching
-
-func dayTypesForCalendarDay(_ weekday: Int) -> Set<DayType> {
-    switch weekday {
-    case 7: [.saturday, .weekend] // Saturday
-    case 1: [.sunday, .weekend, .holiday] // Sunday
-    default: [.weekday]
-    }
-}
-
 // MARK: - Time of Day
 
 private enum TimeOfDay {
@@ -122,15 +112,11 @@ struct NextDepartureView: View {
     }
 
     private var currentDayTypes: Set<DayType> {
-        dayTypesForCalendarDay(currentWeekday)
+        TimetableQuery.dayTypesForDate(Date())
     }
 
     private var currentDayType: DayType {
-        switch currentWeekday {
-        case 7: return .saturday
-        case 1: return .sunday
-        default: return .weekday
-        }
+        TimetableQuery.primaryDayType()
     }
 
     private var activeRoutesData: [RouteLoadedData] {
@@ -286,7 +272,7 @@ struct NextDepartureView: View {
         for daysAhead in 1 ... 7 {
             guard let futureDate = Calendar.current.date(byAdding: .day, value: daysAhead, to: Date()) else { continue }
             let futureWeekday = Calendar.current.component(.weekday, from: futureDate)
-            let futureDayTypes = dayTypesForCalendarDay(futureWeekday)
+            let futureDayTypes = TimetableQuery.dayTypesForDate(futureDate)
 
             var tagged: [TaggedDeparture] = []
             for routeData in activeRoutesData {
@@ -457,8 +443,7 @@ struct NextDepartureView: View {
                         guard info.daysAhead > 0,
                               let futureDate = Calendar.current.date(byAdding: .day, value: info.daysAhead, to: Date())
                         else { return nil }
-                        let weekday = Calendar.current.component(.weekday, from: futureDate)
-                        return weekday == 7 ? .saturday : (weekday == 1 ? .sunday : .weekday)
+                        return TimetableQuery.primaryDayType(futureDate)
                     }()
                     let scheduleDir = mergedDirectionLabel != nil
                         ? (info.departure?.direction ?? direction)

@@ -65,7 +65,7 @@ struct DayScheduleView: View {
 
     private var currentDayTypes: Set<DayType> {
         if let override = overrideDayType { return dayTypesFor(override) }
-        return dayTypesForToday(currentWeekday)
+        return TimetableQuery.dayTypesForDate(Date())
     }
 
     // Each item is (departure, effectiveDirection) — direction may vary per-departure in merged mode.
@@ -82,7 +82,7 @@ struct DayScheduleView: View {
     }
 
     private var dayTypeLabel: String {
-        switch overrideDayType ?? (currentWeekday == 7 ? .saturday : currentWeekday == 1 ? .sunday : .weekday) {
+        switch overrideDayType ?? TimetableQuery.primaryDayType() {
         case .saturday, .weekend: "Sábado"
         case .sunday, .holiday: "Domingo"
         default: "Lunes a Viernes"
@@ -327,14 +327,6 @@ struct DayScheduleView: View {
 }
 
 // MARK: - Day Type Helpers
-
-private func dayTypesForToday(_ weekday: Int) -> Set<DayType> {
-    switch weekday {
-    case 7: [.saturday, .weekend]
-    case 1: [.sunday, .weekend, .holiday]
-    default: [.weekday]
-    }
-}
 
 private func dayTypesFor(_ dayType: DayType) -> Set<DayType> {
     switch dayType {

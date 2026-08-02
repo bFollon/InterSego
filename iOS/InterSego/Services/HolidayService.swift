@@ -30,8 +30,19 @@ import Foundation
 actor HolidayService {
     static let shared = HolidayService()
 
+    /// Lock-protected instead of actor-isolated: `isHoliday(_:)` is called synchronously
+    /// from `TimetableQuery.dayTypesForDate`, which every day-type call site in the app
+    /// calls without `await`. An actor-isolated var would force async on all of them.
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var holidayDates: Set<String> = []
+
+    private static func setHolidayDates(_ dates: Set<String>) {
+        lock.lock()
+        defer { lock.unlock() }
+        holidayDates = dates
+    }
+
     private let session: URLSession
-    private var holidayDates: Set<String> = []
 
     private init() {
         let config = URLSessionConfiguration.default
@@ -118,8 +129,9 @@ actor HolidayService {
     /// Loads whatever holiday data is available (disk cache, else bundled resource) into
     /// memory. No network access — safe to call unconditionally at startup, offline or not.
     func initialize() {
-        holidayDates = loadFromDisk() ?? loadFromBundle()
-        DebugConfig.debugPrint("HolidayService: loaded \(holidayDates.count) holiday date(s) into memory")
+        let dates = loadFromDisk() ?? loadFromBundle()
+        Self.setHolidayDates(dates)
+        DebugConfig.debugPrint("HolidayService: loaded \(dates.count) holiday date(s) into memory")
     }
 
     /// Fetches the latest calendar from the server and, on success, replaces the
@@ -151,7 +163,7 @@ actor HolidayService {
                 if let etag = http.value(forHTTPHeaderField: "ETag") {
                     saveEtag(etag)
                 }
-                holidayDates = dates
+                Self.setHolidayDates(dates)
                 DebugConfig.debugPrint("HolidayService: updated, \(dates.count) holiday date(s)")
                 return true
             case 304:
@@ -175,7 +187,11 @@ actor HolidayService {
     }()
 
     /// True if `date` is a known festivo. Never throws; false if no calendar is loaded.
-    func isHoliday(_ date: Date = Date()) -> Bool {
-        holidayDates.contains(Self.isoFormatter.string(from: date))
+    /// `nonisolated` and lock-backed so `TimetableQuery.dayTypesForDate` — called
+    /// synchronously everywhere in the app — can use it as a default parameter.
+    nonisolated static func isHoliday(_ date: Date = Date()) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return holidayDates.contains(isoFormatter.string(from: date))
     }
 }

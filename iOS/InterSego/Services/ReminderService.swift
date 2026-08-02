@@ -302,7 +302,7 @@ actor ReminderService {
             let weekday = cal.component(.weekday, from: targetDay)
             let month = cal.component(.month, from: targetDay)
 
-            if let dt = dayType, !dayTypeMatches(dt, weekday: weekday) { continue }
+            if let dt = dayType, !dayTypeMatches(dt, date: targetDay) { continue }
             if let seasonal = seasonalAvailability, !seasonal.runsIn(month: month, weekday: weekday) { continue }
 
             var comps = cal.dateComponents([.year, .month, .day], from: targetDay)
@@ -316,15 +316,11 @@ actor ReminderService {
         return nil
     }
 
-    /// Returns true if the given DayType applies on the given Calendar weekday (1=Sun, 7=Sat).
-    private func dayTypeMatches(_ dayType: DayType, weekday: Int) -> Bool {
-        switch dayType {
-        case .weekday: return (2...6).contains(weekday)
-        case .saturday: return weekday == 7
-        case .sunday: return weekday == 1
-        case .weekend: return weekday == 1 || weekday == 7
-        case .holiday: return weekday == 1
-        }
+    /// Returns true if the given DayType applies on the given date, consulting the holiday
+    /// calendar so a reminder tagged .sunday/.weekend/.holiday also fires on a non-Sunday
+    /// festivo, not just a literal Sunday.
+    private func dayTypeMatches(_ dayType: DayType, date: Date) -> Bool {
+        TimetableQuery.dayTypesForDate(date).contains(dayType)
     }
 
     // MARK: - Persistence

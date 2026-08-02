@@ -126,7 +126,7 @@ struct ContentView: View {
                                         let allRoutes = BusRouteRegistry.knownRoutes()
                                         let now = Date()
                                         let weekday = Calendar.current.component(.weekday, from: now)
-                                        let todayDayTypes = dayTypesForCalendarDay(weekday)
+                                        let todayDayTypes = TimetableQuery.dayTypesForDate(now)
                                         let h = Calendar.current.component(.hour, from: now)
                                         let m = Calendar.current.component(.minute, from: now)
                                         let currentMinutes = h * 60 + m
@@ -267,8 +267,8 @@ struct ContentView: View {
                                     landingBoardingSubmitting = true
                                     let option = landingBoardingOptions.first { $0.route.id == route.id }
                                     let weekday = Calendar.current.component(.weekday, from: Date())
-                                    let currentDayType: DayType = weekday == 7 ? .saturday : (weekday == 1 ? .sunday : .weekday)
-                                    let dayTypes = dayTypesForCalendarDay(weekday)
+                                    let currentDayType = TimetableQuery.primaryDayType()
+                                    let dayTypes = TimetableQuery.dayTypesForDate(Date())
                                     let h = Calendar.current.component(.hour, from: Date())
                                     let m = Calendar.current.component(.minute, from: Date())
                                     let departure = option?.timetables

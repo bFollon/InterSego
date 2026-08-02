@@ -85,12 +85,7 @@ actor TimetableService {
     }
 
     nonisolated func getCurrentDayType() -> DayType {
-        let weekday = Calendar.current.component(.weekday, from: Date())
-        switch weekday {
-        case 7: return .saturday
-        case 1: return .sunday
-        default: return .weekday
-        }
+        TimetableQuery.primaryDayType()
     }
 
     nonisolated func getCurrentTime() -> (hour: Int, minute: Int) {

@@ -83,9 +83,7 @@ actor DeparturesService {
         var loadedRoutes: [RouteLoadedData] = []
         let today = Date()
         let currentDayTypes = TimetableQuery.dayTypesForDate(today)
-        let currentDayType: DayType = currentDayTypes.contains(.saturday) ? .saturday :
-                             currentDayTypes.contains(.sunday) ? .sunday :
-                             .weekday
+        let currentDayType = TimetableQuery.primaryDayType(today)
         let currentWeekday = Calendar.current.component(.weekday, from: today)
 
         for routeId in routeIds {
