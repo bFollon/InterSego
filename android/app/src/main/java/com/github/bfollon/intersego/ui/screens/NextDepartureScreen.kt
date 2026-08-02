@@ -128,6 +128,7 @@ import com.github.bfollon.intersego.services.RouteLoadedData
 import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TaggedDeparture
 import com.github.bfollon.intersego.services.TimetableService
+import com.github.bfollon.intersego.services.TimetableQueryUtils
 import com.github.bfollon.intersego.ui.theme.WarningOrange
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -141,16 +142,6 @@ import java.util.Calendar
 // ============================================================================
 // DAY TYPE HELPERS
 // ============================================================================
-
-/**
- * Map a Calendar day-of-week to the set of DayType values that might match.
- * M4 uses WEEKEND for Saturday; M6 uses SATURDAY and SUNDAY separately.
- */
-internal fun dayTypesForCalendarDay(dayOfWeek: Int): Set<DayType> = when (dayOfWeek) {
-    Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
-    Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-    else -> setOf(DayType.WEEKDAY)
-}
 
 /** Expand a DayType value to the full set used for timetable filtering. */
 internal fun dayTypesFor(dayType: DayType): Set<DayType> = when (dayType) {
@@ -224,14 +215,8 @@ fun NextDepartureScreen(
     }
 
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
-    val currentDayTypes = remember { dayTypesForCalendarDay(currentDayOfWeek) }
-    val currentDayType = remember {
-        when (currentDayOfWeek) {
-            Calendar.SATURDAY -> DayType.SATURDAY
-            Calendar.SUNDAY -> DayType.SUNDAY
-            else -> DayType.WEEKDAY
-        }
-    }
+    val currentDayTypes = remember { TimetableQueryUtils.dayTypesForDate() }
+    val currentDayType = remember { TimetableQueryUtils.primaryDayType() }
 
     // Load all routes serving this stop
     LaunchedEffect(stop.id) {
@@ -324,7 +309,7 @@ fun NextDepartureScreen(
         for (daysAhead in 1..7) {
             val calendar = Calendar.getInstance()
             calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
-            val futureDayTypes = dayTypesForCalendarDay(calendar.get(Calendar.DAY_OF_WEEK))
+            val futureDayTypes = TimetableQueryUtils.dayTypesForDate(calendar)
             val routesToUse = if (selectedRouteId != null)
                 loadedRoutes.filter { it.route.id == selectedRouteId }
             else loadedRoutes
@@ -767,11 +752,7 @@ fun NextDepartureScreen(
                             // When showing a future day, link to that day's full schedule.
                             val scheduleOverrideDayType = if (daysAhead > 0) {
                                 val cal = Calendar.getInstance().also { it.add(Calendar.DAY_OF_YEAR, daysAhead) }
-                                when (cal.get(Calendar.DAY_OF_WEEK)) {
-                                    Calendar.SATURDAY -> DayType.SATURDAY
-                                    Calendar.SUNDAY -> DayType.SUNDAY
-                                    else -> DayType.WEEKDAY
-                                }
+                                TimetableQueryUtils.primaryDayType(cal)
                             } else null
                             OutlinedButton(
                                 onClick = {

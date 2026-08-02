@@ -82,6 +82,7 @@ import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.TimetableCacheService
 import com.github.bfollon.intersego.services.PolylineCacheService
 import com.github.bfollon.intersego.services.HolidayService
+import com.github.bfollon.intersego.services.TimetableQueryUtils
 import com.github.bfollon.intersego.services.ClosestStopFinderService
 import com.github.bfollon.intersego.services.LocationManager as BusLocationManager
 import com.github.bfollon.intersego.services.TimetableService
@@ -569,11 +570,7 @@ fun AppNavigation(
                     val routeIds = routeDataService.getRoutesForStop(stop.id)
                     val cal = java.util.Calendar.getInstance()
                     val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
-                    val todayDayTypes = when (dayOfWeek) {
-                        java.util.Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
-                        java.util.Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-                        else -> setOf(DayType.WEEKDAY)
-                    }
+                    val todayDayTypes = TimetableQueryUtils.dayTypesForDate(cal)
                     val currentMinutes = LocalTime.now().let { it.hour * 60 + it.minute }
                     val options = mutableListOf<Pair<BusRoute, List<String>>>()
                     for (routeId in routeIds.sorted()) {
@@ -688,16 +685,8 @@ fun AppNavigation(
                                         val timetables = timetableService.loadTimetables(route.id)
                                         val cal = java.util.Calendar.getInstance()
                                         val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
-                                        val currentDayType = when (dayOfWeek) {
-                                            java.util.Calendar.SATURDAY -> DayType.SATURDAY
-                                            java.util.Calendar.SUNDAY -> DayType.SUNDAY
-                                            else -> DayType.WEEKDAY
-                                        }
-                                        val currentDayTypes = when (dayOfWeek) {
-                                            java.util.Calendar.SATURDAY -> setOf(DayType.SATURDAY, DayType.WEEKEND)
-                                            java.util.Calendar.SUNDAY -> setOf(DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
-                                            else -> setOf(DayType.WEEKDAY)
-                                        }
+                                        val currentDayType = TimetableQueryUtils.primaryDayType(cal)
+                                        val currentDayTypes = TimetableQueryUtils.dayTypesForDate(cal)
                                         val currentTime = LocalTime.now()
                                         val departure = timetables
                                             .filter { it.dayType in currentDayTypes && it.stopId == stop.id && it.direction == dir }
@@ -850,11 +839,7 @@ fun AppNavigation(
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val todayDayType = remember {
-                when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
-                    java.util.Calendar.SATURDAY -> DayType.SATURDAY
-                    java.util.Calendar.SUNDAY -> DayType.SUNDAY
-                    else -> DayType.WEEKDAY
-                }
+                TimetableQueryUtils.primaryDayType()
             }
 
             val views = remember(routeId, todayDayType) {
@@ -913,11 +898,7 @@ fun AppNavigation(
                 com.github.bfollon.intersego.data.BusStopRegistry.findById(stopId)
                     ?: run {
                         // Fallback: search across known route views
-                        val dayType = when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
-                            java.util.Calendar.SATURDAY -> DayType.SATURDAY
-                            java.util.Calendar.SUNDAY -> DayType.SUNDAY
-                            else -> DayType.WEEKDAY
-                        }
+                        val dayType = TimetableQueryUtils.primaryDayType()
                         routeDataService.getSupportedRoutes()
                             .flatMap { routeDataService.getRouteViews(it, dayType) }
                             .flatMap { it.stops }
@@ -958,11 +939,7 @@ fun AppNavigation(
                 com.github.bfollon.intersego.data.BusStopRegistry.findById(stopId)
                     ?: run {
                         // Fallback: search across known route views
-                        val dayType = when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
-                            java.util.Calendar.SATURDAY -> DayType.SATURDAY
-                            java.util.Calendar.SUNDAY -> DayType.SUNDAY
-                            else -> DayType.WEEKDAY
-                        }
+                        val dayType = TimetableQueryUtils.primaryDayType()
                         routeDataService.getSupportedRoutes()
                             .flatMap { routeDataService.getRouteViews(it, dayType) }
                             .flatMap { it.stops }
@@ -997,11 +974,7 @@ fun AppNavigation(
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val todayDayType = remember {
-                when (java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK)) {
-                    java.util.Calendar.SATURDAY -> DayType.SATURDAY
-                    java.util.Calendar.SUNDAY -> DayType.SUNDAY
-                    else -> DayType.WEEKDAY
-                }
+                TimetableQueryUtils.primaryDayType()
             }
 
             val views = remember(routeId) {

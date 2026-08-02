@@ -86,11 +86,7 @@ class DeparturesService(private val context: Context) {
         val loadedRoutes = mutableListOf<RouteLoadedData>()
         val today = Calendar.getInstance()
         val currentDayTypes = TimetableQueryUtils.dayTypesForDate(today)
-        val currentDayType = when {
-            currentDayTypes.contains(DayType.SATURDAY) -> DayType.SATURDAY
-            currentDayTypes.contains(DayType.SUNDAY) -> DayType.SUNDAY
-            else -> DayType.WEEKDAY
-        }
+        val currentDayType = TimetableQueryUtils.primaryDayType(today)
 
         for (routeId in routeIds) {
             val route = allRoutes.find { it.id == routeId } ?: continue

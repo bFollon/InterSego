@@ -85,14 +85,7 @@ class TimetableService(private val context: Context) {
         DebugConfig.debugPrint("TimetableService: Cleared cache for route $routeId")
     }
 
-    fun getCurrentDayType(): DayType {
-        val calendar = java.util.Calendar.getInstance()
-        return when (calendar.get(java.util.Calendar.DAY_OF_WEEK)) {
-            java.util.Calendar.SATURDAY -> DayType.SATURDAY
-            java.util.Calendar.SUNDAY -> DayType.SUNDAY
-            else -> DayType.WEEKDAY
-        }
-    }
+    fun getCurrentDayType(): DayType = TimetableQueryUtils.primaryDayType()
 
     fun getCurrentTime(): Pair<Int, Int> {
         val calendar = java.util.Calendar.getInstance()

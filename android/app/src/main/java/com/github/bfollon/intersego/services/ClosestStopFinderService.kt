@@ -128,13 +128,7 @@ class ClosestStopFinderService(private val context: Context) {
         return best
     }
 
-    private fun getCurrentDayType(): DayType {
-        return when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-            Calendar.SATURDAY -> DayType.SATURDAY
-            Calendar.SUNDAY -> DayType.SUNDAY
-            else -> DayType.WEEKDAY
-        }
-    }
+    private fun getCurrentDayType(): DayType = TimetableQueryUtils.primaryDayType()
 
     private data class StopCandidate(
         val route: BusRoute,

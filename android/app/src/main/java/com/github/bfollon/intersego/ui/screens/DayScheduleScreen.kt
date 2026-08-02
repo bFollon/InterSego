@@ -42,6 +42,7 @@ import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.TimetableService
+import com.github.bfollon.intersego.services.TimetableQueryUtils
 import kotlinx.coroutines.delay
 import java.time.LocalTime
 import java.util.Calendar
@@ -98,15 +99,11 @@ fun DayScheduleScreen(
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
     // When an override is set, use the matching DayType set; otherwise derive from today's calendar day.
     val currentDayTypes = remember(overrideDayType) {
-        if (overrideDayType != null) dayTypesFor(overrideDayType) else dayTypesForCalendarDay(currentDayOfWeek)
+        if (overrideDayType != null) dayTypesFor(overrideDayType) else TimetableQueryUtils.dayTypesForDate()
     }
     // Effective day type used when scheduling reminders from this screen.
     val effectiveDayType = remember(overrideDayType, currentDayOfWeek) {
-        overrideDayType ?: when (currentDayOfWeek) {
-            Calendar.SATURDAY -> DayType.SATURDAY
-            Calendar.SUNDAY -> DayType.SUNDAY
-            else -> DayType.WEEKDAY
-        }
+        overrideDayType ?: TimetableQueryUtils.primaryDayType()
     }
     // Weekday used for seasonal filtering — use today's for "now" context even when overriding
     val weekdayForSeasonal = remember { currentDayOfWeek }
@@ -124,13 +121,7 @@ fun DayScheduleScreen(
     }
 
     val dayTypeLabel = remember(overrideDayType) {
-        when (overrideDayType ?: run {
-            when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-                Calendar.SATURDAY -> DayType.SATURDAY
-                Calendar.SUNDAY -> DayType.SUNDAY
-                else -> DayType.WEEKDAY
-            }
-        }) {
+        when (overrideDayType ?: TimetableQueryUtils.primaryDayType()) {
             DayType.SATURDAY, DayType.WEEKEND -> "Sábado"
             DayType.SUNDAY, DayType.HOLIDAY -> "Domingo"
             else -> "Lunes a Viernes"
