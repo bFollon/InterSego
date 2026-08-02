@@ -110,6 +110,7 @@ All timetable data is loaded from bundled JSON assets via `TimetableLoader`. The
 **Timetable Services**:
 - `TimetableLoader` - Reads `assets/timetables/{routeId}.json`, produces `List<BusTimetable>`
 - `TimetableCacheService` - Fetches per-route JSON from server, disk cache + ETag, hot-swap flag for `TimetableService`
+- `HolidayService` - Fetches/caches the festivo calendar (`GET /api/holidays`, disk cache + ETag, bundled `assets/holidays/2026.json` fallback); exposes `isHoliday(Calendar)` — not yet consumed by day-type resolution
 - `RouteDataService` - Coordinator: wraps `TimetableLoader`, maintains stop→route index, exposes route variants/views/entries
 - `TimetableService` - Memory cache + departure helpers over `RouteDataService`
 - `DeparturesService` - Departure queries combining `RouteDataService` + `TimetableService`
@@ -215,6 +216,7 @@ app/src/main/java/com/github/bfollon/intersego/
 │   ├── CoordinateCache.kt        # Geocoding cache
 │   ├── TimetableLoader.kt        # Bundle JSON reader → List<BusTimetable>
 │   ├── TimetableCacheService.kt  # Server fetch + disk cache for timetables
+│   ├── HolidayService.kt         # Server fetch + disk cache for festivo calendar
 │   ├── RouteDataService.kt   # Route metadata coordinator
 │   ├── TimetableService.kt       # Memory cache + departure helpers
 │   ├── PolylineLoader.kt         # Bundle JSON reader → List<GeoPoint>
