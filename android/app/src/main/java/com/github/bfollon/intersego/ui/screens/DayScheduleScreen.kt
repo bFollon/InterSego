@@ -22,7 +22,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,11 +42,14 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.services.DebugConfig
+import com.github.bfollon.intersego.services.HolidayService
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.TimetableService
 import com.github.bfollon.intersego.services.TimetableQueryUtils
 import kotlinx.coroutines.delay
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.Month
 import java.util.Calendar
 
 /**
@@ -59,11 +64,24 @@ fun DayScheduleScreen(
     selectedVariantLabel: String? = null,
     overrideDayType: DayType? = null,
     mergedDirectionLabel: String? = null,
+    allowDateSelection: Boolean = false,
     reminderService: ReminderService? = null,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
+
+    // "Consultar otro día" flow only — the pre-existing overrideDayType path (from
+    // NextDepartureScreen's "Ver horario completo") keeps its existing today-anchored
+    // weekday/seasonal resolution below, unchanged.
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val isToday = !allowDateSelection || selectedDate == LocalDate.now()
+    val calendarForSelectedDate = remember(selectedDate) {
+        Calendar.getInstance().apply {
+            set(selectedDate.year, selectedDate.monthValue - 1, selectedDate.dayOfMonth, 12, 0, 0)
+        }
+    }
 
     var timetables by remember { mutableStateOf<List<com.github.bfollon.intersego.data.BusTimetable>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
@@ -98,38 +116,54 @@ fun DayScheduleScreen(
 
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
     // When an override is set, use the matching DayType set; otherwise derive from today's calendar day.
-    val currentDayTypes = remember(overrideDayType) {
-        if (overrideDayType != null) dayTypesFor(overrideDayType) else TimetableQueryUtils.dayTypesForDate()
+    val currentDayTypes = remember(overrideDayType, allowDateSelection, selectedDate) {
+        when {
+            allowDateSelection -> TimetableQueryUtils.dayTypesForDate(calendarForSelectedDate)
+            overrideDayType != null -> dayTypesFor(overrideDayType)
+            else -> TimetableQueryUtils.dayTypesForDate()
+        }
     }
     // Effective day type used when scheduling reminders from this screen.
-    val effectiveDayType = remember(overrideDayType, currentDayOfWeek) {
-        overrideDayType ?: TimetableQueryUtils.primaryDayType()
+    val effectiveDayType = remember(overrideDayType, currentDayOfWeek, allowDateSelection, selectedDate) {
+        if (allowDateSelection) TimetableQueryUtils.primaryDayType(calendarForSelectedDate)
+        else overrideDayType ?: TimetableQueryUtils.primaryDayType()
     }
-    // Weekday used for seasonal filtering — use today's for "now" context even when overriding
-    val weekdayForSeasonal = remember { currentDayOfWeek }
+    // Weekday/month used for seasonal filtering — the picked date when selectable, else today's
+    // (the pre-existing overrideDayType path only carries a DayType, not an actual date).
+    val weekdayForSeasonal = remember(allowDateSelection, selectedDate) {
+        if (allowDateSelection) calendarForSelectedDate.get(Calendar.DAY_OF_WEEK) else currentDayOfWeek
+    }
+    val monthForSeasonal = remember(allowDateSelection, selectedDate) {
+        if (allowDateSelection) Month.of(selectedDate.monthValue) else LocalDate.now().month
+    }
+    val holidayName = remember(allowDateSelection, selectedDate) {
+        if (allowDateSelection) HolidayService.holidayName(calendarForSelectedDate) else null
+    }
 
     // Each item is (departure, effectiveDirection) — direction may vary per-departure in merged mode.
-    val todayItems = remember(timetables, currentDayTypes, stop, direction, mergedDirectionLabel) {
+    val todayItems = remember(timetables, currentDayTypes, stop, direction, mergedDirectionLabel, weekdayForSeasonal, monthForSeasonal) {
         timetables.filter {
             it.dayType in currentDayTypes &&
             it.stopId == stop.id &&
             (mergedDirectionLabel != null || it.direction == direction)
         }.flatMap { timetable ->
-            timetable.seasonalDepartures(weekday = weekdayForSeasonal)
+            timetable.seasonalDepartures(month = monthForSeasonal, weekday = weekdayForSeasonal)
                 .map { dep -> Pair(dep, timetable.direction ?: direction) }
         }.sortedBy { it.first.toMinutesSinceMidnight() }
     }
 
-    val dayTypeLabel = remember(overrideDayType) {
-        when (overrideDayType ?: TimetableQueryUtils.primaryDayType()) {
+    val dayTypeLabel = remember(overrideDayType, allowDateSelection, selectedDate) {
+        when (effectiveDayType) {
             DayType.SATURDAY, DayType.WEEKEND -> "Sábado"
             DayType.SUNDAY, DayType.HOLIDAY -> "Domingo"
             else -> "Lunes a Viernes"
         }
     }
 
-    // Find marker index: first departure that is in the future
-    val markerIndex = remember(todayItems, currentTime) {
+    // Find marker index: first departure that is in the future. "Ahora" only makes sense
+    // when the displayed schedule is actually today's.
+    val markerIndex = remember(todayItems, currentTime, isToday) {
+        if (!isToday) return@remember -1
         val idx = todayItems.indexOfFirst { (dep, _) ->
             val depTime = LocalTime.of(dep.hour, dep.minute)
             depTime.isAfter(currentTime) || depTime == currentTime
@@ -192,25 +226,37 @@ fun DayScheduleScreen(
                 }
             }
             todayItems.isEmpty() -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No hay horarios disponibles para hoy",
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center
-                    )
+                Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                    if (allowDateSelection) {
+                        DateSelectionHeader(
+                            selectedDate = selectedDate,
+                            holidayName = holidayName,
+                            onPickDate = { showDatePicker = true }
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isToday) "No hay horarios disponibles para hoy"
+                                   else "No hay horarios disponibles para este día",
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
             else -> {
                 val listState = rememberLazyListState()
 
-                // Auto-scroll to center marker in viewport (mirrors iOS scrollTo anchor: .center)
+                // Auto-scroll to center marker in viewport (mirrors iOS scrollTo anchor: .center).
+                // Only relevant for today's schedule — non-today dates have no "Ahora" marker.
                 LaunchedEffect(markerIndex) {
+                    if (markerIndex < 0) return@LaunchedEffect
                     val scrollTarget = markerIndex + 1 // +1 for header
                     listState.scrollToItem(scrollTarget)
                     val layoutInfo = listState.layoutInfo
@@ -229,6 +275,16 @@ fun DayScheduleScreen(
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
+                    if (allowDateSelection) {
+                        item {
+                            DateSelectionHeader(
+                                selectedDate = selectedDate,
+                                holidayName = holidayName,
+                                onPickDate = { showDatePicker = true }
+                            )
+                        }
+                    }
+
                     // Section header
                     item {
                         Row(
@@ -344,6 +400,104 @@ fun DayScheduleScreen(
             }
         }
     }
+
+    if (showDatePicker) {
+        val todayEpochMillis = LocalDate.now().toEpochDay() * MILLIS_PER_DAY
+        val maxEpochMillis = LocalDate.now().plusDays(90).toEpochDay() * MILLIS_PER_DAY
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate.toEpochDay() * MILLIS_PER_DAY,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                    utcTimeMillis in todayEpochMillis..maxEpochMillis
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        selectedDate = LocalDate.ofEpochDay(millis / MILLIS_PER_DAY)
+                    }
+                    showDatePicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+private const val MILLIS_PER_DAY = 86_400_000L
+
+/**
+ * Compact date affordance + festivo banner for the "Consultar otro día" flow.
+ */
+@Composable
+private fun DateSelectionHeader(
+    selectedDate: LocalDate,
+    holidayName: String?,
+    onPickDate: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Surface(
+            onClick = onPickDate,
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = formatSelectedDate(selectedDate),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.weight(1f)
+                )
+                if (selectedDate != LocalDate.now()) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = "Elegir otra fecha",
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+
+        if (holidayName != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Festivo: $holidayName · horario de domingo",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                )
+            }
+        }
+    }
+}
+
+private fun formatSelectedDate(date: LocalDate): String {
+    if (date == LocalDate.now()) return "Hoy"
+    val formatter = java.time.format.DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", java.util.Locale("es", "ES"))
+    return date.format(formatter).replaceFirstChar { it.uppercase() }
 }
 
 /**

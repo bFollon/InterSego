@@ -40,9 +40,9 @@ import java.util.concurrent.TimeUnit
  *
  * Bundles a copy of the current year's calendar (`assets/holidays/2026.json`) as a
  * cold-start floor: it will go stale year over year, but it means a fresh install with
- * no connectivity yet isn't wrong about this year's festivos. Out of scope here: wiring
- * this into actual day-type resolution (`TimetableQueryUtils.dayTypesForDate`) — that's
- * a separate card.
+ * no connectivity yet isn't wrong about this year's festivos. Consumed by
+ * `TimetableQueryUtils.dayTypesForDate` for day-type resolution, and by
+ * `DayScheduleScreen`'s festivo banner via [holidayName].
  */
 object HolidayService {
 
@@ -68,7 +68,7 @@ object HolidayService {
     private data class HolidayYearFile(val year: Int = 0, val holidays: List<HolidayEntry> = emptyList())
 
     @Volatile
-    private var holidayDates: Set<String> = emptySet()
+    private var holidayNamesByDate: Map<String, String> = emptyMap()
 
     private fun cacheFile(context: Context): File = File(context.filesDir, "$ASSET_DIR/all.json")
 
@@ -81,38 +81,37 @@ object HolidayService {
         prefs(context).edit().putString(ETAG_KEY, etag).apply()
 
     /** Server responds with a JSON array, one entry per known year. */
-    private fun datesFromYearArray(text: String): Set<String> =
+    private fun namesByDateFromYearArray(text: String): Map<String, String> =
         json.decodeFromString<List<HolidayYearFile>>(text)
             .flatMap { it.holidays }
-            .map { it.date }
-            .toSet()
+            .associate { it.date to it.name }
 
     /** Bundled/`resources/holidays/{year}.json` assets are a single year object each. */
-    private fun datesFromBundleAsset(text: String): Set<String> =
-        json.decodeFromString<HolidayYearFile>(text).holidays.map { it.date }.toSet()
+    private fun namesByDateFromBundleAsset(text: String): Map<String, String> =
+        json.decodeFromString<HolidayYearFile>(text).holidays.associate { it.date to it.name }
 
-    private fun loadFromDisk(context: Context): Set<String>? {
+    private fun loadFromDisk(context: Context): Map<String, String>? {
         val file = cacheFile(context)
         if (!file.exists()) return null
         return try {
-            datesFromYearArray(file.readText()).ifEmpty { null }
+            namesByDateFromYearArray(file.readText()).ifEmpty { null }
         } catch (e: Exception) {
             DebugConfig.debugError("$TAG: failed to parse disk cache", e)
             null
         }
     }
 
-    private fun loadFromBundle(context: Context): Set<String> {
+    private fun loadFromBundle(context: Context): Map<String, String> {
         val files = context.assets.list(ASSET_DIR)?.filter { it.endsWith(".json") } ?: emptyList()
         return files.flatMap { name ->
             try {
                 val text = context.assets.open("$ASSET_DIR/$name").bufferedReader().use { it.readText() }
-                datesFromBundleAsset(text)
+                namesByDateFromBundleAsset(text).toList()
             } catch (e: Exception) {
                 DebugConfig.debugError("$TAG: failed to parse bundled asset $name", e)
                 emptyList()
             }
-        }.toSet()
+        }.toMap()
     }
 
     /**
@@ -120,8 +119,8 @@ object HolidayService {
      * memory. No network access — safe to call unconditionally at startup, offline or not.
      */
     suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
-        holidayDates = loadFromDisk(context) ?: loadFromBundle(context)
-        DebugConfig.debugPrint("$TAG: loaded ${holidayDates.size} holiday date(s) into memory")
+        holidayNamesByDate = loadFromDisk(context) ?: loadFromBundle(context)
+        DebugConfig.debugPrint("$TAG: loaded ${holidayNamesByDate.size} holiday date(s) into memory")
     }
 
     /**
@@ -140,13 +139,13 @@ object HolidayService {
             when (response.code) {
                 200 -> {
                     val bytes = response.body?.bytes() ?: return@withContext false
-                    val dates = datesFromYearArray(bytes.toString(Charsets.UTF_8))
+                    val names = namesByDateFromYearArray(bytes.toString(Charsets.UTF_8))
                     val file = cacheFile(context)
                     file.parentFile?.mkdirs()
                     file.writeBytes(bytes)
                     response.header("ETag")?.let { saveEtag(context, it) }
-                    holidayDates = dates
-                    DebugConfig.debugPrint("$TAG: updated, ${dates.size} holiday date(s)")
+                    holidayNamesByDate = names
+                    DebugConfig.debugPrint("$TAG: updated, ${names.size} holiday date(s)")
                     true
                 }
                 304 -> {
@@ -168,5 +167,9 @@ object HolidayService {
 
     /** True if [date] (defaults to today) is a known festivo. Never throws; false if no calendar is loaded. */
     fun isHoliday(date: Calendar = Calendar.getInstance()): Boolean =
-        holidayDates.contains(isoFormat.format(date.time))
+        holidayNamesByDate.containsKey(isoFormat.format(date.time))
+
+    /** The festivo's name (e.g. "San Frutos") if [date] is a known holiday, else null. */
+    fun holidayName(date: Calendar = Calendar.getInstance()): String? =
+        holidayNamesByDate[isoFormat.format(date.time)]
 }

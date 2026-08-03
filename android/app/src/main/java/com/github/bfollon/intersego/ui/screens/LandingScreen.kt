@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
@@ -74,6 +75,7 @@ fun LandingScreen(
     onShowAbout: () -> Unit = {},
     onShowReminders: () -> Unit = {},
     onShowSettings: () -> Unit = {},
+    onNavigateToTripPlanner: () -> Unit = {},
     onBoardBus: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
     closestStopError: String? = null,
@@ -213,6 +215,19 @@ fun LandingScreen(
                         modifier = Modifier.size(40.dp).padding(8.dp)
                     )
                 }
+
+                SquareLandingCard(
+                    label = "Planifica tu viaje",
+                    onClick = onNavigateToTripPlanner,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp).padding(8.dp)
+                    )
+                }
             }
 
             if (closestStopError != null) {
@@ -256,7 +271,7 @@ fun LandingScreen(
 }
 
 @Composable
-private fun HorizontalLandingCard(
+internal fun HorizontalLandingCard(
     label: String,
     showChevron: Boolean,
     isLoading: Boolean,
@@ -299,7 +314,7 @@ private fun HorizontalLandingCard(
 }
 
 @Composable
-private fun SquareLandingCard(
+internal fun SquareLandingCard(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

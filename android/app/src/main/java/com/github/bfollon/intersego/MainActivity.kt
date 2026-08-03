@@ -114,6 +114,7 @@ import androidx.compose.foundation.layout.Arrangement
 import com.github.bfollon.intersego.ui.screens.AboutScreen
 import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
+import com.github.bfollon.intersego.ui.screens.TripPlannerScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
 import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.ui.screens.NextDepartureScreen
@@ -797,6 +798,7 @@ fun AppNavigation(
                 onShowAbout = { showAboutModal = true },
                 onShowReminders = { navController.navigate("reminders") },
                 onShowSettings = { navController.navigate("settings") },
+                onNavigateToTripPlanner = { navController.navigate("trip_planner") },
                 onFindClosestStop = {
                     closestStopError = null
                     if (locationMgr.hasLocationPermission()) {
@@ -879,6 +881,58 @@ fun AppNavigation(
                     } else {
                         navController.navigate("next_departure/${stop.id}/${route.id}/$viewId")
                     }
+                },
+                onMapSelected = { viewId ->
+                    navController.navigate("route_map/${route.id}/$viewId/none")
+                }
+            )
+        }
+
+        // --- "Planifica tu viaje" → "Consultar otro día" flow ---
+        // Mirrors route_selection/route_stops above, but always lands on DaySchedule
+        // (skipping NextDeparture) with the date picker enabled, regardless of guided mode.
+        composable("trip_planner") {
+            TripPlannerScreen(
+                onBack = { navController.popBackStack() },
+                onCheckAnotherDay = { navController.navigate("trip_planner_route_selection") }
+            )
+        }
+
+        composable("trip_planner_route_selection") {
+            RouteSelectionScreen(
+                routes = routes,
+                routeDataService = routeDataService,
+                onRouteSelected = { route ->
+                    navController.navigate("trip_planner_route_stops/${route.id}")
+                }
+            )
+        }
+
+        composable("trip_planner_route_stops/{routeId}") { backStackEntry ->
+            val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
+            val route = routes.find { it.id == routeId } ?: return@composable
+
+            val todayDayType = remember { TimetableQueryUtils.primaryDayType() }
+            val views = remember(routeId, todayDayType) {
+                val todayViews = routeDataService.getRouteViews(routeId, todayDayType)
+                if (todayViews.isNotEmpty()) todayViews
+                else {
+                    listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY, DayType.WEEKEND, DayType.HOLIDAY)
+                        .firstNotNullOfOrNull { dt -> routeDataService.getRouteViews(routeId, dt).takeIf { it.isNotEmpty() } }
+                        ?: emptyList()
+                }
+            }
+
+            RouteStopsScreen(
+                route = route,
+                views = views,
+                onAllRoutesSelected = null,
+                onBack = { navController.popBackStack() },
+                onStopSelected = { stop, viewId ->
+                    val view = views.find { it.id == viewId }
+                    val direction = view?.direction ?: ""
+                    val label = view?.departureLabel ?: "all"
+                    navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/none?allowDateSelection=true")
                 },
                 onMapSelected = { viewId ->
                     navController.navigate("route_map/${route.id}/$viewId/none")
@@ -1131,8 +1185,11 @@ fun AppNavigation(
         }
 
         composable(
-            "day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}/{dayTypeOverride}?mergedLabel={mergedLabel}",
-            arguments = listOf(navArgument("mergedLabel") { nullable = true; defaultValue = null; type = NavType.StringType })
+            "day_schedule/{routeId}/{stopId}/{direction}/{variantLabel}/{dayTypeOverride}?mergedLabel={mergedLabel}&allowDateSelection={allowDateSelection}",
+            arguments = listOf(
+                navArgument("mergedLabel") { nullable = true; defaultValue = null; type = NavType.StringType },
+                navArgument("allowDateSelection") { defaultValue = false; type = NavType.BoolType }
+            )
         ) { backStackEntry ->
             val routeId = backStackEntry.arguments?.getString("routeId") ?: return@composable
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
@@ -1140,6 +1197,7 @@ fun AppNavigation(
             val variantLabel = backStackEntry.arguments?.getString("variantLabel")
             val dayTypeOverrideName = backStackEntry.arguments?.getString("dayTypeOverride")?.takeIf { it != "none" }
             val mergedLabel = backStackEntry.arguments?.getString("mergedLabel")
+            val allowDateSelection = backStackEntry.arguments?.getBoolean("allowDateSelection") ?: false
             val route = routes.find { it.id == routeId } ?: return@composable
 
             val stop = listOf(DayType.WEEKDAY, DayType.SATURDAY, DayType.SUNDAY)
@@ -1162,6 +1220,7 @@ fun AppNavigation(
                 selectedVariantLabel = effectiveVariantLabel,
                 overrideDayType = overrideDayType,
                 mergedDirectionLabel = mergedLabel,
+                allowDateSelection = allowDateSelection,
                 reminderService = reminderService,
                 onBack = { navController.popBackStack() }
             )
