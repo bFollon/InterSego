@@ -18,14 +18,16 @@ struct DayScheduleSelection: Hashable {
     let departureLabel: String?
     let overrideDayType: DayType?
     let mergedDirectionLabel: String?
+    let allowDateSelection: Bool
 
-    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil) {
+    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false) {
         self.route = route
         self.stop = stop
         self.direction = direction
         self.departureLabel = departureLabel
         self.overrideDayType = overrideDayType
         self.mergedDirectionLabel = mergedDirectionLabel
+        self.allowDateSelection = allowDateSelection
     }
 }
 
@@ -38,14 +40,16 @@ struct DayScheduleView: View {
     let selectedVariantLabel: String?
     let overrideDayType: DayType?
     let mergedDirectionLabel: String?
+    let allowDateSelection: Bool
 
-    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil) {
+    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false) {
         self.route = route
         self.stop = stop
         self.direction = direction
         self.selectedVariantLabel = selectedVariantLabel
         self.overrideDayType = overrideDayType
         self.mergedDirectionLabel = mergedDirectionLabel
+        self.allowDateSelection = allowDateSelection
     }
 
     @State private var timetables: [BusTimetable] = []
@@ -57,15 +61,36 @@ struct DayScheduleView: View {
     @State private var reminderErrorMessage: String?
     @State private var showReminderAlert = false
 
+    // "Consultar otro día" flow only — the pre-existing overrideDayType path (from
+    // NextDepartureView's "Ver horario completo") keeps its existing today-anchored
+    // weekday/seasonal resolution below, unchanged.
+    @State private var selectedDate = Date()
+    @State private var showDatePicker = false
+
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
+    private var isToday: Bool {
+        !allowDateSelection || Calendar.current.isDateInToday(selectedDate)
+    }
+
     private var currentWeekday: Int {
-        Calendar.current.component(.weekday, from: Date())
+        let date = allowDateSelection ? selectedDate : Date()
+        return Calendar.current.component(.weekday, from: date)
+    }
+
+    private var currentMonth: Int {
+        let date = allowDateSelection ? selectedDate : Date()
+        return Calendar.current.component(.month, from: date)
     }
 
     private var currentDayTypes: Set<DayType> {
+        if allowDateSelection { return TimetableQuery.dayTypesForDate(selectedDate) }
         if let override = overrideDayType { return dayTypesFor(override) }
         return TimetableQuery.dayTypesForDate(Date())
+    }
+
+    private var holidayName: String? {
+        allowDateSelection ? HolidayService.holidayName(selectedDate) : nil
     }
 
     // Each item is (departure, effectiveDirection) — direction may vary per-departure in merged mode.
@@ -76,20 +101,22 @@ struct DayScheduleView: View {
                 && (mergedDirectionLabel != nil || timetable.direction == direction)
         }
         return matching.flatMap { timetable in
-            timetable.seasonalDepartures(weekday: currentWeekday)
+            timetable.seasonalDepartures(month: currentMonth, weekday: currentWeekday)
                 .map { ($0, timetable.direction ?? direction) }
         }.sorted { $0.0 < $1.0 }
     }
 
     private var dayTypeLabel: String {
-        switch overrideDayType ?? TimetableQuery.primaryDayType() {
+        switch effectiveDayType {
         case .saturday, .weekend: "Sábado"
         case .sunday, .holiday: "Domingo"
         default: "Lunes a Viernes"
         }
     }
 
-    private var nowMarkerIndex: Int {
+    /// Nil when the schedule shown isn't today's — "Ahora" only makes sense for today.
+    private var nowMarkerIndex: Int? {
+        guard isToday else { return nil }
         let cal = Calendar.current
         let currentHour = cal.component(.hour, from: currentTime)
         let currentMinute = cal.component(.minute, from: currentTime)
@@ -128,6 +155,26 @@ struct DayScheduleView: View {
             } message: {
                 Text(reminderErrorMessage ?? "")
             }
+            .sheet(isPresented: $showDatePicker) {
+                NavigationStack {
+                    DatePicker(
+                        "Fecha",
+                        selection: $selectedDate,
+                        in: Date() ... (Calendar.current.date(byAdding: .day, value: 90, to: Date()) ?? Date()),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    .navigationTitle("Elige una fecha")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Aceptar") { showDatePicker = false }
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
+            }
     }
 
     @ViewBuilder
@@ -145,10 +192,17 @@ struct DayScheduleView: View {
                 .multilineTextAlignment(.center)
                 .padding()
         } else if todayItems.isEmpty {
-            Text("No hay horarios disponibles para hoy")
-                .font(.title3)
-                .multilineTextAlignment(.center)
-                .padding()
+            VStack(spacing: 0) {
+                if allowDateSelection {
+                    DateSelectionHeader(selectedDate: $selectedDate, holidayName: holidayName, showDatePicker: $showDatePicker)
+                }
+                Spacer()
+                Text(isToday ? "No hay horarios disponibles para hoy" : "No hay horarios disponibles para este día")
+                    .font(.title3)
+                    .multilineTextAlignment(.center)
+                    .padding()
+                Spacer()
+            }
         } else {
             scheduleList
         }
@@ -161,6 +215,10 @@ struct DayScheduleView: View {
         return ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
+                    if allowDateSelection {
+                        DateSelectionHeader(selectedDate: $selectedDate, holidayName: holidayName, showDatePicker: $showDatePicker)
+                    }
+
                     // Section header
                     HStack(spacing: 8) {
                         Image(systemName: "calendar")
@@ -203,7 +261,7 @@ struct DayScheduleView: View {
                                 stop: stop,
                                 selectedVariantLabel: selectedVariantLabel,
                                 isFirst: index == 0,
-                                isLast: index == items.count - 1 && markerIndex <= items.count - 1,
+                                isLast: index == items.count - 1 && (markerIndex.map { $0 <= items.count - 1 } ?? true),
                                 bellState: bellStateValue,
                                 showBell: canSetReminder(for: departure),
                                 onBellTap: { handleBellTap(for: departure, direction: depDir) },
@@ -253,12 +311,9 @@ struct DayScheduleView: View {
     }
 
     private var effectiveDayType: DayType {
+        if allowDateSelection { return TimetableQuery.primaryDayType(selectedDate) }
         if let override = overrideDayType { return override }
-        switch currentWeekday {
-        case 7: return .saturday
-        case 1: return .sunday
-        default: return .weekday
-        }
+        return TimetableQuery.primaryDayType()
     }
 
     private func canSetReminder(for departure: DepartureTime) -> Bool {
@@ -323,6 +378,59 @@ struct DayScheduleView: View {
             }
             await refreshReminderKeys()
         }
+    }
+}
+
+// MARK: - Date Selection Header
+
+/// Compact date affordance + festivo banner for the "Consultar otro día" flow.
+private struct DateSelectionHeader: View {
+    @Binding var selectedDate: Date
+    let holidayName: String?
+    @Binding var showDatePicker: Bool
+
+    private var formattedDate: String {
+        if Calendar.current.isDateInToday(selectedDate) { return "Hoy" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE d 'de' MMMM"
+        formatter.locale = Locale(identifier: "es_ES")
+        return formatter.string(from: selectedDate).prefix(1).uppercased() + formatter.string(from: selectedDate).dropFirst()
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Button(action: { showDatePicker = true }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "calendar")
+                    Text(formattedDate)
+                        .font(.headline)
+                    Spacer()
+                    if !Calendar.current.isDateInToday(selectedDate) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color.accentColor.opacity(0.12))
+                .foregroundColor(.accentColor)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+
+            if let holidayName {
+                Text("Festivo: \(holidayName) · horario de domingo")
+                    .font(.subheadline)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.purple.opacity(0.12))
+                    .foregroundColor(.purple)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
     }
 }
 

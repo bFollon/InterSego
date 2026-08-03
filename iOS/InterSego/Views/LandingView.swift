@@ -15,6 +15,7 @@ struct LandingView: View {
     let onShowAbout: () -> Void
     let onShowReminders: () -> Void
     let onShowSettings: () -> Void
+    let onPlanTrip: () -> Void
     let onBoardBus: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
@@ -126,6 +127,17 @@ struct LandingView: View {
                     }
                     .buttonStyle(.plain)
                     .aspectRatio(1, contentMode: .fit)
+
+                    Button(action: onPlanTrip) {
+                        SquareCard(label: "Planifica tu viaje") {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 24))
+                                .foregroundColor(.accentColor)
+                                .frame(width: 40, height: 40)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .aspectRatio(1, contentMode: .fit)
                 }
 
                 if let error = closestStopError {
@@ -193,7 +205,7 @@ struct LandingView: View {
     }
 }
 
-private struct HorizontalCard<Icon: View>: View {
+struct HorizontalCard<Icon: View>: View {
     let label: String
     var labelColor: Color = .accentColor
     let showChevron: Bool

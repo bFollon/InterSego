@@ -14,6 +14,17 @@ enum HomeDestination: Hashable {
     case routeList
 }
 
+/// "Planifica tu viaje" hub — separate from `HomeDestination.routeList` so its route/stop
+/// picker (below) can always land on `DayScheduleSelection` instead of `StopSelection`.
+enum TripPlannerDestination: Hashable {
+    case home
+    case routeList
+}
+
+struct TripPlannerRouteSelection: Hashable {
+    let route: BusRoute
+}
+
 struct StopSelection: Hashable {
     let stop: BusStop
     let primaryRouteId: String?
@@ -115,6 +126,9 @@ struct ContentView: View {
                             onShowSettings: {
                                 showSettings = true
                             },
+                            onPlanTrip: {
+                                navigationPath.append(TripPlannerDestination.home)
+                            },
                             onBoardBus: {
                                 Task {
                                     isSearchingBoardingStop = true
@@ -184,6 +198,27 @@ struct ContentView: View {
                 .navigationDestination(for: BusRoute.self) { route in
                     RouteStopsContainer(route: route, navigationPath: $navigationPath)
                 }
+                .navigationDestination(for: TripPlannerDestination.self) { destination in
+                    switch destination {
+                    case .home:
+                        TripPlannerView(
+                            onCheckAnotherDay: {
+                                navigationPath.append(TripPlannerDestination.routeList)
+                            },
+                        )
+                    case .routeList:
+                        RouteSelectionView(
+                            routes: routes,
+                            supportedRoutes: supportedRoutes,
+                            onRouteSelected: { route in
+                                navigationPath.append(TripPlannerRouteSelection(route: route))
+                            },
+                        )
+                    }
+                }
+                .navigationDestination(for: TripPlannerRouteSelection.self) { selection in
+                    TripPlannerRouteStopsContainer(route: selection.route, navigationPath: $navigationPath)
+                }
                 .navigationDestination(for: StopSelection.self) { selection in
                     NextDepartureView(
                         stop: selection.stop,
@@ -217,6 +252,7 @@ struct ContentView: View {
                         selectedVariantLabel: selection.departureLabel,
                         overrideDayType: selection.overrideDayType,
                         mergedDirectionLabel: selection.mergedDirectionLabel,
+                        allowDateSelection: selection.allowDateSelection,
                     )
                 }
                 .navigationDestination(for: MapSelection.self) { selection in
@@ -408,6 +444,69 @@ struct ContentView: View {
                 if todayViews.isEmpty {
                     // No service today — find any day type that has views so stops are still shown.
                     // NextDepartureView handles looking up to 7 days ahead for the actual departure.
+                    var fallback: [RouteView] = []
+                    for dayType in [DayType.weekday, .saturday, .sunday, .weekend, .holiday] {
+                        let v = await RouteDataService.shared.getRouteViews(routeId: route.id, dayType: dayType)
+                        if !v.isEmpty { fallback = v; break }
+                    }
+                    views = fallback
+                } else {
+                    views = todayViews
+                }
+                loaded = true
+            }
+        }
+    }
+
+    /// "Consultar otro día" variant of `RouteStopsContainer` — always lands directly on
+    /// `DayScheduleSelection` (with the date picker enabled) regardless of guided mode,
+    /// since the whole point of this flow is picking an arbitrary date, not today's direction.
+    private struct TripPlannerRouteStopsContainer: View {
+        let route: BusRoute
+        @Binding var navigationPath: NavigationPath
+        @State private var views: [RouteView]?
+        @State private var loaded = false
+
+        private var todayDayType: DayType {
+            TimetableService.shared.getCurrentDayType()
+        }
+
+        var body: some View {
+            Group {
+                if loaded {
+                    let resolvedViews = views ?? []
+                    RouteStopsView(
+                        route: route,
+                        views: resolvedViews,
+                        onAllRoutesSelected: nil,
+                        onStopSelected: { stop, viewId in
+                            let direction = resolvedViews.first { $0.id == viewId }?.direction ?? ""
+                            let label = resolvedViews.first { $0.id == viewId }?.departureLabel
+                            navigationPath.append(DayScheduleSelection(
+                                route: route,
+                                stop: stop,
+                                direction: direction,
+                                departureLabel: label,
+                                allowDateSelection: true,
+                            ))
+                        },
+                        onMapSelected: { viewId in
+                            navigationPath.append(MapSelection(
+                                route: route,
+                                routeViews: resolvedViews,
+                                initialViewId: viewId,
+                            ))
+                        },
+                    )
+                } else {
+                    ProgressView("Cargando paradas...")
+                }
+            }
+            .task {
+                let todayViews = await RouteDataService.shared.getRouteViews(
+                    routeId: route.id, dayType: todayDayType,
+                )
+                if todayViews.isEmpty {
                     var fallback: [RouteView] = []
                     for dayType in [DayType.weekday, .saturday, .sunday, .weekend, .holiday] {
                         let v = await RouteDataService.shared.getRouteViews(routeId: route.id, dayType: dayType)

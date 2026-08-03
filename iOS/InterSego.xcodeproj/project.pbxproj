@@ -75,6 +75,7 @@
 		A100000100000000000000AA /* ReviewPromptService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000100000000000000AA /* ReviewPromptService.swift */; };
 		A1000001000000000000005E /* HolidayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005E /* HolidayService.swift */; };
 		A1000001000000000000005F /* Holidays in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000005F /* Holidays */; };
+		A10000010000000000000060 /* TripPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000060 /* TripPlannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -146,6 +147,7 @@
 		A30000010000000000000001 /* InterSego.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterSego.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000001000000000000005E /* HolidayService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolidayService.swift; sourceTree = "<group>"; };
 		A2000001000000000000005F /* Holidays */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Holidays; sourceTree = "<group>"; };
+		A20000010000000000000060 /* TripPlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripPlannerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -270,6 +272,7 @@
 				A2000001000000000000005A /* MonitoringConsentView.swift */,
 				A200000100000000000000A9 /* NotificationConsentView.swift */,
 				A2000001000000000000005D /* BugReportView.swift */,
+				A20000010000000000000060 /* TripPlannerView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -422,6 +425,7 @@
 				A100000100000000000000A5 /* FeedbackCoordinator.swift in Sources */,
 				A100000100000000000000AA /* ReviewPromptService.swift in Sources */,
 				A1000001000000000000005E /* HolidayService.swift in Sources */,
+				A10000010000000000000060 /* TripPlannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
