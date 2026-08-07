@@ -19,8 +19,9 @@ struct DayScheduleSelection: Hashable {
     let overrideDayType: DayType?
     let mergedDirectionLabel: String?
     let allowDateSelection: Bool
+    let initialDate: Date
 
-    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false) {
+    init(route: BusRoute, stop: BusStop, direction: String, departureLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false, initialDate: Date = Date()) {
         self.route = route
         self.stop = stop
         self.direction = direction
@@ -28,6 +29,7 @@ struct DayScheduleSelection: Hashable {
         self.overrideDayType = overrideDayType
         self.mergedDirectionLabel = mergedDirectionLabel
         self.allowDateSelection = allowDateSelection
+        self.initialDate = initialDate
     }
 }
 
@@ -42,7 +44,7 @@ struct DayScheduleView: View {
     let mergedDirectionLabel: String?
     let allowDateSelection: Bool
 
-    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false) {
+    init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false, initialDate: Date = Date()) {
         self.route = route
         self.stop = stop
         self.direction = direction
@@ -50,6 +52,7 @@ struct DayScheduleView: View {
         self.overrideDayType = overrideDayType
         self.mergedDirectionLabel = mergedDirectionLabel
         self.allowDateSelection = allowDateSelection
+        _selectedDate = State(initialValue: initialDate)
     }
 
     @State private var timetables: [BusTimetable] = []
@@ -64,7 +67,7 @@ struct DayScheduleView: View {
     // "Consultar otro día" flow only — the pre-existing overrideDayType path (from
     // NextDepartureView's "Ver horario completo") keeps its existing today-anchored
     // weekday/seasonal resolution below, unchanged.
-    @State private var selectedDate = Date()
+    @State private var selectedDate: Date
     @State private var showDatePicker = false
 
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()

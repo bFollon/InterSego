@@ -29,11 +29,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -73,9 +72,8 @@ fun LandingScreen(
     onNavigateToRouteList: () -> Unit,
     onFindClosestStop: () -> Unit = {},
     onShowAbout: () -> Unit = {},
-    onShowReminders: () -> Unit = {},
     onShowSettings: () -> Unit = {},
-    onNavigateToTripPlanner: () -> Unit = {},
+    onNavigateToOtrasOpciones: () -> Unit = {},
     onBoardBus: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
     closestStopError: String? = null,
@@ -204,25 +202,12 @@ fun LandingScreen(
                 }
 
                 SquareLandingCard(
-                    label = "Mis recordatorios",
-                    onClick = onShowReminders,
+                    label = "Otras opciones",
+                    onClick = onNavigateToOtrasOpciones,
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp).padding(8.dp)
-                    )
-                }
-
-                SquareLandingCard(
-                    label = "Planifica tu viaje",
-                    onClick = onNavigateToTripPlanner,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CalendarMonth,
+                        imageVector = Icons.Filled.Apps,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(40.dp).padding(8.dp)

@@ -65,6 +65,7 @@ fun DayScheduleScreen(
     overrideDayType: DayType? = null,
     mergedDirectionLabel: String? = null,
     allowDateSelection: Boolean = false,
+    initialDate: LocalDate = LocalDate.now(),
     reminderService: ReminderService? = null,
     onBack: () -> Unit
 ) {
@@ -74,7 +75,7 @@ fun DayScheduleScreen(
     // "Consultar otro día" flow only — the pre-existing overrideDayType path (from
     // NextDepartureScreen's "Ver horario completo") keeps its existing today-anchored
     // weekday/seasonal resolution below, unchanged.
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var selectedDate by remember { mutableStateOf(initialDate) }
     var showDatePicker by remember { mutableStateOf(false) }
     val isToday = !allowDateSelection || selectedDate == LocalDate.now()
     val calendarForSelectedDate = remember(selectedDate) {

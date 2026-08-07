@@ -13,9 +13,8 @@ struct LandingView: View {
     let onShowRouteList: () -> Void
     let onFindClosestStop: () -> Void
     let onShowAbout: () -> Void
-    let onShowReminders: () -> Void
     let onShowSettings: () -> Void
-    let onPlanTrip: () -> Void
+    let onShowOtrasOpciones: () -> Void
     let onBoardBus: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
@@ -117,20 +116,9 @@ struct LandingView: View {
                     .buttonStyle(.plain)
                     .aspectRatio(1, contentMode: .fit)
 
-                    Button(action: onShowReminders) {
-                        SquareCard(label: "Mis recordatorios") {
-                            Image(systemName: "bell.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.accentColor)
-                                .frame(width: 40, height: 40)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .aspectRatio(1, contentMode: .fit)
-
-                    Button(action: onPlanTrip) {
-                        SquareCard(label: "Planifica tu viaje") {
-                            Image(systemName: "calendar")
+                    Button(action: onShowOtrasOpciones) {
+                        SquareCard(label: "Otras opciones") {
+                            Image(systemName: "square.grid.2x2")
                                 .font(.system(size: 24))
                                 .foregroundColor(.accentColor)
                                 .frame(width: 40, height: 40)
@@ -247,7 +235,7 @@ struct HorizontalCard<Icon: View>: View {
     }
 }
 
-private struct SquareCard<Icon: View>: View {
+struct SquareCard<Icon: View>: View {
     let label: String
     @ViewBuilder let icon: () -> Icon
 
