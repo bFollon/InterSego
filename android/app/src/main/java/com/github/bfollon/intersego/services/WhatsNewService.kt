@@ -44,12 +44,12 @@ object WhatsNewService {
         WhatsNewEntry(
             icon = Icons.Filled.Apps,
             title = "“Mis recordatorios” se movió",
-            body = "Ahora lo encontrarás dentro de “Otras opciones”, junto con las nuevas funciones."
+            body = "Ahora lo encontrarás dentro de “Más opciones”, junto con las nuevas funciones."
         ),
         WhatsNewEntry(
             icon = Icons.Filled.CalendarMonth,
             title = "Consulta otro día",
-            body = "Desde “Otras opciones” puedes elegir una fecha futura y ver los horarios de cualquier línea para ese día, con aviso de festivos incluido."
+            body = "Desde “Más opciones” puedes elegir una fecha futura y ver los horarios de cualquier línea para ese día, con aviso de festivos incluido."
         ),
         WhatsNewEntry(
             icon = Icons.Filled.EventBusy,

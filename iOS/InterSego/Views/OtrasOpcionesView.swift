@@ -9,7 +9,7 @@
 
 import SwiftUI
 
-/// Menu screen reached from Landing's "Otras opciones" card — groups secondary features
+/// Menu screen reached from Landing's "Más opciones" card — groups secondary features
 /// (reminders, trip planning, and future entries like "Cómo llegar") behind one grid, the
 /// same style as Landing's own square-card grid.
 ///
@@ -51,7 +51,7 @@ struct OtrasOpcionesView: View {
         .padding(.top, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(uiColor: .systemGroupedBackground))
-        .navigationTitle("Otras opciones")
+        .navigationTitle("Más opciones")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showDatePicker) {
             NavigationStack {

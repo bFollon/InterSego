@@ -14,7 +14,7 @@ enum HomeDestination: Hashable {
     case routeList
 }
 
-/// "Otras opciones" hub — separate from `HomeDestination.routeList` so its "Consultar otro
+/// "Más opciones" hub — separate from `HomeDestination.routeList` so its "Consultar otro
 /// día" route/stop picker (below) can always land on `DayScheduleSelection` instead of
 /// `StopSelection`. The target date is picked on the hub screen itself, before route/stop
 /// selection: a route's stops and views can differ completely by day type (e.g. M1's

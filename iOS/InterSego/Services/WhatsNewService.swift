@@ -36,12 +36,12 @@ enum WhatsNewService {
         WhatsNewEntry(
             icon: "square.grid.2x2",
             title: "\u{201c}Mis recordatorios\u{201d} se movió",
-            body: "Ahora lo encontrarás dentro de \u{201c}Otras opciones\u{201d}, junto con las nuevas funciones."
+            body: "Ahora lo encontrarás dentro de \u{201c}Más opciones\u{201d}, junto con las nuevas funciones."
         ),
         WhatsNewEntry(
             icon: "calendar",
             title: "Consulta otro día",
-            body: "Desde \u{201c}Otras opciones\u{201d} puedes elegir una fecha futura y ver los horarios de cualquier línea para ese día, con aviso de festivos incluido."
+            body: "Desde \u{201c}Más opciones\u{201d} puedes elegir una fecha futura y ver los horarios de cualquier línea para ese día, con aviso de festivos incluido."
         ),
         WhatsNewEntry(
             icon: "calendar.badge.exclamationmark",

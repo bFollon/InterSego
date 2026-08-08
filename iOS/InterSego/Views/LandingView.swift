@@ -117,7 +117,7 @@ struct LandingView: View {
                     .aspectRatio(1, contentMode: .fit)
 
                     Button(action: onShowOtrasOpciones) {
-                        SquareCard(label: "Otras opciones") {
+                        SquareCard(label: "Más opciones") {
                             Image(systemName: "square.grid.2x2")
                                 .font(.system(size: 24))
                                 .foregroundColor(.accentColor)

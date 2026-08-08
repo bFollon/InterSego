@@ -202,7 +202,7 @@ fun LandingScreen(
                 }
 
                 SquareLandingCard(
-                    label = "Otras opciones",
+                    label = "Más opciones",
                     onClick = onNavigateToOtrasOpciones,
                     modifier = Modifier.weight(1f)
                 ) {

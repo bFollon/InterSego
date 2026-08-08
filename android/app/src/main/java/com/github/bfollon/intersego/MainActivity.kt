@@ -902,7 +902,7 @@ fun AppNavigation(
             )
         }
 
-        // --- "Otras opciones" → "Consultar otro día" flow ---
+        // --- "Más opciones" → "Consultar otro día" flow ---
         // Asks for the target date FIRST, before route/stop selection: which stops exist (and
         // how a route's views are laid out) depends on the day type, so the date must be known
         // before we can show a correct stop list — mirrors how every other screen resolves its

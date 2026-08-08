@@ -44,7 +44,7 @@ import java.time.LocalDate
 private const val MILLIS_PER_DAY = 86_400_000L
 
 /**
- * Menu screen reached from Landing's "Otras opciones" card — groups secondary features
+ * Menu screen reached from Landing's "Más opciones" card — groups secondary features
  * (reminders, trip planning, and future entries like "Cómo llegar") behind one grid, the
  * same style as Landing's own square-card grid.
  *
@@ -63,7 +63,7 @@ fun OtrasOpcionesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Otras opciones") },
+                title = { Text("Más opciones") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
