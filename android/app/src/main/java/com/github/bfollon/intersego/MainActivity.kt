@@ -137,6 +137,8 @@ import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
 import com.github.bfollon.intersego.ui.screens.MonitoringConsentScreen
 import com.github.bfollon.intersego.ui.screens.NotificationConsentScreen
+import com.github.bfollon.intersego.ui.screens.WhatsNewScreen
+import com.github.bfollon.intersego.services.WhatsNewService
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeparturesService
 import com.github.bfollon.intersego.services.ErrorReportingService
@@ -268,6 +270,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             var isInitialized by remember { mutableStateOf(false) }
             var showMonitoringConsent by remember { mutableStateOf(false) }
             var showNotificationConsent by remember { mutableStateOf(false) }
+            var showWhatsNew by remember { mutableStateOf(false) }
 
             // Hoist services so the splash covers their initialization
             val reminderService = remember { ReminderService(this@MainActivity) }
@@ -292,6 +295,9 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 }
                 if (!NotificationPreferencesService.hasUserMadeNotificationChoice(this@MainActivity)) {
                     showNotificationConsent = true
+                }
+                if (WhatsNewService.shouldShow(this@MainActivity)) {
+                    showWhatsNew = true
                 }
 
                 // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
@@ -329,6 +335,13 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     } else if (showNotificationConsent) {
                         NotificationConsentScreen(
                             onDismiss = { showNotificationConsent = false }
+                        )
+                    } else if (showWhatsNew) {
+                        WhatsNewScreen(
+                            onDismiss = {
+                                WhatsNewService.markAsSeen(this@MainActivity)
+                                showWhatsNew = false
+                            }
                         )
                     }
                 }

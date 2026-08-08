@@ -68,6 +68,7 @@ struct ContentView: View {
     @State private var showSplash = true
     @State private var showMonitoringConsent = false
     @State private var showNotificationConsent = false
+    @State private var showWhatsNew = false
     @State private var showAbout = false
     @State private var showReminders = false
     @State private var showSettings = false
@@ -366,6 +367,20 @@ struct ContentView: View {
                     .ignoresSafeArea()
 
                 NotificationConsentView(isPresented: $showNotificationConsent)
+                    .frame(maxWidth: 500)
+                    .background(Color(uiColor: .systemBackground))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(radius: 20)
+                    .padding(40)
+            } else if showWhatsNew {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+
+                WhatsNewView(isPresented: $showWhatsNew)
                     .frame(maxWidth: 500)
                     .background(Color(uiColor: .systemBackground))
                     .cornerRadius(16)
@@ -742,6 +757,9 @@ struct ContentView: View {
         }
         if !NotificationPreferencesService.shared.hasUserMadeNotificationChoice() {
             showNotificationConsent = true
+        }
+        if WhatsNewService.shouldShow() {
+            showWhatsNew = true
         }
     }
 }
