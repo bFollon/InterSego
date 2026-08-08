@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.services.AnalyticsService
 import java.time.LocalDate
 
 private const val MILLIS_PER_DAY = 86_400_000L
@@ -125,6 +126,7 @@ fun OtrasOpcionesScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         showDatePicker = false
+                        AnalyticsService.track("check_another_day")
                         onCheckAnotherDay(LocalDate.ofEpochDay(millis / MILLIS_PER_DAY))
                     }
                 }) {

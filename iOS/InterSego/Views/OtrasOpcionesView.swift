@@ -72,6 +72,7 @@ struct OtrasOpcionesView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Aceptar") {
                             showDatePicker = false
+                            AnalyticsService.shared.track("check_another_day")
                             onCheckAnotherDay(pickedDate)
                         }
                     }
