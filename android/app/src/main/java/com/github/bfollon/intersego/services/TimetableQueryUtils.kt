@@ -11,6 +11,7 @@ package com.github.bfollon.intersego.services
 
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
+import java.time.LocalDate
 import java.util.Calendar
 
 /**
@@ -103,3 +104,8 @@ fun DayType.matchesDate(
     date: Calendar,
     isHoliday: (Calendar) -> Boolean = HolidayService::isHoliday
 ): Boolean = this in TimetableQueryUtils.dayTypesForDate(date, isHoliday)
+
+/** Converts to a [Calendar] at noon (avoids DST/midnight edge cases) for day-type resolution. */
+fun LocalDate.toNoonCalendar(): Calendar = Calendar.getInstance().apply {
+    set(year, monthValue - 1, dayOfMonth, 12, 0, 0)
+}

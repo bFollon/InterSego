@@ -65,6 +65,7 @@ fun DayScheduleScreen(
     overrideDayType: DayType? = null,
     mergedDirectionLabel: String? = null,
     allowDateSelection: Boolean = false,
+    initialDate: LocalDate = LocalDate.now(),
     reminderService: ReminderService? = null,
     onBack: () -> Unit
 ) {
@@ -74,7 +75,7 @@ fun DayScheduleScreen(
     // "Consultar otro día" flow only — the pre-existing overrideDayType path (from
     // NextDepartureScreen's "Ver horario completo") keeps its existing today-anchored
     // weekday/seasonal resolution below, unchanged.
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
+    var selectedDate by remember { mutableStateOf(initialDate) }
     var showDatePicker by remember { mutableStateOf(false) }
     val isToday = !allowDateSelection || selectedDate == LocalDate.now()
     val calendarForSelectedDate = remember(selectedDate) {
@@ -478,19 +479,28 @@ private fun DateSelectionHeader(
 
         if (holidayName != null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Festivo: $holidayName · horario de domingo",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-                )
-            }
+            FestivoBanner(holidayName)
         }
+    }
+}
+
+/**
+ * Purple banner explaining why a festivo is showing Sunday-shaped departures — shared between
+ * DaySchedule's "Consultar otro día" date header and NextDeparture's "today" case.
+ */
+@Composable
+internal fun FestivoBanner(holidayName: String) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "Festivo: $holidayName · horario de domingo",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+        )
     }
 }
 

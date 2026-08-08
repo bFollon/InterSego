@@ -14,15 +14,20 @@ enum HomeDestination: Hashable {
     case routeList
 }
 
-/// "Planifica tu viaje" hub — separate from `HomeDestination.routeList` so its route/stop
-/// picker (below) can always land on `DayScheduleSelection` instead of `StopSelection`.
-enum TripPlannerDestination: Hashable {
+/// "Otras opciones" hub — separate from `HomeDestination.routeList` so its "Consultar otro
+/// día" route/stop picker (below) can always land on `DayScheduleSelection` instead of
+/// `StopSelection`. The target date is picked on the hub screen itself, before route/stop
+/// selection: a route's stops and views can differ completely by day type (e.g. M1's
+/// circularA/B, M6's 7 variants), so the date must be known before a correct stop list can
+/// be shown for it.
+enum OtrasOpcionesDestination: Hashable {
     case home
-    case routeList
+    case routeList(Date)
 }
 
-struct TripPlannerRouteSelection: Hashable {
+struct OtrasOpcionesRouteSelection: Hashable {
     let route: BusRoute
+    let date: Date
 }
 
 struct StopSelection: Hashable {
@@ -63,6 +68,7 @@ struct ContentView: View {
     @State private var showSplash = true
     @State private var showMonitoringConsent = false
     @State private var showNotificationConsent = false
+    @State private var showWhatsNew = false
     @State private var showAbout = false
     @State private var showReminders = false
     @State private var showSettings = false
@@ -120,14 +126,11 @@ struct ContentView: View {
                             onShowAbout: {
                                 showAbout = true
                             },
-                            onShowReminders: {
-                                showReminders = true
-                            },
                             onShowSettings: {
                                 showSettings = true
                             },
-                            onPlanTrip: {
-                                navigationPath.append(TripPlannerDestination.home)
+                            onShowOtrasOpciones: {
+                                navigationPath.append(OtrasOpcionesDestination.home)
                             },
                             onBoardBus: {
                                 Task {
@@ -198,26 +201,29 @@ struct ContentView: View {
                 .navigationDestination(for: BusRoute.self) { route in
                     RouteStopsContainer(route: route, navigationPath: $navigationPath)
                 }
-                .navigationDestination(for: TripPlannerDestination.self) { destination in
+                .navigationDestination(for: OtrasOpcionesDestination.self) { destination in
                     switch destination {
                     case .home:
-                        TripPlannerView(
-                            onCheckAnotherDay: {
-                                navigationPath.append(TripPlannerDestination.routeList)
+                        OtrasOpcionesView(
+                            onShowReminders: {
+                                showReminders = true
+                            },
+                            onCheckAnotherDay: { date in
+                                navigationPath.append(OtrasOpcionesDestination.routeList(date))
                             },
                         )
-                    case .routeList:
+                    case .routeList(let date):
                         RouteSelectionView(
                             routes: routes,
                             supportedRoutes: supportedRoutes,
                             onRouteSelected: { route in
-                                navigationPath.append(TripPlannerRouteSelection(route: route))
+                                navigationPath.append(OtrasOpcionesRouteSelection(route: route, date: date))
                             },
                         )
                     }
                 }
-                .navigationDestination(for: TripPlannerRouteSelection.self) { selection in
-                    TripPlannerRouteStopsContainer(route: selection.route, navigationPath: $navigationPath)
+                .navigationDestination(for: OtrasOpcionesRouteSelection.self) { selection in
+                    OtrasOpcionesRouteStopsContainer(route: selection.route, date: selection.date, navigationPath: $navigationPath)
                 }
                 .navigationDestination(for: StopSelection.self) { selection in
                     NextDepartureView(
@@ -253,6 +259,7 @@ struct ContentView: View {
                         overrideDayType: selection.overrideDayType,
                         mergedDirectionLabel: selection.mergedDirectionLabel,
                         allowDateSelection: selection.allowDateSelection,
+                        initialDate: selection.initialDate,
                     )
                 }
                 .navigationDestination(for: MapSelection.self) { selection in
@@ -369,6 +376,20 @@ struct ContentView: View {
                     )
                     .shadow(radius: 20)
                     .padding(40)
+            } else if showWhatsNew {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+
+                WhatsNewView(isPresented: $showWhatsNew)
+                    .frame(maxWidth: 500)
+                    .background(Color(uiColor: .systemBackground))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(radius: 20)
+                    .padding(40)
             }
         }
         .task {
@@ -461,14 +482,15 @@ struct ContentView: View {
     /// "Consultar otro día" variant of `RouteStopsContainer` — always lands directly on
     /// `DayScheduleSelection` (with the date picker enabled) regardless of guided mode,
     /// since the whole point of this flow is picking an arbitrary date, not today's direction.
-    private struct TripPlannerRouteStopsContainer: View {
+    private struct OtrasOpcionesRouteStopsContainer: View {
         let route: BusRoute
+        let date: Date
         @Binding var navigationPath: NavigationPath
         @State private var views: [RouteView]?
         @State private var loaded = false
 
-        private var todayDayType: DayType {
-            TimetableService.shared.getCurrentDayType()
+        private var selectedDayType: DayType {
+            TimetableQuery.primaryDayType(date)
         }
 
         var body: some View {
@@ -488,6 +510,7 @@ struct ContentView: View {
                                 direction: direction,
                                 departureLabel: label,
                                 allowDateSelection: true,
+                                initialDate: date,
                             ))
                         },
                         onMapSelected: { viewId in
@@ -503,10 +526,10 @@ struct ContentView: View {
                 }
             }
             .task {
-                let todayViews = await RouteDataService.shared.getRouteViews(
-                    routeId: route.id, dayType: todayDayType,
+                let dateViews = await RouteDataService.shared.getRouteViews(
+                    routeId: route.id, dayType: selectedDayType,
                 )
-                if todayViews.isEmpty {
+                if dateViews.isEmpty {
                     var fallback: [RouteView] = []
                     for dayType in [DayType.weekday, .saturday, .sunday, .weekend, .holiday] {
                         let v = await RouteDataService.shared.getRouteViews(routeId: route.id, dayType: dayType)
@@ -514,7 +537,7 @@ struct ContentView: View {
                     }
                     views = fallback
                 } else {
-                    views = todayViews
+                    views = dateViews
                 }
                 loaded = true
             }
@@ -734,6 +757,9 @@ struct ContentView: View {
         }
         if !NotificationPreferencesService.shared.hasUserMadeNotificationChoice() {
             showNotificationConsent = true
+        }
+        if WhatsNewService.shouldShow() {
+            showWhatsNew = true
         }
     }
 }

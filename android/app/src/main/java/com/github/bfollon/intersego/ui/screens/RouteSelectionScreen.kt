@@ -10,16 +10,15 @@
 package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.github.bfollon.intersego.ui.theme.SuccessGreen
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.data.BusRoute
@@ -63,11 +62,13 @@ fun RouteSelectionScreen(
                 modifier = Modifier.padding(16.dp)
             )
 
-            // Route list
-            LazyColumn(
+            // Route grid
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(routes) { route ->
@@ -106,7 +107,9 @@ fun RouteCard(
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 96.dp),
         onClick = onClick,
         enabled = isAvailable,
         colors = CardDefaults.cardColors(
@@ -120,21 +123,20 @@ fun RouteCard(
             defaultElevation = if (isAvailable) 2.dp else 0.dp
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(12.dp)
         ) {
-            // Left side: Route info
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Route number
                 Text(
                     text = route.number,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (isAvailable) {
                         MaterialTheme.colorScheme.primary
@@ -143,57 +145,38 @@ fun RouteCard(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                if (!isAvailable) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "No disponible",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                }
+            }
 
-                // Route name
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Route name
+            Text(
+                text = route.name,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                color = if (isAvailable) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                }
+            )
+
+            if (!isAvailable) {
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = route.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (isAvailable) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    }
+                    text = "Próximamente",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
-
-            // Right side: Status indicator
-            StatusIndicator(isAvailable = isAvailable)
-        }
-    }
-}
-
-/**
- * Status indicator showing whether a route is available or not.
- *
- * @param isAvailable Whether the route has a parser implemented
- */
-@Composable
-fun StatusIndicator(isAvailable: Boolean) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = if (isAvailable) {
-                Icons.Default.CheckCircle
-            } else {
-                Icons.Default.Warning
-            },
-            contentDescription = if (isAvailable) "Disponible" else "No disponible",
-            tint = if (isAvailable) {
-                SuccessGreen
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-            }
-        )
-
-        if (!isAvailable) {
-            Text(
-                text = "Próximamente",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
         }
     }
 }

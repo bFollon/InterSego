@@ -137,6 +137,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import com.github.bfollon.intersego.services.HolidayService
 import java.util.Calendar
 
 // ============================================================================
@@ -217,6 +218,7 @@ fun NextDepartureScreen(
     val currentDayOfWeek = remember { Calendar.getInstance().get(Calendar.DAY_OF_WEEK) }
     val currentDayTypes = remember { TimetableQueryUtils.dayTypesForDate() }
     val currentDayType = remember { TimetableQueryUtils.primaryDayType() }
+    val todayHolidayName = remember { HolidayService.holidayName(Calendar.getInstance()) }
 
     // Load all routes serving this stop
     LaunchedEffect(stop.id) {
@@ -572,6 +574,17 @@ fun NextDepartureScreen(
                                 },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             )
+                        }
+                    }
+
+                    // Festivo banner — explains why today follows Sunday's schedule, shown even
+                    // when that means this route has no service today at all (daysAhead > 0),
+                    // so "next bus is tomorrow" isn't a mystery.
+                    if (todayHolidayName != null) {
+                        item {
+                            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                FestivoBanner(todayHolidayName)
+                            }
                         }
                     }
 
