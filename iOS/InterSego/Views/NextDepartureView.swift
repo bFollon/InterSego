@@ -385,9 +385,6 @@ struct NextDepartureView: View {
             }
         } else if let error = errorMessage {
             Text(error).foregroundColor(.red).multilineTextAlignment(.center).padding()
-        } else if departureInfo.departure == nil {
-            Text("No hay horarios disponibles para esta parada")
-                .font(.title3).multilineTextAlignment(.center).padding()
         } else {
             departureScrollView
         }
@@ -414,43 +411,49 @@ struct NextDepartureView: View {
                         .padding(.horizontal, 16).padding(.vertical, 12)
                 }
 
-                if info.daysAhead > 0 {
-                    FutureDayWarningCard(daysAhead: info.daysAhead)
+                if info.departure == nil {
+                    // No departures today nor in the next 7 days.
+                    NoDeparturesCard()
                         .padding(.horizontal, 16).padding(.vertical, 12)
+                } else {
+                    if info.daysAhead > 0 {
+                        FutureDayWarningCard(daysAhead: info.daysAhead)
+                            .padding(.horizontal, 16).padding(.vertical, 12)
+                    }
+
+                    if let next = info.departure {
+                        NextDepartureCard(
+                            tagged: next,
+                            currentTime: currentTime,
+                            selectedVariantLabel: variantLabel(for: next),
+                            daysAhead: info.daysAhead,
+                            showRouteBadge: isMultiRoute,
+                            adjustedETA: adjustedETA,
+                            boardingCount: matchingBoardings.count,
+                            bellState: isToday ? bellState(for: next) : .off,
+                            onBellTap: isToday ? { handleBellTap(for: next) } : nil,
+                            onBellLongPress: isToday ? { handleBellLongPress(for: next) } : nil,
+                        )
+                        .padding(.horizontal, 16).padding(.top, 8)
+                    }
+
+                    TimesDisclaimerCard()
+                        .padding(.horizontal, 16).padding(.top, 16)
+
+                    // "Estoy en el autobús" button — always visible for today, active within ±20 min
+                    if info.daysAhead == 0 {
+                        BoardingButton(
+                            confirmed: boardingConfirmed,
+                            isLoading: boardingSubmitting,
+                            isActive: isWithinBoardingWindow,
+                            onTap: handleBoardingTap,
+                            onInactiveTap: { showBoardingWindowTooltip = true }
+                        )
+                        .padding(.horizontal, 16).padding(.top, 12)
+                    }
                 }
 
-                if let next = info.departure {
-                    NextDepartureCard(
-                        tagged: next,
-                        currentTime: currentTime,
-                        selectedVariantLabel: variantLabel(for: next),
-                        daysAhead: info.daysAhead,
-                        showRouteBadge: isMultiRoute,
-                        adjustedETA: adjustedETA,
-                        boardingCount: matchingBoardings.count,
-                        bellState: isToday ? bellState(for: next) : .off,
-                        onBellTap: isToday ? { handleBellTap(for: next) } : nil,
-                        onBellLongPress: isToday ? { handleBellLongPress(for: next) } : nil,
-                    )
-                    .padding(.horizontal, 16).padding(.top, 8)
-                }
-
-                TimesDisclaimerCard()
-                    .padding(.horizontal, 16).padding(.top, 16)
-
-                // "Estoy en el autobús" button — always visible for today, active within ±20 min
-                if info.daysAhead == 0 {
-                    BoardingButton(
-                        confirmed: boardingConfirmed,
-                        isLoading: boardingSubmitting,
-                        isActive: isWithinBoardingWindow,
-                        onTap: handleBoardingTap,
-                        onInactiveTap: { showBoardingWindowTooltip = true }
-                    )
-                    .padding(.horizontal, 16).padding(.top, 12)
-                }
-
-                if let activeRoute = singleActiveRoute {
+                if let activeRoute = singleActiveRoute, info.departure != nil || !todayDepartures.isEmpty {
                     let scheduleOverrideDayType: DayType? = {
                         guard info.daysAhead > 0,
                               let futureDate = Calendar.current.date(byAdding: .day, value: info.daysAhead, to: Date())
@@ -865,6 +868,25 @@ private struct FutureDayWarningCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - No Departures Card
+
+private struct NoDeparturesCard: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.subheadline)
+            Text("No hay más salidas hoy ni en los próximos 7 días")
+                .font(.subheadline)
+                .lineSpacing(2)
+        }
+        .foregroundColor(.secondary)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

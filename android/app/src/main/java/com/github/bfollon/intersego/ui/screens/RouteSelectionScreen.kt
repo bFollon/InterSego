@@ -68,6 +68,7 @@ fun RouteSelectionScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -82,11 +83,6 @@ fun RouteSelectionScreen(
                             }
                         }
                     )
-                }
-
-                // Bottom spacing
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
