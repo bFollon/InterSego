@@ -14,6 +14,16 @@ struct DirectionPickerSelection: Hashable, Identifiable {
     let stop: BusStop
     let primaryRouteId: String?
     let primaryViewId: String?
+    /// When set, this picker was reached from the "Consultar otro día" flow: selecting a
+    /// direction should land on DayScheduleSelection for this date instead of StopSelection.
+    let date: Date?
+
+    init(stop: BusStop, primaryRouteId: String?, primaryViewId: String?, date: Date? = nil) {
+        self.stop = stop
+        self.primaryRouteId = primaryRouteId
+        self.primaryViewId = primaryViewId
+        self.date = date
+    }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -50,8 +60,17 @@ struct DirectionPickerView: View {
     let stop: BusStop
     let primaryRouteId: String?
     let primaryViewId: String?
+    let referenceDate: Date
     let onSelected: (String, String) -> Void
     @Environment(\.dismiss) private var dismiss
+
+    init(stop: BusStop, primaryRouteId: String?, primaryViewId: String?, referenceDate: Date = Date(), onSelected: @escaping (String, String) -> Void) {
+        self.stop = stop
+        self.primaryRouteId = primaryRouteId
+        self.primaryViewId = primaryViewId
+        self.referenceDate = referenceDate
+        self.onSelected = onSelected
+    }
 
     @State private var loading = true
     @State private var error: String?
@@ -136,7 +155,7 @@ struct DirectionPickerView: View {
 
         let departuresService = DeparturesService.shared
         let allRoutes = BusRouteRegistry.knownRoutes()
-        let departuresData = await departuresService.loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId)
+        let departuresData = await departuresService.loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId, referenceDate: referenceDate)
 
         // Build direction groups from the loaded routes
         var groups: [RouteDirectionGroup] = []

@@ -38,20 +38,24 @@ struct DayScheduleSelection: Hashable {
 struct DayScheduleView: View {
     let route: BusRoute
     let stop: BusStop
-    let direction: String
     let selectedVariantLabel: String?
     let overrideDayType: DayType?
     let mergedDirectionLabel: String?
     let allowDateSelection: Bool
 
+    // Direction can be swapped in-place (mirrors NextDepartureView's swap button) — starts from
+    // the direction the caller resolved, but the user can flip to the other direction this
+    // route serves at this stop without leaving the screen.
+    @State private var currentDirection: String
+
     init(route: BusRoute, stop: BusStop, direction: String, selectedVariantLabel: String?, overrideDayType: DayType? = nil, mergedDirectionLabel: String? = nil, allowDateSelection: Bool = false, initialDate: Date = Date()) {
         self.route = route
         self.stop = stop
-        self.direction = direction
         self.selectedVariantLabel = selectedVariantLabel
         self.overrideDayType = overrideDayType
         self.mergedDirectionLabel = mergedDirectionLabel
         self.allowDateSelection = allowDateSelection
+        _currentDirection = State(initialValue: direction)
         _selectedDate = State(initialValue: initialDate)
     }
 
@@ -101,12 +105,35 @@ struct DayScheduleView: View {
         let matching = timetables.filter { timetable in
             currentDayTypes.contains(timetable.dayType)
                 && timetable.stopId == stop.id
-                && (mergedDirectionLabel != nil || timetable.direction == direction)
+                && (mergedDirectionLabel != nil || timetable.direction == currentDirection)
         }
         return matching.flatMap { timetable in
             timetable.seasonalDepartures(month: currentMonth, weekday: currentWeekday)
-                .map { ($0, timetable.direction ?? direction) }
+                .map { ($0, timetable.direction ?? currentDirection) }
         }.sorted { $0.0 < $1.0 }
+    }
+
+    // Other directions this route serves at this stop (for the swap button) — irrelevant in
+    // merged-direction mode (e.g. M4 circular), where there's only one logical direction.
+    private var availableDirections: [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for t in timetables where currentDayTypes.contains(t.dayType) && t.stopId == stop.id {
+            guard let dir = t.direction, seen.insert(dir).inserted else { continue }
+            result.append(dir)
+        }
+        return result
+    }
+
+    private var swapDirection: String? {
+        mergedDirectionLabel == nil ? availableDirections.first { $0 != currentDirection } : nil
+    }
+
+    private var directionLabel: String {
+        if let mergedDirectionLabel { return mergedDirectionLabel }
+        if route.isCircular { return currentDirection }
+        let destination = currentDirection.split(separator: "→").last.map { $0.trimmingCharacters(in: .whitespaces) } ?? currentDirection
+        return "Dirección \(destination)"
     }
 
     private var dayTypeLabel: String {
@@ -144,6 +171,15 @@ struct DayScheduleView: View {
         content
             .navigationTitle("Horario del día")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let target = swapDirection {
+                        Button { currentDirection = target } label: {
+                            Image(systemName: "arrow.up.arrow.down")
+                        }
+                    }
+                }
+            }
             .task {
                 await loadTimetables()
             }
@@ -199,6 +235,19 @@ struct DayScheduleView: View {
                 if allowDateSelection {
                     DateSelectionHeader(selectedDate: $selectedDate, holidayName: holidayName, showDatePicker: $showDatePicker)
                 }
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                        .font(.subheadline)
+                    Text(stop.name)
+                        .font(.headline)
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                DirectionPill(directionLabel: directionLabel)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
                 Spacer()
                 Text(isToday ? "No hay horarios disponibles para hoy" : "No hay horarios disponibles para este día")
                     .font(.title3)
@@ -239,6 +288,11 @@ struct DayScheduleView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
+
+                    DirectionPill(directionLabel: directionLabel)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
 
                     // Timeline
                     VStack(spacing: 0) {
@@ -381,6 +435,24 @@ struct DayScheduleView: View {
             }
             await refreshReminderKeys()
         }
+    }
+}
+
+// MARK: - Direction Pill
+
+/// Small pill showing the direction this schedule is for — mirrors NextDepartureView's
+/// StopHeroHeader direction pill.
+private struct DirectionPill: View {
+    let directionLabel: String
+
+    var body: some View {
+        Text(directionLabel)
+            .font(.caption)
+            .foregroundColor(.accentColor)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Color.accentColor.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 

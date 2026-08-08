@@ -64,11 +64,16 @@ actor DeparturesService {
     ///   - stop: The bus stop to load departures for
     ///   - allRoutes: All available routes (used for metadata lookup)
     ///   - primaryRouteId: Optional route ID to filter to a single route
-    /// - Returns: DeparturesData containing today's and future departures
+    ///   - referenceDate: The date to resolve views/day-type against; defaults to today. Pass a
+    ///     specific date (e.g. from the "Consultar otro día" flow) so the returned views/directions
+    ///     match that date's day type rather than today's — otherwise resolved view IDs won't be
+    ///     found in a views list fetched for a different day type.
+    /// - Returns: DeparturesData containing today's (or referenceDate's) and future departures
     func loadDepartures(
         stop: BusStop,
         allRoutes: [BusRoute],
-        primaryRouteId: String? = nil
+        primaryRouteId: String? = nil,
+        referenceDate: Date = Date()
     ) async -> DeparturesData {
         // Determine which routes to load
         let routeIds: [String]
@@ -81,10 +86,9 @@ actor DeparturesService {
 
         // Load route data for all routes serving this stop
         var loadedRoutes: [RouteLoadedData] = []
-        let today = Date()
-        let currentDayTypes = TimetableQuery.dayTypesForDate(today)
-        let currentDayType = TimetableQuery.primaryDayType(today)
-        let currentWeekday = Calendar.current.component(.weekday, from: today)
+        let currentDayTypes = TimetableQuery.dayTypesForDate(referenceDate)
+        let currentDayType = TimetableQuery.primaryDayType(referenceDate)
+        let currentWeekday = Calendar.current.component(.weekday, from: referenceDate)
 
         for routeId in routeIds {
             guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
@@ -105,8 +109,8 @@ actor DeparturesService {
             loadedRoutes, stop: stop, dayTypes: currentDayTypes, weekday: currentWeekday
         )
 
-        // Build future departures (up to 7 days ahead) for each direction
-        let nextDayDepartures = buildNextDayDepartures(loadedRoutes, stop: stop)
+        // Build future departures (up to 7 days ahead of referenceDate) for each direction
+        let nextDayDepartures = buildNextDayDepartures(loadedRoutes, stop: stop, referenceDate: referenceDate)
 
         return DeparturesData(
             todayTaggedDepartures: todayDepartures,
@@ -120,9 +124,10 @@ actor DeparturesService {
     func resolveDirectionIfUnambiguous(
         stop: BusStop,
         allRoutes: [BusRoute],
-        primaryRouteId: String?
+        primaryRouteId: String?,
+        referenceDate: Date = Date()
     ) async -> (String, String)? {
-        let data = await loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId)
+        let data = await loadDepartures(stop: stop, allRoutes: allRoutes, primaryRouteId: primaryRouteId, referenceDate: referenceDate)
         var count = 0
         var resolved: (String, String)? = nil
 
@@ -173,12 +178,13 @@ actor DeparturesService {
     /// Returns a dictionary keyed by daysAhead, containing departures for that day.
     private func buildNextDayDepartures(
         _ loadedRoutes: [RouteLoadedData],
-        stop: BusStop
+        stop: BusStop,
+        referenceDate: Date
     ) -> [Int: [TaggedDeparture]] {
         var result: [Int: [TaggedDeparture]] = [:]
 
         for daysAhead in 1 ... 7 {
-            guard let futureDate = Calendar.current.date(byAdding: .day, value: daysAhead, to: Date()) else { continue }
+            guard let futureDate = Calendar.current.date(byAdding: .day, value: daysAhead, to: referenceDate) else { continue }
             let futureWeekday = Calendar.current.component(.weekday, from: futureDate)
 
             var tagged: [TaggedDeparture] = []

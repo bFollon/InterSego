@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +36,7 @@ import com.github.bfollon.intersego.services.RouteDataService
 fun RouteSelectionScreen(
     routes: List<BusRoute>,
     routeDataService: RouteDataService,
+    onBack: (() -> Unit)? = null,
     onRouteSelected: (BusRoute) -> Unit
 ) {
     Scaffold(
@@ -42,6 +44,13 @@ fun RouteSelectionScreen(
         topBar = {
             TopAppBar(
                 title = { Text("InterSego - Segovia") },
+                navigationIcon = {
+                    if (onBack != null) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer

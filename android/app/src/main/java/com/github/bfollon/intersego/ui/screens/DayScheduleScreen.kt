@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -71,6 +72,11 @@ fun DayScheduleScreen(
 ) {
     val context = LocalContext.current
     val timetableService = remember { TimetableService(context) }
+
+    // Direction can be swapped in-place (mirrors NextDepartureScreen's swap button) — starts
+    // from the direction the caller resolved, but the user can flip to the other direction
+    // this route serves at this stop without leaving the screen.
+    var currentDirection by remember(direction) { mutableStateOf(direction) }
 
     // "Consultar otro día" flow only — the pre-existing overrideDayType path (from
     // NextDepartureScreen's "Ver horario completo") keeps its existing today-anchored
@@ -142,22 +148,40 @@ fun DayScheduleScreen(
     }
 
     // Each item is (departure, effectiveDirection) — direction may vary per-departure in merged mode.
-    val todayItems = remember(timetables, currentDayTypes, stop, direction, mergedDirectionLabel, weekdayForSeasonal, monthForSeasonal) {
+    val todayItems = remember(timetables, currentDayTypes, stop, currentDirection, mergedDirectionLabel, weekdayForSeasonal, monthForSeasonal) {
         timetables.filter {
             it.dayType in currentDayTypes &&
             it.stopId == stop.id &&
-            (mergedDirectionLabel != null || it.direction == direction)
+            (mergedDirectionLabel != null || it.direction == currentDirection)
         }.flatMap { timetable ->
             timetable.seasonalDepartures(month = monthForSeasonal, weekday = weekdayForSeasonal)
-                .map { dep -> Pair(dep, timetable.direction ?: direction) }
+                .map { dep -> Pair(dep, timetable.direction ?: currentDirection) }
         }.sortedBy { it.first.toMinutesSinceMidnight() }
     }
+
+    // Other directions this route serves at this stop (for the swap button) — irrelevant in
+    // merged-direction mode (e.g. M4 circular), where there's only one logical direction.
+    val availableDirections = remember(timetables, currentDayTypes, stop) {
+        timetables.filter { it.dayType in currentDayTypes && it.stopId == stop.id }
+            .mapNotNull { it.direction }
+            .distinct()
+    }
+    val swapDirection = if (mergedDirectionLabel == null) availableDirections.firstOrNull { it != currentDirection } else null
 
     val dayTypeLabel = remember(overrideDayType, allowDateSelection, selectedDate) {
         when (effectiveDayType) {
             DayType.SATURDAY, DayType.WEEKEND -> "Sábado"
             DayType.SUNDAY, DayType.HOLIDAY -> "Domingo"
             else -> "Lunes a Viernes"
+        }
+    }
+
+    val directionLabel = remember(mergedDirectionLabel, route.isCircular, currentDirection) {
+        mergedDirectionLabel ?: if (route.isCircular) {
+            currentDirection
+        } else {
+            val destination = currentDirection.split("→").lastOrNull()?.trim() ?: currentDirection
+            "Dirección $destination"
         }
     }
 
@@ -187,6 +211,16 @@ fun DayScheduleScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
+                    }
+                },
+                actions = {
+                    if (swapDirection != null) {
+                        IconButton(onClick = { currentDirection = swapDirection }) {
+                            Icon(
+                                imageVector = Icons.Filled.SwapVert,
+                                contentDescription = "Cambiar dirección"
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -235,6 +269,29 @@ fun DayScheduleScreen(
                             onPickDate = { showDatePicker = true }
                         )
                     }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stop.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    DirectionPill(
+                        directionLabel = directionLabel,
+                        modifier = Modifier.padding(horizontal = 20.dp)
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -323,6 +380,14 @@ fun DayScheduleScreen(
                                 )
                             }
                         }
+                    }
+
+                    item {
+                        DirectionPill(
+                            directionLabel = directionLabel,
+                            modifier = Modifier.padding(horizontal = 20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     // Departures with interleaved marker
@@ -432,6 +497,29 @@ fun DayScheduleScreen(
 }
 
 private const val MILLIS_PER_DAY = 86_400_000L
+
+/**
+ * Small pill showing the direction this schedule is for — mirrors NextDepartureScreen's
+ * StopHeroHeader direction pill.
+ */
+@Composable
+private fun DirectionPill(
+    directionLabel: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+    ) {
+        Text(
+            text = directionLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
+    }
+}
 
 /**
  * Compact date affordance + festivo banner for the "Consultar otro día" flow.

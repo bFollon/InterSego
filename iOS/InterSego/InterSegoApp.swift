@@ -237,16 +237,38 @@ struct ContentView: View {
                         stop: selection.stop,
                         primaryRouteId: selection.primaryRouteId,
                         primaryViewId: selection.primaryViewId,
+                        referenceDate: selection.date ?? Date(),
                         onSelected: { routeId, viewId in
-                            // Replace the DirectionPickerSelection with the StopSelection so
-                            // pressing Back from NextDeparture skips past the picker entirely
-                            // rather than re-triggering it (which causes an auto-advance loop).
-                            navigationPath.removeLast()
-                            navigationPath.append(StopSelection(
-                                stop: selection.stop,
-                                primaryRouteId: routeId,
-                                primaryViewId: viewId
-                            ))
+                            // Replace the DirectionPickerSelection with the resolved destination
+                            // so pressing Back skips past the picker entirely rather than
+                            // re-triggering it (which causes an auto-advance loop). For the
+                            // date-picker flow, resolve the destination BEFORE popping — popping
+                            // first would briefly reveal the screen underneath the picker while
+                            // the async lookup is still in flight.
+                            if let date = selection.date {
+                                Task {
+                                    let dayType = TimetableQuery.primaryDayType(date)
+                                    let resolvedViews = await RouteDataService.shared.getRouteViews(routeId: routeId, dayType: dayType)
+                                    let view = resolvedViews.first { $0.id == viewId }
+                                    guard let resolvedRoute = (routes.first { $0.id == routeId } ?? BusRouteRegistry.knownRoutes().first { $0.id == routeId }) else { return }
+                                    navigationPath.removeLast()
+                                    navigationPath.append(DayScheduleSelection(
+                                        route: resolvedRoute,
+                                        stop: selection.stop,
+                                        direction: view?.direction ?? "",
+                                        departureLabel: view?.departureLabel,
+                                        allowDateSelection: true,
+                                        initialDate: date,
+                                    ))
+                                }
+                            } else {
+                                navigationPath.removeLast()
+                                navigationPath.append(StopSelection(
+                                    stop: selection.stop,
+                                    primaryRouteId: routeId,
+                                    primaryViewId: viewId
+                                ))
+                            }
                         }
                     )
                 }
@@ -479,9 +501,9 @@ struct ContentView: View {
         }
     }
 
-    /// "Consultar otro día" variant of `RouteStopsContainer` — always lands directly on
-    /// `DayScheduleSelection` (with the date picker enabled) regardless of guided mode,
-    /// since the whole point of this flow is picking an arbitrary date, not today's direction.
+    /// "Consultar otro día" variant of `RouteStopsContainer` — lands on `DayScheduleSelection`
+    /// (with the date picker enabled) for the picked date instead of `StopSelection`/today,
+    /// but otherwise mirrors `RouteStopsContainer`'s guided-mode direction resolution.
     private struct OtrasOpcionesRouteStopsContainer: View {
         let route: BusRoute
         let date: Date
@@ -502,16 +524,37 @@ struct ContentView: View {
                         views: resolvedViews,
                         onAllRoutesSelected: nil,
                         onStopSelected: { stop, viewId in
-                            let direction = resolvedViews.first { $0.id == viewId }?.direction ?? ""
-                            let label = resolvedViews.first { $0.id == viewId }?.departureLabel
-                            navigationPath.append(DayScheduleSelection(
-                                route: route,
-                                stop: stop,
-                                direction: direction,
-                                departureLabel: label,
-                                allowDateSelection: true,
-                                initialDate: date,
-                            ))
+                            if GuidedModePrefs.isGuidedModeEnabled() {
+                                Task {
+                                    let allRoutes = BusRouteRegistry.knownRoutes()
+                                    if let resolved = await DeparturesService.shared.resolveDirectionIfUnambiguous(stop: stop, allRoutes: allRoutes, primaryRouteId: route.id, referenceDate: date) {
+                                        let resolvedViewsForRoute = await RouteDataService.shared.getRouteViews(routeId: resolved.0, dayType: selectedDayType)
+                                        let view = resolvedViewsForRoute.first { $0.id == resolved.1 }
+                                        let resolvedRoute = allRoutes.first { $0.id == resolved.0 } ?? route
+                                        navigationPath.append(DayScheduleSelection(
+                                            route: resolvedRoute,
+                                            stop: stop,
+                                            direction: view?.direction ?? "",
+                                            departureLabel: view?.departureLabel,
+                                            allowDateSelection: true,
+                                            initialDate: date,
+                                        ))
+                                    } else {
+                                        navigationPath.append(DirectionPickerSelection(stop: stop, primaryRouteId: route.id, primaryViewId: viewId, date: date))
+                                    }
+                                }
+                            } else {
+                                let direction = resolvedViews.first { $0.id == viewId }?.direction ?? ""
+                                let label = resolvedViews.first { $0.id == viewId }?.departureLabel
+                                navigationPath.append(DayScheduleSelection(
+                                    route: route,
+                                    stop: stop,
+                                    direction: direction,
+                                    departureLabel: label,
+                                    allowDateSelection: true,
+                                    initialDate: date,
+                                ))
+                            }
                         },
                         onMapSelected: { viewId in
                             navigationPath.append(MapSelection(

@@ -68,12 +68,17 @@ class DeparturesService(private val context: Context) {
      * @param stop The bus stop to load departures for
      * @param allRoutes All available routes (used for metadata lookup)
      * @param primaryRouteId Optional route ID to filter to a single route
-     * @return DeparturesData containing today's and future departures
+     * @param referenceDate The date to resolve views/day-type against; defaults to today. Pass
+     *   a specific date (e.g. from the "Consultar otro día" flow) so the returned views/directions
+     *   match that date's day type rather than today's — otherwise resolved view IDs won't be
+     *   found in a views list fetched for a different day type.
+     * @return DeparturesData containing today's (or referenceDate's) and future departures
      */
     suspend fun loadDepartures(
         stop: BusStop,
         allRoutes: List<BusRoute>,
-        primaryRouteId: String? = null
+        primaryRouteId: String? = null,
+        referenceDate: Calendar = Calendar.getInstance()
     ): DeparturesData {
         // Determine which routes to load
         val routeIds = if (primaryRouteId != null && primaryRouteId != "none") {
@@ -84,9 +89,8 @@ class DeparturesService(private val context: Context) {
 
         // Load route data for all routes serving this stop
         val loadedRoutes = mutableListOf<RouteLoadedData>()
-        val today = Calendar.getInstance()
-        val currentDayTypes = TimetableQueryUtils.dayTypesForDate(today)
-        val currentDayType = TimetableQueryUtils.primaryDayType(today)
+        val currentDayTypes = TimetableQueryUtils.dayTypesForDate(referenceDate)
+        val currentDayType = TimetableQueryUtils.primaryDayType(referenceDate)
 
         for (routeId in routeIds) {
             val route = allRoutes.find { it.id == routeId } ?: continue
@@ -105,13 +109,13 @@ class DeparturesService(private val context: Context) {
             }
         }
 
-        val currentDayOfWeek = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        val currentDayOfWeek = referenceDate.get(Calendar.DAY_OF_WEEK)
 
-        // Build today's departures for all available directions
+        // Build today's (or referenceDate's) departures for all available directions
         val todayDepartures = buildTodayDepartures(loadedRoutes, stop, currentDayTypes, currentDayOfWeek)
 
-        // Build future departures (up to 7 days ahead) for each direction
-        val nextDayDepartures = buildNextDayDepartures(loadedRoutes, stop, currentDayOfWeek)
+        // Build future departures (up to 7 days ahead of referenceDate) for each direction
+        val nextDayDepartures = buildNextDayDepartures(loadedRoutes, stop, referenceDate)
 
         return DeparturesData(
             todayTaggedDepartures = todayDepartures,
@@ -127,10 +131,11 @@ class DeparturesService(private val context: Context) {
     suspend fun resolveDirectionIfUnambiguous(
         stop: BusStop,
         allRoutes: List<BusRoute>,
-        primaryRouteId: String?
+        primaryRouteId: String?,
+        referenceDate: Calendar = Calendar.getInstance()
     ): Pair<String, String>? {
         return try {
-            val data = loadDepartures(stop, allRoutes, primaryRouteId)
+            val data = loadDepartures(stop, allRoutes, primaryRouteId, referenceDate)
             var count = 0
             var resolved: Pair<String, String>? = null
 
@@ -187,12 +192,12 @@ class DeparturesService(private val context: Context) {
     private fun buildNextDayDepartures(
         loadedRoutes: List<RouteLoadedData>,
         stop: BusStop,
-        currentDayOfWeek: Int
+        referenceDate: Calendar
     ): Map<Int, List<TaggedDeparture>> {
         val result = mutableMapOf<Int, List<TaggedDeparture>>()
 
         for (daysAhead in 1..7) {
-            val calendar = Calendar.getInstance()
+            val calendar = referenceDate.clone() as Calendar
             calendar.add(Calendar.DAY_OF_YEAR, daysAhead)
             val futureDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
 

@@ -53,6 +53,7 @@ fun DirectionPickerScreen(
     primaryViewId: String?,
     stop: BusStop,
     allRoutes: List<BusRoute>,
+    referenceDate: Calendar = Calendar.getInstance(),
     onDirectionSelected: (routeId: String, viewId: String) -> Unit,
     onBack: () -> Unit
 ) {
@@ -71,7 +72,7 @@ fun DirectionPickerScreen(
         error = null
         try {
             val departuresService = DeparturesService(context)
-            val departuresData = departuresService.loadDepartures(stop, allRoutes, primaryRouteId)
+            val departuresData = departuresService.loadDepartures(stop, allRoutes, primaryRouteId, referenceDate)
 
             // Build direction groups from the loaded routes
             val groups = mutableListOf<RouteDirectionGroup>()

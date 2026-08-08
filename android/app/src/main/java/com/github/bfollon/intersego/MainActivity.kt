@@ -842,6 +842,7 @@ fun AppNavigation(
             RouteSelectionScreen(
                 routes = routes,
                 routeDataService = routeDataService,
+                onBack = { navController.popBackStack() },
                 onRouteSelected = { route ->
                     AnalyticsService.track("route_selected", mapOf("route" to route.id))
                     navController.navigate("route_stops/${route.id}")
@@ -924,6 +925,7 @@ fun AppNavigation(
             RouteSelectionScreen(
                 routes = routes,
                 routeDataService = routeDataService,
+                onBack = { navController.popBackStack() },
                 onRouteSelected = { route ->
                     navController.navigate("otras_opciones_route_stops/${route.id}/$epochDay")
                 }
@@ -958,10 +960,24 @@ fun AppNavigation(
                 onAllRoutesSelected = null,
                 onBack = { navController.popBackStack() },
                 onStopSelected = { stop, viewId ->
-                    val view = views.find { it.id == viewId }
-                    val direction = view?.direction ?: ""
-                    val label = view?.departureLabel ?: "all"
-                    navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/none?allowDateSelection=true&initialDate=$epochDay")
+                    if (GuidedModePrefs.isGuidedModeEnabled()) {
+                        coroutineScope.launch {
+                            val resolved = DeparturesService(activity).resolveDirectionIfUnambiguous(stop, routes, route.id, selectedDate.toNoonCalendar())
+                            if (resolved != null) {
+                                val resolvedView = routeDataService.getRouteViews(resolved.first, selectedDayType).find { it.id == resolved.second }
+                                val direction = resolvedView?.direction ?: ""
+                                val label = resolvedView?.departureLabel ?: "all"
+                                navController.navigate("day_schedule/${resolved.first}/${stop.id}/$direction/$label/none?allowDateSelection=true&initialDate=$epochDay")
+                            } else {
+                                navController.navigate("direction_picker/${stop.id}/${route.id}/$viewId?date=$epochDay")
+                            }
+                        }
+                    } else {
+                        val view = views.find { it.id == viewId }
+                        val direction = view?.direction ?: ""
+                        val label = view?.departureLabel ?: "all"
+                        navController.navigate("day_schedule/${route.id}/${stop.id}/$direction/$label/none?allowDateSelection=true&initialDate=$epochDay")
+                    }
                 },
                 onMapSelected = { viewId ->
                     navController.navigate("route_map/${route.id}/$viewId/none")
@@ -969,12 +985,18 @@ fun AppNavigation(
             )
         }
 
-        composable("direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}") { backStackEntry ->
+        composable(
+            "direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}?date={date}",
+            arguments = listOf(navArgument("date") { defaultValue = "none"; type = NavType.StringType })
+        ) { backStackEntry ->
             val stopId = backStackEntry.arguments?.getString("stopId") ?: return@composable
             val primaryRouteId = backStackEntry.arguments?.getString("primaryRouteId")
                 ?.takeIf { it != "none" }
             val primaryViewId = backStackEntry.arguments?.getString("primaryViewId")
                 ?.takeIf { it != "none" }
+            val pickedEpochDay = backStackEntry.arguments?.getString("date")
+                ?.takeIf { it != "none" }
+                ?.toLongOrNull()
 
             // Resolve stop from BusStopRegistry
             val stop = remember(stopId) {
@@ -996,13 +1018,27 @@ fun AppNavigation(
                 primaryViewId = primaryViewId,
                 stop = stop,
                 allRoutes = routes,
+                referenceDate = pickedEpochDay?.let { LocalDate.ofEpochDay(it).toNoonCalendar() } ?: java.util.Calendar.getInstance(),
                 onDirectionSelected = { routeId, viewId ->
                     // Pop the direction_picker off the back stack so pressing Back from
-                    // NextDeparture returns to wherever the user came from (stop list, etc.)
-                    // rather than re-triggering the picker.
-                    navController.navigate("next_departure/$stopId/$routeId/$viewId") {
-                        popUpTo("direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}") {
-                            inclusive = true
+                    // NextDeparture/DaySchedule returns to wherever the user came from (stop
+                    // list, etc.) rather than re-triggering the picker.
+                    if (pickedEpochDay != null) {
+                        val pickedDate = LocalDate.ofEpochDay(pickedEpochDay)
+                        val pickedDayType = TimetableQueryUtils.primaryDayType(pickedDate.toNoonCalendar())
+                        val resolvedView = routeDataService.getRouteViews(routeId, pickedDayType).find { it.id == viewId }
+                        val direction = resolvedView?.direction ?: ""
+                        val label = resolvedView?.departureLabel ?: "all"
+                        navController.navigate("day_schedule/$routeId/$stopId/$direction/$label/none?allowDateSelection=true&initialDate=$pickedEpochDay") {
+                            popUpTo("direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}?date={date}") {
+                                inclusive = true
+                            }
+                        }
+                    } else {
+                        navController.navigate("next_departure/$stopId/$routeId/$viewId") {
+                            popUpTo("direction_picker/{stopId}/{primaryRouteId}/{primaryViewId}?date={date}") {
+                                inclusive = true
+                            }
                         }
                     }
                 },
