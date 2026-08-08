@@ -57,6 +57,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.HolidayVillage
 import androidx.compose.material.icons.outlined.Info
@@ -530,21 +531,6 @@ fun NextDepartureScreen(
                     )
                 }
             }
-            nextTaggedDeparture == null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No hay horarios disponibles para esta parada",
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
             else -> {
                 LazyColumn(
                     modifier = Modifier
@@ -588,6 +574,14 @@ fun NextDepartureScreen(
                         }
                     }
 
+                    if (nextTaggedDeparture == null) {
+                        // No departures today nor in the next 7 days.
+                        item {
+                            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                                NoDeparturesCard()
+                            }
+                        }
+                    } else {
                     // Future day warning card
                     if (daysAhead > 0) {
                         item {
@@ -757,10 +751,12 @@ fun NextDepartureScreen(
                             )
                         }
                     }
+                    }
 
-                    // "Ver horario completo" — show whenever there's a clear single route context,
-                    // even when all of today's buses have passed or there's no service today.
-                    if (activeSingleRoute != null) {
+                    // "Ver horario completo" — show whenever there's a clear single route context
+                    // and there's something to see: either a departure is being displayed, or
+                    // today had departures that have all already passed (true empty state).
+                    if (activeSingleRoute != null && (nextTaggedDeparture != null || hasTodayDepartures)) {
                         item {
                             // When showing a future day, link to that day's full schedule.
                             val scheduleOverrideDayType = if (daysAhead > 0) {
@@ -942,6 +938,42 @@ fun FutureDayWarningCard(daysAhead: Int) {
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
                 color = WarningOrange,
+                lineHeight = 18.sp
+            )
+        }
+    }
+}
+
+/**
+ * Card shown when a stop/direction has no departures today nor in the next 7 days
+ * (e.g. a Saturday-only route where the next Saturday is a festivo).
+ */
+@Composable
+fun NoDeparturesCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.EventBusy,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = "No hay más salidas hoy ni en los próximos 7 días",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 18.sp
             )
         }
