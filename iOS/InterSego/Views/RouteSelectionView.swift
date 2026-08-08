@@ -24,7 +24,7 @@ struct RouteSelectionView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 4)
 
-                LazyVStack(spacing: 12) {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                     ForEach(routes) { route in
                         let isAvailable = supportedRoutes.contains(route.id)
                         RouteCardView(route: route, isAvailable: isAvailable)
@@ -52,34 +52,37 @@ private struct RouteCardView: View {
     let isAvailable: Bool
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
                 Text(route.number)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(isAvailable ? .accentColor : .secondary)
 
-                Text(route.name)
-                    .font(.body)
-                    .foregroundColor(isAvailable ? .primary : .secondary)
-            }
+                Spacer()
 
-            Spacer()
-
-            if isAvailable {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            } else {
-                HStack(spacing: 4) {
+                if !isAvailable {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.secondary)
-                    Text("Próximamente")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
+
+            Text(route.name)
+                .font(.caption)
+                .foregroundColor(isAvailable ? .primary : .secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !isAvailable {
+                Text("Próximamente")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
         }
-        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .frame(minHeight: 96, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemGroupedBackground))
