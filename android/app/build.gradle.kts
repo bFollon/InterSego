@@ -22,8 +22,8 @@ android {
         applicationId = "com.github.bfollon.intersego"
         minSdk = 26
         targetSdk = 36
-        versionCode = 34
-        versionName = "2.10.1"
+        versionCode = 35
+        versionName = "2.10.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
