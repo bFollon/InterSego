@@ -165,11 +165,28 @@ object HolidayService {
 
     private val isoFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
+    /**
+     * Dev-only override for exercising festivo UI (e.g. NextDeparture's/DaySchedule's banner)
+     * without waiting for a real holiday to roll around — the real calendar only ever contains
+     * true festivos, so there's no other way to preview this on a physical device. Set to a
+     * non-null name, rebuild, and it's treated as today's festivo everywhere in the app; revert
+     * to `null` before committing. No effect on any date other than today.
+     */
+    var debugForceTodayHolidayName: String? = null
+
+    private fun isToday(date: Calendar): Boolean {
+        val today = Calendar.getInstance()
+        return date.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+            date.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
+    }
+
     /** True if [date] (defaults to today) is a known festivo. Never throws; false if no calendar is loaded. */
     fun isHoliday(date: Calendar = Calendar.getInstance()): Boolean =
-        holidayNamesByDate.containsKey(isoFormat.format(date.time))
+        holidayName(date) != null
 
     /** The festivo's name (e.g. "San Frutos") if [date] is a known holiday, else null. */
-    fun holidayName(date: Calendar = Calendar.getInstance()): String? =
-        holidayNamesByDate[isoFormat.format(date.time)]
+    fun holidayName(date: Calendar = Calendar.getInstance()): String? {
+        debugForceTodayHolidayName?.let { if (isToday(date)) return it }
+        return holidayNamesByDate[isoFormat.format(date.time)]
+    }
 }

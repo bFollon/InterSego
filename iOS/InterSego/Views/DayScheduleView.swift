@@ -422,18 +422,28 @@ private struct DateSelectionHeader: View {
             .buttonStyle(.plain)
 
             if let holidayName {
-                Text("Festivo: \(holidayName) · horario de domingo")
-                    .font(.subheadline)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.purple.opacity(0.12))
-                    .foregroundColor(.purple)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                FestivoBanner(holidayName: holidayName)
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
+    }
+}
+
+/// Purple banner explaining why a festivo is showing Sunday-shaped departures — shared between
+/// DaySchedule's "Consultar otro día" date header and NextDeparture's "today" case.
+struct FestivoBanner: View {
+    let holidayName: String
+
+    var body: some View {
+        Text("Festivo: \(holidayName) · horario de domingo")
+            .font(.subheadline)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.purple.opacity(0.12))
+            .foregroundColor(.purple)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

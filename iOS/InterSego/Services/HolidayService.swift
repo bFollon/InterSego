@@ -187,17 +187,25 @@ actor HolidayService {
         return formatter
     }()
 
+    /// Dev-only override for exercising festivo UI (e.g. NextDeparture's/DaySchedule's banner)
+    /// without waiting for a real holiday to roll around — the real calendar only ever contains
+    /// true festivos, so there's no other way to preview this on a physical device. Set to a
+    /// non-nil name, rebuild, and it's treated as today's festivo everywhere in the app; revert
+    /// to `nil` before committing. No effect on any date other than today.
+    nonisolated(unsafe) static var debugForceTodayHolidayName: String? = nil
+
     /// True if `date` is a known festivo. Never throws; false if no calendar is loaded.
     /// `nonisolated` and lock-backed so `TimetableQuery.dayTypesForDate` — called
     /// synchronously everywhere in the app — can use it as a default parameter.
     nonisolated static func isHoliday(_ date: Date = Date()) -> Bool {
-        lock.lock()
-        defer { lock.unlock() }
-        return holidayNamesByDate[isoFormatter.string(from: date)] != nil
+        holidayName(date) != nil
     }
 
     /// The festivo's name (e.g. "San Frutos") if `date` is a known holiday, else nil.
     nonisolated static func holidayName(_ date: Date = Date()) -> String? {
+        if let forced = debugForceTodayHolidayName, Calendar.current.isDateInToday(date) {
+            return forced
+        }
         lock.lock()
         defer { lock.unlock() }
         return holidayNamesByDate[isoFormatter.string(from: date)]

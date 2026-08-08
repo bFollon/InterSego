@@ -479,19 +479,28 @@ private fun DateSelectionHeader(
 
         if (holidayName != null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.tertiaryContainer,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Festivo: $holidayName · horario de domingo",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-                )
-            }
+            FestivoBanner(holidayName)
         }
+    }
+}
+
+/**
+ * Purple banner explaining why a festivo is showing Sunday-shaped departures — shared between
+ * DaySchedule's "Consultar otro día" date header and NextDeparture's "today" case.
+ */
+@Composable
+internal fun FestivoBanner(holidayName: String) {
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = "Festivo: $holidayName · horario de domingo",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+        )
     }
 }
 

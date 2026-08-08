@@ -119,6 +119,10 @@ struct NextDepartureView: View {
         TimetableQuery.primaryDayType()
     }
 
+    private var todayHolidayName: String? {
+        HolidayService.holidayName(Date())
+    }
+
     private var activeRoutesData: [RouteLoadedData] {
         if let id = selectedRouteId {
             return routesData.filter { $0.route.id == id }
@@ -400,6 +404,14 @@ struct NextDepartureView: View {
                     LineFilterChips(routes: routesData.map(\.route), selectedRouteId: $selectedRouteId)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
+                }
+
+                // Festivo banner — explains why today follows Sunday's schedule, shown even
+                // when that means this route has no service today at all (daysAhead > 0), so
+                // "next bus is tomorrow" isn't a mystery.
+                if let todayHolidayName {
+                    FestivoBanner(holidayName: todayHolidayName)
+                        .padding(.horizontal, 16).padding(.vertical, 12)
                 }
 
                 if info.daysAhead > 0 {
