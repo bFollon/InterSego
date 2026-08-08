@@ -170,6 +170,17 @@ Each timetable JSON has a top-level `"version"` field (e.g. `"3.4"`). `Timetable
 
 Polyline JSON files (`resources/route_polylines/`) also carry a `"version"` field (starting at `"1.0"`). Bump it whenever coordinates are edited — same discipline as timetable versions.
 
+## App Release Versioning
+
+App-store-facing version numbers are tracked independently per platform and are **not** the same as the timetable/polyline `"version"` fields above:
+
+- **Android**: `versionCode` (integer, +1 per release) and `versionName` (semver-ish, e.g. `"2.10.0"`) in `android/app/build.gradle.kts`
+- **iOS**: `MARKETING_VERSION` (e.g. `3.8.0`) in `iOS/InterSego.xcodeproj/project.pbxproj` (appears twice — Debug + Release build configs, must match); `CURRENT_PROJECT_VERSION` (build number) stays `1` and is not bumped per release
+
+Android and iOS version numbers drift from each other by design (different histories) — there's no requirement they match.
+
+**When to bump:** after merging a PR (or set of PRs) worth shipping, as a dedicated release commit — bump both platforms together, minor version +1 on each (Android `versionCode` +1 too), commit message `chore(InterSego): Release Android (X.Y.0) and iOS (A.B.0)`. Don't bump mid-feature-PR unless that PR's own commit already includes it.
+
 ## Development Rules
 
 ### Feature Tracker Maintenance
