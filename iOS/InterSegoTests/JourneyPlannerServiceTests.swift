@@ -102,6 +102,32 @@ final class JourneyPlannerServiceTests: XCTestCase {
         XCTAssertEqual(result[0].transferCount, 1)
     }
 
+    func testBoardingTheSameTripFurtherUpstreamViaAnUnnecessaryWalkBackDetourIsDroppedWhenItTiesTheDirectBoardingOnEveryOtherAxis() {
+        // Regression for a live-testing report: two candidates both end up on the exact same M4
+        // trip and reach the destination at the exact same time (arrival, transfers, and
+        // departure all tie) - one boards it sensibly at b, the other rides the first bus (M6)
+        // two stops further to c, walks back to d (upstream of b on the M4 trip), and boards the
+        // same M4 vehicle there instead. Same outcome, strictly more walking for no benefit.
+        let routeM6 = singleVariantRoute(
+            routeId: "M6", stops: [stop("a"), stop("b"), stop("c")],
+            stopSequenceIds: ["a", "b", "c"], dayType: .weekday,
+            trips: [[dep(0), dep(8), dep(12)]]
+        )
+        let routeM4 = singleVariantRoute(
+            routeId: "M4", stops: [stop("d"), stop("b"), stop("dest")],
+            stopSequenceIds: ["d", "b", "dest"], dayType: .weekday,
+            trips: [[dep(70), dep(73), dep(81)]]
+        )
+        let transfers = [TransferEdge(from: "c", to: "d", meters: 300, walkMinutes: 4)]
+        let result = JourneyPlannerService.findJourneys(routes: [routeM6, routeM4], transfers: transfers, query: query("a", "dest"))
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].legs, [
+            .ride(Leg.Ride(routeId: "M6", variantId: "out", fromStop: "a", toStop: "b", depMin: 0, arrMin: 8, isEstimated: false)),
+            .ride(Leg.Ride(routeId: "M4", variantId: "out", fromStop: "b", toStop: "dest", depMin: 73, arrMin: 81, isEstimated: false)),
+        ])
+    }
+
     func testUnreachableOriginDestinationReturnsEmptyNotACrash() {
         let routeA = singleVariantRoute(routeId: "M1", stops: [stop("a"), stop("b")], stopSequenceIds: ["a", "b"], dayType: .weekday, trips: [[dep(600), dep(610)]])
         let routeB = singleVariantRoute(routeId: "M2", stops: [stop("c"), stop("d")], stopSequenceIds: ["c", "d"], dayType: .weekday, trips: [[dep(600), dep(610)]])

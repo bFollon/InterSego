@@ -251,10 +251,20 @@ on the same query (`JourneyQuery.arriveBeforeMin` — when set, `departAfterMin`
   "prefers alighting at the destination directly" test for the regression case.
 - `rankAndDedupe` takes a **rank key of ordered ints, ascending = better** (callers negate
   fields where higher is naturally better, e.g. `-departureMin`) rather than a single primary
-  key, so depart-after (`[arrivalMin, transferCount, -departureMin]`) and arrive-before
-  (`[-departureMin, transferCount, arrivalMin]`) can use genuinely different orderings, not just
-  different primary values, while still sharing one implementation. Dominance filtering compares
-  the same key element-wise.
+  key, so depart-after (`[arrivalMin, transferCount, -departureMin, totalWalkMinutes]`) and
+  arrive-before (`[-departureMin, transferCount, arrivalMin, totalWalkMinutes]`) can use
+  genuinely different orderings, not just different primary values, while still sharing one
+  implementation. Dominance filtering compares the same key element-wise.
+- **Final tie-break: least total walking.** Two candidates can tie exactly on arrival, transfers,
+  *and* departure while still differing in effort — the case that motivated this: overshooting on
+  the first bus past the real transfer point, walking back, and boarding the *exact same onward
+  trip* further upstream than necessary. Because it's the same trip, the arrival is identical by
+  construction (same vehicle, same alighting stop); because both candidates share the same
+  boarding chain up to where they diverge, the departure ties too — so without this axis, the
+  needless detour would sit in the results as a second "option" with no real difference except
+  more walking. `totalWalkMinutes` (sum of every `Leg.Walk` in the journey) breaks that tie and
+  lets dominance filtering drop it. See `JourneyPlannerServiceTest.kt` /
+  `JourneyPlannerServiceTests.swift`'s "boarding the same trip further upstream" test.
 
 **Dominance filtering.** A different leg sequence is not automatically a genuine trade-off — a
 walk to a nearby stop the direct bus already serves, or alighting one stop early, produces a

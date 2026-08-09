@@ -110,6 +110,32 @@ class JourneyPlannerServiceTest : FunSpec({
         result[0].transferCount shouldBe 1
     }
 
+    test("boarding the same trip further upstream via an unnecessary walk-back detour is dropped when it ties the direct boarding on every other axis") {
+        // Regression for a live-testing report: two candidates both end up on the exact same M4
+        // trip and reach the destination at the exact same time (arrival, transfers, and
+        // departure all tie) - one boards it sensibly at b, the other rides the first bus (M6)
+        // two stops further to c, walks back to d (upstream of b on the M4 trip), and boards the
+        // same M4 vehicle there instead. Same outcome, strictly more walking for no benefit.
+        val routeM6 = singleVariantRoute(
+            "M6", listOf(stop("a"), stop("b"), stop("c")),
+            listOf("a", "b", "c"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(0), dep(8), dep(12))),
+        )
+        val routeM4 = singleVariantRoute(
+            "M4", listOf(stop("d"), stop("b"), stop("dest")),
+            listOf("d", "b", "dest"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(70), dep(73), dep(81))),
+        )
+        val transfers = listOf(TransferEdge("c", "d", meters = 300, walkMinutes = 4))
+        val result = JourneyPlannerService.findJourneys(listOf(routeM6, routeM4), transfers, query("a", "dest"))
+
+        result.size shouldBe 1
+        result[0].legs shouldBe listOf(
+            Leg.Ride("M6", "out", "a", "b", 0, 8, isEstimated = false),
+            Leg.Ride("M4", "out", "b", "dest", 73, 81, isEstimated = false),
+        )
+    }
+
     test("unreachable origin/destination returns empty, not a crash") {
         val routeA = singleVariantRoute("M1", listOf(stop("a"), stop("b")), listOf("a", "b"), DayType.WEEKDAY, listOf(listOf(dep(600), dep(610))))
         val routeB = singleVariantRoute("M2", listOf(stop("c"), stop("d")), listOf("c", "d"), DayType.WEEKDAY, listOf(listOf(dep(600), dep(610))))

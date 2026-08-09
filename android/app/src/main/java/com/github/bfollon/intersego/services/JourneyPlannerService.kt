@@ -168,10 +168,15 @@ object JourneyPlannerService {
             // though it's strictly worse (later arrival, extra walking, same everything else).
             // Latest-departure-first sidesteps that: such a detour never departs later than just
             // getting off at the right stop, so it can only win ties by *also* arriving earlier -
-            // which is never true of a walk-back detour. See docs/JOURNEY_PLANNER.md.
-            rankAndDedupe(journeys.filter { it.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin) }
+            // which is never true of a walk-back detour. Least total walk time is the final
+            // tie-break for the case that leaves untouched: overshooting on a bus past the real
+            // transfer point, then walking back to board that *same trip* earlier upstream - which
+            // ties exactly on arrival/transfers/departure (same trip, same everything) and would
+            // otherwise slip through as a second, needlessly effortful "option." See
+            // docs/JOURNEY_PLANNER.md.
+            rankAndDedupe(journeys.filter { it.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin, it.totalWalkMinutes()) }
         } else {
-            rankAndDedupe(journeys) { listOf(it.arrivalMin, it.transferCount, -it.departureMin) }
+            rankAndDedupe(journeys) { listOf(it.arrivalMin, it.transferCount, -it.departureMin, it.totalWalkMinutes()) }
         }
     }
 
@@ -242,6 +247,8 @@ object JourneyPlannerService {
         val transferCount = legs.count { it is Leg.Ride } - 1
         return Journey(legs = legs, departureMin = departureMin, arrivalMin = reached.timeMin, transferCount = transferCount)
     }
+
+    private fun Journey.totalWalkMinutes(): Int = legs.filterIsInstance<Leg.Walk>().sumOf { it.minutes }
 
     private fun walkMinutesBefore(legs: List<Leg>, firstRide: Leg.Ride): Int {
         var total = 0

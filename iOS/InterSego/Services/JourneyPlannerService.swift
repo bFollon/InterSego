@@ -162,10 +162,15 @@ enum JourneyPlannerService {
             // though it's strictly worse (later arrival, extra walking, same everything else).
             // Latest-departure-first sidesteps that: such a detour never departs later than just
             // getting off at the right stop, so it can only win ties by *also* arriving earlier -
-            // which is never true of a walk-back detour. See docs/JOURNEY_PLANNER.md.
-            return rankAndDedupe(journeys.filter { $0.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin] }
+            // which is never true of a walk-back detour. Least total walk time is the final
+            // tie-break for the case that leaves untouched: overshooting on a bus past the real
+            // transfer point, then walking back to board that *same trip* earlier upstream - which
+            // ties exactly on arrival/transfers/departure (same trip, same everything) and would
+            // otherwise slip through as a second, needlessly effortful "option." See
+            // docs/JOURNEY_PLANNER.md.
+            return rankAndDedupe(journeys.filter { $0.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin, totalWalkMinutes($0)] }
         } else {
-            return rankAndDedupe(journeys) { [$0.arrivalMin, $0.transferCount, -$0.departureMin] }
+            return rankAndDedupe(journeys) { [$0.arrivalMin, $0.transferCount, -$0.departureMin, totalWalkMinutes($0)] }
         }
     }
 
@@ -243,6 +248,13 @@ enum JourneyPlannerService {
         }
         let transferCount = legs.filter { if case .ride = $0 { return true }; return false }.count - 1
         return Journey(legs: legs, departureMin: departureMin, arrivalMin: reached.timeMin, transferCount: transferCount)
+    }
+
+    private static func totalWalkMinutes(_ journey: Journey) -> Int {
+        journey.legs.reduce(0) { total, leg in
+            if case .walk(let w) = leg { return total + w.minutes }
+            return total
+        }
     }
 
     private static func walkMinutesBefore(_ legs: [Leg], firstRide: Leg.Ride) -> Int {
