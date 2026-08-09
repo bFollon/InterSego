@@ -83,6 +83,7 @@ struct JourneyResultsView: View {
                         .foregroundStyle(.primary)
                     }
                 }
+                .listSectionSpacing(.compact)
             }
         }
         .navigationTitle("\(originName) → \(destinationName)")
