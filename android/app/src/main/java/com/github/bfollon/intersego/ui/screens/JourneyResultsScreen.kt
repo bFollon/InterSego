@@ -9,10 +9,12 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -21,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -103,12 +106,8 @@ private fun JourneyCard(journey: Journey, onClick: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 journey.legs.forEach { leg ->
                     when (leg) {
-                        is Leg.Ride -> AssistChip(onClick = {}, label = { Text(leg.routeId) }, leadingIcon = {
-                            Icon(Icons.Filled.DirectionsBus, contentDescription = null, modifier = Modifier.size(16.dp))
-                        })
-                        is Leg.Walk -> AssistChip(onClick = {}, label = { Text("${leg.minutes} min") }, leadingIcon = {
-                            Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, modifier = Modifier.size(16.dp))
-                        })
+                        is Leg.Ride -> LegChip(text = leg.routeId, icon = Icons.Filled.DirectionsBus)
+                        is Leg.Walk -> LegChip(text = "${leg.minutes} min", icon = Icons.AutoMirrored.Filled.DirectionsWalk)
                     }
                 }
             }
@@ -118,6 +117,29 @@ private fun JourneyCard(journey: Journey, onClick: () -> Unit) {
                 // cluster-estimated times shouldn't look more precise than the app is elsewhere.
                 TimesDisclaimerCard()
             }
+        }
+    }
+}
+
+/**
+ * Looks like an [AssistChip] but isn't clickable, so a tap anywhere on the card — including on
+ * one of these — reaches the card's own `onClick` instead of being swallowed by the chip's own
+ * ripple and doing nothing (matches iOS, where the whole row is one tap target).
+ */
+@Composable
+private fun LegChip(text: String, icon: ImageVector) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Text(text, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
