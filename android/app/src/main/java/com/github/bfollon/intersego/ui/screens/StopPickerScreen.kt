@@ -12,13 +12,13 @@ package com.github.bfollon.intersego.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -31,7 +31,9 @@ private fun normalize(s: String): String =
 
 /**
  * Searchable stop picker for the journey planner's origin/destination selection, grouped by
- * area, each row showing which routes serve it. Includes a "Mi ubicación" entry at the top when
+ * area, each row showing which routes serve it. Areas are rendered as their own rounded
+ * [GroupedCard] (matching iOS's inset-grouped `List` sections) so the break between one area's
+ * stops and the next reads clearly at a glance. Includes a "Mi ubicación" entry at the top when
  * [allowMyLocation] is true (degraded/hidden when location permission isn't available — the
  * caller decides via [allowMyLocation], this screen doesn't request permissions itself).
  */
@@ -84,18 +86,33 @@ fun StopPickerScreen(
                 singleLine = true,
             )
 
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 if (allowMyLocation && query.isBlank()) {
                     item {
-                        ListItem(
-                            headlineContent = { Text("Mi ubicación", fontWeight = FontWeight.Medium) },
-                            supportingContent = { Text("Usar mi ubicación actual") },
-                            leadingContent = {
-                                Icon(Icons.Filled.MyLocation, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            },
-                            modifier = Modifier.clickable { onMyLocationSelected() }
-                        )
-                        HorizontalDivider()
+                        GroupedCard {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().clickable { onMyLocationSelected() }.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.MyLocation,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(end = 12.dp)
+                                )
+                                Column {
+                                    Text("Mi ubicación", fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "Usar mi ubicación actual",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -105,17 +122,32 @@ fun StopPickerScreen(
                             text = area,
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
                     }
-                    items(stopsInArea) { entry ->
-                        ListItem(
-                            headlineContent = { Text(entry.stop.name) },
-                            supportingContent = { Text(entry.routeIds.joinToString(", ")) },
-                            modifier = Modifier.clickable { onStopSelected(entry.physicalStopId, entry.stop.name) }
-                        )
+                    item {
+                        GroupedCard {
+                            stopsInArea.forEachIndexed { index, entry ->
+                                if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onStopSelected(entry.physicalStopId, entry.stop.name) }
+                                        .padding(16.dp)
+                                ) {
+                                    Text(entry.stop.name)
+                                    Text(
+                                        entry.routeIds.joinToString(", "),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
+
+                item { Spacer(modifier = Modifier.height(1.dp)) }
             }
         }
     }

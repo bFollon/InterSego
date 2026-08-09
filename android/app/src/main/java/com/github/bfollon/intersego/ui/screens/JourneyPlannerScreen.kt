@@ -14,10 +14,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.*
@@ -66,7 +65,9 @@ fun JourneyPlannerScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var recents by remember { mutableStateOf(RecentJourneysService.recent(context)) }
     var locationError by remember { mutableStateOf<String?>(null) }
-    var resolvingLocation by remember { mutableStateOf(false) }
+    // Which field's "mi ubicación" lookup is in flight, if any - lets the field itself show a
+    // spinner and reject taps while resolving, rather than sitting inert with no feedback.
+    var resolvingTarget by remember { mutableStateOf<PickerTarget?>(null) }
     var hasLocationPermission by remember {
         mutableStateOf(
             androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -76,7 +77,7 @@ fun JourneyPlannerScreen(
 
     fun resolveMyLocation(target: PickerTarget) {
         coroutineScope.launch {
-            resolvingLocation = true
+            resolvingTarget = target
             locationError = null
             try {
                 val locationMgr = LocationManager(context)
@@ -106,7 +107,7 @@ fun JourneyPlannerScreen(
             } catch (e: Exception) {
                 locationError = "No se pudo determinar tu ubicación."
             } finally {
-                resolvingLocation = false
+                resolvingTarget = null
             }
         }
     }
@@ -133,86 +134,127 @@ fun JourneyPlannerScreen(
             )
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier.padding(paddingValues).padding(16.dp).fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    EndpointField(
-                        label = "Origen",
-                        endpoint = origin,
-                        onClick = { pickerTarget = PickerTarget.ORIGIN }
-                    )
-                    EndpointField(
-                        label = "Destino",
-                        endpoint = destination,
-                        onClick = { pickerTarget = PickerTarget.DESTINATION }
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        val tmp = origin
-                        origin = destination
-                        destination = tmp
+            item {
+                GroupedCard {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            EndpointRow(
+                                label = "Origen",
+                                endpoint = origin,
+                                isLoading = resolvingTarget == PickerTarget.ORIGIN,
+                                onClick = { pickerTarget = PickerTarget.ORIGIN }
+                            )
+                            HorizontalDivider()
+                            EndpointRow(
+                                label = "Destino",
+                                endpoint = destination,
+                                isLoading = resolvingTarget == PickerTarget.DESTINATION,
+                                onClick = { pickerTarget = PickerTarget.DESTINATION }
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val tmp = origin
+                                origin = destination
+                                destination = tmp
+                            }
+                        ) {
+                            Icon(Icons.Filled.SwapVert, contentDescription = "Intercambiar origen y destino")
+                        }
                     }
-                ) {
-                    Icon(Icons.Filled.SwapVert, contentDescription = "Intercambiar origen y destino")
                 }
             }
 
             if (locationError != null) {
-                Text(locationError!!, color = MaterialTheme.colorScheme.secondary, style = MaterialTheme.typography.bodySmall)
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(
-                    onClick = { showDatePicker = true },
-                    label = { Text(if (date == LocalDate.now()) "Hoy" else date.format(DateTimeFormatter.ofPattern("d MMM"))) },
-                    leadingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = null) }
-                )
-                AssistChip(
-                    onClick = { showTimePicker = true },
-                    label = { Text(departureTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Ahora") }
-                )
-            }
-
-            if (recents.isNotEmpty()) {
-                Text("Recientes", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
-                LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-                    items(recents) { recent ->
-                        ListItem(
-                            leadingContent = { Icon(Icons.Filled.History, contentDescription = null) },
-                            headlineContent = { Text("${recent.originName} → ${recent.destinationName}") },
-                            modifier = Modifier.clickable {
-                                origin = Endpoint(recent.originStopId, recent.originName)
-                                destination = Endpoint(recent.destinationStopId, recent.destinationName)
-                            }
+                item {
+                    GroupedCard {
+                        Text(
+                            locationError!!,
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
             }
 
-            Button(
-                onClick = {
-                    val o = origin
-                    val d = destination
-                    if (o != null && d != null) {
-                        RecentJourneysService.record(context, RecentJourney(o.physicalStopId, o.name, d.physicalStopId, d.name))
-                        val departAfterMin = departureTime?.let { it.hour * 60 + it.minute }
-                            ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
-                        onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, departAfterMin)
+            item {
+                GroupedCard {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Fecha", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        PillValue(
+                            text = if (date == LocalDate.now()) "Hoy" else date.format(DateTimeFormatter.ofPattern("d MMM")),
+                            onClick = { showDatePicker = true }
+                        )
                     }
-                },
-                enabled = origin != null && destination != null && origin?.physicalStopId != destination?.physicalStopId,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Buscar")
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Hora de salida", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                        PillValue(
+                            text = departureTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Ahora",
+                            onClick = { showTimePicker = true }
+                        )
+                    }
+                }
+            }
+
+            if (recents.isNotEmpty()) {
+                item {
+                    Text("Recientes", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+                }
+                item {
+                    GroupedCard {
+                        recents.forEachIndexed { index, recent ->
+                            if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        origin = Endpoint(recent.originStopId, recent.originName)
+                                        destination = Endpoint(recent.destinationStopId, recent.destinationName)
+                                    }
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Filled.History, contentDescription = null, modifier = Modifier.padding(end = 12.dp))
+                                Text("${recent.originName} → ${recent.destinationName}")
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Button(
+                    onClick = {
+                        val o = origin
+                        val d = destination
+                        if (o != null && d != null) {
+                            RecentJourneysService.record(context, RecentJourney(o.physicalStopId, o.name, d.physicalStopId, d.name))
+                            val departAfterMin = departureTime?.let { it.hour * 60 + it.minute }
+                                ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
+                            onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, departAfterMin)
+                        }
+                    },
+                    enabled = origin != null && destination != null && origin?.physicalStopId != destination?.physicalStopId,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Text("Buscar")
+                }
             }
         }
     }
@@ -293,16 +335,35 @@ fun JourneyPlannerScreen(
 }
 
 @Composable
-private fun EndpointField(label: String, endpoint: Endpoint?, onClick: () -> Unit) {
-    OutlinedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun EndpointRow(label: String, endpoint: Endpoint?, isLoading: Boolean, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !isLoading, onClick = onClick)
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                endpoint?.name ?: "Elegir parada",
+                if (isLoading) "Buscando ubicación…" else (endpoint?.name ?: "Elegir parada"),
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+            }
         }
+    }
+}
+
+@Composable
+private fun PillValue(text: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    ) {
+        Text(text, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium)
     }
 }
