@@ -232,6 +232,12 @@ struct TimetableLoader {
         try loadFile(routeId).version
     }
 
+    /// Raw stop id -> physicalStopId (defaults to itself when the JSON has no override).
+    func loadPhysicalStopIds(_ routeId: String) throws -> [String: String] {
+        let file = try loadFile(routeId)
+        return Dictionary(uniqueKeysWithValues: file.stops.map { ($0.id, $0.physicalStopId ?? $0.id) })
+    }
+
     /// Pure (no UIKit/SwiftUI dependency) trip-major view of this route, for the journey
     /// planner's connection extraction. See `docs/JOURNEY_PLANNER.md` and `JourneyRouteData`.
     func loadJourneyRouteData(_ routeId: String) throws -> JourneyRouteData {

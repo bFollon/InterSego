@@ -19,6 +19,7 @@ import SwiftUI
 struct OtrasOpcionesView: View {
     let onShowReminders: () -> Void
     let onCheckAnotherDay: (Date) -> Void
+    let onPlanJourney: () -> Void
 
     @State private var showDatePicker = false
     @State private var pickedDate = Date()
@@ -39,6 +40,17 @@ struct OtrasOpcionesView: View {
             Button(action: { showDatePicker = true }) {
                 SquareCard(label: "Consultar otro día") {
                     Image(systemName: "calendar")
+                        .font(.system(size: 24))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 40, height: 40)
+                }
+            }
+            .buttonStyle(.plain)
+            .aspectRatio(1, contentMode: .fit)
+
+            Button(action: onPlanJourney) {
+                SquareCard(label: "Planificar viaje") {
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                         .font(.system(size: 24))
                         .foregroundColor(.accentColor)
                         .frame(width: 40, height: 40)

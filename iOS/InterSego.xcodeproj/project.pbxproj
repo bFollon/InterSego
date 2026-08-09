@@ -64,6 +64,13 @@
 		A10000010000000000000300 /* JourneyRouteData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000300 /* JourneyRouteData.swift */; };
 		A10000010000000000000301 /* JourneyPlannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000301 /* JourneyPlannerService.swift */; };
 		A10000010000000000000302 /* TransfersLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000302 /* TransfersLoader.swift */; };
+		B00000010000000000000021 /* StopDirectoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000020 /* StopDirectoryService.swift */; };
+		B00000010000000000000023 /* RecentJourneysService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000022 /* RecentJourneysService.swift */; };
+		B00000010000000000000025 /* JourneySearchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000024 /* JourneySearchCoordinator.swift */; };
+		B00000010000000000000027 /* StopPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000026 /* StopPickerView.swift */; };
+		B00000010000000000000029 /* JourneyPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000028 /* JourneyPlannerView.swift */; };
+		B0000001000000000000002B /* JourneyResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000002A /* JourneyResultsView.swift */; };
+		B0000001000000000000002D /* JourneyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000002C /* JourneyDetailView.swift */; };
 		B0000001000000000000000B /* JourneyPlannerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000000A /* JourneyPlannerServiceTests.swift */; };
 		B0000001000000000000000E /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000200 /* Journey.swift */; };
 		B0000001000000000000000F /* JourneyRouteData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000300 /* JourneyRouteData.swift */; };
@@ -148,6 +155,13 @@
 		A20000010000000000000300 /* JourneyRouteData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyRouteData.swift; sourceTree = "<group>"; };
 		A20000010000000000000301 /* JourneyPlannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlannerService.swift; sourceTree = "<group>"; };
 		A20000010000000000000302 /* TransfersLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersLoader.swift; sourceTree = "<group>"; };
+		B00000010000000000000020 /* StopDirectoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopDirectoryService.swift; sourceTree = "<group>"; };
+		B00000010000000000000022 /* RecentJourneysService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentJourneysService.swift; sourceTree = "<group>"; };
+		B00000010000000000000024 /* JourneySearchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneySearchCoordinator.swift; sourceTree = "<group>"; };
+		B00000010000000000000026 /* StopPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopPickerView.swift; sourceTree = "<group>"; };
+		B00000010000000000000028 /* JourneyPlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlannerView.swift; sourceTree = "<group>"; };
+		B0000001000000000000002A /* JourneyResultsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyResultsView.swift; sourceTree = "<group>"; };
+		B0000001000000000000002C /* JourneyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyDetailView.swift; sourceTree = "<group>"; };
 		B00000010000000000000002 /* InterSegoTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = InterSegoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0000001000000000000000A /* JourneyPlannerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlannerServiceTests.swift; sourceTree = "<group>"; };
 		A2000001000000000000005C /* TimetableLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableLoader.swift; sourceTree = "<group>"; };
@@ -283,6 +297,9 @@
 				A20000010000000000000061 /* WhatsNewService.swift */,
 				A20000010000000000000301 /* JourneyPlannerService.swift */,
 				A20000010000000000000302 /* TransfersLoader.swift */,
+				B00000010000000000000020 /* StopDirectoryService.swift */,
+				B00000010000000000000022 /* RecentJourneysService.swift */,
+				B00000010000000000000024 /* JourneySearchCoordinator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -319,6 +336,10 @@
 				A2000001000000000000005D /* BugReportView.swift */,
 				A20000010000000000000060 /* OtrasOpcionesView.swift */,
 				A20000010000000000000062 /* WhatsNewView.swift */,
+				B00000010000000000000026 /* StopPickerView.swift */,
+				B00000010000000000000028 /* JourneyPlannerView.swift */,
+				B0000001000000000000002A /* JourneyResultsView.swift */,
+				B0000001000000000000002C /* JourneyDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -452,6 +473,13 @@
 				A10000010000000000000300 /* JourneyRouteData.swift in Sources */,
 				A10000010000000000000301 /* JourneyPlannerService.swift in Sources */,
 				A10000010000000000000302 /* TransfersLoader.swift in Sources */,
+				B00000010000000000000021 /* StopDirectoryService.swift in Sources */,
+				B00000010000000000000023 /* RecentJourneysService.swift in Sources */,
+				B00000010000000000000025 /* JourneySearchCoordinator.swift in Sources */,
+				B00000010000000000000027 /* StopPickerView.swift in Sources */,
+				B00000010000000000000029 /* JourneyPlannerView.swift in Sources */,
+				B0000001000000000000002B /* JourneyResultsView.swift in Sources */,
+				B0000001000000000000002D /* JourneyDetailView.swift in Sources */,
 				A1000001000000000000000A /* RouteView.swift in Sources */,
 				A10000010000000000000040 /* RouteGroup.swift in Sources */,
 				A10000010000000000000041 /* RouteSelectorEntry.swift in Sources */,
