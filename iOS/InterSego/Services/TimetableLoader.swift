@@ -50,6 +50,8 @@ struct TimetableLoader {
         let lat: Double
         let lon: Double
         let alternates: [JsonAlternate]?
+        let physicalStopId: String?
+        let timeIsEstimated: Bool?
     }
 
     private struct JsonAlternate: Decodable {
@@ -228,6 +230,36 @@ struct TimetableLoader {
 
     func getVersion(_ routeId: String) throws -> String {
         try loadFile(routeId).version
+    }
+
+    /// Pure (no UIKit/SwiftUI dependency) trip-major view of this route, for the journey
+    /// planner's connection extraction. See `docs/JOURNEY_PLANNER.md` and `JourneyRouteData`.
+    func loadJourneyRouteData(_ routeId: String) throws -> JourneyRouteData {
+        let file = try loadFile(routeId)
+        let stops = file.stops.map {
+            JourneyStop(id: $0.id, physicalStopId: $0.physicalStopId ?? $0.id, isEstimated: $0.timeIsEstimated ?? false)
+        }
+        let variants = file.variants.map { JourneyVariant(id: $0.id, stopSequence: $0.stopSequence) }
+        let timetables = file.timetables.map { section -> JourneyTimetableSection in
+            let trips = section.trips.map { trip -> JourneyTrip in
+                let tripSeason = parseSeason(trip.season)
+                let departures = trip.departures.map { makeJourneyDeparture(from: $0, tripSeason: tripSeason) }
+                return JourneyTrip(departures: departures)
+            }
+            return JourneyTimetableSection(variantId: section.variantId, dayType: parseDayType(section.dayType), trips: trips)
+        }
+        return JourneyRouteData(routeId: routeId, stops: stops, variants: variants, timetables: timetables)
+    }
+
+    private func makeJourneyDeparture(from value: DepartureValue, tripSeason: SeasonalAvailability) -> JourneyDeparture? {
+        switch value {
+        case .absent:
+            return nil
+        case .hhmm(let raw):
+            return JourneyDeparture(minutesOfDay: (raw / 100) * 60 + (raw % 100), season: tripSeason)
+        case .detailed(let raw, let season, _, _):
+            return JourneyDeparture(minutesOfDay: (raw / 100) * 60 + (raw % 100), season: season.map { parseSeason($0) } ?? tripSeason)
+        }
     }
 
     func loadBusStopsById(_ routeId: String) throws -> [String: BusStop] {
