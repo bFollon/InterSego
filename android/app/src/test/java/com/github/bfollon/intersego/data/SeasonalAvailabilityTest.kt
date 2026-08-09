@@ -44,15 +44,15 @@ class SeasonalAvailabilityTest : FunSpec({
     context("custom summer months") {
         test("SUMMER_ONLY with custom set") {
             val custom = setOf(Month.JUNE, Month.JULY, Month.AUGUST, Month.SEPTEMBER)
-            SeasonalAvailability.SUMMER_ONLY.runsIn(Month.JUNE, custom) shouldBe true
-            SeasonalAvailability.SUMMER_ONLY.runsIn(Month.SEPTEMBER, custom) shouldBe true
-            SeasonalAvailability.SUMMER_ONLY.runsIn(Month.MAY, custom) shouldBe false
+            SeasonalAvailability.SUMMER_ONLY.runsIn(Month.JUNE, summerMonths = custom) shouldBe true
+            SeasonalAvailability.SUMMER_ONLY.runsIn(Month.SEPTEMBER, summerMonths = custom) shouldBe true
+            SeasonalAvailability.SUMMER_ONLY.runsIn(Month.MAY, summerMonths = custom) shouldBe false
         }
 
         test("SCHOOL_ONLY with custom set") {
             val custom = setOf(Month.JUNE, Month.JULY, Month.AUGUST, Month.SEPTEMBER)
-            SeasonalAvailability.SCHOOL_ONLY.runsIn(Month.JUNE, custom) shouldBe false
-            SeasonalAvailability.SCHOOL_ONLY.runsIn(Month.MAY, custom) shouldBe true
+            SeasonalAvailability.SCHOOL_ONLY.runsIn(Month.JUNE, summerMonths = custom) shouldBe false
+            SeasonalAvailability.SCHOOL_ONLY.runsIn(Month.MAY, summerMonths = custom) shouldBe true
         }
     }
 })
