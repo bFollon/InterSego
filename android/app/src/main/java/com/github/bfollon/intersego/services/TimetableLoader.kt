@@ -274,6 +274,10 @@ class TimetableLoader(private val context: Context) {
 
     fun loadBusStopsById(routeId: String): Map<String, BusStop> = stopsIndex(loadFile(routeId))
 
+    /** Raw stop id -> physicalStopId (defaults to itself when the JSON has no override). */
+    fun loadPhysicalStopIds(routeId: String): Map<String, String> =
+        loadFile(routeId).stops.associate { it.id to (it.physicalStopId ?: it.id) }
+
     fun loadRoute(routeId: String): BusRoute {
         val r = loadFile(routeId).route
         val type = if (r.routeType == "INTERURBAN") RouteType.INTERURBAN else RouteType.URBAN

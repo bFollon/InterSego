@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,7 +58,8 @@ private const val MILLIS_PER_DAY = 86_400_000L
 fun OtrasOpcionesScreen(
     onBack: () -> Unit,
     onShowReminders: () -> Unit,
-    onCheckAnotherDay: (LocalDate) -> Unit
+    onCheckAnotherDay: (LocalDate) -> Unit,
+    onPlanJourney: () -> Unit
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     Scaffold(
@@ -102,6 +104,19 @@ fun OtrasOpcionesScreen(
             ) {
                 Icon(
                     imageVector = Icons.Filled.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp).padding(8.dp)
+                )
+            }
+
+            SquareLandingCard(
+                label = "Planificar viaje",
+                onClick = onPlanJourney,
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Route,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(40.dp).padding(8.dp)
