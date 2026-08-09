@@ -19,6 +19,15 @@ struct JourneyResultsContainer: View {
     @State private var journeys: [Journey] = []
     @State private var isLoading = true
     @State private var stopsById: [String: BusStop] = [:]
+    // `.task` reruns every time this view re-appears - including popping back from a pushed
+    // JourneyDetailView, not just on first load - so without this guard the search re-ran on
+    // every return trip. Harmless in principle (same query, should give the same answer) but
+    // wasteful, and visibly not always the same answer: ties between candidates with identical
+    // arrival/transfers/departure can land in a different order between two separate CSA runs
+    // (Swift's `[String: Journey]` dictionary used internally has no ordering guarantee), so the
+    // top-3 list could silently reshuffle each time you came back. Searching once per selection
+    // fixes both.
+    @State private var hasSearched = false
 
     var body: some View {
         JourneyResultsView(
@@ -29,6 +38,8 @@ struct JourneyResultsContainer: View {
             onJourneySelected: { journey in onJourneySelected(journey, stopsById) },
         )
         .task {
+            guard !hasSearched else { return }
+            hasSearched = true
             let entries = StopDirectoryService.buildDirectory(routeIds: supportedRouteIds)
             stopsById = Dictionary(uniqueKeysWithValues: entries.map { ($0.physicalStopId, $0.stop) })
             journeys = await JourneySearchCoordinator.search(
