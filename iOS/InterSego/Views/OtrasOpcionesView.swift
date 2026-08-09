@@ -24,8 +24,10 @@ struct OtrasOpcionesView: View {
     @State private var showDatePicker = false
     @State private var pickedDate = Date()
 
+    private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+
     var body: some View {
-        HStack(spacing: 16) {
+        LazyVGrid(columns: columns, spacing: 16) {
             Button(action: onShowReminders) {
                 SquareCard(label: "Mis recordatorios") {
                     Image(systemName: "bell.fill")

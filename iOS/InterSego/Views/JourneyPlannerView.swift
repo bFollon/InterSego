@@ -36,18 +36,28 @@ struct JourneyPlannerView: View {
     @State private var locationMessage: String?
     @State private var resolvingLocation = false
 
+    private var isToday: Bool { Calendar.current.isDateInToday(date) }
+
     var body: some View {
         Form {
             Section {
-                endpointRow(label: "Origen", endpoint: origin) { pickerTarget = .origin }
-                endpointRow(label: "Destino", endpoint: destination) { pickerTarget = .destination }
-                    .overlay(alignment: .trailing) {
-                        Button(action: swap) {
-                            Image(systemName: "arrow.up.arrow.down")
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, 4)
+                // Two-column layout in one row: fields stacked on the left, swap button as its
+                // own column on the right, spanning both. Without .buttonStyle(.plain) on every
+                // nested Button here, Form/List defaults to treating the whole row as a single
+                // tap target, which is what was actually swallowing origin's and swap's taps in
+                // earlier attempts - not the HStack layout itself.
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        endpointRow(label: "Origen", endpoint: origin) { pickerTarget = .origin }
+                        Divider()
+                        endpointRow(label: "Destino", endpoint: destination) { pickerTarget = .destination }
                     }
+                    Button(action: swap) {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
 
             if let locationMessage {
@@ -60,12 +70,25 @@ struct JourneyPlannerView: View {
 
             Section {
                 DatePicker("Fecha", selection: $date, in: Date()...(Calendar.current.date(byAdding: .day, value: 90, to: Date()) ?? Date()), displayedComponents: .date)
-                Toggle("Salir ahora", isOn: Binding(
-                    get: { departureTime == nil },
-                    set: { isNow in departureTime = isNow ? nil : Date() }
-                ))
-                if departureTime != nil {
-                    DatePicker("Hora", selection: Binding(get: { departureTime ?? Date() }, set: { departureTime = $0 }), displayedComponents: .hourAndMinute)
+                    .onChange(of: date) { _, newDate in
+                        // "Salir ahora" only makes sense for today; picking a future date
+                        // needs an explicit time, so make sure one is set.
+                        if !Calendar.current.isDateInToday(newDate), departureTime == nil {
+                            departureTime = Date()
+                        }
+                    }
+                if isToday {
+                    Toggle("Salir ahora", isOn: Binding(
+                        get: { departureTime == nil },
+                        set: { isNow in departureTime = isNow ? nil : Date() }
+                    ))
+                }
+                if !isToday || departureTime != nil {
+                    DatePicker(
+                        isToday ? "Hora" : "Hora de salida",
+                        selection: Binding(get: { departureTime ?? Date() }, set: { departureTime = $0 }),
+                        displayedComponents: .hourAndMinute
+                    )
                 }
             }
 
@@ -132,8 +155,14 @@ struct JourneyPlannerView: View {
                 Text(label).font(.caption).foregroundStyle(.secondary)
                 Text(endpoint?.name ?? "Elegir parada")
                     .foregroundStyle(endpoint == nil ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
             }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .foregroundStyle(.primary)
     }
 

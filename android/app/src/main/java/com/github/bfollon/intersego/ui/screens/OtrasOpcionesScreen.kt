@@ -10,7 +10,9 @@
 package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -77,50 +79,55 @@ fun OtrasOpcionesScreen(
             )
         }
     ) { paddingValues ->
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(paddingValues)
                 .padding(24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SquareLandingCard(
-                label = "Mis recordatorios",
-                onClick = onShowReminders,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Notifications,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(40.dp).padding(8.dp)
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SquareLandingCard(
+                    label = "Mis recordatorios",
+                    onClick = onShowReminders,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp).padding(8.dp)
+                    )
+                }
+
+                SquareLandingCard(
+                    label = "Consultar otro día",
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CalendarMonth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp).padding(8.dp)
+                    )
+                }
             }
 
-            SquareLandingCard(
-                label = "Consultar otro día",
-                onClick = { showDatePicker = true },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CalendarMonth,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(40.dp).padding(8.dp)
-                )
-            }
-
-            SquareLandingCard(
-                label = "Planificar viaje",
-                onClick = onPlanJourney,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Route,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(40.dp).padding(8.dp)
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                SquareLandingCard(
+                    label = "Planificar viaje",
+                    onClick = onPlanJourney,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Route,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(40.dp).padding(8.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

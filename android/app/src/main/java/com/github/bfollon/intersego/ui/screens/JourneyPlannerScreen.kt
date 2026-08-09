@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -136,8 +137,11 @@ fun JourneyPlannerScreen(
             modifier = Modifier.padding(paddingValues).padding(16.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     EndpointField(
                         label = "Origen",
                         endpoint = origin,
@@ -154,8 +158,7 @@ fun JourneyPlannerScreen(
                         val tmp = origin
                         origin = destination
                         destination = tmp
-                    },
-                    modifier = Modifier.align(Alignment.CenterEnd)
+                    }
                 ) {
                     Icon(Icons.Filled.SwapVert, contentDescription = "Intercambiar origen y destino")
                 }
@@ -251,7 +254,13 @@ fun JourneyPlannerScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis -> date = LocalDate.ofEpochDay(millis / MILLIS_PER_DAY) }
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        date = LocalDate.ofEpochDay(millis / MILLIS_PER_DAY)
+                        // "Ahora" only makes sense for today; a future date needs an explicit time.
+                        if (date != LocalDate.now() && departureTime == null) {
+                            departureTime = LocalTime.now()
+                        }
+                    }
                     showDatePicker = false
                 }) { Text("Aceptar") }
             },
@@ -272,7 +281,9 @@ fun JourneyPlannerScreen(
             },
             dismissButton = {
                 Row {
-                    TextButton(onClick = { departureTime = null; showTimePicker = false }) { Text("Ahora") }
+                    if (date == LocalDate.now()) {
+                        TextButton(onClick = { departureTime = null; showTimePicker = false }) { Text("Ahora") }
+                    }
                     TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
                 }
             },
@@ -286,7 +297,12 @@ private fun EndpointField(label: String, endpoint: Endpoint?, onClick: () -> Uni
     OutlinedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(endpoint?.name ?: "Elegir parada", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                endpoint?.name ?: "Elegir parada",
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
