@@ -922,7 +922,10 @@ fun AppNavigation(
         composable("journey_planner") {
             com.github.bfollon.intersego.ui.screens.JourneyPlannerFlowScreen(
                 supportedRouteIds = routes.map { it.id },
-                onExit = { navController.popBackStack() }
+                onExit = { navController.popBackStack() },
+                onOpenNextDeparture = { routeId, stopId ->
+                    navController.navigate("next_departure/$stopId/$routeId/none")
+                }
             )
         }
 

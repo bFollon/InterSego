@@ -36,6 +36,7 @@ private sealed class FlowStep {
 fun JourneyPlannerFlowScreen(
     supportedRouteIds: List<String>,
     onExit: () -> Unit,
+    onOpenNextDeparture: (routeId: String, stopId: String) -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -80,7 +81,8 @@ fun JourneyPlannerFlowScreen(
             JourneyDetailScreen(
                 journey = current.journey,
                 stopName = { stopId -> stopNames[stopId] ?: stopId },
-                onBack = { step = current.results }
+                onBack = { step = current.results },
+                onLegSelected = onOpenNextDeparture
             )
         }
     }

@@ -39,6 +39,7 @@ fun JourneyDetailScreen(
     journey: Journey,
     stopName: (String) -> String,
     onBack: () -> Unit,
+    onLegSelected: (routeId: String, stopId: String) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -58,39 +59,53 @@ fun JourneyDetailScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(journey.legs) { leg ->
-                LegRow(leg = leg, stopName = stopName)
+                val onClick: (() -> Unit)? = (leg as? Leg.Ride)?.let { ride -> { onLegSelected(ride.routeId, ride.fromStop) } }
+                LegRow(leg = leg, stopName = stopName, onClick = onClick)
             }
         }
     }
 }
 
 @Composable
-private fun LegRow(leg: Leg, stopName: (String) -> String) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            when (leg) {
-                is Leg.Ride -> {
-                    Icon(Icons.Filled.DirectionsBus, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("${leg.routeId} · ${stopName(leg.fromStop)} → ${stopName(leg.toStop)}", fontWeight = FontWeight.Medium)
-                        Text("${formatMin(leg.depMin)} — ${formatMin(leg.arrMin)}", style = MaterialTheme.typography.bodySmall)
-                        if (leg.isEstimated) {
-                            Text(
-                                "Horario aproximado",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
-                        }
+private fun LegRow(leg: Leg, stopName: (String) -> String, onClick: (() -> Unit)?) {
+    // Tapping a Ride leg reaches the existing NextDeparture screen for that route+stop, so the
+    // planner feeds into what's already there rather than being a dead end (Walk legs aren't
+    // clickable - there's no route/stop screen for a walking segment).
+    val cardModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+    if (onClick != null) {
+        ElevatedCard(onClick = onClick, modifier = cardModifier) { LegRowContent(leg, stopName) }
+    } else {
+        ElevatedCard(modifier = cardModifier) { LegRowContent(leg, stopName) }
+    }
+}
+
+@Composable
+private fun LegRowContent(leg: Leg, stopName: (String) -> String) {
+    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        when (leg) {
+            is Leg.Ride -> {
+                Icon(Icons.Filled.DirectionsBus, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("${leg.routeId} · ${stopName(leg.fromStop)} → ${stopName(leg.toStop)}", fontWeight = FontWeight.Medium)
+                    Text("${formatMin(leg.depMin)} — ${formatMin(leg.arrMin)}", style = MaterialTheme.typography.bodySmall)
+                    if (leg.isEstimated) {
+                        // Same copy as NextDepartureScreen's TimesDisclaimerCard - see
+                        // JourneyResultsScreen for the full expandable version.
+                        Text(
+                            "Horarios orientativos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
                     }
                 }
-                is Leg.Walk -> {
-                    Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = Color.Gray)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Caminar · ${stopName(leg.fromStop)} → ${stopName(leg.toStop)}", fontWeight = FontWeight.Medium)
-                        Text("${leg.minutes} min (${leg.meters} m)", style = MaterialTheme.typography.bodySmall)
-                    }
+            }
+            is Leg.Walk -> {
+                Icon(Icons.AutoMirrored.Filled.DirectionsWalk, contentDescription = null, tint = Color.Gray)
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Caminar · ${stopName(leg.fromStop)} → ${stopName(leg.toStop)}", fontWeight = FontWeight.Medium)
+                    Text("${leg.minutes} min (${leg.meters} m)", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

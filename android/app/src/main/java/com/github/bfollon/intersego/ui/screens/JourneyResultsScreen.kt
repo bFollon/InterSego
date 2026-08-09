@@ -113,11 +113,10 @@ private fun JourneyCard(journey: Journey, onClick: () -> Unit) {
                 }
             }
             if (hasEstimatedLeg) {
-                Text(
-                    "Margen amplio: horario aproximado en parte del trayecto",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
+                // Reuses the same "Horarios orientativos" disclaimer language as NextDepartureScreen
+                // (TimesDisclaimerCard) rather than inventing new copy — a journey built partly on
+                // cluster-estimated times shouldn't look more precise than the app is elsewhere.
+                TimesDisclaimerCard()
             }
         }
     }
