@@ -36,13 +36,31 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-private enum class PickerTarget { ORIGIN, DESTINATION }
+enum class PickerTarget { ORIGIN, DESTINATION }
 
-private enum class TimeMode { DEPART_AFTER, ARRIVE_BEFORE }
+enum class TimeMode { DEPART_AFTER, ARRIVE_BEFORE }
 
-private data class Endpoint(val physicalStopId: String, val name: String)
+data class Endpoint(val physicalStopId: String, val name: String)
 
 private const val MILLIS_PER_DAY = 86_400_000L
+
+/**
+ * Holds the planner form's input state (everything the user has typed/picked) outside
+ * [JourneyPlannerScreen] itself, so it survives the screen being disposed and recomposed when
+ * [JourneyPlannerFlowScreen] switches between its picker/results/detail steps — without this,
+ * navigating to results and back would silently reset origin/destination/date/time.
+ */
+class JourneyPlannerFormState {
+    var origin by mutableStateOf<Endpoint?>(null)
+    var destination by mutableStateOf<Endpoint?>(null)
+    var date by mutableStateOf(LocalDate.now())
+    var timeMode by mutableStateOf(TimeMode.DEPART_AFTER)
+    var departureTime by mutableStateOf<LocalTime?>(null) // null = "ahora"
+    var arriveBeforeTime by mutableStateOf(LocalTime.now().plusHours(1))
+}
+
+@Composable
+fun rememberJourneyPlannerFormState(): JourneyPlannerFormState = remember { JourneyPlannerFormState() }
 
 /**
  * Entry UI for the journey planner: choose origin/destination (stop or "mi ubicación"), a
@@ -54,19 +72,20 @@ private const val MILLIS_PER_DAY = 86_400_000L
 @Composable
 fun JourneyPlannerScreen(
     supportedRouteIds: List<String>,
+    formState: JourneyPlannerFormState,
     onBack: () -> Unit,
     onSearch: (originId: String, originName: String, destinationId: String, destinationName: String, date: LocalDate, departAfterMin: Int, arriveBeforeMin: Int?) -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var origin by remember { mutableStateOf<Endpoint?>(null) }
-    var destination by remember { mutableStateOf<Endpoint?>(null) }
+    var origin by formState::origin
+    var destination by formState::destination
     var pickerTarget by remember { mutableStateOf<PickerTarget?>(null) }
-    var date by remember { mutableStateOf(LocalDate.now()) }
-    var timeMode by remember { mutableStateOf(TimeMode.DEPART_AFTER) }
-    var departureTime by remember { mutableStateOf<LocalTime?>(null) } // null = "ahora"
-    var arriveBeforeTime by remember { mutableStateOf(LocalTime.now().plusHours(1)) }
+    var date by formState::date
+    var timeMode by formState::timeMode
+    var departureTime by formState::departureTime
+    var arriveBeforeTime by formState::arriveBeforeTime
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
     var showArriveBeforePicker by remember { mutableStateOf(false) }

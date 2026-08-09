@@ -9,6 +9,7 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import com.github.bfollon.intersego.data.Journey
@@ -45,16 +46,32 @@ fun JourneyPlannerFlowScreen(
     var journeys by remember { mutableStateOf<List<Journey>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var stopNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    // Hoisted above JourneyPlannerScreen (rather than remembered inside it) so it survives that
+    // screen being disposed/recomposed when step switches away and back - see its doc comment.
+    val formState = rememberJourneyPlannerFormState()
 
     LaunchedEffect(Unit) {
         stopNames = StopDirectoryService(context).buildDirectory(supportedRouteIds)
             .associate { it.physicalStopId to it.stop.name }
     }
 
+    // The system back gesture/button only pops JourneyPlannerFlowScreen itself off the app's
+    // real navigation stack (step is just local state, not part of it) - without this, swiping
+    // back from results or detail would skip straight past the picker to wherever this flow was
+    // launched from. Disabled on the picker step so a swipe/press there falls through to onExit.
+    BackHandler(enabled = step !is FlowStep.Picker) {
+        step = when (val current = step) {
+            is FlowStep.Detail -> current.results
+            is FlowStep.Results -> FlowStep.Picker
+            FlowStep.Picker -> FlowStep.Picker
+        }
+    }
+
     when (val current = step) {
         is FlowStep.Picker -> {
             JourneyPlannerScreen(
                 supportedRouteIds = supportedRouteIds,
+                formState = formState,
                 onBack = onExit,
                 onSearch = { originId, originName, destinationId, destinationName, date, departAfterMin, arriveBeforeMin ->
                     val results = FlowStep.Results(originId, originName, destinationId, destinationName, date, departAfterMin, arriveBeforeMin)
