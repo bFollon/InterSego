@@ -149,6 +149,30 @@ class JourneyPlannerServiceTest : FunSpec({
         onSaturday.size shouldBe 1
     }
 
+    test("a dominated walk-detour alternative is dropped, not just outranked") {
+        // Direct: board M9 at a, ride straight to c, arriving 620.
+        val direct = singleVariantRoute(
+            "M9", listOf(stop("a"), stop("b"), stop("c")),
+            listOf("a", "b", "c"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(600), dep(610), dep(620))),
+        )
+        // Alternative: walk from a to a nearby stop d, then ride M10 to c - but it arrives later
+        // (630) with no other advantage, so it must never surface in results, not merely rank below
+        // the direct journey (regression for the "pointless walking detour" bug: real-world reports
+        // showed alternatives that walk to a nearby stop the direct bus already serves, or get off
+        // one stop early, without any time/transfer benefit).
+        val detour = singleVariantRoute(
+            "M10", listOf(stop("d"), stop("c")),
+            listOf("d", "c"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(590), dep(630))),
+        )
+        val transfers = listOf(TransferEdge("a", "d", meters = 300, walkMinutes = 5))
+        val result = JourneyPlannerService.findJourneys(listOf(direct, detour), transfers, query("a", "c"))
+
+        result.size shouldBe 1
+        result[0].legs shouldBe listOf(Leg.Ride("M9", "out", "a", "c", 600, 620, isEstimated = false))
+    }
+
     test("seasonal availability is resolved against the query month, not unconditionally true") {
         val route = singleVariantRoute(
             "M4", listOf(stop("a"), stop("b")), listOf("a", "b"), DayType.WEEKDAY,

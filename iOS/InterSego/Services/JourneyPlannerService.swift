@@ -292,6 +292,11 @@ enum JourneyPlannerService {
 
     /// Ranks by earliest arrival, then fewest transfers, then latest departure; collapses to the
     /// best journey per distinct route/leg-kind pattern, then returns the top 3 patterns.
+    /// Ranks by earliest arrival, then fewest transfers, then latest departure; collapses to the
+    /// best journey per distinct route/leg-kind pattern, drops any journey dominated by another
+    /// (see `strictlyDominates` - this is what filters out "walk to a nearby stop the direct bus
+    /// already passes through" alternatives that arrive no sooner and cost no fewer transfers),
+    /// then returns the top 3 non-dominated patterns.
     private static func rankAndDedupe(_ journeys: [Journey]) -> [Journey] {
         func pattern(_ j: Journey) -> String {
             j.legs.map { leg -> String in
@@ -311,10 +316,24 @@ enum JourneyPlannerService {
             let key = pattern(j)
             bestPerPattern[key] = bestPerPattern[key].map { better($0, j) } ?? j
         }
-        return bestPerPattern.values.sorted { a, b in
+
+        let candidates = Array(bestPerPattern.values)
+        let nonDominated = candidates.filter { candidate in
+            !candidates.contains { other in other != candidate && strictlyDominates(other, candidate) }
+        }
+
+        return nonDominated.sorted { a, b in
             if a.arrivalMin != b.arrivalMin { return a.arrivalMin < b.arrivalMin }
             if a.transferCount != b.transferCount { return a.transferCount < b.transferCount }
             return a.departureMin > b.departureMin
         }.prefix(3).map { $0 }
+    }
+
+    /// True if `a` is never worse than `b` on arrival/transfers/departure and strictly better on
+    /// at least one - i.e. `b` offers no genuine trade-off and shouldn't be shown alongside `a`.
+    private static func strictlyDominates(_ a: Journey, _ b: Journey) -> Bool {
+        let neverWorse = a.arrivalMin <= b.arrivalMin && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
+        let strictlyBetter = a.arrivalMin < b.arrivalMin || a.transferCount < b.transferCount || a.departureMin > b.departureMin
+        return neverWorse && strictlyBetter
     }
 }

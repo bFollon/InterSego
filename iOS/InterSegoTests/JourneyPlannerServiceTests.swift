@@ -9,7 +9,7 @@
 
 import XCTest
 
-/// Behavioral mirror of Android's `JourneyPlannerServiceTest.kt` — same 7 scenarios, same
+/// Behavioral mirror of Android's `JourneyPlannerServiceTest.kt` — same 8 scenarios, same
 /// inputs, same expected outputs, so the two platforms are checked against the same truths.
 /// See `docs/JOURNEY_PLANNER.md`.
 final class JourneyPlannerServiceTests: XCTestCase {
@@ -139,6 +139,31 @@ final class JourneyPlannerServiceTests: XCTestCase {
         // and confirms it *does* run when queried on the right day type
         let onSaturday = JourneyPlannerService.findJourneys(routes: [route], transfers: [], query: query("a", "b", dayTypes: [.saturday, .weekend]))
         XCTAssertEqual(onSaturday.count, 1)
+    }
+
+    func testDominatedWalkDetourAlternativeIsDroppedNotJustOutranked() {
+        // Direct: board M9 at a, ride straight to c, arriving 620.
+        let direct = singleVariantRoute(
+            routeId: "M9", stops: [stop("a"), stop("b"), stop("c")],
+            stopSequenceIds: ["a", "b", "c"], dayType: .weekday,
+            trips: [[dep(600), dep(610), dep(620)]]
+        )
+        // Alternative: walk from a to a nearby stop d, then ride M10 to c - but it departs no
+        // later and arrives later (630) with no other advantage, so it must never surface in
+        // results, not merely rank below the direct journey (regression for the "pointless
+        // walking detour" bug: real-world reports showed alternatives that walk to a nearby stop
+        // the direct bus already serves, or get off one stop early, without any time/transfer
+        // benefit).
+        let detour = singleVariantRoute(
+            routeId: "M10", stops: [stop("d"), stop("c")],
+            stopSequenceIds: ["d", "c"], dayType: .weekday,
+            trips: [[dep(590), dep(630)]]
+        )
+        let transfers = [TransferEdge(from: "a", to: "d", meters: 300, walkMinutes: 5)]
+        let result = JourneyPlannerService.findJourneys(routes: [direct, detour], transfers: transfers, query: query("a", "c"))
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].legs, [.ride(Leg.Ride(routeId: "M9", variantId: "out", fromStop: "a", toStop: "c", depMin: 600, arrMin: 620, isEstimated: false))])
     }
 
     func testSeasonalAvailabilityIsResolvedAgainstTheQueryMonthNotUnconditionallyTrue() {

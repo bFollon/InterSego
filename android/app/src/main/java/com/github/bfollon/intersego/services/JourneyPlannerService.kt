@@ -297,7 +297,10 @@ object JourneyPlannerService {
     }
 
     /** Ranks by earliest arrival, then fewest transfers, then latest departure; collapses to the
-     * best journey per distinct route/leg-kind pattern, then returns the top 3 patterns. */
+     * best journey per distinct route/leg-kind pattern, drops any journey dominated by another
+     * (see [strictlyDominates] — this is what filters out "walk to a nearby stop the direct bus
+     * already passes through" alternatives that arrive no sooner and cost no fewer transfers),
+     * then returns the top 3 non-dominated patterns. */
     private fun rankAndDedupe(journeys: List<Journey>): List<Journey> {
         fun pattern(j: Journey) = j.legs.joinToString("|") { leg ->
             when (leg) {
@@ -311,10 +314,23 @@ object JourneyPlannerService {
             return if (a.departureMin >= b.departureMin) a else b
         }
         val bestPerPattern = journeys.groupBy(::pattern).values.map { it.reduce(::betterOf) }
-        return bestPerPattern.sortedWith(
+
+        val nonDominated = bestPerPattern.filterNot { candidate ->
+            bestPerPattern.any { other -> other != candidate && strictlyDominates(other, candidate) }
+        }
+
+        return nonDominated.sortedWith(
             compareBy<Journey> { it.arrivalMin }
                 .thenBy { it.transferCount }
                 .thenByDescending { it.departureMin }
         ).take(3)
+    }
+
+    /** True if [a] is never worse than [b] on arrival/transfers/departure and strictly better on
+     * at least one — i.e. [b] offers no genuine trade-off and shouldn't be shown alongside [a]. */
+    private fun strictlyDominates(a: Journey, b: Journey): Boolean {
+        val neverWorse = a.arrivalMin <= b.arrivalMin && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
+        val strictlyBetter = a.arrivalMin < b.arrivalMin || a.transferCount < b.transferCount || a.departureMin > b.departureMin
+        return neverWorse && strictlyBetter
     }
 }

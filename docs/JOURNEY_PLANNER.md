@@ -217,6 +217,27 @@ Return the **top 3 distinct** journeys (distinct = different leg sequence, not j
 times on the same route/transfer pattern), not just the single best, so the results UI can offer
 a trade-off instead of only the tightest option.
 
+**Dominance filtering.** A different leg sequence is not automatically a genuine trade-off — a
+walk to a nearby stop the direct bus already serves, or alighting one stop early, produces a
+distinct pattern with no actual benefit. Before taking the top 3, drop any journey `b` for which
+another candidate `a` is *never worse* and *strictly better* on at least one axis:
+
+```
+dominates(a, b) = (a.arrivalMin <= b.arrivalMin
+                    && a.transferCount <= b.transferCount
+                    && a.departureMin >= b.departureMin)
+                  && (a.arrivalMin < b.arrivalMin
+                      || a.transferCount < b.transferCount
+                      || a.departureMin > b.departureMin)
+```
+
+Applied per-pattern, after collapsing each pattern to its best instance and before the final
+sort/take(3) — so a dominated alternative never displaces or crowds out a real trade-off, and
+never appears at all, not merely last. (Found via live testing: a real query surfaced "walk to a
+different stop, then ride the same buses" alternatives that arrived no sooner and cost no fewer
+transfers than the direct option — see `JourneyPlannerServiceTest.kt` /
+`JourneyPlannerServiceTests.swift`'s "dominated walk-detour" test for the regression case.)
+
 ---
 
 ## What this spec does not cover
