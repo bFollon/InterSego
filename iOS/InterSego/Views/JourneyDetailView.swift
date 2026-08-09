@@ -23,9 +23,9 @@ struct JourneyDetailView: View {
 
     var body: some View {
         List {
-            ForEach(Array(journey.legs.enumerated()), id: \.offset) { _, leg in
-                switch leg {
-                case .ride(let ride):
+            ForEach(Array(journey.stepsWithWaits().enumerated()), id: \.offset) { _, step in
+                switch step {
+                case .leg(.ride(let ride)):
                     Button(action: { onLegSelected(ride.routeId, ride.fromStop) }) {
                         legRow(
                             systemImage: "bus",
@@ -36,13 +36,21 @@ struct JourneyDetailView: View {
                         )
                     }
                     .foregroundStyle(.primary)
-                case .walk(let walk):
+                case .leg(.walk(let walk)):
                     // Walk legs aren't tappable - there's no route/stop screen for a walking segment.
                     legRow(
                         systemImage: "figure.walk",
                         iconColor: .gray,
                         title: "Caminar · \(stopName(walk.fromStop)) → \(stopName(walk.toStop))",
                         subtitle: "\(walk.minutes) min (\(walk.meters) m)",
+                        disclaimer: nil
+                    )
+                case .wait(let minutes):
+                    legRow(
+                        systemImage: "clock",
+                        iconColor: .gray,
+                        title: "Espera",
+                        subtitle: "\(minutes) min",
                         disclaimer: nil
                     )
                 }

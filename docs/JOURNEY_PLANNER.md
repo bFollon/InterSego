@@ -202,6 +202,16 @@ results/detail-view cards, not here — this spec only requires that the buffer 
 *which* rule admitted the connection (transcribed vs. estimated threshold) so the UI has that
 information to surface.
 
+**Long-wait step.** The detail (leg-by-leg) view inserts an explicit "Espera X min" step before
+any ride that starts more than **5 minutes** after the previous leg ends, so a long transbordo
+wait reads as its own step instead of being buried in the two legs' times either side of it. This
+is purely a display concern — it doesn't affect which journeys are found or how they're ranked —
+but the 5-minute threshold is a single source of truth shared by both platforms:
+`Journey.longWaitThresholdMin` (iOS) / `Journey.LONG_WAIT_THRESHOLD_MIN` (Android), both in
+`Journey`'s file. Only mid-journey gaps count (never before the first leg — that's simply when the
+journey starts, see `departureMin`'s doc comment); a gap after a walk counts the same as a gap
+after a ride. See `Journey.stepsWithWaits()` / `Journey.kt`'s `stepsWithWaits()`.
+
 ---
 
 ## Defining "best" — tie-breaking

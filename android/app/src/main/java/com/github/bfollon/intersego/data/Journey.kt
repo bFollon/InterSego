@@ -59,4 +59,48 @@ data class Journey(
     init {
         require(legs.isNotEmpty()) { "Journey must have at least one leg" }
     }
+
+    companion object {
+        /**
+         * Minimum wait at a transfer point before it's surfaced as an explicit step (see
+         * [stepsWithWaits]) rather than left implicit in the leg times either side of it. Single
+         * source of truth for this value — mirrored on iOS as `Journey.longWaitThresholdMin`.
+         */
+        const val LONG_WAIT_THRESHOLD_MIN = 5
+    }
+
+    /**
+     * [legs] with a [JourneyStep.Wait] step inserted before any Ride that follows more than
+     * [LONG_WAIT_THRESHOLD_MIN] minutes after the previous leg ends. Only mid-journey transfers
+     * are considered — never before the first leg, since that's simply when you start the
+     * journey, not something to "wait out" (see [departureMin]'s doc comment on why it can
+     * precede the first leg's own `depMin`).
+     */
+    fun stepsWithWaits(): List<JourneyStep> {
+        val steps = mutableListOf<JourneyStep>()
+        var clock = departureMin
+        legs.forEachIndexed { index, leg ->
+            if (index > 0 && leg is Leg.Ride) {
+                val gap = leg.depMin - clock
+                if (gap > LONG_WAIT_THRESHOLD_MIN) {
+                    steps.add(JourneyStep.Wait(gap))
+                }
+            }
+            steps.add(JourneyStep.LegStep(leg))
+            clock = when (leg) {
+                is Leg.Ride -> leg.arrMin
+                is Leg.Walk -> clock + leg.minutes
+            }
+        }
+        return steps
+    }
+}
+
+/**
+ * One row of a journey's leg-by-leg breakdown: either an actual [Leg], or an explicit wait
+ * inserted between two legs by [Journey.stepsWithWaits].
+ */
+sealed class JourneyStep {
+    data class LegStep(val leg: Leg) : JourneyStep()
+    data class Wait(val minutes: Int) : JourneyStep()
 }

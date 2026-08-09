@@ -72,6 +72,7 @@
 		B0000001000000000000002B /* JourneyResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000002A /* JourneyResultsView.swift */; };
 		B0000001000000000000002D /* JourneyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000002C /* JourneyDetailView.swift */; };
 		B0000001000000000000000B /* JourneyPlannerServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000000A /* JourneyPlannerServiceTests.swift */; };
+		B0000001000000000000002F /* JourneyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000001000000000000002E /* JourneyTests.swift */; };
 		B0000001000000000000000E /* Journey.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000200 /* Journey.swift */; };
 		B0000001000000000000000F /* JourneyRouteData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000300 /* JourneyRouteData.swift */; };
 		B00000010000000000000010 /* JourneyPlannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000301 /* JourneyPlannerService.swift */; };
@@ -164,6 +165,7 @@
 		B0000001000000000000002C /* JourneyDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyDetailView.swift; sourceTree = "<group>"; };
 		B00000010000000000000002 /* InterSegoTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = InterSegoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0000001000000000000000A /* JourneyPlannerServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlannerServiceTests.swift; sourceTree = "<group>"; };
+		B0000001000000000000002E /* JourneyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyTests.swift; sourceTree = "<group>"; };
 		A2000001000000000000005C /* TimetableLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableLoader.swift; sourceTree = "<group>"; };
 		A2000001000000000000005D /* BugReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BugReportView.swift; sourceTree = "<group>"; };
 		A20000010000000000000099 /* TimetableQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetableQuery.swift; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 			isa = PBXGroup;
 			children = (
 				B0000001000000000000000A /* JourneyPlannerServiceTests.swift */,
+				B0000001000000000000002E /* JourneyTests.swift */,
 			);
 			path = InterSegoTests;
 			sourceTree = "<group>";
@@ -543,6 +546,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B0000001000000000000000B /* JourneyPlannerServiceTests.swift in Sources */,
+				B0000001000000000000002F /* JourneyTests.swift in Sources */,
 				B0000001000000000000000E /* Journey.swift in Sources */,
 				B0000001000000000000000F /* JourneyRouteData.swift in Sources */,
 				B00000010000000000000010 /* JourneyPlannerService.swift in Sources */,

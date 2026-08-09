@@ -73,4 +73,40 @@ struct Journey: Hashable {
         self.arrivalMin = arrivalMin
         self.transferCount = transferCount
     }
+
+    /// Minimum wait at a transfer point before it's surfaced as an explicit step (see
+    /// `stepsWithWaits()`) rather than left implicit in the leg times either side of it. Single
+    /// source of truth for this value — mirrored on Android as `Journey.LONG_WAIT_THRESHOLD_MIN`.
+    static let longWaitThresholdMin = 5
+
+    /// `legs` with a `.wait` step inserted before any Ride that follows more than
+    /// `longWaitThresholdMin` minutes after the previous leg ends. Only mid-journey transfers are
+    /// considered — never before the first leg, since that's simply when you start the journey,
+    /// not something to "wait out" (see `departureMin`'s doc comment on why it can precede the
+    /// first leg's own `depMin`).
+    func stepsWithWaits() -> [JourneyStep] {
+        var steps: [JourneyStep] = []
+        var clock = departureMin
+        for (index, leg) in legs.enumerated() {
+            if index > 0, case .ride(let ride) = leg {
+                let gap = ride.depMin - clock
+                if gap > Journey.longWaitThresholdMin {
+                    steps.append(.wait(gap))
+                }
+            }
+            steps.append(.leg(leg))
+            switch leg {
+            case .ride(let ride): clock = ride.arrMin
+            case .walk(let walk): clock += walk.minutes
+            }
+        }
+        return steps
+    }
+}
+
+/// One row of a journey's leg-by-leg breakdown: either an actual `Leg`, or an explicit wait
+/// inserted between two legs by `Journey.stepsWithWaits()`.
+enum JourneyStep: Hashable {
+    case leg(Leg)
+    case wait(Int)
 }

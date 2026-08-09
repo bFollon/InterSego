@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.data.Journey
+import com.github.bfollon.intersego.data.JourneyStep
 import com.github.bfollon.intersego.data.Leg
 
 private fun formatMin(minutesOfDay: Int): String {
@@ -58,9 +60,14 @@ fun JourneyDetailScreen(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(journey.legs) { leg ->
-                val onClick: (() -> Unit)? = (leg as? Leg.Ride)?.let { ride -> { onLegSelected(ride.routeId, ride.fromStop) } }
-                LegRow(leg = leg, stopName = stopName, onClick = onClick)
+            items(journey.stepsWithWaits()) { step ->
+                when (step) {
+                    is JourneyStep.LegStep -> {
+                        val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> { onLegSelected(ride.routeId, ride.fromStop) } }
+                        LegRow(leg = step.leg, stopName = stopName, onClick = onClick)
+                    }
+                    is JourneyStep.Wait -> WaitRow(minutes = step.minutes)
+                }
             }
         }
     }
@@ -76,6 +83,20 @@ private fun LegRow(leg: Leg, stopName: (String) -> String, onClick: (() -> Unit)
         ElevatedCard(onClick = onClick, modifier = cardModifier) { LegRowContent(leg, stopName) }
     } else {
         ElevatedCard(modifier = cardModifier) { LegRowContent(leg, stopName) }
+    }
+}
+
+@Composable
+private fun WaitRow(minutes: Int) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Schedule, contentDescription = null, tint = Color.Gray)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text("Espera", fontWeight = FontWeight.Medium)
+                Text("$minutes min", style = MaterialTheme.typography.bodySmall)
+            }
+        }
     }
 }
 
