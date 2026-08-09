@@ -9,9 +9,9 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -34,7 +34,11 @@ private fun formatMin(minutesOfDay: Int): String {
     return "%02d:%02d".format(h, m)
 }
 
-/** Leg-by-leg breakdown of one journey. See docs/JOURNEY_PLANNER.md. */
+/**
+ * Leg-by-leg breakdown of one journey, rendered as a single grouped card with dividers between
+ * steps (matching iOS's single-List-with-dividers detail view), rather than a separate card per
+ * step. See docs/JOURNEY_PLANNER.md.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JourneyDetailScreen(
@@ -58,15 +62,20 @@ fun JourneyDetailScreen(
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            items(journey.stepsWithWaits()) { step ->
-                when (step) {
-                    is JourneyStep.LegStep -> {
-                        val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> { onLegSelected(ride.routeId, ride.fromStop) } }
-                        LegRow(leg = step.leg, stopName = stopName, onClick = onClick)
+            item {
+                GroupedCard {
+                    val steps = journey.stepsWithWaits()
+                    steps.forEachIndexed { index, step ->
+                        if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        when (step) {
+                            is JourneyStep.LegStep -> {
+                                val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> { onLegSelected(ride.routeId, ride.fromStop) } }
+                                LegRow(leg = step.leg, stopName = stopName, onClick = onClick)
+                            }
+                            is JourneyStep.Wait -> WaitRow(minutes = step.minutes)
+                        }
                     }
-                    is JourneyStep.Wait -> WaitRow(minutes = step.minutes)
                 }
             }
         }
@@ -78,31 +87,10 @@ private fun LegRow(leg: Leg, stopName: (String) -> String, onClick: (() -> Unit)
     // Tapping a Ride leg reaches the existing NextDeparture screen for that route+stop, so the
     // planner feeds into what's already there rather than being a dead end (Walk legs aren't
     // clickable - there's no route/stop screen for a walking segment).
-    val cardModifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-    if (onClick != null) {
-        ElevatedCard(onClick = onClick, modifier = cardModifier) { LegRowContent(leg, stopName) }
-    } else {
-        ElevatedCard(modifier = cardModifier) { LegRowContent(leg, stopName) }
+    val rowModifier = Modifier.fillMaxWidth().let { base ->
+        if (onClick != null) base.clickable(onClick = onClick) else base
     }
-}
-
-@Composable
-private fun WaitRow(minutes: Int) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Schedule, contentDescription = null, tint = Color.Gray)
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text("Espera", fontWeight = FontWeight.Medium)
-                Text("$minutes min", style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
-
-@Composable
-private fun LegRowContent(leg: Leg, stopName: (String) -> String) {
-    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = rowModifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
         when (leg) {
             is Leg.Ride -> {
                 Icon(Icons.Filled.DirectionsBus, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -129,6 +117,18 @@ private fun LegRowContent(leg: Leg, stopName: (String) -> String) {
                     Text("${leg.minutes} min (${leg.meters} m)", style = MaterialTheme.typography.bodySmall)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun WaitRow(minutes: Int) {
+    Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.Schedule, contentDescription = null, tint = Color.Gray)
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text("Espera", fontWeight = FontWeight.Medium)
+            Text("$minutes min", style = MaterialTheme.typography.bodySmall)
         }
     }
 }

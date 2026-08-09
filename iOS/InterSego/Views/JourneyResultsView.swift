@@ -73,11 +73,15 @@ struct JourneyResultsView: View {
                     description: Text("No hay viajes con margen suficiente para esta búsqueda. Prueba con otra hora.")
                 )
             } else {
+                // Each journey gets its own Section so it renders as its own separate pill
+                // (matching Android's per-journey card) rather than one pill with dividers.
                 List(journeys, id: \.self) { journey in
-                    Button(action: { onJourneySelected(journey) }) {
-                        JourneyRow(journey: journey)
+                    Section {
+                        Button(action: { onJourneySelected(journey) }) {
+                            JourneyRow(journey: journey)
+                        }
+                        .foregroundStyle(.primary)
                     }
-                    .foregroundStyle(.primary)
                 }
             }
         }
