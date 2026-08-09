@@ -173,6 +173,38 @@ class JourneyPlannerServiceTest : FunSpec({
         result[0].legs shouldBe listOf(Leg.Ride("M9", "out", "a", "c", 600, 620, isEstimated = false))
     }
 
+    test("arrive-before mode picks the journey closest to the deadline, ignoring departAfterMin") {
+        val route = singleVariantRoute(
+            "M9", listOf(stop("a"), stop("b"), stop("c")),
+            listOf("a", "b", "c"), DayType.WEEKDAY,
+            trips = listOf(
+                listOf(dep(600), dep(610), dep(620)),
+                listOf(dep(630), dep(640), dep(650)),
+                listOf(dep(700), dep(710), dep(720)),
+            ),
+        )
+        // departAfterMin is a nonsense value (800, after every trip) to prove it's ignored in this mode
+        val result = JourneyPlannerService.findJourneys(
+            listOf(route), emptyList(),
+            query("a", "c", departAfterMin = 800).copy(arriveBeforeMin = 655)
+        )
+
+        result.size shouldBe 1
+        result[0].arrivalMin shouldBe 650 // closest to 655 - not the earliest (620) or the excluded, past-deadline one (720)
+    }
+
+    test("arrive-before mode excludes journeys that arrive after the deadline entirely, not just ranks them last") {
+        val route = singleVariantRoute(
+            "M9", listOf(stop("a"), stop("b")), listOf("a", "b"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(600), dep(620))),
+        )
+        val result = JourneyPlannerService.findJourneys(
+            listOf(route), emptyList(),
+            query("a", "b").copy(arriveBeforeMin = 500)
+        )
+        result.shouldBeEmpty()
+    }
+
     test("seasonal availability is resolved against the query month, not unconditionally true") {
         val route = singleVariantRoute(
             "M4", listOf(stop("a"), stop("b")), listOf("a", "b"), DayType.WEEKDAY,

@@ -29,6 +29,7 @@ object JourneySearchCoordinator {
         destinationPhysicalStopId: String,
         date: LocalDate,
         departAfterMin: Int,
+        arriveBeforeMin: Int? = null,
     ): List<Journey> = withContext(Dispatchers.IO) {
         val loader = TimetableLoader(context)
         val routeDataService = RouteDataService(context)
@@ -49,6 +50,7 @@ object JourneySearchCoordinator {
             month = month,
             weekday = weekday,
             departAfterMin = departAfterMin,
+            arriveBeforeMin = arriveBeforeMin,
         )
         JourneyPlannerService.findJourneys(routes, transfers, query)
     }

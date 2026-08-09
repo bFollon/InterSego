@@ -19,6 +19,7 @@ enum JourneySearchCoordinator {
         destinationPhysicalStopId: String,
         date: Date,
         departAfterMin: Int,
+        arriveBeforeMin: Int? = nil,
     ) async -> [Journey] {
         let loader = TimetableLoader()
         let supportedRouteIds = await RouteDataService.shared.getSupportedRoutes()
@@ -39,6 +40,7 @@ enum JourneySearchCoordinator {
             month: month,
             weekday: weekday,
             departAfterMin: departAfterMin,
+            arriveBeforeMin: arriveBeforeMin,
         )
         return JourneyPlannerService.findJourneys(routes: routes, transfers: transfers, query: query)
     }

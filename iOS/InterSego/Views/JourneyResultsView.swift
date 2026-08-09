@@ -36,6 +36,7 @@ struct JourneyResultsContainer: View {
                 destinationPhysicalStopId: selection.destinationId,
                 date: selection.date,
                 departAfterMin: selection.departAfterMin,
+                arriveBeforeMin: selection.arriveBeforeMin,
             )
             isLoading = false
         }

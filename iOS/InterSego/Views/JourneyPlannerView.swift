@@ -15,22 +15,31 @@ private enum PickerTarget: Identifiable {
     var id: Int { self == .origin ? 0 : 1 }
 }
 
+private enum TimeMode {
+    case departAfter
+    case arriveBefore
+}
+
 private struct Endpoint {
     let physicalStopId: String
     let name: String
 }
 
-/// Entry UI for the journey planner: choose origin/destination (stop or "mi ubicación"),
-/// departure date/time, and search. See `docs/JOURNEY_PLANNER.md` for the search itself.
+/// Entry UI for the journey planner: choose origin/destination (stop or "mi ubicación"), a
+/// departure date and either a departure time ("Salir a las") or an arrival deadline ("Llegar
+/// antes de"), and search. See `docs/JOURNEY_PLANNER.md` for the search itself, in particular
+/// "Arrive-before mode" for how the two time modes differ.
 struct JourneyPlannerView: View {
     let supportedRouteIds: [String]
-    let onSearch: (_ originId: String, _ originName: String, _ destinationId: String, _ destinationName: String, _ date: Date, _ departAfterMin: Int) -> Void
+    let onSearch: (_ originId: String, _ originName: String, _ destinationId: String, _ destinationName: String, _ date: Date, _ departAfterMin: Int, _ arriveBeforeMin: Int?) -> Void
 
     @State private var origin: Endpoint?
     @State private var destination: Endpoint?
     @State private var pickerTarget: PickerTarget?
     @State private var date = Date()
+    @State private var timeMode: TimeMode = .departAfter
     @State private var departureTime: Date?
+    @State private var arriveBeforeTime = Calendar.current.date(byAdding: .hour, value: 1, to: Date()) ?? Date()
     @State private var showTimePicker = false
     @State private var recents = RecentJourneysService.recent()
     @State private var locationMessage: String?
@@ -77,18 +86,27 @@ struct JourneyPlannerView: View {
                             departureTime = Date()
                         }
                     }
-                if isToday {
-                    Toggle("Salir ahora", isOn: Binding(
-                        get: { departureTime == nil },
-                        set: { isNow in departureTime = isNow ? nil : Date() }
-                    ))
+                Picker("Modo", selection: $timeMode) {
+                    Text("Salir a las").tag(TimeMode.departAfter)
+                    Text("Llegar antes de").tag(TimeMode.arriveBefore)
                 }
-                if !isToday || departureTime != nil {
-                    DatePicker(
-                        isToday ? "Hora" : "Hora de salida",
-                        selection: Binding(get: { departureTime ?? Date() }, set: { departureTime = $0 }),
-                        displayedComponents: .hourAndMinute
-                    )
+                .pickerStyle(.segmented)
+                if timeMode == .departAfter {
+                    if isToday {
+                        Toggle("Salir ahora", isOn: Binding(
+                            get: { departureTime == nil },
+                            set: { isNow in departureTime = isNow ? nil : Date() }
+                        ))
+                    }
+                    if !isToday || departureTime != nil {
+                        DatePicker(
+                            isToday ? "Hora" : "Hora de salida",
+                            selection: Binding(get: { departureTime ?? Date() }, set: { departureTime = $0 }),
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
+                } else {
+                    DatePicker("Llegar antes de", selection: $arriveBeforeTime, displayedComponents: .hourAndMinute)
                 }
             }
 
@@ -113,15 +131,21 @@ struct JourneyPlannerView: View {
                         originStopId: origin.physicalStopId, originName: origin.name,
                         destinationStopId: destination.physicalStopId, destinationName: destination.name
                     ))
-                    let departAfterMin: Int = {
-                        guard let departureTime else {
-                            let now = Calendar.current.dateComponents([.hour, .minute], from: Date())
-                            return (now.hour ?? 0) * 60 + (now.minute ?? 0)
-                        }
-                        let comps = Calendar.current.dateComponents([.hour, .minute], from: departureTime)
-                        return (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
-                    }()
-                    onSearch(origin.physicalStopId, origin.name, destination.physicalStopId, destination.name, date, departAfterMin)
+                    if timeMode == .arriveBefore {
+                        let comps = Calendar.current.dateComponents([.hour, .minute], from: arriveBeforeTime)
+                        let arriveBeforeMin = (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+                        onSearch(origin.physicalStopId, origin.name, destination.physicalStopId, destination.name, date, 0, arriveBeforeMin)
+                    } else {
+                        let departAfterMin: Int = {
+                            guard let departureTime else {
+                                let now = Calendar.current.dateComponents([.hour, .minute], from: Date())
+                                return (now.hour ?? 0) * 60 + (now.minute ?? 0)
+                            }
+                            let comps = Calendar.current.dateComponents([.hour, .minute], from: departureTime)
+                            return (comps.hour ?? 0) * 60 + (comps.minute ?? 0)
+                        }()
+                        onSearch(origin.physicalStopId, origin.name, destination.physicalStopId, destination.name, date, departAfterMin, nil)
+                    }
                 }
                 .disabled(origin == nil || destination == nil || origin?.physicalStopId == destination?.physicalStopId)
                 .frame(maxWidth: .infinity, alignment: .center)

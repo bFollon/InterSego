@@ -22,7 +22,7 @@ private sealed class FlowStep {
     data class Results(
         val originId: String, val originName: String,
         val destinationId: String, val destinationName: String,
-        val date: LocalDate, val departAfterMin: Int,
+        val date: LocalDate, val departAfterMin: Int, val arriveBeforeMin: Int?,
     ) : FlowStep()
     data class Detail(val journey: Journey, val results: Results) : FlowStep()
 }
@@ -56,12 +56,12 @@ fun JourneyPlannerFlowScreen(
             JourneyPlannerScreen(
                 supportedRouteIds = supportedRouteIds,
                 onBack = onExit,
-                onSearch = { originId, originName, destinationId, destinationName, date, departAfterMin ->
-                    val results = FlowStep.Results(originId, originName, destinationId, destinationName, date, departAfterMin)
+                onSearch = { originId, originName, destinationId, destinationName, date, departAfterMin, arriveBeforeMin ->
+                    val results = FlowStep.Results(originId, originName, destinationId, destinationName, date, departAfterMin, arriveBeforeMin)
                     step = results
                     isSearching = true
                     coroutineScope.launch {
-                        journeys = JourneySearchCoordinator.search(context, originId, destinationId, date, departAfterMin)
+                        journeys = JourneySearchCoordinator.search(context, originId, destinationId, date, departAfterMin, arriveBeforeMin)
                         isSearching = false
                     }
                 }

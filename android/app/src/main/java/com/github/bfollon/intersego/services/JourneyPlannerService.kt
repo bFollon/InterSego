@@ -22,10 +22,16 @@ import java.time.Month
  * this whole service stays pure Kotlin with no Android/Calendar dependency and is trivially
  * unit-testable on the JVM.
  *
+ * Exactly one of two search modes applies: if [arriveBeforeMin] is set, it takes over — the
+ * whole day is searched (regardless of [departAfterMin]) for journeys arriving at or before it,
+ * ranked by closeness to that deadline first. Otherwise [departAfterMin] applies as before,
+ * ranked by earliest arrival first. See "Arrive-before mode" in `docs/JOURNEY_PLANNER.md`.
+ *
  * @param origin physicalStopId
  * @param destination physicalStopId
  * @param weekday java.util.Calendar.DAY_OF_WEEK value (Sun=1…Sat=7), for MON_FRI_ONLY/FRI_ONLY seasonal filtering
- * @param departAfterMin minutes-of-day; only journeys departing at or after this are returned
+ * @param departAfterMin minutes-of-day; only journeys departing at or after this are returned (ignored when [arriveBeforeMin] is set)
+ * @param arriveBeforeMin minutes-of-day; when set, switches to arrive-before mode (see above)
  */
 data class JourneyQuery(
     val origin: String,
@@ -34,6 +40,7 @@ data class JourneyQuery(
     val month: Month,
     val weekday: Int,
     val departAfterMin: Int,
+    val arriveBeforeMin: Int? = null,
 )
 
 /**
@@ -78,13 +85,17 @@ object JourneyPlannerService {
         val segments = buildRideSegments(routes, query.dayTypes, query.month, query.weekday)
         val walkNeighbors = buildWalkIndex(transfers)
 
+        // Arrive-before mode searches the whole day (any bus, however early, is a candidate) and
+        // ranks by closeness to the deadline afterwards - departAfterMin doesn't apply.
+        val searchStartMin = if (query.arriveBeforeMin != null) 0 else query.departAfterMin
+
         // Round 0: origin (+ its immediate walk neighbors) as boarding points, no buffer (nothing to transfer from yet).
-        val origin = Reached(query.origin, query.departAfterMin, isEstimatedArrival = false, legsFromOrigin = emptyList(), boardedTripKeys = emptySet())
+        val origin = Reached(query.origin, searchStartMin, isEstimatedArrival = false, legsFromOrigin = emptyList(), boardedTripKeys = emptySet())
         val round0Starts = listOf(origin) + walkNeighbors[query.origin].orEmpty().map { edge ->
             val other = if (edge.from == query.origin) edge.to else edge.from
             Reached(
                 stop = other,
-                timeMin = query.departAfterMin + edge.walkMinutes,
+                timeMin = searchStartMin + edge.walkMinutes,
                 isEstimatedArrival = false,
                 legsFromOrigin = listOf(Leg.Walk(query.origin, other, edge.meters, edge.walkMinutes)),
                 boardedTripKeys = emptySet(),
@@ -114,7 +125,7 @@ object JourneyPlannerService {
         // Round 1: transfer at every round-0 ride-reachable stop, or a walk from it, onto a *different* trip.
         // The walk itself adds no buffer to the arrival time here — the transfer buffer is
         // applied at the *next boarding* check inside ridesFrom (see its `cameFromWalk` branch).
-        val round1Starts = round0RideReach + round0RideReach.flatMap { reached ->
+        val round1StartsRaw = round0RideReach + round0RideReach.flatMap { reached ->
             walkNeighbors[reached.stop].orEmpty().map { edge ->
                 val other = if (edge.from == reached.stop) edge.to else edge.from
                 val walkLeg = Leg.Walk(reached.stop, other, edge.meters, edge.walkMinutes)
@@ -125,6 +136,9 @@ object JourneyPlannerService {
                 )
             }
         }
+        // In arrive-before mode, a stop already reached past the deadline can only produce
+        // further journeys that are also past it (time only moves forward) - prune it here.
+        val round1Starts = query.arriveBeforeMin?.let { deadline -> round1StartsRaw.filter { it.timeMin <= deadline } } ?: round1StartsRaw
 
         for (start in round1Starts) {
             val buffer = if (start.isEstimatedArrival) BUFFER_SAME_STOP_ESTIMATED else BUFFER_SAME_STOP_TRANSCRIBED
@@ -145,7 +159,12 @@ object JourneyPlannerService {
             }
         }
 
-        return rankAndDedupe(journeys)
+        val deadline = query.arriveBeforeMin
+        return if (deadline != null) {
+            rankAndDedupe(journeys.filter { it.arrivalMin <= deadline }) { deadline - it.arrivalMin }
+        } else {
+            rankAndDedupe(journeys) { it.arrivalMin }
+        }
     }
 
     /**
@@ -296,12 +315,13 @@ object JourneyPlannerService {
         return segments
     }
 
-    /** Ranks by earliest arrival, then fewest transfers, then latest departure; collapses to the
-     * best journey per distinct route/leg-kind pattern, drops any journey dominated by another
-     * (see [strictlyDominates] — this is what filters out "walk to a nearby stop the direct bus
-     * already passes through" alternatives that arrive no sooner and cost no fewer transfers),
-     * then returns the top 3 non-dominated patterns. */
-    private fun rankAndDedupe(journeys: List<Journey>): List<Journey> {
+    /** Ranks by [primaryKey] ascending (earliest arrival in depart-after mode, closeness to the
+     * deadline in arrive-before mode — see [findJourneys]), then fewest transfers, then latest
+     * departure; collapses to the best journey per distinct route/leg-kind pattern, drops any
+     * journey dominated by another (see [strictlyDominates] — this is what filters out "walk to
+     * a nearby stop the direct bus already passes through" alternatives that are no better on any
+     * axis), then returns the top 3 non-dominated patterns. */
+    private fun rankAndDedupe(journeys: List<Journey>, primaryKey: (Journey) -> Int): List<Journey> {
         fun pattern(j: Journey) = j.legs.joinToString("|") { leg ->
             when (leg) {
                 is Leg.Ride -> "R:${leg.routeId}:${leg.variantId}"
@@ -309,28 +329,29 @@ object JourneyPlannerService {
             }
         }
         fun betterOf(a: Journey, b: Journey): Journey {
-            if (a.arrivalMin != b.arrivalMin) return if (a.arrivalMin < b.arrivalMin) a else b
+            if (primaryKey(a) != primaryKey(b)) return if (primaryKey(a) < primaryKey(b)) a else b
             if (a.transferCount != b.transferCount) return if (a.transferCount < b.transferCount) a else b
             return if (a.departureMin >= b.departureMin) a else b
         }
         val bestPerPattern = journeys.groupBy(::pattern).values.map { it.reduce(::betterOf) }
 
         val nonDominated = bestPerPattern.filterNot { candidate ->
-            bestPerPattern.any { other -> other != candidate && strictlyDominates(other, candidate) }
+            bestPerPattern.any { other -> other != candidate && strictlyDominates(other, candidate, primaryKey) }
         }
 
         return nonDominated.sortedWith(
-            compareBy<Journey> { it.arrivalMin }
+            compareBy<Journey> { primaryKey(it) }
                 .thenBy { it.transferCount }
                 .thenByDescending { it.departureMin }
         ).take(3)
     }
 
-    /** True if [a] is never worse than [b] on arrival/transfers/departure and strictly better on
-     * at least one — i.e. [b] offers no genuine trade-off and shouldn't be shown alongside [a]. */
-    private fun strictlyDominates(a: Journey, b: Journey): Boolean {
-        val neverWorse = a.arrivalMin <= b.arrivalMin && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
-        val strictlyBetter = a.arrivalMin < b.arrivalMin || a.transferCount < b.transferCount || a.departureMin > b.departureMin
+    /** True if [a] is never worse than [b] on [primaryKey]/transfers/departure and strictly
+     * better on at least one — i.e. [b] offers no genuine trade-off and shouldn't be shown
+     * alongside [a]. */
+    private fun strictlyDominates(a: Journey, b: Journey, primaryKey: (Journey) -> Int): Boolean {
+        val neverWorse = primaryKey(a) <= primaryKey(b) && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
+        val strictlyBetter = primaryKey(a) < primaryKey(b) || a.transferCount < b.transferCount || a.departureMin > b.departureMin
         return neverWorse && strictlyBetter
     }
 }

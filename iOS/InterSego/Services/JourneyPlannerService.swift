@@ -14,11 +14,17 @@ import Foundation
 /// computed here, so this whole service stays pure Swift with no Foundation-Calendar coupling
 /// baked into its logic and is trivially unit-testable.
 ///
+/// Exactly one of two search modes applies: if `arriveBeforeMin` is set, it takes over — the
+/// whole day is searched (regardless of `departAfterMin`) for journeys arriving at or before it,
+/// ranked by closeness to that deadline first. Otherwise `departAfterMin` applies as before,
+/// ranked by earliest arrival first. See "Arrive-before mode" in `docs/JOURNEY_PLANNER.md`.
+///
 /// - Parameters:
 ///   - origin: physicalStopId
 ///   - destination: physicalStopId
 ///   - weekday: Calendar.current.component(.weekday) value (Sun=1…Sat=7), for MON_FRI_ONLY/FRI_ONLY seasonal filtering
-///   - departAfterMin: minutes-of-day; only journeys departing at or after this are returned
+///   - departAfterMin: minutes-of-day; only journeys departing at or after this are returned (ignored when `arriveBeforeMin` is set)
+///   - arriveBeforeMin: minutes-of-day; when set, switches to arrive-before mode (see above)
 struct JourneyQuery {
     let origin: String
     let destination: String
@@ -26,6 +32,7 @@ struct JourneyQuery {
     let month: Int
     let weekday: Int
     let departAfterMin: Int
+    var arriveBeforeMin: Int? = nil
 }
 
 /// Journey search, per `docs/JOURNEY_PLANNER.md`. Pure logic, no UIKit/SwiftUI dependency —
@@ -71,13 +78,17 @@ enum JourneyPlannerService {
         let segments = buildRideSegments(routes: routes, dayTypes: query.dayTypes, month: query.month, weekday: query.weekday)
         let walkNeighbors = buildWalkIndex(transfers)
 
+        // Arrive-before mode searches the whole day (any bus, however early, is a candidate) and
+        // ranks by closeness to the deadline afterwards - departAfterMin doesn't apply.
+        let searchStartMin = query.arriveBeforeMin != nil ? 0 : query.departAfterMin
+
         // Round 0: origin (+ its immediate walk neighbors) as boarding points, no buffer (nothing to transfer from yet).
-        let origin = Reached(stop: query.origin, timeMin: query.departAfterMin, isEstimatedArrival: false, legsFromOrigin: [], boardedTripKeys: [])
+        let origin = Reached(stop: query.origin, timeMin: searchStartMin, isEstimatedArrival: false, legsFromOrigin: [], boardedTripKeys: [])
         let round0Starts: [Reached] = [origin] + (walkNeighbors[query.origin] ?? []).map { edge in
             let other = edge.from == query.origin ? edge.to : edge.from
             return Reached(
                 stop: other,
-                timeMin: query.departAfterMin + edge.walkMinutes,
+                timeMin: searchStartMin + edge.walkMinutes,
                 isEstimatedArrival: false,
                 legsFromOrigin: [.walk(Leg.Walk(fromStop: query.origin, toStop: other, meters: edge.meters, minutes: edge.walkMinutes))],
                 boardedTripKeys: []
@@ -108,13 +119,21 @@ enum JourneyPlannerService {
         // Round 1: transfer at every round-0 ride-reachable stop, or a walk from it, onto a *different* trip.
         // The walk itself adds no buffer to the arrival time here — the transfer buffer is applied at the
         // *next boarding* check inside ridesFrom (see its cameFromWalk branch).
-        var round1Starts = round0RideReach
+        var round1StartsRaw = round0RideReach
         for reached in round0RideReach {
             for edge in walkNeighbors[reached.stop] ?? [] {
                 let other = edge.from == reached.stop ? edge.to : edge.from
                 let walkLeg = Leg.Walk(fromStop: reached.stop, toStop: other, meters: edge.meters, minutes: edge.walkMinutes)
-                round1Starts.append(Reached(stop: other, timeMin: reached.timeMin + edge.walkMinutes, isEstimatedArrival: reached.isEstimatedArrival, legsFromOrigin: reached.legsFromOrigin + [.walk(walkLeg)], boardedTripKeys: reached.boardedTripKeys))
+                round1StartsRaw.append(Reached(stop: other, timeMin: reached.timeMin + edge.walkMinutes, isEstimatedArrival: reached.isEstimatedArrival, legsFromOrigin: reached.legsFromOrigin + [.walk(walkLeg)], boardedTripKeys: reached.boardedTripKeys))
             }
+        }
+        // In arrive-before mode, a stop already reached past the deadline can only produce
+        // further journeys that are also past it (time only moves forward) - prune it here.
+        let round1Starts: [Reached]
+        if let deadline = query.arriveBeforeMin {
+            round1Starts = round1StartsRaw.filter { $0.timeMin <= deadline }
+        } else {
+            round1Starts = round1StartsRaw
         }
 
         for start in round1Starts {
@@ -135,7 +154,11 @@ enum JourneyPlannerService {
             }
         }
 
-        return rankAndDedupe(journeys)
+        if let deadline = query.arriveBeforeMin {
+            return rankAndDedupe(journeys.filter { $0.arrivalMin <= deadline }) { deadline - $0.arrivalMin }
+        } else {
+            return rankAndDedupe(journeys) { $0.arrivalMin }
+        }
     }
 
     /// From `start` (already at `Reached.stop` at `Reached.timeMin`), board every eligible trip
@@ -290,14 +313,13 @@ enum JourneyPlannerService {
         return segments
     }
 
-    /// Ranks by earliest arrival, then fewest transfers, then latest departure; collapses to the
-    /// best journey per distinct route/leg-kind pattern, then returns the top 3 patterns.
-    /// Ranks by earliest arrival, then fewest transfers, then latest departure; collapses to the
-    /// best journey per distinct route/leg-kind pattern, drops any journey dominated by another
-    /// (see `strictlyDominates` - this is what filters out "walk to a nearby stop the direct bus
-    /// already passes through" alternatives that arrive no sooner and cost no fewer transfers),
-    /// then returns the top 3 non-dominated patterns.
-    private static func rankAndDedupe(_ journeys: [Journey]) -> [Journey] {
+    /// Ranks by `primaryKey` ascending (earliest arrival in depart-after mode, closeness to the
+    /// deadline in arrive-before mode — see `findJourneys`), then fewest transfers, then latest
+    /// departure; collapses to the best journey per distinct route/leg-kind pattern, drops any
+    /// journey dominated by another (see `strictlyDominates` - this is what filters out "walk to
+    /// a nearby stop the direct bus already passes through" alternatives that are no better on
+    /// any axis), then returns the top 3 non-dominated patterns.
+    private static func rankAndDedupe(_ journeys: [Journey], primaryKey: (Journey) -> Int) -> [Journey] {
         func pattern(_ j: Journey) -> String {
             j.legs.map { leg -> String in
                 switch leg {
@@ -307,7 +329,7 @@ enum JourneyPlannerService {
             }.joined(separator: "|")
         }
         func better(_ a: Journey, _ b: Journey) -> Journey {
-            if a.arrivalMin != b.arrivalMin { return a.arrivalMin < b.arrivalMin ? a : b }
+            if primaryKey(a) != primaryKey(b) { return primaryKey(a) < primaryKey(b) ? a : b }
             if a.transferCount != b.transferCount { return a.transferCount < b.transferCount ? a : b }
             return a.departureMin >= b.departureMin ? a : b
         }
@@ -319,21 +341,22 @@ enum JourneyPlannerService {
 
         let candidates = Array(bestPerPattern.values)
         let nonDominated = candidates.filter { candidate in
-            !candidates.contains { other in other != candidate && strictlyDominates(other, candidate) }
+            !candidates.contains { other in other != candidate && strictlyDominates(other, candidate, primaryKey: primaryKey) }
         }
 
         return nonDominated.sorted { a, b in
-            if a.arrivalMin != b.arrivalMin { return a.arrivalMin < b.arrivalMin }
+            if primaryKey(a) != primaryKey(b) { return primaryKey(a) < primaryKey(b) }
             if a.transferCount != b.transferCount { return a.transferCount < b.transferCount }
             return a.departureMin > b.departureMin
         }.prefix(3).map { $0 }
     }
 
-    /// True if `a` is never worse than `b` on arrival/transfers/departure and strictly better on
-    /// at least one - i.e. `b` offers no genuine trade-off and shouldn't be shown alongside `a`.
-    private static func strictlyDominates(_ a: Journey, _ b: Journey) -> Bool {
-        let neverWorse = a.arrivalMin <= b.arrivalMin && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
-        let strictlyBetter = a.arrivalMin < b.arrivalMin || a.transferCount < b.transferCount || a.departureMin > b.departureMin
+    /// True if `a` is never worse than `b` on `primaryKey`/transfers/departure and strictly
+    /// better on at least one - i.e. `b` offers no genuine trade-off and shouldn't be shown
+    /// alongside `a`.
+    private static func strictlyDominates(_ a: Journey, _ b: Journey, primaryKey: (Journey) -> Int) -> Bool {
+        let neverWorse = primaryKey(a) <= primaryKey(b) && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
+        let strictlyBetter = primaryKey(a) < primaryKey(b) || a.transferCount < b.transferCount || a.departureMin > b.departureMin
         return neverWorse && strictlyBetter
     }
 }

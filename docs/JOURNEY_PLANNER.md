@@ -219,13 +219,35 @@ after a ride. See `Journey.stepsWithWaits()` / `Journey.kt`'s `stepsWithWaits()`
 Earliest arrival alone produces bad suggestions (an earlier arrival via a stressful 4-minute
 transfer beats a relaxed one it shouldn't). Ranking, in order:
 
-1. **Earliest arrival** (`arrivalMin`)
+1. **Primary key** — see "Arrive-before mode" below; earliest arrival (`arrivalMin`) in the
+   default (depart-after) mode
 2. **Fewest transfers** (`transferCount`)
 3. **Latest departure** (`departureMin`, descending — less waiting at the origin)
 
 Return the **top 3 distinct** journeys (distinct = different leg sequence, not just different
 times on the same route/transfer pattern), not just the single best, so the results UI can offer
 a trade-off instead of only the tightest option.
+
+### Arrive-before mode
+
+The query can ask for journeys that arrive by a deadline instead of departing after a given time
+("¿A qué hora salgo si quiero llegar antes de las X?"). This is a second, mutually-exclusive mode
+on the same query (`JourneyQuery.arriveBeforeMin` — when set, `departAfterMin` is ignored):
+
+- The whole day is searched (round 0/1 both start from minute 0), since any bus, however early,
+  is a candidate — the deadline is a filter and ranking key, not a departure floor.
+- Journeys arriving after the deadline are dropped entirely before ranking, not merely ranked
+  last (`arrivalMin <= arriveBeforeMin`).
+- The **primary ranking key becomes closeness to the deadline** (`arriveBeforeMin - arrivalMin`,
+  ascending) in place of raw `arrivalMin` — tie-breaking (fewest transfers, latest departure)
+  and dominance filtering (below) are otherwise unchanged, just evaluated against this key
+  instead. `rankAndDedupe` takes the primary key as a parameter for exactly this reason, so the
+  two modes share one implementation rather than diverging.
+- No dedicated ranking exists yet for trade-offs specific to this mode (e.g. an earlier, more
+  relaxed arrival vs. one that cuts it closer to the deadline with fewer transfers) — closeness
+  to the deadline is used as a straightforward stand-in for "best," matching the depart-after
+  mode's straightforwardness before dominance filtering was added. Revisit if arrive-before
+  results turn out to need their own dominance/trade-off logic.
 
 **Dominance filtering.** A different leg sequence is not automatically a genuine trade-off — a
 walk to a nearby stop the direct bus already serves, or alighting one stop early, produces a

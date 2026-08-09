@@ -42,6 +42,7 @@ struct JourneyResultsSelection: Hashable {
     let destinationName: String
     let date: Date
     let departAfterMin: Int
+    let arriveBeforeMin: Int?
 }
 
 struct JourneyDetailSelection: Hashable {
@@ -245,11 +246,11 @@ struct ContentView: View {
                     case .journeyPlanner:
                         JourneyPlannerView(
                             supportedRouteIds: routes.map(\.id),
-                            onSearch: { originId, originName, destinationId, destinationName, date, departAfterMin in
+                            onSearch: { originId, originName, destinationId, destinationName, date, departAfterMin, arriveBeforeMin in
                                 navigationPath.append(JourneyResultsSelection(
                                     originId: originId, originName: originName,
                                     destinationId: destinationId, destinationName: destinationName,
-                                    date: date, departAfterMin: departAfterMin
+                                    date: date, departAfterMin: departAfterMin, arriveBeforeMin: arriveBeforeMin
                                 ))
                             },
                         )

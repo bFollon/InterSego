@@ -38,8 +38,8 @@ final class JourneyPlannerServiceTests: XCTestCase {
         )
     }
 
-    private func query(_ origin: String, _ destination: String, departAfterMin: Int = 0, dayTypes: Set<DayType> = [.weekday]) -> JourneyQuery {
-        JourneyQuery(origin: origin, destination: destination, dayTypes: dayTypes, month: 3, weekday: 3, departAfterMin: departAfterMin)
+    private func query(_ origin: String, _ destination: String, departAfterMin: Int = 0, dayTypes: Set<DayType> = [.weekday], arriveBeforeMin: Int? = nil) -> JourneyQuery {
+        JourneyQuery(origin: origin, destination: destination, dayTypes: dayTypes, month: 3, weekday: 3, departAfterMin: departAfterMin, arriveBeforeMin: arriveBeforeMin)
     }
 
     func testDirectJourneyOnASingleRoute() {
@@ -164,6 +164,38 @@ final class JourneyPlannerServiceTests: XCTestCase {
 
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].legs, [.ride(Leg.Ride(routeId: "M9", variantId: "out", fromStop: "a", toStop: "c", depMin: 600, arrMin: 620, isEstimated: false))])
+    }
+
+    func testArriveBeforeModePicksTheJourneyClosestToTheDeadlineIgnoringDepartAfterMin() {
+        let route = singleVariantRoute(
+            routeId: "M9", stops: [stop("a"), stop("b"), stop("c")],
+            stopSequenceIds: ["a", "b", "c"], dayType: .weekday,
+            trips: [
+                [dep(600), dep(610), dep(620)],
+                [dep(630), dep(640), dep(650)],
+                [dep(700), dep(710), dep(720)],
+            ]
+        )
+        // departAfterMin is a nonsense value (800, after every trip) to prove it's ignored in this mode
+        let result = JourneyPlannerService.findJourneys(
+            routes: [route], transfers: [],
+            query: query("a", "c", departAfterMin: 800, arriveBeforeMin: 655)
+        )
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].arrivalMin, 650) // closest to 655 - not the earliest (620) or the excluded, past-deadline one (720)
+    }
+
+    func testArriveBeforeModeExcludesJourneysThatArriveAfterTheDeadlineEntirelyNotJustRanksThemLast() {
+        let route = singleVariantRoute(
+            routeId: "M9", stops: [stop("a"), stop("b")], stopSequenceIds: ["a", "b"], dayType: .weekday,
+            trips: [[dep(600), dep(620)]]
+        )
+        let result = JourneyPlannerService.findJourneys(
+            routes: [route], transfers: [],
+            query: query("a", "b", arriveBeforeMin: 500)
+        )
+        XCTAssertEqual(result, [])
     }
 
     func testSeasonalAvailabilityIsResolvedAgainstTheQueryMonthNotUnconditionallyTrue() {

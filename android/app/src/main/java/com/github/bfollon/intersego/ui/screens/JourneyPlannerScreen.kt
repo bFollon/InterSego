@@ -38,20 +38,24 @@ import java.time.format.DateTimeFormatter
 
 private enum class PickerTarget { ORIGIN, DESTINATION }
 
+private enum class TimeMode { DEPART_AFTER, ARRIVE_BEFORE }
+
 private data class Endpoint(val physicalStopId: String, val name: String)
 
 private const val MILLIS_PER_DAY = 86_400_000L
 
 /**
- * Entry UI for the journey planner: choose origin/destination (stop or "mi ubicación"),
- * departure date/time, and search. See `docs/JOURNEY_PLANNER.md` for the search itself.
+ * Entry UI for the journey planner: choose origin/destination (stop or "mi ubicación"), a
+ * departure date and either a departure time ("Salir a las") or an arrival deadline ("Llegar
+ * antes de"), and search. See `docs/JOURNEY_PLANNER.md` for the search itself, in particular
+ * "Arrive-before mode" for how the two time modes differ.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JourneyPlannerScreen(
     supportedRouteIds: List<String>,
     onBack: () -> Unit,
-    onSearch: (originId: String, originName: String, destinationId: String, destinationName: String, date: LocalDate, departAfterMin: Int) -> Unit,
+    onSearch: (originId: String, originName: String, destinationId: String, destinationName: String, date: LocalDate, departAfterMin: Int, arriveBeforeMin: Int?) -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -60,9 +64,12 @@ fun JourneyPlannerScreen(
     var destination by remember { mutableStateOf<Endpoint?>(null) }
     var pickerTarget by remember { mutableStateOf<PickerTarget?>(null) }
     var date by remember { mutableStateOf(LocalDate.now()) }
+    var timeMode by remember { mutableStateOf(TimeMode.DEPART_AFTER) }
     var departureTime by remember { mutableStateOf<LocalTime?>(null) } // null = "ahora"
+    var arriveBeforeTime by remember { mutableStateOf(LocalTime.now().plusHours(1)) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showArriveBeforePicker by remember { mutableStateOf(false) }
     var recents by remember { mutableStateOf(RecentJourneysService.recent(context)) }
     var locationError by remember { mutableStateOf<String?>(null) }
     // Which field's "mi ubicación" lookup is in flight, if any - lets the field itself show a
@@ -200,13 +207,44 @@ fun JourneyPlannerScreen(
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Hora de salida", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                        PillValue(
-                            text = departureTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Ahora",
-                            onClick = { showTimePicker = true }
+                        FilterChip(
+                            selected = timeMode == TimeMode.DEPART_AFTER,
+                            onClick = { timeMode = TimeMode.DEPART_AFTER },
+                            label = { Text("Salir a las") },
+                            modifier = Modifier.weight(1f)
                         )
+                        FilterChip(
+                            selected = timeMode == TimeMode.ARRIVE_BEFORE,
+                            onClick = { timeMode = TimeMode.ARRIVE_BEFORE },
+                            label = { Text("Llegar antes de") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    if (timeMode == TimeMode.DEPART_AFTER) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Hora de salida", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            PillValue(
+                                text = departureTime?.format(DateTimeFormatter.ofPattern("HH:mm")) ?: "Ahora",
+                                onClick = { showTimePicker = true }
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Llegar antes de", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            PillValue(
+                                text = arriveBeforeTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                                onClick = { showArriveBeforePicker = true }
+                            )
+                        }
                     }
                 }
             }
@@ -244,9 +282,14 @@ fun JourneyPlannerScreen(
                         val d = destination
                         if (o != null && d != null) {
                             RecentJourneysService.record(context, RecentJourney(o.physicalStopId, o.name, d.physicalStopId, d.name))
-                            val departAfterMin = departureTime?.let { it.hour * 60 + it.minute }
-                                ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
-                            onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, departAfterMin)
+                            if (timeMode == TimeMode.ARRIVE_BEFORE) {
+                                val arriveBeforeMin = arriveBeforeTime.hour * 60 + arriveBeforeTime.minute
+                                onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, 0, arriveBeforeMin)
+                            } else {
+                                val departAfterMin = departureTime?.let { it.hour * 60 + it.minute }
+                                    ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
+                                onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, departAfterMin, null)
+                            }
                         }
                     },
                     enabled = origin != null && destination != null && origin?.physicalStopId != destination?.physicalStopId,
@@ -328,6 +371,23 @@ fun JourneyPlannerScreen(
                     }
                     TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
                 }
+            },
+            text = { TimePicker(state = timePickerState) }
+        )
+    }
+
+    if (showArriveBeforePicker) {
+        val timePickerState = rememberTimePickerState(initialHour = arriveBeforeTime.hour, initialMinute = arriveBeforeTime.minute, is24Hour = true)
+        AlertDialog(
+            onDismissRequest = { showArriveBeforePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    arriveBeforeTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+                    showArriveBeforePicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showArriveBeforePicker = false }) { Text("Cancelar") }
             },
             text = { TimePicker(state = timePickerState) }
         )
