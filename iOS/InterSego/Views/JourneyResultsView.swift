@@ -127,12 +127,12 @@ private struct JourneyRow: View {
                     case .ride(let ride):
                         Label(ride.routeId, systemImage: "bus")
                             .font(.caption)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, 8).padding(.vertical, 8)
                             .background(Capsule().fill(Color.accentColor.opacity(0.15)))
                     case .walk(let walk):
                         Label("\(walk.minutes) min", systemImage: "figure.walk")
                             .font(.caption)
-                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .padding(.horizontal, 8).padding(.vertical, 8)
                             .background(Capsule().fill(Color.gray.opacity(0.15)))
                     }
                 }
