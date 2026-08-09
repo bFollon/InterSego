@@ -1,6 +1,6 @@
 {
   "routeId": "M4",
-  "version": "1.1",
+  "version": "1.2",
   "source": "Linecar M4 PDF, 2026-04-15",
   "route": {
     "number": "M4",
@@ -22,6 +22,7 @@
     },
     {
       "id": "azoguejo-endStop",
+      "physicalStopId": "azoguejo",
       "name": "Azoguejo",
       "area": "Segovia capital",
       "lat": 40.948502,

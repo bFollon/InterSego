@@ -1,0 +1,515 @@
+{
+  "version": "1.0",
+  "transfers": [
+    {
+      "from": "estacion-autobuses",
+      "to": "jardinillos",
+      "meters": 95,
+      "walkMinutes": 2
+    },
+    {
+      "from": "la-pradera",
+      "to": "valsain-pradera",
+      "meters": 114,
+      "walkMinutes": 2
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "leopoldo-moreno",
+      "meters": 129,
+      "walkMinutes": 2
+    },
+    {
+      "from": "palazuelos",
+      "to": "palazuelos-ermita",
+      "meters": 159,
+      "walkMinutes": 3
+    },
+    {
+      "from": "parroquia-sotillo",
+      "to": "paseo-cabanillas-sotillo",
+      "meters": 213,
+      "walkMinutes": 3
+    },
+    {
+      "from": "parroquia-sotillo",
+      "to": "rafael-las-heras",
+      "meters": 217,
+      "walkMinutes": 3
+    },
+    {
+      "from": "frente-bar-norte",
+      "to": "la-pista",
+      "meters": 218,
+      "walkMinutes": 3
+    },
+    {
+      "from": "hotel-av-sotillo",
+      "to": "maspalomas",
+      "meters": 246,
+      "walkMinutes": 4
+    },
+    {
+      "from": "andres-laguna",
+      "to": "frente-bar-norte",
+      "meters": 250,
+      "walkMinutes": 4
+    },
+    {
+      "from": "maspalomas",
+      "to": "parroquia-sotillo",
+      "meters": 252,
+      "walkMinutes": 4
+    },
+    {
+      "from": "fronton",
+      "to": "valsain-pradera",
+      "meters": 288,
+      "walkMinutes": 4
+    },
+    {
+      "from": "palazuelos-colegio",
+      "to": "tabanera",
+      "meters": 299,
+      "walkMinutes": 4
+    },
+    {
+      "from": "san-cristobal",
+      "to": "san-cristobal-iglesia",
+      "meters": 308,
+      "walkMinutes": 5
+    },
+    {
+      "from": "palazuelos",
+      "to": "palazuelos-iglesia",
+      "meters": 310,
+      "walkMinutes": 5
+    },
+    {
+      "from": "pension",
+      "to": "poligono-lastrilla",
+      "meters": 310,
+      "walkMinutes": 5
+    },
+    {
+      "from": "hermanitas",
+      "to": "plaza-de-toros",
+      "meters": 312,
+      "walkMinutes": 5
+    },
+    {
+      "from": "trescasas",
+      "to": "trescasas-2",
+      "meters": 316,
+      "walkMinutes": 5
+    },
+    {
+      "from": "sonsoto",
+      "to": "sonsoto-2",
+      "meters": 321,
+      "walkMinutes": 5
+    },
+    {
+      "from": "ctra-valladolid",
+      "to": "leopoldo-moreno",
+      "meters": 325,
+      "walkMinutes": 5
+    },
+    {
+      "from": "ctra-valladolid",
+      "to": "pension",
+      "meters": 325,
+      "walkMinutes": 5
+    },
+    {
+      "from": "palazuelos",
+      "to": "palazuelos-colegio",
+      "meters": 325,
+      "walkMinutes": 5
+    },
+    {
+      "from": "fabrica-cristal",
+      "to": "la-granja",
+      "meters": 328,
+      "walkMinutes": 5
+    },
+    {
+      "from": "gasolinera-lastrilla",
+      "to": "leopoldo-moreno",
+      "meters": 332,
+      "walkMinutes": 5
+    },
+    {
+      "from": "palazuelos-ermita",
+      "to": "tabanera",
+      "meters": 344,
+      "walkMinutes": 5
+    },
+    {
+      "from": "san-cristobal-iglesia",
+      "to": "san-cristobal-rotonda",
+      "meters": 345,
+      "walkMinutes": 5
+    },
+    {
+      "from": "hotel-av-sotillo",
+      "to": "parroquia-sotillo",
+      "meters": 346,
+      "walkMinutes": 5
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "gasolinera-lastrilla",
+      "meters": 349,
+      "walkMinutes": 5
+    },
+    {
+      "from": "paseo-cabanillas-sotillo",
+      "to": "rafael-las-heras",
+      "meters": 351,
+      "walkMinutes": 5
+    },
+    {
+      "from": "fabrica-cristal",
+      "to": "ptas-segovia",
+      "meters": 355,
+      "walkMinutes": 5
+    },
+    {
+      "from": "iglesia-sto-tomas",
+      "to": "jardinillos",
+      "meters": 356,
+      "walkMinutes": 5
+    },
+    {
+      "from": "centro-boal",
+      "to": "maspalomas",
+      "meters": 362,
+      "walkMinutes": 5
+    },
+    {
+      "from": "tabanera",
+      "to": "tabanera-2",
+      "meters": 365,
+      "walkMinutes": 5
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "hotel-av-sotillo",
+      "meters": 368,
+      "walkMinutes": 5
+    },
+    {
+      "from": "palazuelos-colegio",
+      "to": "palazuelos-ermita",
+      "meters": 369,
+      "walkMinutes": 5
+    },
+    {
+      "from": "rafael-las-heras",
+      "to": "venta-magullo",
+      "meters": 372,
+      "walkMinutes": 5
+    },
+    {
+      "from": "maspalomas",
+      "to": "paseo-cabanillas-sotillo",
+      "meters": 373,
+      "walkMinutes": 5
+    },
+    {
+      "from": "andres-laguna",
+      "to": "iglesia-sto-tomas",
+      "meters": 378,
+      "walkMinutes": 6
+    },
+    {
+      "from": "palazuelos-iglesia",
+      "to": "palazuelos-parque-cruz",
+      "meters": 381,
+      "walkMinutes": 6
+    },
+    {
+      "from": "gasolinera-lastrilla",
+      "to": "pension",
+      "meters": 392,
+      "walkMinutes": 6
+    },
+    {
+      "from": "palazuelos-colegio",
+      "to": "palazuelos-iglesia",
+      "meters": 397,
+      "walkMinutes": 6
+    },
+    {
+      "from": "torrecaballeros",
+      "to": "torrecaballeros-2",
+      "meters": 399,
+      "walkMinutes": 6
+    },
+    {
+      "from": "andres-laguna",
+      "to": "la-pista",
+      "meters": 401,
+      "walkMinutes": 6
+    },
+    {
+      "from": "fronton",
+      "to": "la-pradera",
+      "meters": 401,
+      "walkMinutes": 6
+    },
+    {
+      "from": "ctra-valladolid",
+      "to": "poligono-lastrilla",
+      "meters": 403,
+      "walkMinutes": 6
+    },
+    {
+      "from": "aldehuela",
+      "to": "torrecaballeros-2",
+      "meters": 426,
+      "walkMinutes": 6
+    },
+    {
+      "from": "palazuelos",
+      "to": "tabanera",
+      "meters": 427,
+      "walkMinutes": 6
+    },
+    {
+      "from": "leopoldo-moreno",
+      "to": "pension",
+      "meters": 433,
+      "walkMinutes": 6
+    },
+    {
+      "from": "hotel-av-sotillo",
+      "to": "rafael-las-heras",
+      "meters": 436,
+      "walkMinutes": 6
+    },
+    {
+      "from": "palazuelos-colegio",
+      "to": "tabanera-2",
+      "meters": 442,
+      "walkMinutes": 6
+    },
+    {
+      "from": "estacion-autobuses",
+      "to": "iglesia-sto-tomas",
+      "meters": 446,
+      "walkMinutes": 6
+    },
+    {
+      "from": "maspalomas",
+      "to": "rafael-las-heras",
+      "meters": 447,
+      "walkMinutes": 6
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "ctra-valladolid",
+      "meters": 451,
+      "walkMinutes": 7
+    },
+    {
+      "from": "palazuelos-ermita",
+      "to": "palazuelos-iglesia",
+      "meters": 467,
+      "walkMinutes": 7
+    },
+    {
+      "from": "hotel-av-sotillo",
+      "to": "leopoldo-moreno",
+      "meters": 472,
+      "walkMinutes": 7
+    },
+    {
+      "from": "estacion-autobuses",
+      "to": "hospital-segovia",
+      "meters": 475,
+      "walkMinutes": 7
+    },
+    {
+      "from": "sonsoto-2",
+      "to": "trescasas",
+      "meters": 508,
+      "walkMinutes": 7
+    },
+    {
+      "from": "fronton",
+      "to": "plaza-valsain",
+      "meters": 517,
+      "walkMinutes": 7
+    },
+    {
+      "from": "la-granja",
+      "to": "ptas-segovia",
+      "meters": 529,
+      "walkMinutes": 8
+    },
+    {
+      "from": "ctra-valladolid",
+      "to": "gasolinera-lastrilla",
+      "meters": 532,
+      "walkMinutes": 8
+    },
+    {
+      "from": "centro-boal",
+      "to": "paseo-cabanillas-sotillo",
+      "meters": 543,
+      "walkMinutes": 8
+    },
+    {
+      "from": "hotel-av-sotillo",
+      "to": "paseo-cabanillas-sotillo",
+      "meters": 543,
+      "walkMinutes": 8
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "pension",
+      "meters": 546,
+      "walkMinutes": 8
+    },
+    {
+      "from": "c-la-fuencisla",
+      "to": "penas-del-erizo",
+      "meters": 550,
+      "walkMinutes": 8
+    },
+    {
+      "from": "hospital-segovia",
+      "to": "jardinillos",
+      "meters": 553,
+      "walkMinutes": 8
+    },
+    {
+      "from": "centro-boal",
+      "to": "parroquia-sotillo",
+      "meters": 555,
+      "walkMinutes": 8
+    },
+    {
+      "from": "parroquia-sotillo",
+      "to": "venta-magullo",
+      "meters": 567,
+      "walkMinutes": 8
+    },
+    {
+      "from": "centro-boal",
+      "to": "hotel-av-sotillo",
+      "meters": 578,
+      "walkMinutes": 8
+    },
+    {
+      "from": "hotel-av-sotillo",
+      "to": "venta-magullo",
+      "meters": 602,
+      "walkMinutes": 9
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "maspalomas",
+      "meters": 609,
+      "walkMinutes": 9
+    },
+    {
+      "from": "azoguejo",
+      "to": "jardinillos",
+      "meters": 615,
+      "walkMinutes": 9
+    },
+    {
+      "from": "la-pista",
+      "to": "plaza-de-toros",
+      "meters": 616,
+      "walkMinutes": 9
+    },
+    {
+      "from": "frente-bar-norte",
+      "to": "iglesia-sto-tomas",
+      "meters": 627,
+      "walkMinutes": 9
+    },
+    {
+      "from": "azoguejo",
+      "to": "estacion-autobuses",
+      "meters": 643,
+      "walkMinutes": 12
+    },
+    {
+      "from": "plaza-valsain",
+      "to": "valsain-pradera",
+      "meters": 645,
+      "walkMinutes": 9
+    },
+    {
+      "from": "palazuelos-iglesia",
+      "to": "tabanera",
+      "meters": 646,
+      "walkMinutes": 9
+    },
+    {
+      "from": "san-cristobal",
+      "to": "san-cristobal-rotonda",
+      "meters": 652,
+      "walkMinutes": 9
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "venta-magullo",
+      "meters": 654,
+      "walkMinutes": 9
+    },
+    {
+      "from": "leopoldo-moreno",
+      "to": "poligono-lastrilla",
+      "meters": 668,
+      "walkMinutes": 9
+    },
+    {
+      "from": "palazuelos",
+      "to": "palazuelos-parque-cruz",
+      "meters": 678,
+      "walkMinutes": 10
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "parroquia-sotillo",
+      "meters": 687,
+      "walkMinutes": 10
+    },
+    {
+      "from": "palazuelos-ermita",
+      "to": "tabanera-2",
+      "meters": 689,
+      "walkMinutes": 10
+    },
+    {
+      "from": "azoguejo",
+      "to": "hermanitas",
+      "meters": 690,
+      "walkMinutes": 10
+    },
+    {
+      "from": "colegio-lastrilla",
+      "to": "rafael-las-heras",
+      "meters": 692,
+      "walkMinutes": 10
+    },
+    {
+      "from": "gasolinera-lastrilla",
+      "to": "hotel-av-sotillo",
+      "meters": 693,
+      "walkMinutes": 10
+    },
+    {
+      "from": "poligono-ind-m1",
+      "to": "poligono-ind-m1-2",
+      "meters": 699,
+      "walkMinutes": 10
+    }
+  ]
+}

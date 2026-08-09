@@ -1,6 +1,6 @@
 {
   "routeId": "M7-AVE",
-  "version": "1.0",
+  "version": "1.1",
   "source": "Linecar M7 PDF (AVE variant)",
   "route": {
     "number": "M7-AVE",
@@ -77,6 +77,7 @@
     },
     {
       "id": "palazuelos-carrascalejo",
+      "physicalStopId": "urb-carrascalejo",
       "name": "Carrascalejo",
       "area": "Carrascalejo",
       "lat": 40.922847,
