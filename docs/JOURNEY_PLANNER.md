@@ -235,19 +235,26 @@ The query can ask for journeys that arrive by a deadline instead of departing af
 on the same query (`JourneyQuery.arriveBeforeMin` — when set, `departAfterMin` is ignored):
 
 - The whole day is searched (round 0/1 both start from minute 0), since any bus, however early,
-  is a candidate — the deadline is a filter and ranking key, not a departure floor.
+  is a candidate — the deadline is a filter, not a departure floor.
 - Journeys arriving after the deadline are dropped entirely before ranking, not merely ranked
   last (`arrivalMin <= arriveBeforeMin`).
-- The **primary ranking key becomes closeness to the deadline** (`arriveBeforeMin - arrivalMin`,
-  ascending) in place of raw `arrivalMin` — tie-breaking (fewest transfers, latest departure)
-  and dominance filtering (below) are otherwise unchanged, just evaluated against this key
-  instead. `rankAndDedupe` takes the primary key as a parameter for exactly this reason, so the
-  two modes share one implementation rather than diverging.
-- No dedicated ranking exists yet for trade-offs specific to this mode (e.g. an earlier, more
-  relaxed arrival vs. one that cuts it closer to the deadline with fewer transfers) — closeness
-  to the deadline is used as a straightforward stand-in for "best," matching the depart-after
-  mode's straightforwardness before dominance filtering was added. Revisit if arrive-before
-  results turn out to need their own dominance/trade-off logic.
+- **Ranking key: latest departure, then fewest transfers, then earliest arrival** — *not*
+  closeness to the deadline (`arriveBeforeMin - arrivalMin`), which was tried first and produced
+  a real bug: closeness alone rewards riding further than necessary on a trip that already
+  passes the destination and then walking back to it, because arriving *later* (via the extra
+  ride + walk) reads as "closer to the deadline" than getting off at the right stop, even though
+  it's strictly worse (later arrival, extra walking, identical everything else). Latest-departure
+  ranking sidesteps this: such a detour never departs later than simply alighting at the correct
+  stop (both share the same boarding chain up to where they diverge), so it can only win on a
+  later tie-break — and it never wins on "earliest arrival" either, since alighting correctly is
+  by definition no later. See `JourneyPlannerServiceTest.kt` / `JourneyPlannerServiceTests.swift`'s
+  "prefers alighting at the destination directly" test for the regression case.
+- `rankAndDedupe` takes a **rank key of ordered ints, ascending = better** (callers negate
+  fields where higher is naturally better, e.g. `-departureMin`) rather than a single primary
+  key, so depart-after (`[arrivalMin, transferCount, -departureMin]`) and arrive-before
+  (`[-departureMin, transferCount, arrivalMin]`) can use genuinely different orderings, not just
+  different primary values, while still sharing one implementation. Dominance filtering compares
+  the same key element-wise.
 
 **Dominance filtering.** A different leg sequence is not automatically a genuine trade-off — a
 walk to a nearby stop the direct bus already serves, or alighting one stop early, produces a

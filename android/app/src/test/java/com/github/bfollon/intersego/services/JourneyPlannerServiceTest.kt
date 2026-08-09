@@ -193,6 +193,26 @@ class JourneyPlannerServiceTest : FunSpec({
         result[0].arrivalMin shouldBe 650 // closest to 655 - not the earliest (620) or the excluded, past-deadline one (720)
     }
 
+    test("arrive-before mode prefers alighting at the destination directly over riding further and walking back, even though the latter is nominally closer to the deadline") {
+        // Regression for a live-testing report: a single bus's own route already serves the
+        // destination (b) two stops before c: riding to c then walking back to b arrives later
+        // (960) than just getting off at b (951), but 960 is numerically CLOSER to a distant
+        // deadline (1000) than 951 is - closeness alone would wrongly prefer the walk-back detour.
+        val route = singleVariantRoute(
+            "M4", listOf(stop("a"), stop("b"), stop("c")),
+            listOf("a", "b", "c"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(940), dep(951), dep(953))),
+        )
+        val transfers = listOf(TransferEdge("c", "b", meters = 450, walkMinutes = 7))
+        val result = JourneyPlannerService.findJourneys(
+            listOf(route), transfers,
+            query("a", "b").copy(arriveBeforeMin = 1000)
+        )
+
+        result.size shouldBe 1
+        result[0].legs shouldBe listOf(Leg.Ride("M4", "out", "a", "b", 940, 951, isEstimated = false))
+    }
+
     test("arrive-before mode excludes journeys that arrive after the deadline entirely, not just ranks them last") {
         val route = singleVariantRoute(
             "M9", listOf(stop("a"), stop("b")), listOf("a", "b"), DayType.WEEKDAY,

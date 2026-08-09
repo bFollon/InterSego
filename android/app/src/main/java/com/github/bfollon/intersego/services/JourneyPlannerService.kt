@@ -161,9 +161,17 @@ object JourneyPlannerService {
 
         val deadline = query.arriveBeforeMin
         return if (deadline != null) {
-            rankAndDedupe(journeys.filter { it.arrivalMin <= deadline }) { deadline - it.arrivalMin }
+            // Latest departure first (least total time spent travelling/waiting), then fewest
+            // transfers, then earliest arrival - NOT closeness to the deadline. Closeness alone
+            // rewards riding further than necessary on the very trip that already reaches the
+            // destination and walking back, since "closer to the deadline" looks better even
+            // though it's strictly worse (later arrival, extra walking, same everything else).
+            // Latest-departure-first sidesteps that: such a detour never departs later than just
+            // getting off at the right stop, so it can only win ties by *also* arriving earlier -
+            // which is never true of a walk-back detour. See docs/JOURNEY_PLANNER.md.
+            rankAndDedupe(journeys.filter { it.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin) }
         } else {
-            rankAndDedupe(journeys) { it.arrivalMin }
+            rankAndDedupe(journeys) { listOf(it.arrivalMin, it.transferCount, -it.departureMin) }
         }
     }
 
@@ -315,13 +323,14 @@ object JourneyPlannerService {
         return segments
     }
 
-    /** Ranks by [primaryKey] ascending (earliest arrival in depart-after mode, closeness to the
-     * deadline in arrive-before mode — see [findJourneys]), then fewest transfers, then latest
-     * departure; collapses to the best journey per distinct route/leg-kind pattern, drops any
+    /** Ranks by [rankKey] lexicographically — each element ascending, i.e. lower is always
+     * better (callers negate fields where "higher is better," like departure time, before
+     * passing them in) — see [findJourneys] for what the two modes' keys are and why they
+     * differ. Collapses to the best journey per distinct route/leg-kind pattern, drops any
      * journey dominated by another (see [strictlyDominates] — this is what filters out "walk to
      * a nearby stop the direct bus already passes through" alternatives that are no better on any
      * axis), then returns the top 3 non-dominated patterns. */
-    private fun rankAndDedupe(journeys: List<Journey>, primaryKey: (Journey) -> Int): List<Journey> {
+    private fun rankAndDedupe(journeys: List<Journey>, rankKey: (Journey) -> List<Int>): List<Journey> {
         fun pattern(j: Journey) = j.legs.joinToString("|") { leg ->
             when (leg) {
                 is Leg.Ride -> "R:${leg.routeId}:${leg.variantId}"
@@ -329,29 +338,34 @@ object JourneyPlannerService {
             }
         }
         fun betterOf(a: Journey, b: Journey): Journey {
-            if (primaryKey(a) != primaryKey(b)) return if (primaryKey(a) < primaryKey(b)) a else b
-            if (a.transferCount != b.transferCount) return if (a.transferCount < b.transferCount) a else b
-            return if (a.departureMin >= b.departureMin) a else b
+            val ka = rankKey(a)
+            val kb = rankKey(b)
+            for (i in ka.indices) {
+                if (ka[i] != kb[i]) return if (ka[i] < kb[i]) a else b
+            }
+            return a
         }
         val bestPerPattern = journeys.groupBy(::pattern).values.map { it.reduce(::betterOf) }
 
         val nonDominated = bestPerPattern.filterNot { candidate ->
-            bestPerPattern.any { other -> other != candidate && strictlyDominates(other, candidate, primaryKey) }
+            bestPerPattern.any { other -> other != candidate && strictlyDominates(other, candidate, rankKey) }
         }
 
-        return nonDominated.sortedWith(
-            compareBy<Journey> { primaryKey(it) }
-                .thenBy { it.transferCount }
-                .thenByDescending { it.departureMin }
-        ).take(3)
+        return nonDominated.sortedWith { a, b ->
+            val ka = rankKey(a)
+            val kb = rankKey(b)
+            ka.indices.firstNotNullOfOrNull { i -> ka[i].compareTo(kb[i]).takeIf { it != 0 } } ?: 0
+        }.take(3)
     }
 
-    /** True if [a] is never worse than [b] on [primaryKey]/transfers/departure and strictly
-     * better on at least one — i.e. [b] offers no genuine trade-off and shouldn't be shown
-     * alongside [a]. */
-    private fun strictlyDominates(a: Journey, b: Journey, primaryKey: (Journey) -> Int): Boolean {
-        val neverWorse = primaryKey(a) <= primaryKey(b) && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
-        val strictlyBetter = primaryKey(a) < primaryKey(b) || a.transferCount < b.transferCount || a.departureMin > b.departureMin
+    /** True if every element of [rankKey](a) is <= the corresponding element of [rankKey](b),
+     * and strictly less on at least one — i.e. [b] offers no genuine trade-off and shouldn't be
+     * shown alongside [a]. */
+    private fun strictlyDominates(a: Journey, b: Journey, rankKey: (Journey) -> List<Int>): Boolean {
+        val ka = rankKey(a)
+        val kb = rankKey(b)
+        val neverWorse = ka.indices.all { ka[it] <= kb[it] }
+        val strictlyBetter = ka.indices.any { ka[it] < kb[it] }
         return neverWorse && strictlyBetter
     }
 }

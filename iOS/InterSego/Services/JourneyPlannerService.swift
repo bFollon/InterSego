@@ -155,9 +155,17 @@ enum JourneyPlannerService {
         }
 
         if let deadline = query.arriveBeforeMin {
-            return rankAndDedupe(journeys.filter { $0.arrivalMin <= deadline }) { deadline - $0.arrivalMin }
+            // Latest departure first (least total time spent travelling/waiting), then fewest
+            // transfers, then earliest arrival - NOT closeness to the deadline. Closeness alone
+            // rewards riding further than necessary on the very trip that already reaches the
+            // destination and walking back, since "closer to the deadline" looks better even
+            // though it's strictly worse (later arrival, extra walking, same everything else).
+            // Latest-departure-first sidesteps that: such a detour never departs later than just
+            // getting off at the right stop, so it can only win ties by *also* arriving earlier -
+            // which is never true of a walk-back detour. See docs/JOURNEY_PLANNER.md.
+            return rankAndDedupe(journeys.filter { $0.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin] }
         } else {
-            return rankAndDedupe(journeys) { $0.arrivalMin }
+            return rankAndDedupe(journeys) { [$0.arrivalMin, $0.transferCount, -$0.departureMin] }
         }
     }
 
@@ -313,13 +321,14 @@ enum JourneyPlannerService {
         return segments
     }
 
-    /// Ranks by `primaryKey` ascending (earliest arrival in depart-after mode, closeness to the
-    /// deadline in arrive-before mode — see `findJourneys`), then fewest transfers, then latest
-    /// departure; collapses to the best journey per distinct route/leg-kind pattern, drops any
+    /// Ranks by `rankKey` lexicographically — each element ascending, i.e. lower is always
+    /// better (callers negate fields where "higher is better," like departure time, before
+    /// passing them in) — see `findJourneys` for what the two modes' keys are and why they
+    /// differ. Collapses to the best journey per distinct route/leg-kind pattern, drops any
     /// journey dominated by another (see `strictlyDominates` - this is what filters out "walk to
     /// a nearby stop the direct bus already passes through" alternatives that are no better on
     /// any axis), then returns the top 3 non-dominated patterns.
-    private static func rankAndDedupe(_ journeys: [Journey], primaryKey: (Journey) -> Int) -> [Journey] {
+    private static func rankAndDedupe(_ journeys: [Journey], rankKey: (Journey) -> [Int]) -> [Journey] {
         func pattern(_ j: Journey) -> String {
             j.legs.map { leg -> String in
                 switch leg {
@@ -329,9 +338,12 @@ enum JourneyPlannerService {
             }.joined(separator: "|")
         }
         func better(_ a: Journey, _ b: Journey) -> Journey {
-            if primaryKey(a) != primaryKey(b) { return primaryKey(a) < primaryKey(b) ? a : b }
-            if a.transferCount != b.transferCount { return a.transferCount < b.transferCount ? a : b }
-            return a.departureMin >= b.departureMin ? a : b
+            let ka = rankKey(a)
+            let kb = rankKey(b)
+            for i in ka.indices where ka[i] != kb[i] {
+                return ka[i] < kb[i] ? a : b
+            }
+            return a
         }
         var bestPerPattern: [String: Journey] = [:]
         for j in journeys {
@@ -341,22 +353,27 @@ enum JourneyPlannerService {
 
         let candidates = Array(bestPerPattern.values)
         let nonDominated = candidates.filter { candidate in
-            !candidates.contains { other in other != candidate && strictlyDominates(other, candidate, primaryKey: primaryKey) }
+            !candidates.contains { other in other != candidate && strictlyDominates(other, candidate, rankKey: rankKey) }
         }
 
         return nonDominated.sorted { a, b in
-            if primaryKey(a) != primaryKey(b) { return primaryKey(a) < primaryKey(b) }
-            if a.transferCount != b.transferCount { return a.transferCount < b.transferCount }
-            return a.departureMin > b.departureMin
+            let ka = rankKey(a)
+            let kb = rankKey(b)
+            for i in ka.indices where ka[i] != kb[i] {
+                return ka[i] < kb[i]
+            }
+            return false
         }.prefix(3).map { $0 }
     }
 
-    /// True if `a` is never worse than `b` on `primaryKey`/transfers/departure and strictly
-    /// better on at least one - i.e. `b` offers no genuine trade-off and shouldn't be shown
-    /// alongside `a`.
-    private static func strictlyDominates(_ a: Journey, _ b: Journey, primaryKey: (Journey) -> Int) -> Bool {
-        let neverWorse = primaryKey(a) <= primaryKey(b) && a.transferCount <= b.transferCount && a.departureMin >= b.departureMin
-        let strictlyBetter = primaryKey(a) < primaryKey(b) || a.transferCount < b.transferCount || a.departureMin > b.departureMin
+    /// True if every element of `rankKey(a)` is <= the corresponding element of `rankKey(b)`,
+    /// and strictly less on at least one - i.e. `b` offers no genuine trade-off and shouldn't be
+    /// shown alongside `a`.
+    private static func strictlyDominates(_ a: Journey, _ b: Journey, rankKey: (Journey) -> [Int]) -> Bool {
+        let ka = rankKey(a)
+        let kb = rankKey(b)
+        let neverWorse = ka.indices.allSatisfy { ka[$0] <= kb[$0] }
+        let strictlyBetter = ka.indices.contains { ka[$0] < kb[$0] }
         return neverWorse && strictlyBetter
     }
 }

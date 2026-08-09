@@ -186,6 +186,26 @@ final class JourneyPlannerServiceTests: XCTestCase {
         XCTAssertEqual(result[0].arrivalMin, 650) // closest to 655 - not the earliest (620) or the excluded, past-deadline one (720)
     }
 
+    func testArriveBeforeModePrefersAlightingAtTheDestinationDirectlyOverRidingFurtherAndWalkingBack() {
+        // Regression for a live-testing report: a single bus's own route already serves the
+        // destination (b) two stops before c: riding to c then walking back to b arrives later
+        // (960) than just getting off at b (951), but 960 is numerically CLOSER to a distant
+        // deadline (1000) than 951 is - closeness alone would wrongly prefer the walk-back detour.
+        let route = singleVariantRoute(
+            routeId: "M4", stops: [stop("a"), stop("b"), stop("c")],
+            stopSequenceIds: ["a", "b", "c"], dayType: .weekday,
+            trips: [[dep(940), dep(951), dep(953)]]
+        )
+        let transfers = [TransferEdge(from: "c", to: "b", meters: 450, walkMinutes: 7)]
+        let result = JourneyPlannerService.findJourneys(
+            routes: [route], transfers: transfers,
+            query: query("a", "b", arriveBeforeMin: 1000)
+        )
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result[0].legs, [.ride(Leg.Ride(routeId: "M4", variantId: "out", fromStop: "a", toStop: "b", depMin: 940, arrMin: 951, isEstimated: false))])
+    }
+
     func testArriveBeforeModeExcludesJourneysThatArriveAfterTheDeadlineEntirelyNotJustRanksThemLast() {
         let route = singleVariantRoute(
             routeId: "M9", stops: [stop("a"), stop("b")], stopSequenceIds: ["a", "b"], dayType: .weekday,
