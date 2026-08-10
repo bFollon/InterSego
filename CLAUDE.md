@@ -174,12 +174,17 @@ Polyline JSON files (`resources/route_polylines/`) also carry a `"version"` fiel
 
 App-store-facing version numbers are tracked independently per platform and are **not** the same as the timetable/polyline `"version"` fields above:
 
-- **Android**: `versionCode` (integer, +1 per release) and `versionName` (semver-ish, e.g. `"2.10.0"`) in `android/app/build.gradle.kts`
-- **iOS**: `MARKETING_VERSION` (e.g. `3.8.0`) in `iOS/InterSego.xcodeproj/project.pbxproj` (appears twice — Debug + Release build configs, must match); `CURRENT_PROJECT_VERSION` (build number) stays `1` and is not bumped per release
+- **Android**: `versionCode` (integer, +1 per release) and `versionName` (SemVer, e.g. `"2.10.0"`) in `android/app/build.gradle.kts`
+- **iOS**: `MARKETING_VERSION` (SemVer, e.g. `3.8.0`) in `iOS/InterSego.xcodeproj/project.pbxproj` (appears twice — Debug + Release build configs, must match); `CURRENT_PROJECT_VERSION` (build number) stays `1` and is not bumped per release
 
 Android and iOS version numbers drift from each other by design (different histories) — there's no requirement they match.
 
-**When to bump:** after merging a PR (or set of PRs) worth shipping, as a dedicated release commit — bump both platforms together, minor version +1 on each (Android `versionCode` +1 too), commit message `chore(InterSego): Release Android (X.Y.0) and iOS (A.B.0)`. Don't bump mid-feature-PR unless that PR's own commit already includes it.
+**These are real [SemVer](https://semver.org/) numbers (`MAJOR.MINOR.PATCH`), not just an incrementing counter:**
+- **Patch** — bug fixes only, no new user-facing capability.
+- **Minor** — new backward-compatible functionality (new screen, new feature, new mode). This is the default for "a PR worth shipping" that adds something.
+- **Major** — reserved for a breaking change, or when explicitly requested by the user for a given release regardless of what SemVer alone would say (e.g. a milestone worth marking). Don't infer "big feature" as sufficient reason on its own — ask if unsure whether a release warrants major.
+
+**When to bump:** after merging a PR (or set of PRs) worth shipping, as a dedicated release commit — bump both platforms together (Android `versionCode` +1 too), commit message `chore(InterSego): Release Android (X.Y.Z) and iOS (A.B.C)`. Don't bump mid-feature-PR unless that PR's own commit already includes it.
 
 ## Development Rules
 
