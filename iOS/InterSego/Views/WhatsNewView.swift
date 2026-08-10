@@ -29,9 +29,10 @@ struct WhatsNewView: View {
 
             Divider()
 
+            let entriesToShow = WhatsNewService.entriesToShow()
             VStack(alignment: .leading, spacing: 16) {
-                ForEach(WhatsNewService.entries.indices, id: \.self) { index in
-                    let entry = WhatsNewService.entries[index]
+                ForEach(entriesToShow.indices, id: \.self) { index in
+                    let entry = entriesToShow[index]
                     Label {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(entry.title)
