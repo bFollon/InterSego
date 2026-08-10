@@ -19,12 +19,15 @@ import SwiftUI
 struct OtrasOpcionesView: View {
     let onShowReminders: () -> Void
     let onCheckAnotherDay: (Date) -> Void
+    let onPlanJourney: () -> Void
 
     @State private var showDatePicker = false
     @State private var pickedDate = Date()
 
+    private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
+
     var body: some View {
-        HStack(spacing: 16) {
+        LazyVGrid(columns: columns, spacing: 16) {
             Button(action: onShowReminders) {
                 SquareCard(label: "Mis recordatorios") {
                     Image(systemName: "bell.fill")
@@ -39,6 +42,17 @@ struct OtrasOpcionesView: View {
             Button(action: { showDatePicker = true }) {
                 SquareCard(label: "Consultar otro día") {
                     Image(systemName: "calendar")
+                        .font(.system(size: 24))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 40, height: 40)
+                }
+            }
+            .buttonStyle(.plain)
+            .aspectRatio(1, contentMode: .fit)
+
+            Button(action: onPlanJourney) {
+                SquareCard(label: "Planificar viaje") {
+                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
                         .font(.system(size: 24))
                         .foregroundColor(.accentColor)
                         .frame(width: 40, height: 40)

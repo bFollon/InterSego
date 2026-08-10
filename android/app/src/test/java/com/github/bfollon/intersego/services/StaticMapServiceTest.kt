@@ -56,6 +56,7 @@ class StaticMapServiceTest : FunSpec({
     context("getStaticMapData") {
         test("returns data for stop with coordinates") {
             val stop = BusStop(
+                id = "test-stop",
                 name = "Plaza Mayor",
                 coordinates = "40.9487, -4.1171"
             )
@@ -67,19 +68,19 @@ class StaticMapServiceTest : FunSpec({
         }
 
         test("returns null for stop with malformed coordinates") {
-            val stop = BusStop(name = "No Coords", coordinates = "invalid")
+            val stop = BusStop(id = "test-stop", name = "No Coords", coordinates = "invalid")
             StaticMapService.getStaticMapData(stop) shouldBe null
         }
     }
 
     context("canShowMap") {
         test("true for stop with valid coordinates") {
-            val stop = BusStop(name = "Test", coordinates = "40.9, -4.1")
+            val stop = BusStop(id = "test-stop", name = "Test", coordinates = "40.9, -4.1")
             StaticMapService.canShowMap(stop) shouldBe true
         }
 
         test("false for stop with malformed coordinates") {
-            val stop = BusStop(name = "Test", coordinates = "invalid")
+            val stop = BusStop(id = "test-stop", name = "Test", coordinates = "invalid")
             StaticMapService.canShowMap(stop) shouldBe false
         }
     }

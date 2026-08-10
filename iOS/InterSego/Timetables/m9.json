@@ -1,6 +1,6 @@
 {
   "routeId": "M9",
-  "version": "1.0",
+  "version": "1.1",
   "source": "infosegovia.com M9 page (Otero de Herreros - Segovia), retrieved 2026-06-13",
   "route": {
     "number": "M9",
@@ -21,6 +21,7 @@
     },
     {
       "id": "estacion-ave-hontoria",
+      "physicalStopId": "ave-segovia",
       "name": "Estación AVE Hontoria",
       "area": "Hontoria",
       "lat": 40.910594,

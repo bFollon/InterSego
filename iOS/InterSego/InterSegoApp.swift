@@ -23,11 +23,31 @@ enum HomeDestination: Hashable {
 enum OtrasOpcionesDestination: Hashable {
     case home
     case routeList(Date)
+    case journeyPlanner
 }
 
 struct OtrasOpcionesRouteSelection: Hashable {
     let route: BusRoute
     let date: Date
+}
+
+/// Query params for a journey search (Epic 2) — the results themselves are computed inside the
+/// destination view's `.task`, not carried on the nav path, so re-pushing the same selection
+/// (e.g. via Back then forward) re-runs the search against current data rather than caching a
+/// stale result.
+struct JourneyResultsSelection: Hashable {
+    let originId: String
+    let originName: String
+    let destinationId: String
+    let destinationName: String
+    let date: Date
+    let departAfterMin: Int
+    let arriveBeforeMin: Int?
+}
+
+struct JourneyDetailSelection: Hashable {
+    let journey: Journey
+    let stops: [String: BusStop]
 }
 
 struct StopSelection: Hashable {
@@ -211,6 +231,9 @@ struct ContentView: View {
                             onCheckAnotherDay: { date in
                                 navigationPath.append(OtrasOpcionesDestination.routeList(date))
                             },
+                            onPlanJourney: {
+                                navigationPath.append(OtrasOpcionesDestination.journeyPlanner)
+                            },
                         )
                     case .routeList(let date):
                         RouteSelectionView(
@@ -220,10 +243,41 @@ struct ContentView: View {
                                 navigationPath.append(OtrasOpcionesRouteSelection(route: route, date: date))
                             },
                         )
+                    case .journeyPlanner:
+                        JourneyPlannerView(
+                            supportedRouteIds: routes.map(\.id),
+                            onSearch: { originId, originName, destinationId, destinationName, date, departAfterMin, arriveBeforeMin in
+                                navigationPath.append(JourneyResultsSelection(
+                                    originId: originId, originName: originName,
+                                    destinationId: destinationId, destinationName: destinationName,
+                                    date: date, departAfterMin: departAfterMin, arriveBeforeMin: arriveBeforeMin
+                                ))
+                            },
+                        )
                     }
                 }
                 .navigationDestination(for: OtrasOpcionesRouteSelection.self) { selection in
                     OtrasOpcionesRouteStopsContainer(route: selection.route, date: selection.date, navigationPath: $navigationPath)
+                }
+                .navigationDestination(for: JourneyResultsSelection.self) { selection in
+                    JourneyResultsContainer(
+                        selection: selection,
+                        supportedRouteIds: routes.map(\.id),
+                        onJourneySelected: { journey, stops in
+                            navigationPath.append(JourneyDetailSelection(journey: journey, stops: stops))
+                        },
+                    )
+                }
+                .navigationDestination(for: JourneyDetailSelection.self) { selection in
+                    JourneyDetailView(
+                        journey: selection.journey,
+                        stopName: { stopId in selection.stops[stopId]?.name ?? stopId },
+                        onLegSelected: { routeId, stopId in
+                            if let stop = selection.stops[stopId] {
+                                navigationPath.append(StopSelection(stop: stop, primaryRouteId: routeId, primaryViewId: nil))
+                            }
+                        },
+                    )
                 }
                 .navigationDestination(for: StopSelection.self) { selection in
                     NextDepartureView(

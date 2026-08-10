@@ -913,6 +913,18 @@ fun AppNavigation(
                 onShowReminders = { navController.navigate("reminders") },
                 onCheckAnotherDay = { date ->
                     navController.navigate("otras_opciones_route_selection/${date.toEpochDay()}")
+                },
+                onPlanJourney = { navController.navigate("journey_planner") }
+            )
+        }
+
+        // --- Journey planner (Epic 2): picker -> results -> detail, one route with internal state ---
+        composable("journey_planner") {
+            com.github.bfollon.intersego.ui.screens.JourneyPlannerFlowScreen(
+                supportedRouteIds = routes.map { it.id },
+                onExit = { navController.popBackStack() },
+                onOpenNextDeparture = { routeId, stopId ->
+                    navController.navigate("next_departure/$stopId/$routeId/none")
                 }
             )
         }

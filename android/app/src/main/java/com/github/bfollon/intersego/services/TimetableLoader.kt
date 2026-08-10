@@ -16,6 +16,12 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.BusTimetable
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.data.JourneyDeparture
+import com.github.bfollon.intersego.data.JourneyRouteData
+import com.github.bfollon.intersego.data.JourneyStop
+import com.github.bfollon.intersego.data.JourneyTimetableSection
+import com.github.bfollon.intersego.data.JourneyTrip
+import com.github.bfollon.intersego.data.JourneyVariant
 import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteTab
 import com.github.bfollon.intersego.data.RouteVariant
@@ -78,7 +84,9 @@ class TimetableLoader(private val context: Context) {
         val area: String? = null,
         val lat: Double,
         val lon: Double,
-        val alternates: List<JsonAlternate> = emptyList()
+        val alternates: List<JsonAlternate> = emptyList(),
+        val physicalStopId: String? = null,
+        val timeIsEstimated: Boolean = false
     )
 
     @Serializable
@@ -222,7 +230,53 @@ class TimetableLoader(private val context: Context) {
 
     fun getVersion(routeId: String): String = loadFile(routeId).version
 
+    /**
+     * Pure (no Android dependency) trip-major view of this route, for the journey planner's
+     * connection extraction. See `docs/JOURNEY_PLANNER.md` and [JourneyRouteData].
+     */
+    fun loadJourneyRouteData(routeId: String): JourneyRouteData {
+        val file = loadFile(routeId)
+        val stops = file.stops.map {
+            JourneyStop(id = it.id, physicalStopId = it.physicalStopId ?: it.id, isEstimated = it.timeIsEstimated)
+        }
+        val variants = file.variants.map { JourneyVariant(id = it.id, stopSequence = it.stopSequence) }
+        val timetables = file.timetables.map { section ->
+            val tripSize = section.trips.maxOfOrNull { it.departures.size } ?: 0
+            JourneyTimetableSection(
+                variantId = section.variantId,
+                dayType = parseDayType(section.dayType),
+                trips = section.trips.map { trip ->
+                    val tripSeason = parseSeason(trip.season)
+                    JourneyTrip(
+                        departures = (0 until tripSize).map { i ->
+                            trip.departures.getOrNull(i)?.let { parseJourneyDeparture(it, tripSeason) }
+                        }
+                    )
+                }
+            )
+        }
+        return JourneyRouteData(routeId = routeId, stops = stops, variants = variants, timetables = timetables)
+    }
+
+    private fun parseJourneyDeparture(element: JsonElement, tripSeason: SeasonalAvailability): JourneyDeparture? {
+        if (element is JsonNull) return null
+        if (element is JsonPrimitive) {
+            val hhmm = element.int
+            return JourneyDeparture((hhmm / 100) * 60 + (hhmm % 100), tripSeason)
+        }
+        if (element is JsonObject) {
+            val hhmm = element["hhmm"]!!.jsonPrimitive.int
+            val season = element["season"]?.jsonPrimitive?.content?.let { parseSeason(it) } ?: tripSeason
+            return JourneyDeparture((hhmm / 100) * 60 + (hhmm % 100), season)
+        }
+        return null
+    }
+
     fun loadBusStopsById(routeId: String): Map<String, BusStop> = stopsIndex(loadFile(routeId))
+
+    /** Raw stop id -> physicalStopId (defaults to itself when the JSON has no override). */
+    fun loadPhysicalStopIds(routeId: String): Map<String, String> =
+        loadFile(routeId).stops.associate { it.id to (it.physicalStopId ?: it.id) }
 
     fun loadRoute(routeId: String): BusRoute {
         val r = loadFile(routeId).route

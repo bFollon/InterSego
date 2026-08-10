@@ -1,6 +1,6 @@
 {
   "routeId": "M6",
-  "version": "1.1",
+  "version": "1.2",
   "source": "Linecar M6 PDF (static data, fully hardcoded — live PDF parsing abandoned in favour of JSON)",
   "route": {
     "number": "M6",
@@ -15,6 +15,7 @@
   "stops": [
     {
       "id": "estacion-autobuses",
+      "timeIsEstimated": true,
       "name": "Estación de Autobuses",
       "area": "Segovia capital",
       "lat": 40.944768,
@@ -22,6 +23,7 @@
     },
     {
       "id": "andres-laguna",
+      "timeIsEstimated": true,
       "name": "Andrés Laguna",
       "area": "Segovia capital",
       "lat": 40.939106,
@@ -29,6 +31,7 @@
     },
     {
       "id": "la-pista",
+      "timeIsEstimated": true,
       "name": "Glorieta La Pista",
       "area": "Segovia capital",
       "lat": 40.937354,
@@ -36,6 +39,7 @@
     },
     {
       "id": "hermanitas",
+      "timeIsEstimated": true,
       "name": "Residencia Hermanitas de los pobres",
       "area": "Segovia capital",
       "lat": 40.944234,
@@ -43,6 +47,7 @@
     },
     {
       "id": "azoguejo",
+      "timeIsEstimated": true,
       "name": "Azoguejo",
       "area": "Segovia capital",
       "lat": 40.948502,
@@ -50,6 +55,7 @@
     },
     {
       "id": "delicias",
+      "timeIsEstimated": true,
       "name": "Delicias",
       "area": "Segovia capital",
       "lat": 40.9545,
@@ -57,6 +63,7 @@
     },
     {
       "id": "montecorredores",
+      "timeIsEstimated": true,
       "name": "Montecorredores",
       "area": "Segovia capital",
       "lat": 40.952,
@@ -64,6 +71,7 @@
     },
     {
       "id": "san-cristobal",
+      "timeIsEstimated": true,
       "name": "San Cristóbal de Segovia",
       "area": "San Cristóbal de Segovia",
       "lat": 40.952056,
@@ -71,6 +79,7 @@
     },
     {
       "id": "san-cristobal-iglesia",
+      "timeIsEstimated": true,
       "name": "Iglesia",
       "area": "San Cristóbal de Segovia",
       "lat": 40.951733,
@@ -78,6 +87,7 @@
     },
     {
       "id": "san-cristobal-rotonda",
+      "timeIsEstimated": true,
       "name": "Rotonda",
       "area": "San Cristóbal de Segovia",
       "lat": 40.951224,
@@ -85,6 +95,7 @@
     },
     {
       "id": "sonsoto",
+      "timeIsEstimated": true,
       "name": "Potro",
       "area": "Sonsoto",
       "lat": 40.954774,
@@ -92,6 +103,7 @@
     },
     {
       "id": "sonsoto-2",
+      "timeIsEstimated": true,
       "name": "Sonsoto 2",
       "area": "Sonsoto",
       "lat": 40.95747,
@@ -99,6 +111,7 @@
     },
     {
       "id": "trescasas",
+      "timeIsEstimated": true,
       "name": "Plaza de la constitución",
       "area": "Trescasas",
       "lat": 40.961834,
@@ -106,6 +119,7 @@
     },
     {
       "id": "trescasas-2",
+      "timeIsEstimated": true,
       "name": "Trescasas 2",
       "area": "Trescasas",
       "lat": 40.963899,
@@ -120,6 +134,7 @@
     },
     {
       "id": "torrecaballeros",
+      "timeIsEstimated": true,
       "name": "Torrecaballeros",
       "area": "Torrecaballeros",
       "lat": 40.99188,
@@ -127,20 +142,23 @@
     },
     {
       "id": "torrecaballeros-2",
+      "timeIsEstimated": true,
       "name": "Torrecaballeros 2",
       "area": "Torrecaballeros",
       "lat": 40.995364,
       "lon": -4.021688
     },
     {
-      "id": "torrecaballeros-3",
-      "name": "Torrecaballeros 3",
+      "id": "aldehuela",
+      "timeIsEstimated": true,
+      "name": "Aldehuela",
       "area": "Torrecaballeros",
       "lat": 40.999144,
       "lon": -4.020855
     },
     {
       "id": "plaza-de-toros",
+      "timeIsEstimated": true,
       "name": "Plaza de Toros",
       "area": "Segovia capital",
       "lat": 40.942093,
@@ -148,6 +166,7 @@
     },
     {
       "id": "palazuelos",
+      "timeIsEstimated": true,
       "name": "Palazuelos",
       "area": "Palazuelos",
       "lat": 40.931068,
@@ -155,6 +174,7 @@
     },
     {
       "id": "palazuelos-colegio",
+      "timeIsEstimated": true,
       "name": "Colegio",
       "area": "Palazuelos",
       "lat": 40.933921,
@@ -162,6 +182,7 @@
     },
     {
       "id": "tabanera",
+      "timeIsEstimated": true,
       "name": "Tabanera",
       "area": "Tabanera",
       "lat": 40.934336,
@@ -169,6 +190,7 @@
     },
     {
       "id": "tabanera-2",
+      "timeIsEstimated": true,
       "name": "Tabanera 2",
       "area": "Tabanera",
       "lat": 40.937491,
@@ -176,6 +198,7 @@
     },
     {
       "id": "jardinillos",
+      "timeIsEstimated": true,
       "name": "Jardinillos de San Roque",
       "area": "Segovia capital",
       "lat": 40.944361,
@@ -203,7 +226,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "swapTargetId": "inbound",
       "extendedSectionLabel": "Ruta extendida",
@@ -217,7 +240,7 @@
       "id": "inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
@@ -265,7 +288,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3",
+        "aldehuela",
         "delicias",
         "azoguejo"
       ],
@@ -292,7 +315,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "departureLabel": "Sábado"
     },
@@ -300,7 +323,7 @@
       "id": "saturday-inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
@@ -342,7 +365,7 @@
         "cabanillas",
         "torrecaballeros",
         "torrecaballeros-2",
-        "torrecaballeros-3"
+        "aldehuela"
       ],
       "swapTargetId": "sunday-inbound",
       "departureLabel": "Domingo"
@@ -351,7 +374,7 @@
       "id": "sunday-inbound",
       "label": "Torrecaballeros → Segovia",
       "stopSequence": [
-        "torrecaballeros-3",
+        "aldehuela",
         "torrecaballeros-2",
         "torrecaballeros",
         "cabanillas",
