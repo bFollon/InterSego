@@ -34,19 +34,9 @@ enum WhatsNewService {
     /// The entries to show for the current version. Empty once there's nothing to announce.
     static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
-            icon: "square.grid.2x2",
-            title: "\u{201c}Mis recordatorios\u{201d} se movió",
-            body: "Ahora lo encontrarás dentro de \u{201c}Más opciones\u{201d}, junto con las nuevas funciones."
-        ),
-        WhatsNewEntry(
-            icon: "calendar",
-            title: "Consulta otro día",
-            body: "Desde \u{201c}Más opciones\u{201d} puedes elegir una fecha futura y ver los horarios de cualquier línea para ese día, con aviso de festivos incluido."
-        ),
-        WhatsNewEntry(
-            icon: "calendar.badge.exclamationmark",
-            title: "Aviso de festivos",
-            body: "Ahora cuando sea festivo y los horarios se vean afectados, lo verás claramente en el listado de salidas."
+            icon: "point.topleft.down.curvedto.point.bottomright.up",
+            title: "Planifica tu viaje",
+            body: "Nuevo en \u{201c}Más opciones\u{201d}: dinos de dónde a dónde quieres ir y te mostramos las mejores combinaciones de autobuses, con transbordos incluidos. Elige salir a una hora concreta o llegar antes de una hora límite."
         ),
     ]
 

@@ -11,9 +11,7 @@ package com.github.bfollon.intersego.services
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.EventBusy
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.edit
 import com.github.bfollon.intersego.BuildConfig
@@ -42,19 +40,9 @@ object WhatsNewService {
     /** The entries to show for the current version. Empty once there's nothing to announce. */
     val entries: List<WhatsNewEntry> = listOf(
         WhatsNewEntry(
-            icon = Icons.Filled.Apps,
-            title = "“Mis recordatorios” se movió",
-            body = "Ahora lo encontrarás dentro de “Más opciones”, junto con las nuevas funciones."
-        ),
-        WhatsNewEntry(
-            icon = Icons.Filled.CalendarMonth,
-            title = "Consulta otro día",
-            body = "Desde “Más opciones” puedes elegir una fecha futura y ver los horarios de cualquier línea para ese día, con aviso de festivos incluido."
-        ),
-        WhatsNewEntry(
-            icon = Icons.Filled.EventBusy,
-            title = "Aviso de festivos",
-            body = "Ahora cuando sea festivo y los horarios se vean afectados, lo verás claramente en el listado de salidas."
+            icon = Icons.Filled.Route,
+            title = "Planifica tu viaje",
+            body = "Nuevo en “Más opciones”: dinos de dónde a dónde quieres ir y te mostramos las mejores combinaciones de autobuses, con transbordos incluidos. Elige salir a una hora concreta o llegar antes de una hora límite."
         ),
     )
 
