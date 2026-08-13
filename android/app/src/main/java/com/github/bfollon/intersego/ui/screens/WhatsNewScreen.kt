@@ -16,9 +16,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
@@ -32,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -42,12 +46,18 @@ import com.github.bfollon.intersego.services.WhatsNewService
 /**
  * "What's new" notice shown once after an app update — see [WhatsNewService].
  * Matches iOS WhatsNewView design.
+ *
+ * The entry list hugs its own content height when short (e.g. a single entry), and is capped at
+ * [entriesMaxHeight] when there's enough content to overflow — which leaves the next entry
+ * visibly peeking/truncated at the bottom edge, the standard iOS/Material affordance for
+ * "there's more, scroll" that doesn't need any custom scroll-position tracking to get right.
  */
 @Composable
 fun WhatsNewScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val entriesMaxHeight = (LocalConfiguration.current.screenHeightDp * 0.5f).dp
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -88,7 +98,12 @@ fun WhatsNewScreen(
 
                 HorizontalDivider()
 
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = entriesMaxHeight)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     WhatsNewService.entriesToShow(context).forEach { entry ->
                         WhatsNewEntryRow(entry)
                     }

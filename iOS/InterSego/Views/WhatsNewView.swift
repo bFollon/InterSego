@@ -8,10 +8,19 @@
  */
 
 import SwiftUI
+import UIKit
 
 /// "What's new" notice shown once after an app update — see `WhatsNewService`.
+///
+/// The entry list hugs its own content height when it fits (e.g. a single entry), and only
+/// switches to a capped, scrollable region when it doesn't — `ViewThatFits` picks whichever
+/// variant actually fits the available space, so the scrollable fallback leaves the next entry
+/// visibly peeking/truncated at the bottom edge, the standard iOS/Material affordance for
+/// "there's more, scroll" that doesn't need any custom scroll-position or size tracking.
 struct WhatsNewView: View {
     @Binding var isPresented: Bool
+
+    private static let maxEntriesHeight = UIScreen.main.bounds.height * 0.5
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -30,24 +39,13 @@ struct WhatsNewView: View {
             Divider()
 
             let entriesToShow = WhatsNewService.entriesToShow()
-            VStack(alignment: .leading, spacing: 16) {
-                ForEach(entriesToShow.indices, id: \.self) { index in
-                    let entry = entriesToShow[index]
-                    Label {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(entry.title)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                            Text(entry.body)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    } icon: {
-                        Image(systemName: entry.icon)
-                            .foregroundColor(.accentColor)
-                    }
+            ViewThatFits(in: .vertical) {
+                entriesList(entriesToShow)
+
+                ScrollView {
+                    entriesList(entriesToShow)
                 }
+                .frame(maxHeight: Self.maxEntriesHeight)
             }
 
             Divider()
@@ -64,6 +62,29 @@ struct WhatsNewView: View {
             .buttonStyle(PlainButtonStyle())
         }
         .padding(20)
+    }
+
+    @ViewBuilder
+    private func entriesList(_ entries: [WhatsNewEntry]) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(entries.indices, id: \.self) { index in
+                let entry = entries[index]
+                Label {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(entry.title)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Text(entry.body)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } icon: {
+                    Image(systemName: entry.icon)
+                        .foregroundColor(.accentColor)
+                }
+            }
+        }
     }
 
     private func dismiss() {
