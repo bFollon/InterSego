@@ -187,6 +187,8 @@ Android and iOS version numbers drift from each other by design (different histo
 
 **When to bump:** after merging a PR (or set of PRs) worth shipping, as a dedicated release commit — bump both platforms together (Android `versionCode` +1 too), commit message `chore(InterSego): Release Android (X.Y.Z) and iOS (A.B.C)`. Don't bump mid-feature-PR unless that PR's own commit already includes it.
 
+**"Novedades" what's-new content:** as part of the same release commit (or the PR before it), decide whether the release has anything worth announcing to users — a new screen, feature, or mode significant enough that a returning user would want a heads-up (roughly: Minor/Major-worthy changes). If so, add a `WhatsNewEntry` tagged with the new version to **both** platforms' `WhatsNewService.entries` (`android/.../services/WhatsNewService.kt` and `iOS/InterSego/Services/WhatsNewService.swift`) — `entries` is append-only, never edit or remove past entries. Skip it for pure bug-fix/Patch releases or internal-only changes. See the feature tracker's "Novedades" row for how the version-range filtering works.
+
 ## Development Rules
 
 ### Feature Tracker Maintenance
