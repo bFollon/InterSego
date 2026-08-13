@@ -21,6 +21,10 @@ struct JourneyDetailView: View {
     let stopName: (String) -> String
     let onLegSelected: (_ routeId: String, _ stopId: String) -> Void
 
+    private var hasEstimatedLeg: Bool {
+        journey.legs.contains { if case .ride(let r) = $0 { return r.isEstimated } else { return false } }
+    }
+
     var body: some View {
         List {
             ForEach(Array(journey.stepsWithWaits().enumerated()), id: \.offset) { _, step in
@@ -31,8 +35,7 @@ struct JourneyDetailView: View {
                             systemImage: "bus",
                             iconColor: .accentColor,
                             title: "\(ride.routeId) · \(stopName(ride.fromStop)) → \(stopName(ride.toStop))",
-                            subtitle: "\(formatMin(ride.depMin)) — \(formatMin(ride.arrMin))",
-                            disclaimer: ride.isEstimated ? "Horarios orientativos" : nil
+                            subtitle: "\(formatMin(ride.depMin)) — \(formatMin(ride.arrMin))"
                         )
                     }
                     .foregroundStyle(.primary)
@@ -42,34 +45,37 @@ struct JourneyDetailView: View {
                         systemImage: "figure.walk",
                         iconColor: .gray,
                         title: "Caminar · \(stopName(walk.fromStop)) → \(stopName(walk.toStop))",
-                        subtitle: "\(walk.minutes) min (\(walk.meters) m)",
-                        disclaimer: nil
+                        subtitle: "\(walk.minutes) min (\(walk.meters) m)"
                     )
                 case .wait(let minutes):
                     legRow(
                         systemImage: "clock",
                         iconColor: .gray,
                         title: "Espera",
-                        subtitle: "\(minutes) min",
-                        disclaimer: nil
+                        subtitle: "\(minutes) min"
                     )
                 }
+            }
+            if hasEstimatedLeg {
+                // Shown once for the whole journey, not per-leg — riding on just the one leg
+                // that happens to be estimated read like a note about that specific bus.
+                Text("Horarios orientativos")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .listRowSeparator(.hidden)
             }
         }
         .navigationTitle("\(formatMin(journey.departureMin)) — \(formatMin(journey.arrivalMin))")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func legRow(systemImage: String, iconColor: Color, title: String, subtitle: String, disclaimer: String?) -> some View {
+    private func legRow(systemImage: String, iconColor: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .foregroundStyle(iconColor)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).fontWeight(.medium)
                 Text(subtitle).font(.footnote).foregroundStyle(.secondary)
-                if let disclaimer {
-                    Text(disclaimer).font(.footnote).foregroundStyle(.orange)
-                }
             }
         }
         .padding(.vertical, 4)

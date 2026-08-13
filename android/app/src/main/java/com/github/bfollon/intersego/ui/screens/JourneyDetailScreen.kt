@@ -78,6 +78,18 @@ fun JourneyDetailScreen(
                     }
                 }
             }
+            if (journey.legs.any { it is Leg.Ride && it.isEstimated }) {
+                item {
+                    // Shown once for the whole journey, not per-leg — riding on just the one leg
+                    // that happens to be estimated read like a note about that specific bus.
+                    Text(
+                        "Horarios orientativos",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.padding(top = 12.dp, start = 4.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -98,15 +110,6 @@ private fun LegRow(leg: Leg, stopName: (String) -> String, onClick: (() -> Unit)
                 Column(modifier = Modifier.weight(1f)) {
                     Text("${leg.routeId} · ${stopName(leg.fromStop)} → ${stopName(leg.toStop)}", fontWeight = FontWeight.Medium)
                     Text("${formatMin(leg.depMin)} — ${formatMin(leg.arrMin)}", style = MaterialTheme.typography.bodySmall)
-                    if (leg.isEstimated) {
-                        // Same copy as NextDepartureScreen's TimesDisclaimerCard - see
-                        // JourneyResultsScreen for the full expandable version.
-                        Text(
-                            "Horarios orientativos",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
                 }
             }
             is Leg.Walk -> {

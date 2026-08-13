@@ -112,10 +112,14 @@ private fun JourneyCard(journey: Journey, onClick: () -> Unit) {
                 }
             }
             if (hasEstimatedLeg) {
-                // Reuses the same "Horarios orientativos" disclaimer language as NextDepartureScreen
-                // (TimesDisclaimerCard) rather than inventing new copy — a journey built partly on
-                // cluster-estimated times shouldn't look more precise than the app is elsewhere.
-                TimesDisclaimerCard()
+                // Plain caption, matching iOS and the JourneyDetailScreen banner — a journey
+                // built partly on cluster-estimated times shouldn't look more precise than the
+                // app is elsewhere, but this is a secondary note, not an alert worth a card.
+                Text(
+                    "Horarios orientativos",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
             }
         }
     }
