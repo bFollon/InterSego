@@ -269,12 +269,13 @@ object JourneyPlannerService {
     }
 
     /**
-     * Extracts, per trip, the maximal contiguous (no gaps) runs of adjacent, time-monotonic
-     * populated departures — see "Connection extraction" and "Non-monotonic departures" in
-     * `docs/JOURNEY_PLANNER.md`. A trip with a non-monotonic hop in the middle (13 cluster-noise
-     * cases + 1 genuine mid-route-origin case in the current data) simply produces two shorter
-     * segments instead of one continuous one; a rider is conservatively assumed unable to ride
-     * straight through the break.
+     * Extracts, per trip, the time-monotonic runs of populated departures — see "Connection
+     * extraction" and "Non-monotonic departures" in `docs/JOURNEY_PLANNER.md`. A `null` entry
+     * (a stop this trip doesn't pick up at, e.g. a school-only stop outside term) does not end
+     * the run: the trip is still physically moving, so the ride bridges straight from the last
+     * populated stop to the next one. Only a non-monotonic hop (13 cluster-noise cases + 1
+     * genuine mid-route-origin case in the current data) ends a run and starts a fresh one — a
+     * rider is conservatively assumed unable to ride straight through that kind of break.
      */
     private fun buildRideSegments(
         routes: List<JourneyRouteData>,
@@ -310,8 +311,9 @@ object JourneyPlannerService {
                     for (i in trip.departures.indices) {
                         val dep = trip.departures[i]
                         if (dep == null || !dep.season.runsIn(month, weekday) || i >= physicalSeq.size) {
-                            // skipped stop, out-of-season departure, or out-of-range index: breaks any in-progress run
-                            flush()
+                            // skipped stop, out-of-season departure, or out-of-range index: this
+                            // trip doesn't stop here, but keeps moving — bridge over it rather
+                            // than ending the run (see docstring above)
                             continue
                         }
                         val lastMinute = runMinutes.lastOrNull()
