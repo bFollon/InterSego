@@ -13,55 +13,93 @@ struct WhatsNewEntry {
     let icon: String
     let title: String
     let body: String
+    /// The version this entry shipped in, e.g. "3.9.0" — see `MARKETING_VERSION` in project.pbxproj.
+    let version: String
 }
 
-/// Version-gated "what's new" notice, shown once per app update.
+/// Version-*range*-gated "what's new" notice, shown once per app update.
 ///
 /// Unlike the per-feature tutorials (`RemindersTutorial`, `LiveUpdateTutorialView`), which key
 /// off "has this screen been visited before", this keys off "has this app version been seen
 /// before" — so it surfaces on first launch after an update, before the user has to go looking
 /// for whatever changed (e.g. a feature moving to a different screen).
 ///
-/// `entries` should be updated (and cleared once shipped) alongside each version bump that
-/// warrants an announcement — see `MARKETING_VERSION` in project.pbxproj.
+/// `entries` is append-only: each release adds new version-tagged entries, older ones are never
+/// removed. A user who skips versions sees everything they missed (`entriesToShow()`), not just
+/// whatever shipped in the version they happen to update to — capped at `maxEntriesToShow` so
+/// someone who hasn't updated in a very long time doesn't get a wall of old announcements.
 enum WhatsNewService {
     private static let lastSeenVersionKey = "whats_new_last_seen_version"
+
+    /// Upper bound on how many past entries to show at once, oldest-missed dropped first.
+    private static let maxEntriesToShow = 5
 
     static var currentVersion: String {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
     }
 
-    /// The entries to show for the current version. Empty once there's nothing to announce.
+    /// All announcements ever shipped, oldest first. Append new ones here on every release that
+    /// warrants an announcement — never remove or overwrite past entries.
     static let entries: [WhatsNewEntry] = [
         WhatsNewEntry(
             icon: "point.topleft.down.curvedto.point.bottomright.up",
             title: "Planifica tu viaje",
-            body: "Nuevo en \u{201c}Más opciones\u{201d}: dinos de dónde a dónde quieres ir y te mostramos las mejores combinaciones de autobuses, con transbordos incluidos. Elige salir a una hora concreta o llegar antes de una hora límite."
+            body: "Nuevo en \u{201c}Más opciones\u{201d}: dinos de dónde a dónde quieres ir y te mostramos las mejores combinaciones de autobuses, con transbordos incluidos. Elige salir a una hora concreta o llegar antes de una hora límite.",
+            version: "3.9.0"
         ),
     ]
 
-    /// True if the current version hasn't been announced yet on this device.
+    /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,
+    /// sorted ascending and capped to the most recent `maxEntriesToShow`.
+    static func entriesToShow() -> [WhatsNewEntry] {
+        let lastSeen = UserDefaults.standard.string(forKey: lastSeenVersionKey) ?? "0.0.0"
+        let inRange = entries.filter {
+            compareSemVer($0.version, lastSeen) == .orderedDescending
+                && compareSemVer($0.version, currentVersion) != .orderedDescending
+        }
+        let sorted = inRange.sorted { compareSemVer($0.version, $1.version) == .orderedAscending }
+        return Array(sorted.suffix(maxEntriesToShow))
+    }
+
+    /// True if there's at least one unseen entry to announce on this device.
     ///
     /// No last-seen version recorded means one of two things: a genuinely fresh install (in
     /// which case there's nothing to announce — the user never saw the old layout), or an
     /// existing install upgrading into the very first version that ships this mechanism (in
-    /// which case they *should* see it). `MonitoringPreferencesService.hasUserMadeAnalyticsChoice`
+    /// which case they *should* see whatever they missed). `MonitoringPreferencesService.hasUserMadeAnalyticsChoice`
     /// distinguishes the two: that choice is only ever made once, on a screen every install has
     /// gone through since long before this feature existed, so its presence means the app has
     /// run on this device before.
     static func shouldShow() -> Bool {
-        guard !entries.isEmpty else { return false }
-        guard let lastSeen = UserDefaults.standard.string(forKey: lastSeenVersionKey) else {
+        guard UserDefaults.standard.string(forKey: lastSeenVersionKey) != nil else {
             let isExistingInstall = MonitoringPreferencesService.shared.hasUserMadeAnalyticsChoice()
             if !isExistingInstall {
                 markAsSeen()
+                return false
             }
-            return isExistingInstall
+            return !entriesToShow().isEmpty
         }
-        return lastSeen != currentVersion
+        return !entriesToShow().isEmpty
     }
 
     static func markAsSeen() {
         UserDefaults.standard.set(currentVersion, forKey: lastSeenVersionKey)
     }
+}
+
+/// Compares two "MAJOR.MINOR.PATCH" SemVer strings numerically, not lexicographically
+/// (`"3.10.0" > "3.9.0"`, which plain string comparison would get wrong). Missing or
+/// non-numeric components are treated as 0.
+private func compareSemVer(_ lhs: String, _ rhs: String) -> ComparisonResult {
+    let l = semVerComponents(lhs)
+    let r = semVerComponents(rhs)
+    if l != r {
+        return (l.0, l.1, l.2) < (r.0, r.1, r.2) ? .orderedAscending : .orderedDescending
+    }
+    return .orderedSame
+}
+
+private func semVerComponents(_ version: String) -> (Int, Int, Int) {
+    let parts = version.split(separator: ".").map { Int($0) ?? 0 }
+    return (parts.count > 0 ? parts[0] : 0, parts.count > 1 ? parts[1] : 0, parts.count > 2 ? parts[2] : 0)
 }
