@@ -42,6 +42,10 @@ object JourneySearchCoordinator {
         val dayTypes = TimetableQueryUtils.dayTypesForDate(calendar)
         val month = date.month
         val weekday = calendar.get(Calendar.DAY_OF_WEEK)
+        val nowMin = if (date == LocalDate.now()) {
+            val now = java.time.LocalTime.now()
+            now.hour * 60 + now.minute
+        } else null
 
         val query = JourneyQuery(
             origin = originPhysicalStopId,
@@ -51,6 +55,7 @@ object JourneySearchCoordinator {
             weekday = weekday,
             departAfterMin = departAfterMin,
             arriveBeforeMin = arriveBeforeMin,
+            nowMin = nowMin,
         )
         JourneyPlannerService.findJourneys(routes, transfers, query)
     }

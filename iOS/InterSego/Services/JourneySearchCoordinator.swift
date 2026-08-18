@@ -32,6 +32,10 @@ enum JourneySearchCoordinator {
         let calendar = Calendar.current
         let month = calendar.component(.month, from: date)
         let weekday = calendar.component(.weekday, from: date)
+        let nowMin: Int? = calendar.isDateInToday(date) ? {
+            let now = calendar.dateComponents([.hour, .minute], from: Date())
+            return (now.hour ?? 0) * 60 + (now.minute ?? 0)
+        }() : nil
 
         let query = JourneyQuery(
             origin: originPhysicalStopId,
@@ -41,6 +45,7 @@ enum JourneySearchCoordinator {
             weekday: weekday,
             departAfterMin: departAfterMin,
             arriveBeforeMin: arriveBeforeMin,
+            nowMin: nowMin,
         )
         return JourneyPlannerService.findJourneys(routes: routes, transfers: transfers, query: query)
     }

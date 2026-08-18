@@ -32,6 +32,9 @@ import java.time.Month
  * @param weekday java.util.Calendar.DAY_OF_WEEK value (Sun=1…Sat=7), for MON_FRI_ONLY/FRI_ONLY seasonal filtering
  * @param departAfterMin minutes-of-day; only journeys departing at or after this are returned (ignored when [arriveBeforeMin] is set)
  * @param arriveBeforeMin minutes-of-day; when set, switches to arrive-before mode (see above)
+ * @param nowMin minutes-of-day for the current moment, only when the query date is today; used as a floor
+ * in arrive-before mode so already-departed buses aren't offered (ignored otherwise, since [departAfterMin]
+ * already carries "now" for today via the caller's default)
  */
 data class JourneyQuery(
     val origin: String,
@@ -41,6 +44,7 @@ data class JourneyQuery(
     val weekday: Int,
     val departAfterMin: Int,
     val arriveBeforeMin: Int? = null,
+    val nowMin: Int? = null,
 )
 
 /**
@@ -86,8 +90,10 @@ object JourneyPlannerService {
         val walkNeighbors = buildWalkIndex(transfers)
 
         // Arrive-before mode searches the whole day (any bus, however early, is a candidate) and
-        // ranks by closeness to the deadline afterwards - departAfterMin doesn't apply.
-        val searchStartMin = if (query.arriveBeforeMin != null) 0 else query.departAfterMin
+        // ranks by closeness to the deadline afterwards - departAfterMin doesn't apply. It's still
+        // floored at "now" (query.nowMin) when the query date is today, so already-departed buses
+        // aren't offered as boarding candidates.
+        val searchStartMin = if (query.arriveBeforeMin != null) (query.nowMin ?: 0) else query.departAfterMin
 
         // Round 0: origin (+ its immediate walk neighbors) as boarding points, no buffer (nothing to transfer from yet).
         val origin = Reached(query.origin, searchStartMin, isEstimatedArrival = false, legsFromOrigin = emptyList(), boardedTripKeys = emptySet())

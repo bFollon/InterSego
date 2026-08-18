@@ -25,6 +25,9 @@ import Foundation
 ///   - weekday: Calendar.current.component(.weekday) value (Sun=1…Sat=7), for MON_FRI_ONLY/FRI_ONLY seasonal filtering
 ///   - departAfterMin: minutes-of-day; only journeys departing at or after this are returned (ignored when `arriveBeforeMin` is set)
 ///   - arriveBeforeMin: minutes-of-day; when set, switches to arrive-before mode (see above)
+///   - nowMin: minutes-of-day for the current moment, only when the query date is today; used as a floor
+///     in arrive-before mode so already-departed buses aren't offered (ignored otherwise, since `departAfterMin`
+///     already carries "now" for today via the caller's default)
 struct JourneyQuery {
     let origin: String
     let destination: String
@@ -33,6 +36,7 @@ struct JourneyQuery {
     let weekday: Int
     let departAfterMin: Int
     var arriveBeforeMin: Int? = nil
+    var nowMin: Int? = nil
 }
 
 /// Journey search, per `docs/JOURNEY_PLANNER.md`. Pure logic, no UIKit/SwiftUI dependency —
@@ -79,8 +83,10 @@ enum JourneyPlannerService {
         let walkNeighbors = buildWalkIndex(transfers)
 
         // Arrive-before mode searches the whole day (any bus, however early, is a candidate) and
-        // ranks by closeness to the deadline afterwards - departAfterMin doesn't apply.
-        let searchStartMin = query.arriveBeforeMin != nil ? 0 : query.departAfterMin
+        // ranks by closeness to the deadline afterwards - departAfterMin doesn't apply. It's still
+        // floored at "now" (query.nowMin) when the query date is today, so already-departed buses
+        // aren't offered as boarding candidates.
+        let searchStartMin = query.arriveBeforeMin != nil ? (query.nowMin ?? 0) : query.departAfterMin
 
         // Round 0: origin (+ its immediate walk neighbors) as boarding points, no buffer (nothing to transfer from yet).
         let origin = Reached(stop: query.origin, timeMin: searchStartMin, isEstimatedArrival: false, legsFromOrigin: [], boardedTripKeys: [])
