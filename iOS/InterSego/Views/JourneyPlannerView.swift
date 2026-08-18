@@ -110,20 +110,6 @@ struct JourneyPlannerView: View {
                 }
             }
 
-            if !recents.isEmpty {
-                Section("Recientes") {
-                    ForEach(recents) { recent in
-                        Button(action: {
-                            origin = Endpoint(physicalStopId: recent.originStopId, name: recent.originName)
-                            destination = Endpoint(physicalStopId: recent.destinationStopId, name: recent.destinationName)
-                        }) {
-                            Label("\(recent.originName) → \(recent.destinationName)", systemImage: "clock.arrow.circlepath")
-                        }
-                        .foregroundStyle(.primary)
-                    }
-                }
-            }
-
             Section {
                 Button("Buscar") {
                     guard let origin, let destination else { return }
@@ -149,6 +135,20 @@ struct JourneyPlannerView: View {
                 }
                 .disabled(origin == nil || destination == nil || origin?.physicalStopId == destination?.physicalStopId)
                 .frame(maxWidth: .infinity, alignment: .center)
+            }
+
+            if !recents.isEmpty {
+                Section("Recientes") {
+                    ForEach(recents) { recent in
+                        Button(action: {
+                            origin = Endpoint(physicalStopId: recent.originStopId, name: recent.originName)
+                            destination = Endpoint(physicalStopId: recent.destinationStopId, name: recent.destinationName)
+                        }) {
+                            Label("\(recent.originName) → \(recent.destinationName)", systemImage: "clock.arrow.circlepath")
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
             }
         }
         .navigationTitle("Planificar viaje")

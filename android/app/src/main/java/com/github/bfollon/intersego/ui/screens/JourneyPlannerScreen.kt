@@ -268,6 +268,31 @@ fun JourneyPlannerScreen(
                 }
             }
 
+            item {
+                Button(
+                    onClick = {
+                        val o = origin
+                        val d = destination
+                        if (o != null && d != null) {
+                            RecentJourneysService.record(context, RecentJourney(o.physicalStopId, o.name, d.physicalStopId, d.name))
+                            if (timeMode == TimeMode.ARRIVE_BEFORE) {
+                                val arriveBeforeMin = arriveBeforeTime.hour * 60 + arriveBeforeTime.minute
+                                onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, 0, arriveBeforeMin)
+                            } else {
+                                val departAfterMin = departureTime?.let { it.hour * 60 + it.minute }
+                                    ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
+                                onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, departAfterMin, null)
+                            }
+                        }
+                    },
+                    enabled = origin != null && destination != null && origin?.physicalStopId != destination?.physicalStopId,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                ) {
+                    Text("Buscar")
+                }
+            }
+
             if (recents.isNotEmpty()) {
                 item {
                     Text("Recientes", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
@@ -291,31 +316,6 @@ fun JourneyPlannerScreen(
                             }
                         }
                     }
-                }
-            }
-
-            item {
-                Button(
-                    onClick = {
-                        val o = origin
-                        val d = destination
-                        if (o != null && d != null) {
-                            RecentJourneysService.record(context, RecentJourney(o.physicalStopId, o.name, d.physicalStopId, d.name))
-                            if (timeMode == TimeMode.ARRIVE_BEFORE) {
-                                val arriveBeforeMin = arriveBeforeTime.hour * 60 + arriveBeforeTime.minute
-                                onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, 0, arriveBeforeMin)
-                            } else {
-                                val departAfterMin = departureTime?.let { it.hour * 60 + it.minute }
-                                    ?: (LocalTime.now().hour * 60 + LocalTime.now().minute)
-                                onSearch(o.physicalStopId, o.name, d.physicalStopId, d.name, date, departAfterMin, null)
-                            }
-                        }
-                    },
-                    enabled = origin != null && destination != null && origin?.physicalStopId != destination?.physicalStopId,
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
-                ) {
-                    Text("Buscar")
                 }
             }
         }
