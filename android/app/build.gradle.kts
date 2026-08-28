@@ -1,5 +1,7 @@
 import java.util.Properties
 
+fun String.toBooleanString(): String = if (toBooleanStrictOrNull() == true) "true" else "false"
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -29,6 +31,7 @@ android {
 
         buildConfigField("String", "BOARDING_SERVER_URL", "\"https://intersego.bfollon.dev\"")
         buildConfigField("String", "SERVER_API_KEY", "\"${localProperties["server.api.key"] ?: ""}\"")
+        buildConfigField("boolean", "LOCAL_MODE", (project.findProperty("intersego.localMode") as? String ?: "false").toBooleanString())
     }
 
     buildTypes {

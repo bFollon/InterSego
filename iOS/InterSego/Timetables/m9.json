@@ -10,6 +10,7 @@
     "routeType": "URBAN",
     "isCircular": false,
     "displayOrder": 10,
+    "pdfUrl": "",
     "sourceUrl": "https://infosegovia.com/ruta-m8-segovia-la-granja-valsain-segovia-2/"
   },
   "stops": [

@@ -10,6 +10,7 @@
     "routeType": "URBAN",
     "isCircular": false,
     "displayOrder": 12,
+    "pdfUrl": "",
     "sourceUrl": "https://infosegovia.com/ruta-m11-bernuy-de-porreros-segovia/"
   },
   "stops": [
