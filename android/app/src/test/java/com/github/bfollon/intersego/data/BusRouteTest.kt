@@ -10,7 +10,7 @@ class BusRouteTest : FunSpec({
         name = "La Lastrilla - El Sotillo",
         origin = "La Lastrilla",
         destination = "El Sotillo",
-        pdfURL = "https://example.com/M4.pdf",
+        sourceURL = "https://example.com/M4.pdf",
         routeType = RouteType.INTERURBAN
     )
 

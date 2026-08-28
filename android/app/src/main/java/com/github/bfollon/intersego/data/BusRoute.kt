@@ -22,7 +22,7 @@ data class BusRoute(
     val name: String,                   // "Centro - San Lorenzo"
     val origin: String,                 // Starting point
     val destination: String,            // End point
-    val pdfURL: String,                 // URL to timetable PDF
+    val sourceURL: String,               // URL to official timetable source (PDF or web page)
     val routeType: RouteType,           // URBAN or INTERURBAN
     val isCircular: Boolean = false,    // True if route forms a loop (no single destination)
     val color: String? = null,          // Optional route color for UI (hex code)
@@ -50,7 +50,7 @@ data class BusRoute(
             name = "Centro - Pío XII",
             origin = "Centro",
             destination = "Pío XII",
-            pdfURL = "https://example.com/linea-1.pdf",
+            sourceURL = "https://example.com/linea-1.pdf",
             routeType = RouteType.URBAN,
             color = "#FF5722"
         )
@@ -64,7 +64,7 @@ data class BusRoute(
             name = "Segovia - La Granja",
             origin = "Segovia",
             destination = "La Granja de San Ildefonso",
-            pdfURL = "https://example.com/linea-40.pdf",
+            sourceURL = "https://example.com/linea-40.pdf",
             routeType = RouteType.INTERURBAN,
             color = "#2196F3"
         )

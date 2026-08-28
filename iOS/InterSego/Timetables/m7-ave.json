@@ -9,7 +9,8 @@
     "destination": "AVE Segovia",
     "routeType": "URBAN",
     "isCircular": false,
-    "displayOrder": 8
+    "displayOrder": 8,
+    "sourceUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M7.pdf"
   },
   "stops": [
     {

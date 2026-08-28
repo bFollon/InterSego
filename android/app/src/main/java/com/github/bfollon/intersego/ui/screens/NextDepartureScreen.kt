@@ -47,12 +47,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Brightness4
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Warning
@@ -853,7 +855,7 @@ fun NextDepartureScreen(
                         val pdfRoutes = if (selectedRouteId != null)
                             loadedRoutes.filter { it.route.id == selectedRouteId }
                         else loadedRoutes
-                        PDFLinksFooter(
+                        SourceLinksFooter(
                             routes = pdfRoutes.map { it.route },
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
                         )
@@ -1978,9 +1980,9 @@ private fun BoardingButton(
 // ============================================================================
 
 @Composable
-private fun PDFLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier) {
+private fun SourceLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val validRoutes = routes.filter { it.pdfURL.isNotEmpty() }
+    val validRoutes = routes.filter { it.sourceURL.isNotEmpty() }
     if (validRoutes.isEmpty()) return
 
     val feedback = rememberFeedbackCoordinator()
@@ -1994,20 +1996,30 @@ private fun PDFLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
-                text = "Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada.",
+                text = headerText(validRoutes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             validRoutes.forEach { route ->
                 TextButton(
                     onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(route.pdfURL))
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(route.sourceURL))
                         context.startActivity(intent)
                     },
                     contentPadding = PaddingValues(0.dp)
                 ) {
+                    Icon(
+                        imageVector = if (route.sourceURL.endsWith(".pdf")) Icons.Filled.Description else Icons.Filled.Public,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = "Ver PDF oficial · Línea ${route.number} ↗",
+                        text = if (route.sourceURL.endsWith(".pdf"))
+                            "Ver PDF oficial · Línea ${route.number} ↗"
+                        else
+                            "Ver horario oficial · Línea ${route.number} ↗",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -2063,6 +2075,18 @@ private fun PDFLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modifier
                 }
             }
         )
+    }
+}
+
+private fun headerText(routes: List<BusRoute>): String {
+    if (routes.isEmpty()) return "Los horarios son orientativos. Consulta la fuente oficial para información actualizada."
+    return when {
+        routes.all { it.sourceURL.contains("linecar.es") } ->
+            "Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada."
+        routes.all { it.sourceURL.contains("infosegovia.com") } ->
+            "Los horarios son orientativos. Consulta la información oficial en infosegovia.com para horarios actualizados."
+        else ->
+            "Los horarios son orientativos. Consulta la fuente oficial para información actualizada."
     }
 }
 
