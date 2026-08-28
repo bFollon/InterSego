@@ -17,12 +17,6 @@ enum DebugConfig {
         static var isDebugEnabled = false
     #endif
 
-    #if LOCAL_MODE
-        static let isLocalMode = true
-    #else
-        static let isLocalMode = false
-    #endif
-
     static var isDetailedLoggingEnabled = false
 
     private static let logger = Logger(subsystem: "com.github.bfollon.intersego", category: "InterSego")

@@ -10,7 +10,6 @@
 package com.github.bfollon.intersego.services
 
 import android.content.Context
-import com.github.bfollon.intersego.BuildConfig
 import com.github.bfollon.intersego.data.AlternateLocation
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
@@ -160,18 +159,16 @@ class TimetableLoader(private val context: Context) {
     // MARK: - File loading
 
     private fun loadFile(routeId: String): TimetableFile {
-        // Disk cache takes priority over bundle assets — unless LOCAL_MODE is on.
-        if (!BuildConfig.LOCAL_MODE) {
-            val cacheFile = TimetableCacheService.cacheFile(context, routeId)
-            if (cacheFile.exists()) {
-                return json.decodeFromString(cacheFile.readText())
-            }
+        val cacheFile = TimetableCacheService.cacheFile(context, routeId)
+        val text = if (cacheFile.exists()) {
+            cacheFile.readText()
+        } else {
+            context.assets
+                .open("timetables/${routeId.lowercase()}.json")
+                .bufferedReader()
+                .readText()
         }
-        return context.assets
-            .open("timetables/${routeId.lowercase()}.json")
-            .bufferedReader()
-            .readText()
-            .let { json.decodeFromString(it) }
+        return json.decodeFromString(text)
     }
 
     // MARK: - Public API: timetables

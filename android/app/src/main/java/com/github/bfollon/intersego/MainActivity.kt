@@ -62,7 +62,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.github.bfollon.intersego.data.ServiceAlert
-import com.github.bfollon.intersego.BuildConfig
 import com.github.bfollon.intersego.services.AlertService
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
@@ -302,7 +301,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 }
 
                 // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
-                if (!BuildConfig.LOCAL_MODE && NetworkMonitor.isOnline()) {
+                if (NetworkMonitor.isOnline()) {
                     launch { TimetableCacheService.fetchAllRoutes(this@MainActivity) }
                     launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
                     launch { HolidayService.refresh(this@MainActivity) }

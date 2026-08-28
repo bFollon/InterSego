@@ -837,7 +837,7 @@ struct ContentView: View {
         Task { activeAlerts = await AlertService.shared.fetchActiveAlerts() }
 
         // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
-        if !DebugConfig.isLocalMode && NetworkMonitor.shared.isOnline {
+        if NetworkMonitor.shared.isOnline {
             Task { await TimetableCacheService.shared.fetchAllRoutes() }
             Task { await PolylineCacheService.shared.fetchAllPolylines() }
             Task { await HolidayService.shared.refresh() }
