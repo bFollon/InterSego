@@ -2009,14 +2009,14 @@ private fun SourceLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modif
                     contentPadding = PaddingValues(0.dp)
                 ) {
                     Icon(
-                        imageVector = if (route.sourceURL.endsWith(".pdf")) Icons.Filled.Description else Icons.Filled.Public,
+                        imageVector = if (isPdfSource(route.sourceURL)) Icons.Filled.Description else Icons.Filled.Public,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.size(4.dp))
                     Text(
-                        text = if (route.sourceURL.endsWith(".pdf"))
+                        text = if (isPdfSource(route.sourceURL))
                             "Ver PDF oficial · Línea ${route.number} ↗"
                         else
                             "Ver horario oficial · Línea ${route.number} ↗",
@@ -2077,6 +2077,9 @@ private fun SourceLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modif
         )
     }
 }
+
+private fun isPdfSource(sourceURL: String): Boolean =
+    Uri.parse(sourceURL).path?.lowercase()?.endsWith(".pdf") ?: false
 
 private fun headerText(routes: List<BusRoute>): String {
     if (routes.isEmpty()) return "Los horarios son orientativos. Consulta la fuente oficial para información actualizada."

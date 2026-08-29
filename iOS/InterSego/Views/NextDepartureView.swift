@@ -1498,14 +1498,18 @@ private struct SourceLinksFooter: View {
         }
     }
 
+    private func isPDF(_ route: BusRoute) -> Bool {
+        URL(string: route.sourceURL)?.path.lowercased().hasSuffix(".pdf") ?? false
+    }
+
     private func linkLabel(for route: BusRoute) -> String {
-        route.sourceURL.hasSuffix(".pdf")
+        isPDF(route)
             ? "PDF oficial · Línea \(route.number)"
             : "Horario oficial · Línea \(route.number)"
     }
 
     private func linkIcon(for route: BusRoute) -> String {
-        route.sourceURL.hasSuffix(".pdf") ? "doc.fill" : "globe"
+        isPDF(route) ? "doc.fill" : "globe"
     }
 }
 
