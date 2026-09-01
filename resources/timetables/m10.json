@@ -9,7 +9,9 @@
     "destination": "Fuentemilanos",
     "routeType": "URBAN",
     "isCircular": false,
-    "displayOrder": 11
+    "displayOrder": 11,
+    "pdfUrl": "",
+    "sourceUrl": "https://infosegovia.com/ruta-m10-fuentemilanos-segovia/"
   },
   "stops": [
     {

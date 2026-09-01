@@ -10,7 +10,8 @@
     "routeType": "URBAN",
     "isCircular": false,
     "displayOrder": 5,
-    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf"
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf",
+    "sourceUrl": "https://www.linecar.es/wp-content/uploads/2024/09/M5-septiembre-2024.pdf"
   },
   "stops": [
     {

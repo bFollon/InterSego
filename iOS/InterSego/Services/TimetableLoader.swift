@@ -40,7 +40,7 @@ struct TimetableLoader {
         let routeType: String
         let isCircular: Bool
         let displayOrder: Int
-        let pdfUrl: String?
+        let sourceUrl: String?
     }
 
     private struct JsonStop: Decodable {
@@ -283,7 +283,7 @@ struct TimetableLoader {
             name: r.name,
             origin: r.origin,
             destination: r.destination,
-            pdfURL: r.pdfUrl ?? "",
+            sourceURL: r.sourceUrl ?? "",
             routeType: type,
             isCircular: r.isCircular
         )
@@ -317,7 +317,7 @@ struct TimetableLoader {
                     name: r.name,
                     origin: r.origin,
                     destination: r.destination,
-                    pdfURL: r.pdfUrl ?? "",
+                    sourceURL: r.sourceUrl ?? "",
                     routeType: type,
                     isCircular: r.isCircular
                 )

@@ -10,7 +10,8 @@
     "routeType": "URBAN",
     "isCircular": true,
     "displayOrder": 4,
-    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf"
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf",
+    "sourceUrl": "https://www.linecar.es/wp-content/uploads/2025/10/M4.pdf"
   },
   "stops": [
     {

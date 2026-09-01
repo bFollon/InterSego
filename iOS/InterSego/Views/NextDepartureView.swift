@@ -499,7 +499,7 @@ struct NextDepartureView: View {
                     .padding(.top, 24)
                 }
 
-                PDFLinksFooter(routes: activeRoutesData.map(\.route))
+                SourceLinksFooter(routes: activeRoutesData.map(\.route))
                     .padding(.horizontal, 16).padding(.top, 20)
 
                 Spacer(minLength: 32)
@@ -1438,25 +1438,26 @@ private struct BoardingButton: View {
     }
 }
 
-// MARK: - PDF Links Footer
+// MARK: - Source Links Footer
 
-private struct PDFLinksFooter: View {
+private struct SourceLinksFooter: View {
     let routes: [BusRoute]
 
     @StateObject private var feedback = FeedbackCoordinator()
     @State private var showFeedbackChoice = false
 
     var body: some View {
+        let validRoutes = routes.filter { !$0.sourceURL.isEmpty }
         VStack(alignment: .leading, spacing: 8) {
-            Text("Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada.")
+            Text(headerText(for: validRoutes))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            ForEach(routes.filter { !$0.pdfURL.isEmpty }, id: \.id) { route in
-                if let url = URL(string: route.pdfURL) {
+            ForEach(validRoutes, id: \.id) { route in
+                if let url = URL(string: route.sourceURL) {
                     Link(destination: url) {
-                        Label("PDF oficial · Línea \(route.number)", systemImage: "doc.fill")
+                        Label(linkLabel(for: route), systemImage: linkIcon(for: route))
                             .font(.caption)
                             .foregroundStyle(.tint)
                     }
@@ -1482,6 +1483,33 @@ private struct PDFLinksFooter: View {
             Button("Cancelar", role: .cancel) {}
         }
         .feedbackPresentation(feedback)
+    }
+
+    private func headerText(for routes: [BusRoute]) -> String {
+        guard !routes.isEmpty else {
+            return "Los horarios son orientativos. Consulta la fuente oficial para información actualizada."
+        }
+        if routes.allSatisfy({ $0.sourceURL.contains("linecar.es") }) {
+            return "Los horarios son orientativos. Consulta los PDFs oficiales de Linecar para información actualizada."
+        } else if routes.allSatisfy({ $0.sourceURL.contains("infosegovia.com") }) {
+            return "Los horarios son orientativos. Consulta la información oficial en infosegovia.com para horarios actualizados."
+        } else {
+            return "Los horarios son orientativos. Consulta la fuente oficial para información actualizada."
+        }
+    }
+
+    private func isPDF(_ route: BusRoute) -> Bool {
+        URL(string: route.sourceURL)?.path.lowercased().hasSuffix(".pdf") ?? false
+    }
+
+    private func linkLabel(for route: BusRoute) -> String {
+        isPDF(route)
+            ? "PDF oficial · Línea \(route.number)"
+            : "Horario oficial · Línea \(route.number)"
+    }
+
+    private func linkIcon(for route: BusRoute) -> String {
+        isPDF(route) ? "doc.fill" : "globe"
     }
 }
 

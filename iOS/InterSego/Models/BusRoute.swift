@@ -15,14 +15,14 @@ struct BusRoute: Codable, Identifiable, Hashable {
     let name: String // "Centro - San Lorenzo"
     let origin: String
     let destination: String
-    let pdfURL: String
+    let sourceURL: String
     let routeType: RouteType
     let isCircular: Bool
     let color: String?
     let active: Bool
 
     init(id: String = UUID().uuidString, number: String, name: String,
-         origin: String, destination: String, pdfURL: String,
+         origin: String, destination: String, sourceURL: String,
          routeType: RouteType, isCircular: Bool = false, color: String? = nil, active: Bool = true)
     {
         self.id = id
@@ -30,7 +30,7 @@ struct BusRoute: Codable, Identifiable, Hashable {
         self.name = name
         self.origin = origin
         self.destination = destination
-        self.pdfURL = pdfURL
+        self.sourceURL = sourceURL
         self.routeType = routeType
         self.isCircular = isCircular
         self.color = color

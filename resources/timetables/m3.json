@@ -10,7 +10,8 @@
     "routeType": "URBAN",
     "isCircular": false,
     "displayOrder": 3,
-    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf"
+    "pdfUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf",
+    "sourceUrl": "https://www.linecar.es/wp-content/uploads/2024/07/SEGOVIA-M3.pdf"
   },
   "stops": [
     {
