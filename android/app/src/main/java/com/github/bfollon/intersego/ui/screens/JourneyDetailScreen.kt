@@ -39,6 +39,9 @@ private fun formatMin(minutesOfDay: Int): String {
     return "%02d:%02d".format(h, m)
 }
 
+private fun formatDuration(minutes: Int): String =
+    if (minutes < 60) "$minutes min" else "${minutes / 60} h ${minutes % 60} min"
+
 /**
  * Leg-by-leg breakdown of one journey, rendered as a single grouped card with dividers between
  * steps (matching iOS's single-List-with-dividers detail view), rather than a separate card per
@@ -56,7 +59,10 @@ fun JourneyDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("${formatMin(journey.departureMin)} — ${formatMin(journey.arrivalMin)}") },
+                title = {
+                    val transferLabel = if (journey.transferCount == 0) "Directo" else "${journey.transferCount} transbordo(s)"
+                    Text("${formatDuration(journey.arrivalMin - journey.departureMin)} · $transferLabel")
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")

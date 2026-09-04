@@ -15,6 +15,10 @@ private func formatMin(_ minutesOfDay: Int) -> String {
     return String(format: "%02d:%02d", h, m)
 }
 
+private func formatDuration(_ minutes: Int) -> String {
+    minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(minutes % 60) min"
+}
+
 /// Leg-by-leg breakdown of one journey. See docs/JOURNEY_PLANNER.md.
 struct JourneyDetailView: View {
     let journey: Journey
@@ -93,7 +97,7 @@ struct JourneyDetailView: View {
                 Text("Pasos")
             }
         }
-        .navigationTitle("\(formatMin(journey.departureMin)) — \(formatMin(journey.arrivalMin))")
+        .navigationTitle("\(formatDuration(journey.arrivalMin - journey.departureMin)) · \(journey.transferCount == 0 ? "Directo" : "\(journey.transferCount) transbordo(s)")")
         .navigationBarTitleDisplayMode(.inline)
     }
 
