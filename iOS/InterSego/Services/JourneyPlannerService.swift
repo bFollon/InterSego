@@ -69,6 +69,16 @@ enum JourneyPlannerService {
         let isEstimated: [Bool]
     }
 
+    /// A finished `Journey` paired with the set of underlying trips (vehicles) it actually rides -
+    /// see `rankAndDedupe`'s dedup key, which groups by this rather than by `Journey.legs`' route
+    /// IDs so that two journeys boarding the exact same trip(s) but alighting/transferring at a
+    /// different shared stop collapse together, while two journeys that simply happen to use the
+    /// same *route* at different times of day do not.
+    private struct Candidate {
+        let journey: Journey
+        let tripKeys: Set<String>
+    }
+
     /// A stop reached during the search, with enough context to compute the next leg's buffer and to reconstruct legs.
     private struct Reached {
         let stop: String
@@ -110,21 +120,21 @@ enum JourneyPlannerService {
             )
         }
 
-        var journeys: [Journey] = []
+        var journeys: [Candidate] = []
         var round0RideReach: [Reached] = []
 
         for start in round0Starts {
             for reached in ridesFrom(start, segments: segments, buffer: 0, requireDifferentTripThan: nil, bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated, maxWaitMin: maxWaitMin) {
                 round0RideReach.append(reached)
                 if reached.stop == query.destination {
-                    journeys.append(toJourney(reached))
+                    journeys.append(Candidate(journey: toJourney(reached), tripKeys: reached.boardedTripKeys))
                 } else {
                     for edge in walkNeighbors[reached.stop] ?? [] {
                         let other = edge.from == reached.stop ? edge.to : edge.from
                         if other == query.destination {
                             let walkLeg = Leg.Walk(fromStop: reached.stop, toStop: other, meters: edge.meters, minutes: edge.walkMinutes)
                             let extended = Reached(stop: other, timeMin: reached.timeMin + edge.walkMinutes, isEstimatedArrival: reached.isEstimatedArrival, legsFromOrigin: reached.legsFromOrigin + [.walk(walkLeg)], boardedTripKeys: reached.boardedTripKeys)
-                            journeys.append(toJourney(extended))
+                            journeys.append(Candidate(journey: toJourney(extended), tripKeys: extended.boardedTripKeys))
                         }
                     }
                 }
@@ -155,14 +165,14 @@ enum JourneyPlannerService {
             let buffer = start.isEstimatedArrival ? bufferSameStopEstimated : bufferSameStopTranscribed
             for reached in ridesFrom(start, segments: segments, buffer: buffer, requireDifferentTripThan: start.boardedTripKeys, bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated, maxWaitMin: maxWaitMin) {
                 if reached.stop == query.destination {
-                    journeys.append(toJourney(reached))
+                    journeys.append(Candidate(journey: toJourney(reached), tripKeys: reached.boardedTripKeys))
                 } else {
                     for edge in walkNeighbors[reached.stop] ?? [] {
                         let other = edge.from == reached.stop ? edge.to : edge.from
                         if other == query.destination {
                             let walkLeg = Leg.Walk(fromStop: reached.stop, toStop: other, meters: edge.meters, minutes: edge.walkMinutes)
                             let extended = Reached(stop: other, timeMin: reached.timeMin + edge.walkMinutes, isEstimatedArrival: reached.isEstimatedArrival, legsFromOrigin: reached.legsFromOrigin + [.walk(walkLeg)], boardedTripKeys: reached.boardedTripKeys)
-                            journeys.append(toJourney(extended))
+                            journeys.append(Candidate(journey: toJourney(extended), tripKeys: extended.boardedTripKeys))
                         }
                     }
                 }
@@ -183,7 +193,7 @@ enum JourneyPlannerService {
             // ties exactly on arrival/transfers/departure (same trip, same everything) and would
             // otherwise slip through as a second, needlessly effortful "option." See
             // docs/JOURNEY_PLANNER.md.
-            return rankAndDedupe(journeys.filter { $0.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin, totalWalkMinutes($0)] }
+            return rankAndDedupe(journeys.filter { $0.journey.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin, totalWalkMinutes($0)] }
         } else {
             return rankAndDedupe(journeys) { [$0.arrivalMin, $0.transferCount, -$0.departureMin, totalWalkMinutes($0)] }
         }
@@ -356,54 +366,48 @@ enum JourneyPlannerService {
     /// Ranks by `rankKey` lexicographically — each element ascending, i.e. lower is always
     /// better (callers negate fields where "higher is better," like departure time, before
     /// passing them in) — see `findJourneys` for what the two modes' keys are and why they
-    /// differ. Collapses to the best journey per distinct route/leg-kind pattern, drops any
-    /// journey dominated by another (see `strictlyDominates` - this is what filters out "walk to
-    /// a nearby stop the direct bus already passes through" alternatives that are no better on
-    /// any axis), then returns the top 3 non-dominated patterns.
-    private static func rankAndDedupe(_ journeys: [Journey], rankKey: (Journey) -> [Int]) -> [Journey] {
-        func pattern(_ j: Journey) -> String {
-            j.legs.map { leg -> String in
-                switch leg {
-                case .ride(let r): return "R:\(r.routeId):\(r.variantId)"
-                case .walk: return "W"
-                }
-            }.joined(separator: "|")
-        }
-        func better(_ a: Journey, _ b: Journey) -> Journey {
-            let ka = rankKey(a)
-            let kb = rankKey(b)
-            for i in ka.indices where ka[i] != kb[i] {
-                return ka[i] < kb[i] ? a : b
+    /// differ.
+    ///
+    /// Dominance filtering runs first, over *every* candidate (see `strictlyDominates` - this is
+    /// what filters out "walk to a nearby stop the direct bus already passes through"
+    /// alternatives that are no better on any axis). Sorting and taking the top 3 then enforces at
+    /// most one journey per underlying trip-combination (`Candidate.tripKeys`) — e.g. boarding the
+    /// same 10:00 bus and getting off at whichever of several shared stops connects to the same
+    /// onward bus is one option, not three — while still letting genuinely different departures
+    /// that happen to use the same *route* each earn their own slot. See docs/JOURNEY_PLANNER.md.
+    private static func rankAndDedupe(_ candidates: [Candidate], rankKey: (Journey) -> [Int]) -> [Journey] {
+        let nonDominated = candidates.enumerated().filter { index, candidate in
+            !candidates.enumerated().contains { otherIndex, other in
+                otherIndex != index && strictlyDominates(other, candidate, rankKey: rankKey)
             }
-            return a
-        }
-        var bestPerPattern: [String: Journey] = [:]
-        for j in journeys {
-            let key = pattern(j)
-            bestPerPattern[key] = bestPerPattern[key].map { better($0, j) } ?? j
-        }
+        }.map { $0.element }
 
-        let candidates = Array(bestPerPattern.values)
-        let nonDominated = candidates.filter { candidate in
-            !candidates.contains { other in other != candidate && strictlyDominates(other, candidate, rankKey: rankKey) }
-        }
-
-        return nonDominated.sorted { a, b in
-            let ka = rankKey(a)
-            let kb = rankKey(b)
+        let sorted = nonDominated.sorted { a, b in
+            let ka = rankKey(a.journey)
+            let kb = rankKey(b.journey)
             for i in ka.indices where ka[i] != kb[i] {
                 return ka[i] < kb[i]
             }
             return false
-        }.prefix(3).map { $0 }
+        }
+
+        var result: [Journey] = []
+        var usedTripKeys: Set<Set<String>> = []
+        for candidate in sorted {
+            if result.count >= 3 { break }
+            if usedTripKeys.insert(candidate.tripKeys).inserted {
+                result.append(candidate.journey)
+            }
+        }
+        return result
     }
 
-    /// True if every element of `rankKey(a)` is <= the corresponding element of `rankKey(b)`,
-    /// and strictly less on at least one - i.e. `b` offers no genuine trade-off and shouldn't be
-    /// shown alongside `a`.
-    private static func strictlyDominates(_ a: Journey, _ b: Journey, rankKey: (Journey) -> [Int]) -> Bool {
-        let ka = rankKey(a)
-        let kb = rankKey(b)
+    /// True if every element of `rankKey(a.journey)` is <= the corresponding element of
+    /// `rankKey(b.journey)`, and strictly less on at least one - i.e. `b` offers no genuine
+    /// trade-off and shouldn't be shown alongside `a`.
+    private static func strictlyDominates(_ a: Candidate, _ b: Candidate, rankKey: (Journey) -> [Int]) -> Bool {
+        let ka = rankKey(a.journey)
+        let kb = rankKey(b.journey)
         let neverWorse = ka.indices.allSatisfy { ka[$0] <= kb[$0] }
         let strictlyBetter = ka.indices.contains { ka[$0] < kb[$0] }
         return neverWorse && strictlyBetter

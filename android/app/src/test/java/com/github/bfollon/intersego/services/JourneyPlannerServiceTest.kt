@@ -215,8 +215,13 @@ class JourneyPlannerServiceTest : FunSpec({
             query("a", "c", departAfterMin = 800).copy(arriveBeforeMin = 655)
         )
 
-        result.size shouldBe 1
-        result[0].arrivalMin shouldBe 650 // closest to 655 - not the earliest (620) or the excluded, past-deadline one (720)
+        // Two distinct trips clear the deadline (620 and 650, on different physical buses) - both
+        // are genuine options and neither dominates the other (650 departs later, 620 arrives
+        // earlier), so both are returned, ranked with the closer/later one first. Only the
+        // past-deadline trip (720) is excluded.
+        result.size shouldBe 2
+        result[0].arrivalMin shouldBe 650
+        result[1].arrivalMin shouldBe 620
     }
 
     test("arrive-before mode prefers alighting at the destination directly over riding further and walking back, even though the latter is nominally closer to the deadline") {

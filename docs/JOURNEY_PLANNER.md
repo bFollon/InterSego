@@ -165,16 +165,24 @@ affect output).
 ### Transfer buffer rules
 
 At the transfer point (end of leg *i*, start of leg *i+1*), the connection scan must apply a
-minimum buffer before considering the next connection eligible. This section is the single
-source of truth for the buffer values — do not duplicate them elsewhere; if they change, change
-them here.
+minimum buffer before considering the next connection eligible.
 
-| Case | Minimum buffer |
+**These are user-configurable** (`TripPlannerPrefs` on Android, the equivalent on iOS — see the
+"Trip planner search tuning" row in the root `CLAUDE.md` feature tracker) since neither
+transcribed (official PDF) nor in-app estimated times are a live feed, so a fixed value can't be
+right for everyone. The table below is the **current default**, not a hardcoded constant — this
+section is still the single source of truth for what that default is; if it changes, change it
+here first.
+
+| Case | Default minimum buffer |
 |---|---|
-| Same physical stop, both times transcribed | 3 min |
-| Same physical stop, either time estimated (`Leg.isEstimated` on either leg) | 8 min |
-| Walking transfer, both times transcribed | `Walk.minutes` + 3 min |
-| Walking transfer, either time estimated | `Walk.minutes` + 8 min |
+| Same physical stop, either time transcribed or estimated | 15 min |
+| Walking transfer, either time transcribed or estimated | `Walk.minutes` + 15 min |
+
+(Earlier versions of this spec called for a shorter, transcribed-vs-estimated-split default —
+3/8 min same-stop, `Walk.minutes`+3/+8 walking — before the buffers became user-configurable. The
+flat 15 min default above is the current, actually-shipped value; don't reintroduce the split
+without also updating `TripPlannerPrefs`' defaults to match.)
 
 A candidate connection at the transfer point is eligible only if
 `nextConnection.depMin >= arrivalAtTransferStop + bufferFor(transferKind, isEstimated)`.
@@ -224,9 +232,10 @@ transfer beats a relaxed one it shouldn't). Ranking, in order:
 2. **Fewest transfers** (`transferCount`)
 3. **Latest departure** (`departureMin`, descending — less waiting at the origin)
 
-Return the **top 3 distinct** journeys (distinct = different leg sequence, not just different
-times on the same route/transfer pattern), not just the single best, so the results UI can offer
-a trade-off instead of only the tightest option.
+Return the **top 3 distinct** journeys, not just the single best, so the results UI can offer a
+trade-off instead of only the tightest option. "Distinct" here means a different underlying
+**trip combination** — see "One result per trip combination, not per route" below for exactly
+what that means and why it's not the same as "different route/variant pair."
 
 ### Arrive-before mode
 
@@ -280,12 +289,49 @@ dominates(a, b) = (a.arrivalMin <= b.arrivalMin
                       || a.departureMin > b.departureMin)
 ```
 
-Applied per-pattern, after collapsing each pattern to its best instance and before the final
-sort/take(3) — so a dominated alternative never displaces or crowds out a real trade-off, and
+Applied across **every** candidate journey found (not a pre-collapsed subset), before sorting and
+taking the top 3 — so a dominated alternative never displaces or crowds out a real trade-off, and
 never appears at all, not merely last. (Found via live testing: a real query surfaced "walk to a
 different stop, then ride the same buses" alternatives that arrived no sooner and cost no fewer
 transfers than the direct option — see `JourneyPlannerServiceTest.kt` /
 `JourneyPlannerServiceTests.swift`'s "dominated walk-detour" test for the regression case.)
+
+### One result per trip combination, not per route
+
+A naive `groupBy(routeId, variantId)` — collapse every candidate to one instance per route/variant
+*pair*, before ranking — looks right at first (it's what a first implementation did) but is wrong
+in two different directions at once:
+
+- **Too aggressive across a whole day.** M4→M6 might only have 2-3 distinct route/variant pairs
+  connecting a given origin/destination, but dozens of usable departures across the day using
+  those same 2-3 pairs. Collapsing by route/variant *alone* — with no regard for *which* trip —
+  picks one global "best" instance per pair and throws every other time of day away before
+  ranking even runs, so a query spanning the whole day (e.g. "depart after 00:00") can never
+  surface more than a small, fixed number of options no matter how many real ones exist. This was
+  shipped and caught live: a real query returned exactly one morning option and one option from
+  20 minutes before the last bus of the day, skipping every genuinely usable departure in between.
+- **Not aggressive enough within one moment.** When two routes share *multiple* physical stops
+  (say A and B share stops x, y, z), boarding the same A trip and getting off at x vs. y vs. z to
+  catch the *same* B trip is not three options — it's one boarding decision with an incidental
+  choice of interchange, and showing all three wastes result slots on a distinction that doesn't
+  matter to the rider. Grouping by route/variant *pair* doesn't even fix this on its own, since
+  route/variant is the same for x/y/z anyway — the real fix has to key on the trips actually
+  ridden, not the route.
+
+The correct grouping key is **which physical trips (vehicles) the journey actually boards** —
+each `RideSegment`'s `tripKey` (Android) / equivalent trip identity (iOS), one per `Leg.Ride`, not
+`routeId`/`variantId`. Two journeys that board the exact same trip(s) collapse to one (picking
+whichever the rank key prefers — resolves the x/y/z case, since it's the same A trip and the same
+B trip regardless of which shared stop the transfer happens at); two journeys that board a
+*different* trip on the same route (a different departure, even a few minutes apart) do not
+collapse (fixes the whole-day-collapse bug).
+
+This grouping is applied **after** dominance filtering (which already runs over every candidate,
+per above) and **during** the final sort/take(3) — walk the dominance-filtered candidates in rank
+order, taking each into the result unless a candidate with the same trip-combination key has
+already been taken. This keeps "top 3" both trip-combination-diverse (no wasted slot on a
+same-trip x/y/z duplicate) and time-of-day-diverse (a later departure on the same route/variant
+pair still gets its own shot at a slot, since it's a different trip combination).
 
 ---
 

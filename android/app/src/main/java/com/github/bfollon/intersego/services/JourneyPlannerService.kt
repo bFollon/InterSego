@@ -76,6 +76,13 @@ object JourneyPlannerService {
         val isEstimated: List<Boolean>,
     )
 
+    /** A finished [Journey] paired with the set of underlying trips (vehicles) it actually rides -
+     * see [rankAndDedupe]'s dedup key, which groups by this rather than by [Journey.legs]' route
+     * IDs so that two journeys boarding the exact same trip(s) but alighting/transferring at a
+     * different shared stop collapse together, while two journeys that simply happen to use the
+     * same *route* at different times of day do not. */
+    private data class Candidate(val journey: Journey, val tripKeys: Set<String>)
+
     /** A stop reached during the search, with enough context to compute the next leg's buffer and to reconstruct legs. */
     private data class Reached(
         val stop: String,
@@ -117,20 +124,21 @@ object JourneyPlannerService {
             )
         }
 
-        val journeys = mutableListOf<Journey>()
+        val journeys = mutableListOf<Candidate>()
         val round0RideReach = mutableListOf<Reached>()
 
         for (start in round0Starts) {
             for (reached in ridesFrom(start, segments, buffer = 0, requireDifferentTripThan = null, bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin)) {
                 round0RideReach += reached
                 if (reached.stop == query.destination) {
-                    journeys += toJourney(reached)
+                    journeys += Candidate(toJourney(reached), reached.boardedTripKeys)
                 } else {
                     walkNeighbors[reached.stop]?.forEach { edge ->
                         val other = if (edge.from == reached.stop) edge.to else edge.from
                         if (other == query.destination) {
                             val walkLeg = Leg.Walk(reached.stop, other, edge.meters, edge.walkMinutes)
-                            journeys += toJourney(reached.copy(stop = other, timeMin = reached.timeMin + edge.walkMinutes, legsFromOrigin = reached.legsFromOrigin + walkLeg))
+                            val arrived = reached.copy(stop = other, timeMin = reached.timeMin + edge.walkMinutes, legsFromOrigin = reached.legsFromOrigin + walkLeg)
+                            journeys += Candidate(toJourney(arrived), arrived.boardedTripKeys)
                         }
                     }
                 }
@@ -161,13 +169,14 @@ object JourneyPlannerService {
             // when the previous leg was a Walk — see there.
             for (reached in ridesFrom(start, segments, buffer = buffer, requireDifferentTripThan = start.boardedTripKeys, bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin)) {
                 if (reached.stop == query.destination) {
-                    journeys += toJourney(reached)
+                    journeys += Candidate(toJourney(reached), reached.boardedTripKeys)
                 } else {
                     walkNeighbors[reached.stop]?.forEach { edge ->
                         val other = if (edge.from == reached.stop) edge.to else edge.from
                         if (other == query.destination) {
                             val walkLeg = Leg.Walk(reached.stop, other, edge.meters, edge.walkMinutes)
-                            journeys += toJourney(reached.copy(stop = other, timeMin = reached.timeMin + edge.walkMinutes, legsFromOrigin = reached.legsFromOrigin + walkLeg))
+                            val arrived = reached.copy(stop = other, timeMin = reached.timeMin + edge.walkMinutes, legsFromOrigin = reached.legsFromOrigin + walkLeg)
+                            journeys += Candidate(toJourney(arrived), arrived.boardedTripKeys)
                         }
                     }
                 }
@@ -189,7 +198,7 @@ object JourneyPlannerService {
             // ties exactly on arrival/transfers/departure (same trip, same everything) and would
             // otherwise slip through as a second, needlessly effortful "option." See
             // docs/JOURNEY_PLANNER.md.
-            rankAndDedupe(journeys.filter { it.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin, it.totalWalkMinutes()) }
+            rankAndDedupe(journeys.filter { it.journey.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin, it.totalWalkMinutes()) }
         } else {
             rankAndDedupe(journeys) { listOf(it.arrivalMin, it.transferCount, -it.departureMin, it.totalWalkMinutes()) }
         }
@@ -353,44 +362,44 @@ object JourneyPlannerService {
     /** Ranks by [rankKey] lexicographically — each element ascending, i.e. lower is always
      * better (callers negate fields where "higher is better," like departure time, before
      * passing them in) — see [findJourneys] for what the two modes' keys are and why they
-     * differ. Collapses to the best journey per distinct route/leg-kind pattern, drops any
-     * journey dominated by another (see [strictlyDominates] — this is what filters out "walk to
-     * a nearby stop the direct bus already passes through" alternatives that are no better on any
-     * axis), then returns the top 3 non-dominated patterns. */
-    private fun rankAndDedupe(journeys: List<Journey>, rankKey: (Journey) -> List<Int>): List<Journey> {
-        fun pattern(j: Journey) = j.legs.joinToString("|") { leg ->
-            when (leg) {
-                is Leg.Ride -> "R:${leg.routeId}:${leg.variantId}"
-                is Leg.Walk -> "W"
-            }
-        }
-        fun betterOf(a: Journey, b: Journey): Journey {
-            val ka = rankKey(a)
-            val kb = rankKey(b)
-            for (i in ka.indices) {
-                if (ka[i] != kb[i]) return if (ka[i] < kb[i]) a else b
-            }
-            return a
-        }
-        val bestPerPattern = journeys.groupBy(::pattern).values.map { it.reduce(::betterOf) }
-
-        val nonDominated = bestPerPattern.filterNot { candidate ->
-            bestPerPattern.any { other -> other != candidate && strictlyDominates(other, candidate, rankKey) }
+     * differ.
+     *
+     * Dominance filtering runs first, over *every* candidate (see [strictlyDominates] — this is
+     * what filters out "walk to a nearby stop the direct bus already passes through"
+     * alternatives that are no better on any axis). Sorting and taking the top 3 then enforces at
+     * most one journey per underlying trip-combination ([Candidate.tripKeys]) — e.g. boarding the
+     * same 10:00 bus and getting off at whichever of several shared stops connects to the same
+     * onward bus is one option, not three — while still letting genuinely different departures
+     * that happen to use the same *route* each earn their own slot. See docs/JOURNEY_PLANNER.md. */
+    private fun rankAndDedupe(candidates: List<Candidate>, rankKey: (Journey) -> List<Int>): List<Journey> {
+        fun compare(a: Candidate, b: Candidate): Int {
+            val ka = rankKey(a.journey)
+            val kb = rankKey(b.journey)
+            return ka.indices.firstNotNullOfOrNull { i -> ka[i].compareTo(kb[i]).takeIf { it != 0 } } ?: 0
         }
 
-        return nonDominated.sortedWith { a, b ->
-            val ka = rankKey(a)
-            val kb = rankKey(b)
-            ka.indices.firstNotNullOfOrNull { i -> ka[i].compareTo(kb[i]).takeIf { it != 0 } } ?: 0
-        }.take(3)
+        val nonDominated = candidates.filterNot { candidate ->
+            candidates.any { other -> other !== candidate && strictlyDominates(other, candidate, rankKey) }
+        }
+
+        val sorted = nonDominated.sortedWith(::compare)
+        val result = mutableListOf<Journey>()
+        val usedTripKeys = mutableSetOf<Set<String>>()
+        for (candidate in sorted) {
+            if (result.size >= 3) break
+            if (usedTripKeys.add(candidate.tripKeys)) {
+                result += candidate.journey
+            }
+        }
+        return result
     }
 
-    /** True if every element of [rankKey](a) is <= the corresponding element of [rankKey](b),
-     * and strictly less on at least one — i.e. [b] offers no genuine trade-off and shouldn't be
-     * shown alongside [a]. */
-    private fun strictlyDominates(a: Journey, b: Journey, rankKey: (Journey) -> List<Int>): Boolean {
-        val ka = rankKey(a)
-        val kb = rankKey(b)
+    /** True if every element of [rankKey](a.journey) is <= the corresponding element of
+     * [rankKey](b.journey), and strictly less on at least one — i.e. [b] offers no genuine
+     * trade-off and shouldn't be shown alongside [a]. */
+    private fun strictlyDominates(a: Candidate, b: Candidate, rankKey: (Journey) -> List<Int>): Boolean {
+        val ka = rankKey(a.journey)
+        val kb = rankKey(b.journey)
         val neverWorse = ka.indices.all { ka[it] <= kb[it] }
         val strictlyBetter = ka.indices.any { ka[it] < kb[it] }
         return neverWorse && strictlyBetter
