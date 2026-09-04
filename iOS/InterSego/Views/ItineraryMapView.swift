@@ -192,19 +192,44 @@ private struct ItineraryWaypointMarker: View {
     private var color: Color {
         switch role {
         case "Origen": .green
-        case "Destino": .red
         default: .accentColor
         }
     }
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(color)
-                .frame(width: 20, height: 20)
-            Circle()
-                .fill(Color.white)
-                .frame(width: 8, height: 8)
+        if role == "Destino" {
+            CheckeredFlagMarker()
+        } else {
+            ZStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 20, height: 20)
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 8, height: 8)
+            }
         }
+    }
+}
+
+/// Drawn in code (checkerboard `Canvas` fill clipped to a circle) rather than as a bundled image
+/// asset, so it stays a plain vector-style marker consistent with the other waypoint dots.
+private struct CheckeredFlagMarker: View {
+    private let gridSize = 4
+
+    var body: some View {
+        Canvas { context, size in
+            let cell = size.width / CGFloat(gridSize)
+            for row in 0..<gridSize {
+                for col in 0..<gridSize {
+                    let isDark = (row + col).isMultiple(of: 2)
+                    let rect = CGRect(x: CGFloat(col) * cell, y: CGFloat(row) * cell, width: cell, height: cell)
+                    context.fill(Path(rect), with: .color(isDark ? .black : .white))
+                }
+            }
+        }
+        .frame(width: 20, height: 20)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(Color.black.opacity(0.3), lineWidth: 1))
     }
 }

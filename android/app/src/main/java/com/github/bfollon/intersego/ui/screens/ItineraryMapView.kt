@@ -10,6 +10,12 @@
 package com.github.bfollon.intersego.ui.screens
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +49,54 @@ private val LEG_COLORS = listOf(
 )
 
 private const val WALK_COLOR = android.graphics.Color.GRAY
+private const val ORIGIN_COLOR = "#27ae60" // green
+private const val TRANSFER_COLOR = "#1c74d3" // blue
+private const val WAYPOINT_ICON_SIZE_DP = 20f
+
+/** Colored dot marker (matching iOS's `ItineraryWaypointMarker`) for origin/transfer waypoints. */
+private fun dotMarkerIcon(context: Context, color: Int): BitmapDrawable {
+    val sizePx = (WAYPOINT_ICON_SIZE_DP * context.resources.displayMetrics.density).toInt()
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val radius = sizePx / 2f
+    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+    canvas.drawCircle(radius, radius, radius, paint)
+    paint.color = android.graphics.Color.WHITE
+    canvas.drawCircle(radius, radius, radius * 0.4f, paint)
+    return BitmapDrawable(context.resources, bitmap)
+}
+
+/** Checkered-flag marker for the destination waypoint - drawn in code (no bundled image asset)
+ * as an NxN checkerboard clipped to a circle, keeping the same footprint as [dotMarkerIcon]. */
+private fun checkeredFlagMarkerIcon(context: Context, gridSize: Int = 4): BitmapDrawable {
+    val sizePx = (WAYPOINT_ICON_SIZE_DP * context.resources.displayMetrics.density).toInt()
+    val checkerboard = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val checkerCanvas = Canvas(checkerboard)
+    val cell = sizePx.toFloat() / gridSize
+    val cellPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    for (row in 0 until gridSize) {
+        for (col in 0 until gridSize) {
+            cellPaint.color = if ((row + col) % 2 == 0) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+            checkerCanvas.drawRect(col * cell, row * cell, (col + 1) * cell, (row + 1) * cell, cellPaint)
+        }
+    }
+
+    val result = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val resultCanvas = Canvas(result)
+    val clipPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    val radius = sizePx / 2f
+    resultCanvas.drawCircle(radius, radius, radius, clipPaint)
+    clipPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+    resultCanvas.drawBitmap(checkerboard, 0f, 0f, clipPaint)
+
+    val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = context.resources.displayMetrics.density
+        color = android.graphics.Color.argb(120, 0, 0, 0)
+    }
+    resultCanvas.drawCircle(radius, radius, radius - borderPaint.strokeWidth / 2, borderPaint)
+    return BitmapDrawable(context.resources, result)
+}
 
 /**
  * Overview map for a whole [Journey]: one colored polyline per ride leg (loaded via
@@ -224,7 +278,12 @@ private fun addItineraryOverlays(
                 uniqueWaypoints.lastIndex -> "Destino"
                 else -> "Transbordo"
             }
-            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            icon = when (idx) {
+                0 -> dotMarkerIcon(context, android.graphics.Color.parseColor(ORIGIN_COLOR))
+                uniqueWaypoints.lastIndex -> checkeredFlagMarkerIcon(context)
+                else -> dotMarkerIcon(context, android.graphics.Color.parseColor(TRANSFER_COLOR))
+            }
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
         }
         mapView.overlays.add(marker)
     }
