@@ -64,6 +64,7 @@
 		A10000010000000000000300 /* JourneyRouteData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000300 /* JourneyRouteData.swift */; };
 		A10000010000000000000301 /* JourneyPlannerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000301 /* JourneyPlannerService.swift */; };
 		A10000010000000000000302 /* TransfersLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000302 /* TransfersLoader.swift */; };
+		A10000010000000000000303 /* TripPlannerPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000303 /* TripPlannerPrefs.swift */; };
 		B00000010000000000000021 /* StopDirectoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000020 /* StopDirectoryService.swift */; };
 		B00000010000000000000023 /* RecentJourneysService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000022 /* RecentJourneysService.swift */; };
 		B00000010000000000000025 /* JourneySearchCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000010000000000000024 /* JourneySearchCoordinator.swift */; };
@@ -156,6 +157,7 @@
 		A20000010000000000000300 /* JourneyRouteData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyRouteData.swift; sourceTree = "<group>"; };
 		A20000010000000000000301 /* JourneyPlannerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneyPlannerService.swift; sourceTree = "<group>"; };
 		A20000010000000000000302 /* TransfersLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransfersLoader.swift; sourceTree = "<group>"; };
+		A20000010000000000000303 /* TripPlannerPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripPlannerPrefs.swift; sourceTree = "<group>"; };
 		B00000010000000000000020 /* StopDirectoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopDirectoryService.swift; sourceTree = "<group>"; };
 		B00000010000000000000022 /* RecentJourneysService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentJourneysService.swift; sourceTree = "<group>"; };
 		B00000010000000000000024 /* JourneySearchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JourneySearchCoordinator.swift; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 				A20000010000000000000061 /* WhatsNewService.swift */,
 				A20000010000000000000301 /* JourneyPlannerService.swift */,
 				A20000010000000000000302 /* TransfersLoader.swift */,
+				A20000010000000000000303 /* TripPlannerPrefs.swift */,
 				B00000010000000000000020 /* StopDirectoryService.swift */,
 				B00000010000000000000022 /* RecentJourneysService.swift */,
 				B00000010000000000000024 /* JourneySearchCoordinator.swift */,
@@ -476,6 +479,7 @@
 				A10000010000000000000300 /* JourneyRouteData.swift in Sources */,
 				A10000010000000000000301 /* JourneyPlannerService.swift in Sources */,
 				A10000010000000000000302 /* TransfersLoader.swift in Sources */,
+				A10000010000000000000303 /* TripPlannerPrefs.swift in Sources */,
 				B00000010000000000000021 /* StopDirectoryService.swift in Sources */,
 				B00000010000000000000023 /* RecentJourneysService.swift in Sources */,
 				B00000010000000000000025 /* JourneySearchCoordinator.swift in Sources */,

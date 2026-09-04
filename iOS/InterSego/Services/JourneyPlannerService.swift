@@ -49,11 +49,15 @@ struct JourneyQuery {
 /// `docs/JOURNEY_PLANNER.md` for the shared spec both implement.
 enum JourneyPlannerService {
 
-    private static let maxWaitMin = 90 // ignore boarding opportunities requiring an unreasonably long wait
-    private static let bufferSameStopTranscribed = 3
-    private static let bufferSameStopEstimated = 8
-    private static let bufferWalkTranscribed = 3
-    private static let bufferWalkEstimated = 8
+    // Defaults for the `findJourneys` parameters below; user-tunable via TripPlannerPrefs
+    // (see JourneySearchCoordinator, the real caller) — kept here as fallbacks for direct/test callers.
+    static let defaultMaxWaitMin = 90 // ignore boarding opportunities requiring an unreasonably long wait
+    // Neither "transcribed" (official PDF) nor in-app estimated times are a live feed, so both
+    // get the same conservative default buffer.
+    static let defaultBufferSameStopTranscribed = 15
+    static let defaultBufferSameStopEstimated = 15
+    static let defaultBufferWalkTranscribed = 15
+    static let defaultBufferWalkEstimated = 15
 
     /// One physically contiguous, time-monotonic run of stops within a single trip. See `buildRideSegments`.
     private struct RideSegment {
@@ -77,7 +81,12 @@ enum JourneyPlannerService {
     static func findJourneys(
         routes: [JourneyRouteData],
         transfers: [TransferEdge],
-        query: JourneyQuery
+        query: JourneyQuery,
+        maxWaitMin: Int = defaultMaxWaitMin,
+        bufferSameStopTranscribed: Int = defaultBufferSameStopTranscribed,
+        bufferSameStopEstimated: Int = defaultBufferSameStopEstimated,
+        bufferWalkTranscribed: Int = defaultBufferWalkTranscribed,
+        bufferWalkEstimated: Int = defaultBufferWalkEstimated
     ) -> [Journey] {
         let segments = buildRideSegments(routes: routes, dayTypes: query.dayTypes, month: query.month, weekday: query.weekday)
         let walkNeighbors = buildWalkIndex(transfers)
@@ -105,7 +114,7 @@ enum JourneyPlannerService {
         var round0RideReach: [Reached] = []
 
         for start in round0Starts {
-            for reached in ridesFrom(start, segments: segments, buffer: 0, requireDifferentTripThan: nil) {
+            for reached in ridesFrom(start, segments: segments, buffer: 0, requireDifferentTripThan: nil, bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated, maxWaitMin: maxWaitMin) {
                 round0RideReach.append(reached)
                 if reached.stop == query.destination {
                     journeys.append(toJourney(reached))
@@ -144,7 +153,7 @@ enum JourneyPlannerService {
 
         for start in round1Starts {
             let buffer = start.isEstimatedArrival ? bufferSameStopEstimated : bufferSameStopTranscribed
-            for reached in ridesFrom(start, segments: segments, buffer: buffer, requireDifferentTripThan: start.boardedTripKeys) {
+            for reached in ridesFrom(start, segments: segments, buffer: buffer, requireDifferentTripThan: start.boardedTripKeys, bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated, maxWaitMin: maxWaitMin) {
                 if reached.stop == query.destination {
                     journeys.append(toJourney(reached))
                 } else {
@@ -194,7 +203,10 @@ enum JourneyPlannerService {
         _ start: Reached,
         segments: [RideSegment],
         buffer: Int,
-        requireDifferentTripThan: Set<String>?
+        requireDifferentTripThan: Set<String>?,
+        bufferWalkTranscribed: Int,
+        bufferWalkEstimated: Int,
+        maxWaitMin: Int
     ) -> [Reached] {
         let cameFromWalk: Bool = {
             if case .walk = start.legsFromOrigin.last { return true }

@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -40,14 +42,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 import com.github.bfollon.intersego.services.NotificationPreferencesService
+import com.github.bfollon.intersego.services.TripPlannerPrefs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private data class SeverityOption(val value: String, val label: String, val description: String)
 private val severityOptions = listOf(
@@ -83,6 +89,12 @@ fun SettingsScreen(
         mutableStateOf(NotificationPreferencesService.getAlertMinSeverity(context))
     }
     var showHowItWorks by remember { mutableStateOf(false) }
+    var showTightMarginInfo by remember { mutableStateOf(false) }
+    var maxWaitMin by remember { mutableStateOf(TripPlannerPrefs.getMaxWaitMin()) }
+    var bufferSameStopTranscribed by remember { mutableStateOf(TripPlannerPrefs.getBufferSameStopTranscribed()) }
+    var bufferSameStopEstimated by remember { mutableStateOf(TripPlannerPrefs.getBufferSameStopEstimated()) }
+    var bufferWalkTranscribed by remember { mutableStateOf(TripPlannerPrefs.getBufferWalkTranscribed()) }
+    var bufferWalkEstimated by remember { mutableStateOf(TripPlannerPrefs.getBufferWalkEstimated()) }
 
     Scaffold(
         topBar = {
@@ -230,6 +242,109 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Section: Planifica tu viaje
+            Text(
+                text = "Planifica tu viaje",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+            )
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    SettingsNumberRow(
+                        title = "Espera máxima en transbordo",
+                        subtitle = "Tiempo máximo de espera para que una conexión entre autobuses se considere válida.",
+                        value = maxWaitMin,
+                        minValue = 5,
+                        maxValue = 240,
+                        onValueChange = {
+                            maxWaitMin = it
+                            TripPlannerPrefs.setMaxWaitMin(it)
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingsNumberRow(
+                        title = "Margen en la misma parada (horario exacto)",
+                        subtitle = "Minutos mínimos entre bajar y coger el siguiente bus en la misma parada para que la conexión se considere válida, cuando el horario es oficial. Cuanto mayor, más seguras las conexiones, pero se muestran menos opciones.",
+                        value = bufferSameStopTranscribed,
+                        minValue = 0,
+                        maxValue = 30,
+                        onValueChange = {
+                            bufferSameStopTranscribed = it
+                            TripPlannerPrefs.setBufferSameStopTranscribed(it)
+                        },
+                        showTightMarginWarning = bufferSameStopTranscribed < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
+                        onTightMarginWarningClick = { showTightMarginInfo = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingsNumberRow(
+                        title = "Margen en la misma parada (estimado)",
+                        subtitle = "Igual, pero cuando la hora de llegada es una estimación, no un horario exacto.",
+                        value = bufferSameStopEstimated,
+                        minValue = 0,
+                        maxValue = 30,
+                        onValueChange = {
+                            bufferSameStopEstimated = it
+                            TripPlannerPrefs.setBufferSameStopEstimated(it)
+                        },
+                        showTightMarginWarning = bufferSameStopEstimated < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
+                        onTightMarginWarningClick = { showTightMarginInfo = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingsNumberRow(
+                        title = "Margen tras caminar (horario exacto)",
+                        subtitle = "Minutos mínimos tras un transbordo caminando a otra parada para que la conexión se considere válida, cuando el horario es oficial. Cuanto mayor, más seguras las conexiones, pero se muestran menos opciones.",
+                        value = bufferWalkTranscribed,
+                        minValue = 0,
+                        maxValue = 30,
+                        onValueChange = {
+                            bufferWalkTranscribed = it
+                            TripPlannerPrefs.setBufferWalkTranscribed(it)
+                        },
+                        showTightMarginWarning = bufferWalkTranscribed < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
+                        onTightMarginWarningClick = { showTightMarginInfo = true }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    SettingsNumberRow(
+                        title = "Margen tras caminar (estimado)",
+                        subtitle = "Igual, pero cuando la hora es una estimación, no un horario exacto.",
+                        value = bufferWalkEstimated,
+                        minValue = 0,
+                        maxValue = 30,
+                        onValueChange = {
+                            bufferWalkEstimated = it
+                            TripPlannerPrefs.setBufferWalkEstimated(it)
+                        },
+                        showTightMarginWarning = bufferWalkEstimated < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
+                        onTightMarginWarningClick = { showTightMarginInfo = true }
+                    )
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = {
+                            TripPlannerPrefs.resetToDefaults()
+                            maxWaitMin = TripPlannerPrefs.getMaxWaitMin()
+                            bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed()
+                            bufferSameStopEstimated = TripPlannerPrefs.getBufferSameStopEstimated()
+                            bufferWalkTranscribed = TripPlannerPrefs.getBufferWalkTranscribed()
+                            bufferWalkEstimated = TripPlannerPrefs.getBufferWalkEstimated()
+                        }) {
+                            Text("Restaurar valores")
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Section: Privacidad
             Text(
                 text = "Privacidad",
@@ -284,6 +399,36 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    if (showTightMarginInfo) {
+        ModalBottomSheet(
+            onDismissRequest = { showTightMarginInfo = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "Margen ajustado",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+                Text(
+                    text = "Las horas de llegada son siempre una previsión, no una posición en tiempo real: incluso los horarios oficiales de Linecar son una estimación, y el autobús puede pasar unos minutos antes o después.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Con un margen menor de ${TripPlannerPrefs.RECOMMENDED_MIN_BUFFER} min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión. Redúcelo solo si conoces bien la puntualidad de esa línea.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }
@@ -378,5 +523,89 @@ private fun SettingsToggleRow(
             )
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun SettingsNumberRow(
+    title: String,
+    subtitle: String,
+    value: Int,
+    minValue: Int,
+    maxValue: Int,
+    onValueChange: (Int) -> Unit,
+    showTightMarginWarning: Boolean = false,
+    onTightMarginWarningClick: () -> Unit = {}
+) {
+    var text by remember(value) { mutableStateOf(value.toString()) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Text(text = title, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Slider(
+                value = value.toFloat(),
+                onValueChange = { newValue ->
+                    val rounded = newValue.roundToInt().coerceIn(minValue, maxValue)
+                    text = rounded.toString()
+                    onValueChange(rounded)
+                },
+                valueRange = minValue.toFloat()..maxValue.toFloat(),
+                modifier = Modifier.weight(1f)
+            )
+            OutlinedTextField(
+                value = text,
+                onValueChange = { newText ->
+                    if (newText.length <= 3 && newText.all { it.isDigit() }) {
+                        text = newText
+                        newText.toIntOrNull()?.let { onValueChange(it.coerceIn(minValue, maxValue)) }
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center),
+                modifier = Modifier.width(72.dp)
+            )
+        }
+        if (showTightMarginWarning) {
+            Spacer(modifier = Modifier.height(4.dp))
+            TightMarginWarningPill(onClick = onTightMarginWarningClick)
+        }
+    }
+}
+
+@Composable
+private fun TightMarginWarningPill(onClick: () -> Unit) {
+    val warningColor = Color(0xFFF59E0BL)
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(warningColor.copy(alpha = 0.15f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Warning,
+            contentDescription = null,
+            tint = warningColor,
+            modifier = Modifier.size(14.dp)
+        )
+        Text(
+            text = "Margen ajustado — toca para más información",
+            style = MaterialTheme.typography.labelSmall,
+            color = warningColor
+        )
     }
 }

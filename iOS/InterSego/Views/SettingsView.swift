@@ -23,6 +23,12 @@ struct SettingsView: View {
     @State private var analyticsEnabled = MonitoringPreferencesService.shared.hasUserOptedInToAnalytics()
     @State private var alertMinSeverity = NotificationPreferencesService.shared.getAlertMinSeverity()
     @State private var showHowItWorks = false
+    @State private var showTightMarginInfo = false
+    @State private var maxWaitMin = TripPlannerPrefs.getMaxWaitMin()
+    @State private var bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed()
+    @State private var bufferSameStopEstimated = TripPlannerPrefs.getBufferSameStopEstimated()
+    @State private var bufferWalkTranscribed = TripPlannerPrefs.getBufferWalkTranscribed()
+    @State private var bufferWalkEstimated = TripPlannerPrefs.getBufferWalkEstimated()
 
     var body: some View {
         NavigationStack {
@@ -70,6 +76,65 @@ struct SettingsView: View {
                     Text("Muestra una pantalla para seleccionar la dirección del autobús antes de ver las salidas")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                }
+
+                Section(header: Text("Planifica tu viaje")) {
+                    TripPlannerNumberRow(
+                        title: "Espera máxima en transbordo",
+                        subtitle: "Tiempo máximo de espera para que una conexión entre autobuses se considere válida.",
+                        value: $maxWaitMin,
+                        minValue: 5,
+                        maxValue: 240,
+                        onCommit: { TripPlannerPrefs.setMaxWaitMin($0) }
+                    )
+                    TripPlannerNumberRow(
+                        title: "Margen en la misma parada (horario exacto)",
+                        subtitle: "Minutos mínimos entre bajar y coger el siguiente bus en la misma parada para que la conexión se considere válida, cuando el horario es oficial. Cuanto mayor, más seguras las conexiones, pero se muestran menos opciones.",
+                        value: $bufferSameStopTranscribed,
+                        minValue: 0,
+                        maxValue: 30,
+                        onCommit: { TripPlannerPrefs.setBufferSameStopTranscribed($0) },
+                        showTightMarginWarning: bufferSameStopTranscribed < TripPlannerPrefs.recommendedMinBuffer,
+                        onTightMarginWarningTap: { showTightMarginInfo = true }
+                    )
+                    TripPlannerNumberRow(
+                        title: "Margen en la misma parada (estimado)",
+                        subtitle: "Igual, pero cuando la hora de llegada es una estimación, no un horario exacto.",
+                        value: $bufferSameStopEstimated,
+                        minValue: 0,
+                        maxValue: 30,
+                        onCommit: { TripPlannerPrefs.setBufferSameStopEstimated($0) },
+                        showTightMarginWarning: bufferSameStopEstimated < TripPlannerPrefs.recommendedMinBuffer,
+                        onTightMarginWarningTap: { showTightMarginInfo = true }
+                    )
+                    TripPlannerNumberRow(
+                        title: "Margen tras caminar (horario exacto)",
+                        subtitle: "Minutos mínimos tras un transbordo caminando a otra parada para que la conexión se considere válida, cuando el horario es oficial. Cuanto mayor, más seguras las conexiones, pero se muestran menos opciones.",
+                        value: $bufferWalkTranscribed,
+                        minValue: 0,
+                        maxValue: 30,
+                        onCommit: { TripPlannerPrefs.setBufferWalkTranscribed($0) },
+                        showTightMarginWarning: bufferWalkTranscribed < TripPlannerPrefs.recommendedMinBuffer,
+                        onTightMarginWarningTap: { showTightMarginInfo = true }
+                    )
+                    TripPlannerNumberRow(
+                        title: "Margen tras caminar (estimado)",
+                        subtitle: "Igual, pero cuando la hora es una estimación, no un horario exacto.",
+                        value: $bufferWalkEstimated,
+                        minValue: 0,
+                        maxValue: 30,
+                        onCommit: { TripPlannerPrefs.setBufferWalkEstimated($0) },
+                        showTightMarginWarning: bufferWalkEstimated < TripPlannerPrefs.recommendedMinBuffer,
+                        onTightMarginWarningTap: { showTightMarginInfo = true }
+                    )
+                    Button("Restaurar valores") {
+                        TripPlannerPrefs.resetToDefaults()
+                        maxWaitMin = TripPlannerPrefs.getMaxWaitMin()
+                        bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed()
+                        bufferSameStopEstimated = TripPlannerPrefs.getBufferSameStopEstimated()
+                        bufferWalkTranscribed = TripPlannerPrefs.getBufferWalkTranscribed()
+                        bufferWalkEstimated = TripPlannerPrefs.getBufferWalkEstimated()
+                    }
                 }
 
                 Section(header: Text("Privacidad")) {
@@ -133,7 +198,101 @@ struct SettingsView: View {
             .sheet(isPresented: $showHowItWorks) {
                 AlertLevelsSheet()
             }
+            .sheet(isPresented: $showTightMarginInfo) {
+                TightMarginInfoSheet()
+            }
         }
+    }
+}
+
+private struct TripPlannerNumberRow: View {
+    let title: String
+    let subtitle: String
+    @Binding var value: Int
+    let minValue: Int
+    let maxValue: Int
+    let onCommit: (Int) -> Void
+    var showTightMarginWarning: Bool = false
+    var onTightMarginWarningTap: () -> Void = {}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+            HStack {
+                Slider(
+                    value: Binding(
+                        get: { Double(value) },
+                        set: { newValue in
+                            let rounded = Int(newValue.rounded())
+                            value = rounded
+                            onCommit(rounded)
+                        }
+                    ),
+                    in: Double(minValue)...Double(maxValue)
+                )
+                TextField("", value: $value, formatter: NumberFormatter())
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 50)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: value) { _, newValue in
+                        let clamped = min(max(newValue, minValue), maxValue)
+                        if clamped != newValue { value = clamped }
+                        onCommit(clamped)
+                    }
+            }
+            if showTightMarginWarning {
+                TightMarginWarningPill(onTap: onTightMarginWarningTap)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+private struct TightMarginWarningPill: View {
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                Text("Margen ajustado — toca para más información")
+                    .font(.caption2)
+            }
+            .foregroundColor(.orange)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Color.orange.opacity(0.15))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct TightMarginInfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Las horas de llegada son siempre una previsión, no una posición en tiempo real: incluso los horarios oficiales de Linecar son una estimación, y el autobús puede pasar unos minutos antes o después.")
+                Text("Con un margen menor de \(TripPlannerPrefs.recommendedMinBuffer) min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión. Redúcelo solo si conoces bien la puntualidad de esa línea.")
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Margen ajustado")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cerrar") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 

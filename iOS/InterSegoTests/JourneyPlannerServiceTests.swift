@@ -69,7 +69,7 @@ final class JourneyPlannerServiceTests: XCTestCase {
             stopSequenceIds: ["estacion-autobuses", "y"], dayType: .weekday,
             trips: [[dep(621), dep(640)], [dep(630), dep(650)]]
         )
-        let result = JourneyPlannerService.findJourneys(routes: [routeA, routeB], transfers: [], query: query("x", "y"))
+        let result = JourneyPlannerService.findJourneys(routes: [routeA, routeB], transfers: [], query: query("x", "y"), bufferSameStopTranscribed: 3)
 
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].transferCount, 1)
@@ -91,7 +91,7 @@ final class JourneyPlannerServiceTests: XCTestCase {
         )
         let transfers = [TransferEdge(from: "azoguejo", to: "estacion-autobuses", meters: 643, walkMinutes: 12)]
         // buffer = walkMinutes(12) + 3 = 15; ready to board at 620 + 15 = 635 -> the 634 trip must be rejected
-        let result = JourneyPlannerService.findJourneys(routes: [routeA, routeB], transfers: transfers, query: query("x", "y"))
+        let result = JourneyPlannerService.findJourneys(routes: [routeA, routeB], transfers: transfers, query: query("x", "y"), bufferWalkTranscribed: 3)
 
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result[0].legs, [

@@ -57,6 +57,13 @@ object JourneySearchCoordinator {
             arriveBeforeMin = arriveBeforeMin,
             nowMin = nowMin,
         )
-        JourneyPlannerService.findJourneys(routes, transfers, query)
+        JourneyPlannerService.findJourneys(
+            routes, transfers, query,
+            maxWaitMin = TripPlannerPrefs.getMaxWaitMin(),
+            bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed(),
+            bufferSameStopEstimated = TripPlannerPrefs.getBufferSameStopEstimated(),
+            bufferWalkTranscribed = TripPlannerPrefs.getBufferWalkTranscribed(),
+            bufferWalkEstimated = TripPlannerPrefs.getBufferWalkEstimated(),
+        )
     }
 }

@@ -132,6 +132,7 @@ import coil.request.CachePolicy
 import com.github.bfollon.intersego.services.OsmTileFetcher
 import com.github.bfollon.intersego.services.TileCacheService
 import com.github.bfollon.intersego.services.GuidedModePrefs
+import com.github.bfollon.intersego.services.TripPlannerPrefs
 import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
@@ -243,6 +244,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         // Initialize caches and cleanup expired entries
         CoordinateCache.initialize(this)
         GuidedModePrefs.initialize(this)
+        TripPlannerPrefs.initialize(this)
 
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()

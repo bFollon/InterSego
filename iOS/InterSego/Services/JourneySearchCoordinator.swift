@@ -47,6 +47,13 @@ enum JourneySearchCoordinator {
             arriveBeforeMin: arriveBeforeMin,
             nowMin: nowMin,
         )
-        return JourneyPlannerService.findJourneys(routes: routes, transfers: transfers, query: query)
+        return JourneyPlannerService.findJourneys(
+            routes: routes, transfers: transfers, query: query,
+            maxWaitMin: TripPlannerPrefs.getMaxWaitMin(),
+            bufferSameStopTranscribed: TripPlannerPrefs.getBufferSameStopTranscribed(),
+            bufferSameStopEstimated: TripPlannerPrefs.getBufferSameStopEstimated(),
+            bufferWalkTranscribed: TripPlannerPrefs.getBufferWalkTranscribed(),
+            bufferWalkEstimated: TripPlannerPrefs.getBufferWalkEstimated()
+        )
     }
 }

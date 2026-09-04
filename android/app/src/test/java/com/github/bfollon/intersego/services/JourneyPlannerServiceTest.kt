@@ -78,7 +78,7 @@ class JourneyPlannerServiceTest : FunSpec({
             listOf("estacion-autobuses", "y"), DayType.WEEKDAY,
             trips = listOf(listOf(dep(621), dep(640)), listOf(dep(630), dep(650))),
         )
-        val result = JourneyPlannerService.findJourneys(listOf(routeA, routeB), emptyList(), query("x", "y"))
+        val result = JourneyPlannerService.findJourneys(listOf(routeA, routeB), emptyList(), query("x", "y"), bufferSameStopTranscribed = 3)
 
         result.size shouldBe 1
         result[0].transferCount shouldBe 1
@@ -99,7 +99,7 @@ class JourneyPlannerServiceTest : FunSpec({
         )
         val transfers = listOf(TransferEdge("azoguejo", "estacion-autobuses", meters = 643, walkMinutes = 12))
         // buffer = walkMinutes(12) + 3 = 15; ready to board at 620 + 15 = 635 -> the 634 trip must be rejected
-        val result = JourneyPlannerService.findJourneys(listOf(routeA, routeB), transfers, query("x", "y"))
+        val result = JourneyPlannerService.findJourneys(listOf(routeA, routeB), transfers, query("x", "y"), bufferWalkTranscribed = 3)
 
         result.size shouldBe 1
         result[0].legs shouldBe listOf(

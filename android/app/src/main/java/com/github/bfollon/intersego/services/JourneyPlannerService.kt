@@ -56,11 +56,15 @@ data class JourneyQuery(
  */
 object JourneyPlannerService {
 
-    private const val MAX_WAIT_MIN = 90 // ignore boarding opportunities requiring an unreasonably long wait
-    private const val BUFFER_SAME_STOP_TRANSCRIBED = 3
-    private const val BUFFER_SAME_STOP_ESTIMATED = 8
-    private const val BUFFER_WALK_TRANSCRIBED = 3
-    private const val BUFFER_WALK_ESTIMATED = 8
+    // Defaults for the [findJourneys] parameters below; user-tunable via TripPlannerPrefs
+    // (see JourneySearchCoordinator, the real caller) — kept here as fallbacks for direct/test callers.
+    const val DEFAULT_MAX_WAIT_MIN = 90 // ignore boarding opportunities requiring an unreasonably long wait
+    // Neither "transcribed" (official PDF) nor in-app estimated times are a live feed, so both
+    // get the same conservative default buffer.
+    const val DEFAULT_BUFFER_SAME_STOP_TRANSCRIBED = 15
+    const val DEFAULT_BUFFER_SAME_STOP_ESTIMATED = 15
+    const val DEFAULT_BUFFER_WALK_TRANSCRIBED = 15
+    const val DEFAULT_BUFFER_WALK_ESTIMATED = 15
 
     /** One physically contiguous, time-monotonic run of stops within a single trip. See [buildRideSegments]. */
     private data class RideSegment(
@@ -85,6 +89,11 @@ object JourneyPlannerService {
         routes: List<JourneyRouteData>,
         transfers: List<TransferEdge>,
         query: JourneyQuery,
+        maxWaitMin: Int = DEFAULT_MAX_WAIT_MIN,
+        bufferSameStopTranscribed: Int = DEFAULT_BUFFER_SAME_STOP_TRANSCRIBED,
+        bufferSameStopEstimated: Int = DEFAULT_BUFFER_SAME_STOP_ESTIMATED,
+        bufferWalkTranscribed: Int = DEFAULT_BUFFER_WALK_TRANSCRIBED,
+        bufferWalkEstimated: Int = DEFAULT_BUFFER_WALK_ESTIMATED,
     ): List<Journey> {
         val segments = buildRideSegments(routes, query.dayTypes, query.month, query.weekday)
         val walkNeighbors = buildWalkIndex(transfers)
@@ -112,7 +121,7 @@ object JourneyPlannerService {
         val round0RideReach = mutableListOf<Reached>()
 
         for (start in round0Starts) {
-            for (reached in ridesFrom(start, segments, buffer = 0, requireDifferentTripThan = null)) {
+            for (reached in ridesFrom(start, segments, buffer = 0, requireDifferentTripThan = null, bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin)) {
                 round0RideReach += reached
                 if (reached.stop == query.destination) {
                     journeys += toJourney(reached)
@@ -147,10 +156,10 @@ object JourneyPlannerService {
         val round1Starts = query.arriveBeforeMin?.let { deadline -> round1StartsRaw.filter { it.timeMin <= deadline } } ?: round1StartsRaw
 
         for (start in round1Starts) {
-            val buffer = if (start.isEstimatedArrival) BUFFER_SAME_STOP_ESTIMATED else BUFFER_SAME_STOP_TRANSCRIBED
+            val buffer = if (start.isEstimatedArrival) bufferSameStopEstimated else bufferSameStopTranscribed
             // Note: the *walk* buffer (vs. same-stop buffer) is selected per-segment inside ridesFrom
             // when the previous leg was a Walk — see there.
-            for (reached in ridesFrom(start, segments, buffer = buffer, requireDifferentTripThan = start.boardedTripKeys)) {
+            for (reached in ridesFrom(start, segments, buffer = buffer, requireDifferentTripThan = start.boardedTripKeys, bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin)) {
                 if (reached.stop == query.destination) {
                     journeys += toJourney(reached)
                 } else {
@@ -203,6 +212,9 @@ object JourneyPlannerService {
         segments: List<RideSegment>,
         buffer: Int,
         requireDifferentTripThan: Set<String>?,
+        bufferWalkTranscribed: Int,
+        bufferWalkEstimated: Int,
+        maxWaitMin: Int,
     ): List<Reached> {
         val cameFromWalk = start.legsFromOrigin.lastOrNull() is Leg.Walk
         val results = mutableListOf<Reached>()
@@ -212,14 +224,14 @@ object JourneyPlannerService {
                 if (segment.stops[i] != start.stop) continue
                 val effectiveBuffer = when {
                     requireDifferentTripThan == null -> 0 // round 0 boarding from origin/its walk neighbor: no prior ride to buffer against
-                    cameFromWalk -> if (start.isEstimatedArrival || segment.isEstimated[i]) BUFFER_WALK_ESTIMATED else BUFFER_WALK_TRANSCRIBED
+                    cameFromWalk -> if (start.isEstimatedArrival || segment.isEstimated[i]) bufferWalkEstimated else bufferWalkTranscribed
                     else -> buffer
                 }
                 if (segment.minutesOfDay[i] < start.timeMin + effectiveBuffer) continue
-                // MAX_WAIT_MIN caps genuine mid-journey transfer waits, not the gap between the
+                // maxWaitMin caps genuine mid-journey transfer waits, not the gap between the
                 // query's departAfterMin and the first bus of the day — a query for "after 00:00"
                 // legitimately waiting until the morning's first departure is not a "long transfer".
-                if (requireDifferentTripThan != null && segment.minutesOfDay[i] - start.timeMin > MAX_WAIT_MIN) continue
+                if (requireDifferentTripThan != null && segment.minutesOfDay[i] - start.timeMin > maxWaitMin) continue
                 for (j in i + 1 until segment.stops.size) {
                     val leg = Leg.Ride(
                         routeId = segment.routeId,
