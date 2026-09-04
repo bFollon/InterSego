@@ -59,6 +59,12 @@ enum WhatsNewService {
             body: "En Configuración → \u{201c}Acción principal\u{201d} puedes elegir qué opción aparece en la tarjeta principal de inicio: Líneas de bus, Planificar viaje, Mis recordatorios o Consultar otro día. Las demás siguen disponibles en \u{201c}Más opciones\u{201d}.",
             version: "3.12.0"
         ),
+        WhatsNewEntry(
+            icon: "map",
+            title: "Mapa en tu itinerario",
+            body: "Al elegir una combinación en \u{201c}Planifica tu viaje\u{201d} ahora verás un mapa con el recorrido completo: cada trayecto en autobús con su propio color y los transbordos marcados sobre el plano.",
+            version: "3.13.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,

@@ -12,6 +12,7 @@ package com.github.bfollon.intersego.services
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,6 +69,12 @@ object WhatsNewService {
             title = "Personaliza tu pantalla de inicio",
             body = "En Configuración → “Acción principal” puedes elegir qué opción aparece en la tarjeta principal de inicio: Líneas de bus, Planificar viaje, Mis recordatorios o Consultar otro día. Las demás siguen disponibles en “Más opciones”.",
             version = "2.14.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.Map,
+            title = "Mapa en tu itinerario",
+            body = "Al elegir una combinación en “Planifica tu viaje” ahora verás un mapa con el recorrido completo: cada trayecto en autobús con su propio color y los transbordos marcados sobre el plano.",
+            version = "2.15.0",
         ),
     )
 
