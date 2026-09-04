@@ -192,7 +192,10 @@ Android and iOS version numbers drift from each other by design (different histo
 
 **When to bump:** after merging a PR (or set of PRs) worth shipping, as a dedicated release commit — bump both platforms together (Android `versionCode` +1 too), commit message `chore(InterSego): Release Android (X.Y.Z) and iOS (A.B.C)`. Don't bump mid-feature-PR unless that PR's own commit already includes it.
 
-**"Novedades" what's-new content:** as part of the same release commit (or the PR before it), decide whether the release has anything worth announcing to users — a new screen, feature, or mode significant enough that a returning user would want a heads-up (roughly: Minor/Major-worthy changes). If so, add a `WhatsNewEntry` tagged with the new version to **both** platforms' `WhatsNewService.entries` (`android/.../services/WhatsNewService.kt` and `iOS/InterSego/Services/WhatsNewService.swift`) — `entries` is append-only, never edit or remove past entries. Skip it for pure bug-fix/Patch releases or internal-only changes. See the feature tracker's "Novedades" row for how the version-range filtering works.
+**Release process, in order:**
+1. **Look for new features since the last release.** Run `git log <last-release-tag-or-commit>..HEAD --oneline` (the previous release commit is `chore(InterSego): Release Android (...) and iOS (...)`) to see everything that shipped. Don't rely on memory of the conversation — a release can bundle work from earlier sessions too.
+2. **Decide whether "Novedades" needs a new entry.** Skim those commits for anything a returning user would want a heads-up about — a new screen, feature, or mode (roughly: Minor/Major-worthy changes). If so, add a `WhatsNewEntry` tagged with the new version to **both** platforms' `WhatsNewService.entries` (`android/.../services/WhatsNewService.kt` and `iOS/InterSego/Services/WhatsNewService.swift`) — `entries` is append-only, never edit or remove past entries. Skip it for pure bug-fix/Patch releases or internal-only changes. See the feature tracker's "Novedades" row for how the version-range filtering works.
+3. **Bump the version numbers** on both platforms as described above, in the same commit as any new `WhatsNewEntry`.
 
 ## Development Rules
 
