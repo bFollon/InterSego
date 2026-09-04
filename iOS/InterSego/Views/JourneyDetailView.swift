@@ -19,6 +19,7 @@ private func formatMin(_ minutesOfDay: Int) -> String {
 struct JourneyDetailView: View {
     let journey: Journey
     let stopName: (String) -> String
+    let stops: [String: BusStop]
     let onLegSelected: (_ routeId: String, _ stopId: String) -> Void
 
     private var hasEstimatedLeg: Bool {
@@ -27,42 +28,51 @@ struct JourneyDetailView: View {
 
     var body: some View {
         List {
-            ForEach(Array(journey.stepsWithWaits().enumerated()), id: \.offset) { _, step in
-                switch step {
-                case .leg(.ride(let ride)):
-                    Button(action: { onLegSelected(ride.routeId, ride.fromStop) }) {
+            Section {
+                ItineraryMapView(journey: journey, stops: stops)
+                    .frame(height: 220)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+            }
+            Section {
+                ForEach(Array(journey.stepsWithWaits().enumerated()), id: \.offset) { _, step in
+                    switch step {
+                    case .leg(.ride(let ride)):
+                        Button(action: { onLegSelected(ride.routeId, ride.fromStop) }) {
+                            legRow(
+                                systemImage: "bus",
+                                iconColor: .accentColor,
+                                title: "\(ride.routeId) · \(stopName(ride.fromStop)) → \(stopName(ride.toStop))",
+                                subtitle: "\(formatMin(ride.depMin)) — \(formatMin(ride.arrMin))"
+                            )
+                        }
+                        .foregroundStyle(.primary)
+                    case .leg(.walk(let walk)):
+                        // Walk legs aren't tappable - there's no route/stop screen for a walking segment.
                         legRow(
-                            systemImage: "bus",
-                            iconColor: .accentColor,
-                            title: "\(ride.routeId) · \(stopName(ride.fromStop)) → \(stopName(ride.toStop))",
-                            subtitle: "\(formatMin(ride.depMin)) — \(formatMin(ride.arrMin))"
+                            systemImage: "figure.walk",
+                            iconColor: .gray,
+                            title: "Caminar · \(stopName(walk.fromStop)) → \(stopName(walk.toStop))",
+                            subtitle: "\(walk.minutes) min (\(walk.meters) m)"
+                        )
+                    case .wait(let minutes):
+                        legRow(
+                            systemImage: "clock",
+                            iconColor: .gray,
+                            title: "Espera",
+                            subtitle: "\(minutes) min"
                         )
                     }
-                    .foregroundStyle(.primary)
-                case .leg(.walk(let walk)):
-                    // Walk legs aren't tappable - there's no route/stop screen for a walking segment.
-                    legRow(
-                        systemImage: "figure.walk",
-                        iconColor: .gray,
-                        title: "Caminar · \(stopName(walk.fromStop)) → \(stopName(walk.toStop))",
-                        subtitle: "\(walk.minutes) min (\(walk.meters) m)"
-                    )
-                case .wait(let minutes):
-                    legRow(
-                        systemImage: "clock",
-                        iconColor: .gray,
-                        title: "Espera",
-                        subtitle: "\(minutes) min"
-                    )
                 }
-            }
-            if hasEstimatedLeg {
-                // Shown once for the whole journey, not per-leg — riding on just the one leg
-                // that happens to be estimated read like a note about that specific bus.
-                Text("Horarios orientativos")
-                    .font(.footnote)
-                    .foregroundStyle(.orange)
-                    .listRowSeparator(.hidden)
+                if hasEstimatedLeg {
+                    // Shown once for the whole journey, not per-leg — riding on just the one leg
+                    // that happens to be estimated read like a note about that specific bus.
+                    Text("Horarios orientativos")
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                        .listRowSeparator(.hidden)
+                }
             }
         }
         .navigationTitle("\(formatMin(journey.departureMin)) — \(formatMin(journey.arrivalMin))")

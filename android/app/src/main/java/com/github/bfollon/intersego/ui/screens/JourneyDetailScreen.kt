@@ -17,13 +17,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.JourneyStep
 import com.github.bfollon.intersego.data.Leg
@@ -44,6 +47,7 @@ private fun formatMin(minutesOfDay: Int): String {
 fun JourneyDetailScreen(
     journey: Journey,
     stopName: (String) -> String,
+    stopLookup: (String) -> BusStop?,
     onBack: () -> Unit,
     onLegSelected: (routeId: String, stopId: String) -> Unit,
 ) {
@@ -63,6 +67,17 @@ fun JourneyDetailScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
         ) {
+            item {
+                ItineraryMapView(
+                    journey = journey,
+                    stopLookup = stopLookup,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .padding(bottom = 16.dp)
+                )
+            }
             item {
                 GroupedCard {
                     val steps = journey.stepsWithWaits()

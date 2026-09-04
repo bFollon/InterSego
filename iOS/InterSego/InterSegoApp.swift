@@ -287,6 +287,7 @@ struct ContentView: View {
                     JourneyDetailView(
                         journey: selection.journey,
                         stopName: { stopId in selection.stops[stopId]?.name ?? stopId },
+                        stops: selection.stops,
                         onLegSelected: { routeId, stopId in
                             if let stop = selection.stops[stopId] {
                                 navigationPath.append(StopSelection(stop: stop, primaryRouteId: routeId, primaryViewId: nil))

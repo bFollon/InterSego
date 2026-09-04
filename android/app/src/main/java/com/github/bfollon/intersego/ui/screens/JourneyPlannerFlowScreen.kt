@@ -12,6 +12,7 @@ package com.github.bfollon.intersego.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.services.JourneySearchCoordinator
 import com.github.bfollon.intersego.services.StopDirectoryService
@@ -46,13 +47,15 @@ fun JourneyPlannerFlowScreen(
     var journeys by remember { mutableStateOf<List<Journey>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var stopNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var stopsById by remember { mutableStateOf<Map<String, BusStop>>(emptyMap()) }
     // Hoisted above JourneyPlannerScreen (rather than remembered inside it) so it survives that
     // screen being disposed/recomposed when step switches away and back - see its doc comment.
     val formState = rememberJourneyPlannerFormState()
 
     LaunchedEffect(Unit) {
-        stopNames = StopDirectoryService(context).buildDirectory(supportedRouteIds)
-            .associate { it.physicalStopId to it.stop.name }
+        val directory = StopDirectoryService(context).buildDirectory(supportedRouteIds)
+        stopNames = directory.associate { it.physicalStopId to it.stop.name }
+        stopsById = directory.associate { it.physicalStopId to it.stop }
     }
 
     // The system back gesture/button only pops JourneyPlannerFlowScreen itself off the app's
@@ -98,6 +101,7 @@ fun JourneyPlannerFlowScreen(
             JourneyDetailScreen(
                 journey = current.journey,
                 stopName = { stopId -> stopNames[stopId] ?: stopId },
+                stopLookup = { stopId -> stopsById[stopId] },
                 onBack = { step = current.results },
                 onLegSelected = onOpenNextDeparture
             )
