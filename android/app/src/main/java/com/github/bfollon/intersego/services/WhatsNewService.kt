@@ -11,6 +11,7 @@ package com.github.bfollon.intersego.services
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -61,6 +62,12 @@ object WhatsNewService {
             title = "Ajusta tu margen de conexión",
             body = "En Configuración → “Planifica tu viaje” puedes personalizar la espera máxima en un transbordo y los márgenes de seguridad que usa el planificador de rutas al buscar combinaciones.",
             version = "2.13.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.Dashboard,
+            title = "Personaliza tu pantalla de inicio",
+            body = "En Configuración → “Acción principal” puedes elegir qué opción aparece en la tarjeta principal de inicio: Líneas de bus, Planificar viaje, Mis recordatorios o Consultar otro día. Las demás siguen disponibles en “Más opciones”.",
+            version = "2.14.0",
         ),
     )
 

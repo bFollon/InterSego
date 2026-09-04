@@ -53,6 +53,12 @@ enum WhatsNewService {
             body: "En Configuración → \u{201c}Planifica tu viaje\u{201d} puedes personalizar la espera máxima en un transbordo y los márgenes de seguridad que usa el planificador de rutas al buscar combinaciones.",
             version: "3.11.0"
         ),
+        WhatsNewEntry(
+            icon: "square.grid.2x2",
+            title: "Personaliza tu pantalla de inicio",
+            body: "En Configuración → \u{201c}Acción principal\u{201d} puedes elegir qué opción aparece en la tarjeta principal de inicio: Líneas de bus, Planificar viaje, Mis recordatorios o Consultar otro día. Las demás siguen disponibles en \u{201c}Más opciones\u{201d}.",
+            version: "3.12.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,
