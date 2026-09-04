@@ -133,7 +133,7 @@ fun JourneyDetailScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
+fun SectionHeader(title: String) {
     Text(
         title,
         style = MaterialTheme.typography.titleMedium,

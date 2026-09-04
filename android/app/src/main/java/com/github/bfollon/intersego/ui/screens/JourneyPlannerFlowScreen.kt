@@ -91,6 +91,9 @@ fun JourneyPlannerFlowScreen(
             JourneyResultsScreen(
                 originName = current.originName,
                 destinationName = current.destinationName,
+                date = current.date,
+                departAfterMin = current.departAfterMin,
+                arriveBeforeMin = current.arriveBeforeMin,
                 journeys = journeys,
                 isLoading = isSearching,
                 onJourneySelected = { journey -> step = FlowStep.Detail(journey, current) },

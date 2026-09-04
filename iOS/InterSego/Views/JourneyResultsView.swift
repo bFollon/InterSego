@@ -33,6 +33,9 @@ struct JourneyResultsContainer: View {
         JourneyResultsView(
             originName: selection.originName,
             destinationName: selection.destinationName,
+            date: selection.date,
+            departAfterMin: selection.departAfterMin,
+            arriveBeforeMin: selection.arriveBeforeMin,
             journeys: journeys,
             isLoading: isLoading,
             onJourneySelected: { journey in onJourneySelected(journey, stopsById) },
@@ -69,36 +72,110 @@ private func formatDuration(_ minutes: Int) -> String {
 struct JourneyResultsView: View {
     let originName: String
     let destinationName: String
+    let date: Date
+    let departAfterMin: Int
+    let arriveBeforeMin: Int?
     let journeys: [Journey]
     let isLoading: Bool
     let onJourneySelected: (Journey) -> Void
 
     var body: some View {
-        Group {
-            if isLoading {
-                ProgressView()
-            } else if journeys.isEmpty {
-                ContentUnavailableView(
-                    "Sin viajes disponibles",
-                    systemImage: "bus",
-                    description: Text("No hay viajes con margen suficiente para esta búsqueda. Prueba con otra hora.")
+        List {
+            Section {
+                SearchSummaryCard(
+                    originName: originName,
+                    destinationName: destinationName,
+                    date: date,
+                    departAfterMin: departAfterMin,
+                    arriveBeforeMin: arriveBeforeMin,
                 )
+            } header: {
+                Text("Resumen")
+            }
+            if isLoading {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                } header: {
+                    Text("Opciones")
+                }
+            } else if journeys.isEmpty {
+                Section {
+                    Text("No hay viajes con margen suficiente para esta búsqueda. Prueba con otra hora.")
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Opciones")
+                }
             } else {
                 // Each journey gets its own Section so it renders as its own separate pill
-                // (matching Android's per-journey card) rather than one pill with dividers.
-                List(journeys, id: \.self) { journey in
+                // (matching Android's per-journey card) rather than one pill with dividers - the
+                // "Opciones" header is only attached to the first one so it reads as one heading
+                // over the whole group, not repeated per card.
+                ForEach(Array(journeys.enumerated()), id: \.offset) { index, journey in
                     Section {
                         Button(action: { onJourneySelected(journey) }) {
                             JourneyRow(journey: journey)
                         }
                         .foregroundStyle(.primary)
+                    } header: {
+                        if index == 0 {
+                            Text("Opciones")
+                        }
                     }
                 }
-                .listSectionSpacing(.compact)
             }
         }
-        .navigationTitle("\(originName) → \(destinationName)")
+        .listSectionSpacing(.compact)
+        .navigationTitle("Resultados")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct SearchSummaryCard: View {
+    let originName: String
+    let destinationName: String
+    let date: Date
+    let departAfterMin: Int
+    let arriveBeforeMin: Int?
+
+    private var dateLabel: String {
+        Calendar.current.isDateInToday(date) ? "Hoy" : date.formatted(.dateTime.day().month(.abbreviated))
+    }
+
+    private var searchLabel: String {
+        var label = "\(dateLabel) · Desde las \(formatMin(departAfterMin))"
+        if let arriveBeforeMin {
+            label += " · Antes de las \(formatMin(arriveBeforeMin))"
+        }
+        return label
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            summaryRow(icon: "circle.fill", iconColor: .accentColor, label: "Origen", value: originName)
+            Divider()
+            summaryRow(icon: "mappin", iconColor: .red, label: "Destino", value: destinationName)
+            Divider()
+            summaryRow(icon: "clock", iconColor: .secondary, label: "Búsqueda", value: searchLabel)
+        }
+    }
+
+    private func summaryRow(icon: String, iconColor: Color, label: String, value: String) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .font(.system(size: 10))
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label).font(.caption).foregroundStyle(.secondary)
+                Text(value).fontWeight(.medium)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 }
 
