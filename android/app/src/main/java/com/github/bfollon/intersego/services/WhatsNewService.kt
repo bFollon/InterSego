@@ -12,6 +12,7 @@ package com.github.bfollon.intersego.services
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.edit
 import com.github.bfollon.intersego.BuildConfig
@@ -54,6 +55,12 @@ object WhatsNewService {
             title = "Planifica tu viaje",
             body = "Nuevo en “Más opciones”: dinos de dónde a dónde quieres ir y te mostramos las mejores combinaciones de autobuses, con transbordos incluidos. Elige salir a una hora concreta o llegar antes de una hora límite.",
             version = "2.11.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.Tune,
+            title = "Ajusta tu margen de conexión",
+            body = "En Configuración → “Planifica tu viaje” puedes personalizar la espera máxima en un transbordo y los márgenes de seguridad que usa el planificador de rutas al buscar combinaciones.",
+            version = "2.13.0",
         ),
     )
 

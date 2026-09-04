@@ -47,6 +47,12 @@ enum WhatsNewService {
             body: "Nuevo en \u{201c}Más opciones\u{201d}: dinos de dónde a dónde quieres ir y te mostramos las mejores combinaciones de autobuses, con transbordos incluidos. Elige salir a una hora concreta o llegar antes de una hora límite.",
             version: "3.9.0"
         ),
+        WhatsNewEntry(
+            icon: "slider.horizontal.3",
+            title: "Ajusta tu margen de conexión",
+            body: "En Configuración → \u{201c}Planifica tu viaje\u{201d} puedes personalizar la espera máxima en un transbordo y los márgenes de seguridad que usa el planificador de rutas al buscar combinaciones.",
+            version: "3.11.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,
