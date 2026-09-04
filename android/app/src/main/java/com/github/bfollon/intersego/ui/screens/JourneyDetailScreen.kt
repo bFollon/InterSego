@@ -16,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -68,6 +70,18 @@ fun JourneyDetailScreen(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
         ) {
             item {
+                SectionHeader("Itinerario")
+            }
+            item {
+                TripSummaryCard(
+                    originName = stopName(journey.legs.first().fromStop),
+                    destinationName = stopName(journey.legs.last().toStop),
+                    departureMin = journey.departureMin,
+                    arrivalMin = journey.arrivalMin,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
+            item {
                 ItineraryMapView(
                     journey = journey,
                     stopLookup = stopLookup,
@@ -77,6 +91,9 @@ fun JourneyDetailScreen(
                         .clip(RoundedCornerShape(12.dp))
                         .padding(bottom = 16.dp)
                 )
+            }
+            item {
+                SectionHeader("Pasos")
             }
             item {
                 GroupedCard {
@@ -106,6 +123,59 @@ fun JourneyDetailScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        title,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+    )
+}
+
+@Composable
+private fun TripSummaryCard(
+    originName: String,
+    destinationName: String,
+    departureMin: Int,
+    arrivalMin: Int,
+    modifier: Modifier = Modifier,
+) {
+    GroupedCard(modifier = modifier) {
+        TripSummaryRow(
+            icon = Icons.Filled.FiberManualRecord,
+            iconTint = MaterialTheme.colorScheme.primary,
+            label = "Salida",
+            stopName = originName,
+            time = formatMin(departureMin)
+        )
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+        TripSummaryRow(
+            icon = Icons.Filled.Place,
+            iconTint = MaterialTheme.colorScheme.error,
+            label = "Llegada",
+            stopName = destinationName,
+            time = formatMin(arrivalMin)
+        )
+    }
+}
+
+@Composable
+private fun TripSummaryRow(icon: androidx.compose.ui.graphics.vector.ImageVector, iconTint: Color, label: String, stopName: String, time: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stopName, fontWeight = FontWeight.Medium)
+        }
+        Text(time, style = MaterialTheme.typography.titleMedium)
     }
 }
 

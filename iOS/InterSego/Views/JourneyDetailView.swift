@@ -29,11 +29,27 @@ struct JourneyDetailView: View {
     var body: some View {
         List {
             Section {
+                tripSummaryRow(
+                    icon: "circle.fill",
+                    iconColor: .accentColor,
+                    label: "Salida",
+                    stopName: stopName(journey.legs.first!.fromStop),
+                    time: formatMin(journey.departureMin)
+                )
+                tripSummaryRow(
+                    icon: "mappin",
+                    iconColor: .red,
+                    label: "Llegada",
+                    stopName: stopName(journey.legs.last!.toStop),
+                    time: formatMin(journey.arrivalMin)
+                )
                 ItineraryMapView(journey: journey, stops: stops)
                     .frame(height: 220)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
+            } header: {
+                Text("Itinerario")
             }
             Section {
                 ForEach(Array(journey.stepsWithWaits().enumerated()), id: \.offset) { _, step in
@@ -73,10 +89,28 @@ struct JourneyDetailView: View {
                         .foregroundStyle(.orange)
                         .listRowSeparator(.hidden)
                 }
+            } header: {
+                Text("Pasos")
             }
         }
         .navigationTitle("\(formatMin(journey.departureMin)) — \(formatMin(journey.arrivalMin))")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func tripSummaryRow(icon: String, iconColor: Color, label: String, stopName: String, time: String) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .font(.system(size: 10))
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label).font(.caption).foregroundStyle(.secondary)
+                Text(stopName).fontWeight(.medium)
+            }
+            Spacer()
+            Text(time).font(.headline)
+        }
+        .padding(.vertical, 4)
     }
 
     private func legRow(systemImage: String, iconColor: Color, title: String, subtitle: String) -> some View {
