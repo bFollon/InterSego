@@ -133,6 +133,8 @@ import com.github.bfollon.intersego.services.OsmTileFetcher
 import com.github.bfollon.intersego.services.TileCacheService
 import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.TripPlannerPrefs
+import com.github.bfollon.intersego.services.MainActionPrefs
+import com.github.bfollon.intersego.services.MainLandingAction
 import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
@@ -245,6 +247,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         CoordinateCache.initialize(this)
         GuidedModePrefs.initialize(this)
         TripPlannerPrefs.initialize(this)
+        MainActionPrefs.initialize(this)
 
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()
@@ -807,9 +810,16 @@ fun AppNavigation(
         startDestination = "landing"
     ) {
         composable("landing") {
+            val mainAction = MainActionPrefs.getMainAction()
             LandingScreen(
-                onNavigateToRouteList = {
-                    navController.navigate("route_selection")
+                mainAction = mainAction,
+                onMainCardClick = {
+                    when (mainAction) {
+                        MainLandingAction.ROUTES -> navController.navigate("route_selection")
+                        MainLandingAction.ROUTE_PLANNER -> navController.navigate("journey_planner")
+                        MainLandingAction.REMINDERS -> navController.navigate("reminders")
+                        MainLandingAction.ANOTHER_DAY -> navController.navigate("otras_opciones")
+                    }
                 },
                 onShowAbout = { showAboutModal = true },
                 onShowSettings = { navController.navigate("settings") },
@@ -916,7 +926,9 @@ fun AppNavigation(
                 onCheckAnotherDay = { date ->
                     navController.navigate("otras_opciones_route_selection/${date.toEpochDay()}")
                 },
-                onPlanJourney = { navController.navigate("journey_planner") }
+                onPlanJourney = { navController.navigate("journey_planner") },
+                onNavigateToRouteList = { navController.navigate("route_selection") },
+                mainAction = MainActionPrefs.getMainAction(),
             )
         }
 

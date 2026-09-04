@@ -10,7 +10,8 @@
 import SwiftUI
 
 struct LandingView: View {
-    let onShowRouteList: () -> Void
+    let onMainCardTap: () -> Void
+    var mainAction: MainLandingAction = .routes
     let onFindClosestStop: () -> Void
     let onShowAbout: () -> Void
     let onShowSettings: () -> Void
@@ -108,9 +109,9 @@ struct LandingView: View {
                 .disabled(isBoardingBus || boardingBusConfirmed)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    Button(action: onShowRouteList) {
-                        SquareCard(label: "Líneas de bus") {
-                            BusLineIcon(size: 40)
+                    Button(action: onMainCardTap) {
+                        SquareCard(label: mainAction.label) {
+                            MainLandingActionIcon(action: mainAction)
                         }
                     }
                     .buttonStyle(.plain)
@@ -255,7 +256,34 @@ struct SquareCard<Icon: View>: View {
     }
 }
 
-private struct BusLineIcon: View {
+struct MainLandingActionIcon: View {
+    let action: MainLandingAction
+    var size: CGFloat = 40
+
+    var body: some View {
+        switch action {
+        case .routes:
+            BusLineIcon(size: size)
+        case .routePlanner:
+            Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
+                .font(.system(size: 24))
+                .foregroundColor(.accentColor)
+                .frame(width: size, height: size)
+        case .reminders:
+            Image(systemName: "bell.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.accentColor)
+                .frame(width: size, height: size)
+        case .anotherDay:
+            Image(systemName: "calendar")
+                .font(.system(size: 24))
+                .foregroundColor(.accentColor)
+                .frame(width: size, height: size)
+        }
+    }
+}
+
+struct BusLineIcon: View {
     let size: CGFloat
 
     var body: some View {

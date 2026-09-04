@@ -20,46 +20,40 @@ struct OtrasOpcionesView: View {
     let onShowReminders: () -> Void
     let onCheckAnotherDay: (Date) -> Void
     let onPlanJourney: () -> Void
+    let onNavigateToRouteList: () -> Void
+    var mainAction: MainLandingAction = .routes
 
     @State private var showDatePicker = false
     @State private var pickedDate = Date()
 
     private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
 
+    // The action bound to Landing's main card is dropped here so every action stays reachable
+    // regardless of which one the user picked as their main card.
+    private var visibleActions: [MainLandingAction] {
+        MainLandingAction.allCases.filter { $0 != mainAction }
+    }
+
+    private func onTapFor(_ action: MainLandingAction) -> () -> Void {
+        switch action {
+        case .routes: return onNavigateToRouteList
+        case .routePlanner: return onPlanJourney
+        case .reminders: return onShowReminders
+        case .anotherDay: return { showDatePicker = true }
+        }
+    }
+
     var body: some View {
         LazyVGrid(columns: columns, spacing: 16) {
-            Button(action: onShowReminders) {
-                SquareCard(label: "Mis recordatorios") {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.accentColor)
-                        .frame(width: 40, height: 40)
+            ForEach(visibleActions, id: \.self) { action in
+                Button(action: onTapFor(action)) {
+                    SquareCard(label: action.label) {
+                        MainLandingActionIcon(action: action)
+                    }
                 }
+                .buttonStyle(.plain)
+                .aspectRatio(1, contentMode: .fit)
             }
-            .buttonStyle(.plain)
-            .aspectRatio(1, contentMode: .fit)
-
-            Button(action: { showDatePicker = true }) {
-                SquareCard(label: "Consultar otro día") {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 24))
-                        .foregroundColor(.accentColor)
-                        .frame(width: 40, height: 40)
-                }
-            }
-            .buttonStyle(.plain)
-            .aspectRatio(1, contentMode: .fit)
-
-            Button(action: onPlanJourney) {
-                SquareCard(label: "Planificar viaje") {
-                    Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-                        .font(.system(size: 24))
-                        .foregroundColor(.accentColor)
-                        .frame(width: 40, height: 40)
-                }
-            }
-            .buttonStyle(.plain)
-            .aspectRatio(1, contentMode: .fit)
         }
         .padding(.horizontal, 24)
         .padding(.top, 24)

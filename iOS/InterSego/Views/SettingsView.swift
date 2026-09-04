@@ -19,6 +19,7 @@ private let alertSeverityOptions: [(value: String, label: String, description: S
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var guidedModeEnabled = GuidedModePrefs.isGuidedModeEnabled()
+    @State private var mainAction = MainActionPrefs.getMainAction()
     @State private var errorsEnabled = MonitoringPreferencesService.shared.hasUserOptedIn()
     @State private var analyticsEnabled = MonitoringPreferencesService.shared.hasUserOptedInToAnalytics()
     @State private var alertMinSeverity = NotificationPreferencesService.shared.getAlertMinSeverity()
@@ -76,6 +77,26 @@ struct SettingsView: View {
                     Text("Muestra una pantalla para seleccionar la dirección del autobús antes de ver las salidas")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                }
+
+                Section(header: Text("Acción principal")) {
+                    Text("Elige qué opción aparece en la tarjeta principal de la pantalla de inicio.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.vertical, 4)
+
+                    Picker("Tarjeta principal", selection: Binding(
+                        get: { mainAction },
+                        set: { newValue in
+                            mainAction = newValue
+                            MainActionPrefs.setMainAction(newValue)
+                        }
+                    )) {
+                        ForEach(MainLandingAction.allCases, id: \.self) { option in
+                            Text(option.label).tag(option)
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
 
                 Section(header: Text("Planifica tu viaje")) {

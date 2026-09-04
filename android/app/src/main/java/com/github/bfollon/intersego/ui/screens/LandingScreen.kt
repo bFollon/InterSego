@@ -30,9 +30,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -61,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.bfollon.intersego.data.ServiceAlert
+import com.github.bfollon.intersego.services.MainLandingAction
 
 private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
 private val GreenBorder = Color(0xFF34C759).copy(alpha = 0.3f)
@@ -69,7 +73,8 @@ private val GreenConfirmed = Color(0xFF34C759)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LandingScreen(
-    onNavigateToRouteList: () -> Unit,
+    onMainCardClick: () -> Unit,
+    mainAction: MainLandingAction = MainLandingAction.ROUTES,
     onFindClosestStop: () -> Unit = {},
     onShowAbout: () -> Unit = {},
     onShowSettings: () -> Unit = {},
@@ -194,11 +199,11 @@ fun LandingScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 SquareLandingCard(
-                    label = "Líneas de bus",
-                    onClick = onNavigateToRouteList,
+                    label = mainAction.label,
+                    onClick = onMainCardClick,
                     modifier = Modifier.weight(1f)
                 ) {
-                    BusLineIcon(size = 40)
+                    MainLandingActionIcon(mainAction)
                 }
 
                 SquareLandingCard(
@@ -328,7 +333,32 @@ internal fun SquareLandingCard(
 }
 
 @Composable
-private fun BusLineIcon(size: Int) {
+internal fun MainLandingActionIcon(action: MainLandingAction, size: Int = 40) {
+    when (action) {
+        MainLandingAction.ROUTES -> BusLineIcon(size = size)
+        MainLandingAction.ROUTE_PLANNER -> Icon(
+            imageVector = Icons.Filled.Route,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(size.dp).padding(8.dp)
+        )
+        MainLandingAction.REMINDERS -> Icon(
+            imageVector = Icons.Filled.Notifications,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(size.dp).padding(8.dp)
+        )
+        MainLandingAction.ANOTHER_DAY -> Icon(
+            imageVector = Icons.Filled.CalendarMonth,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(size.dp).padding(8.dp)
+        )
+    }
+}
+
+@Composable
+internal fun BusLineIcon(size: Int) {
     val color = MaterialTheme.colorScheme.primary
 
     Canvas(modifier = Modifier.size(size.dp)) {

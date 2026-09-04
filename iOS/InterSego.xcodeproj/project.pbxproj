@@ -51,6 +51,7 @@
 		A10000010000000000000051 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000051 /* Secrets.swift */; };
 		A10000010000000000000052 /* LiveUpdateTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000052 /* LiveUpdateTutorialView.swift */; };
 		A10000010000000000000053 /* GuidedModePrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000053 /* GuidedModePrefs.swift */; };
+		A10000010000000000000304 /* MainActionPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000304 /* MainActionPrefs.swift */; };
 		A10000010000000000000054 /* DirectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000054 /* DirectionPickerView.swift */; };
 		A10000010000000000000055 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000055 /* SettingsView.swift */; };
 		A10000010000000000000056 /* GuidedModeTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000056 /* GuidedModeTutorialView.swift */; };
@@ -144,6 +145,7 @@
 		A20000010000000000000051 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		A20000010000000000000052 /* LiveUpdateTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUpdateTutorialView.swift; sourceTree = "<group>"; };
 		A20000010000000000000053 /* GuidedModePrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedModePrefs.swift; sourceTree = "<group>"; };
+		A20000010000000000000304 /* MainActionPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainActionPrefs.swift; sourceTree = "<group>"; };
 		A20000010000000000000054 /* DirectionPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionPickerView.swift; sourceTree = "<group>"; };
 		A20000010000000000000055 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A20000010000000000000056 /* GuidedModeTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedModeTutorialView.swift; sourceTree = "<group>"; };
@@ -294,6 +296,7 @@
 				A20000010000000000000049 /* ReminderService.swift */,
 				A20000010000000000000050 /* BoardingService.swift */,
 				A20000010000000000000053 /* GuidedModePrefs.swift */,
+				A20000010000000000000304 /* MainActionPrefs.swift */,
 				A20000010000000000000057 /* MonitoringPreferencesService.swift */,
 				A20000010000000000000058 /* AnalyticsService.swift */,
 				A20000010000000000000059 /* ErrorReportingService.swift */,
@@ -519,6 +522,7 @@
 				A1000001000000000000004F /* BoardingRequest.swift in Sources */,
 				A10000010000000000000050 /* BoardingService.swift in Sources */,
 				A10000010000000000000053 /* GuidedModePrefs.swift in Sources */,
+				A10000010000000000000304 /* MainActionPrefs.swift in Sources */,
 				A10000010000000000000054 /* DirectionPickerView.swift in Sources */,
 				A10000010000000000000055 /* SettingsView.swift in Sources */,
 				A10000010000000000000056 /* GuidedModeTutorialView.swift in Sources */,

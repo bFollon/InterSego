@@ -18,9 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.MainLandingAction
 import java.time.LocalDate
 
 private const val MILLIS_PER_DAY = 86_400_000L
@@ -61,9 +59,21 @@ fun OtrasOpcionesScreen(
     onBack: () -> Unit,
     onShowReminders: () -> Unit,
     onCheckAnotherDay: (LocalDate) -> Unit,
-    onPlanJourney: () -> Unit
+    onPlanJourney: () -> Unit,
+    onNavigateToRouteList: () -> Unit,
+    mainAction: MainLandingAction = MainLandingAction.ROUTES,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // The action bound to Landing's main card is dropped here so every action stays reachable
+    // regardless of which one the user picked as their main card.
+    val visibleActions = MainLandingAction.entries.filter { it != mainAction }
+    fun onClickFor(action: MainLandingAction): () -> Unit = when (action) {
+        MainLandingAction.ROUTES -> onNavigateToRouteList
+        MainLandingAction.ROUTE_PLANNER -> onPlanJourney
+        MainLandingAction.REMINDERS -> onShowReminders
+        MainLandingAction.ANOTHER_DAY -> { { showDatePicker = true } }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -86,48 +96,21 @@ fun OtrasOpcionesScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                SquareLandingCard(
-                    label = "Mis recordatorios",
-                    onClick = onShowReminders,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp).padding(8.dp)
-                    )
+            visibleActions.chunked(2).forEach { rowActions ->
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    rowActions.forEach { action ->
+                        SquareLandingCard(
+                            label = action.label,
+                            onClick = onClickFor(action),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            MainLandingActionIcon(action)
+                        }
+                    }
+                    if (rowActions.size < 2) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
-
-                SquareLandingCard(
-                    label = "Consultar otro día",
-                    onClick = { showDatePicker = true },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.CalendarMonth,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp).padding(8.dp)
-                    )
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                SquareLandingCard(
-                    label = "Planificar viaje",
-                    onClick = onPlanJourney,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Route,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp).padding(8.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

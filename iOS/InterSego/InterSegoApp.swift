@@ -108,6 +108,7 @@ struct ContentView: View {
     @State private var landingBoardingSubmitting = false
     @State private var showNoServiceSheet = false
     @State private var noServiceStop: BusStop? = nil
+    @State private var mainAction = MainActionPrefs.getMainAction()
 
     var body: some View {
         ZStack {
@@ -115,9 +116,19 @@ struct ContentView: View {
                 Group {
                     if isInitialized {
                         LandingView(
-                            onShowRouteList: {
-                                navigationPath.append(HomeDestination.routeList)
+                            onMainCardTap: {
+                                switch mainAction {
+                                case .routes:
+                                    navigationPath.append(HomeDestination.routeList)
+                                case .routePlanner:
+                                    navigationPath.append(OtrasOpcionesDestination.journeyPlanner)
+                                case .reminders:
+                                    showReminders = true
+                                case .anotherDay:
+                                    navigationPath.append(OtrasOpcionesDestination.home)
+                                }
                             },
+                            mainAction: mainAction,
                             onFindClosestStop: {
                                 Task {
                                     isSearchingClosestStop = true
@@ -234,6 +245,10 @@ struct ContentView: View {
                             onPlanJourney: {
                                 navigationPath.append(OtrasOpcionesDestination.journeyPlanner)
                             },
+                            onNavigateToRouteList: {
+                                navigationPath.append(HomeDestination.routeList)
+                            },
+                            mainAction: mainAction,
                         )
                     case .routeList(let date):
                         RouteSelectionView(
@@ -369,7 +384,9 @@ struct ContentView: View {
                 .sheet(isPresented: $showReminders) {
                     RemindersView()
                 }
-                .sheet(isPresented: $showSettings) {
+                .sheet(isPresented: $showSettings, onDismiss: {
+                    mainAction = MainActionPrefs.getMainAction()
+                }) {
                     SettingsView()
                 }
                 .sheet(isPresented: $showNoServiceSheet) {

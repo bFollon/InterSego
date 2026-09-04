@@ -47,6 +47,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.GuidedModePrefs
+import com.github.bfollon.intersego.services.MainActionPrefs
+import com.github.bfollon.intersego.services.MainLandingAction
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 import com.github.bfollon.intersego.services.NotificationPreferencesService
 import com.github.bfollon.intersego.services.TripPlannerPrefs
@@ -78,6 +80,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     var guidedModeEnabled by remember {
         mutableStateOf(GuidedModePrefs.isGuidedModeEnabled())
+    }
+    var mainAction by remember {
+        mutableStateOf(MainActionPrefs.getMainAction())
     }
     var errorsEnabled by remember {
         mutableStateOf(MonitoringPreferencesService.hasUserOptedIn())
@@ -238,6 +243,90 @@ fun SettingsScreen(
                         GuidedModePrefs.setGuidedModeEnabled(newValue)
                     }
                 )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Section: Acción principal
+            Text(
+                text = "Acción principal",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+            )
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+            ) {
+                Column {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "Elige qué opción aparece en la tarjeta principal de la pantalla de inicio.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    HorizontalDivider()
+                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        var mainActionExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = mainActionExpanded,
+                            onExpandedChange = { mainActionExpanded = it },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
+                                    .padding(vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Tarjeta principal",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Text(
+                                        text = mainAction.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            ExposedDropdownMenu(
+                                expanded = mainActionExpanded,
+                                onDismissRequest = { mainActionExpanded = false }
+                            ) {
+                                MainLandingAction.entries.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.label) },
+                                        onClick = {
+                                            mainActionExpanded = false
+                                            mainAction = option
+                                            MainActionPrefs.setMainAction(option)
+                                        },
+                                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
