@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.NotificationPreferencesService
 import kotlinx.coroutines.CoroutineScope
@@ -57,6 +58,10 @@ fun NotificationConsentScreen(onDismiss: () -> Unit) {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         val effectiveSeverity = if (granted) "info" else "none"
+        AnalyticsService.track(
+            "notification_consent_responded",
+            mapOf("choice" to if (granted) "activated" else "dismissed", "severity" to effectiveSeverity)
+        )
         NotificationPreferencesService.saveChoice(context, effectiveSeverity)
         val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
         val token = prefs.getString("fcm_token", null)
@@ -79,6 +84,7 @@ fun NotificationConsentScreen(onDismiss: () -> Unit) {
             }
         }
         // Already granted (Android < 13 or permission already accepted)
+        AnalyticsService.track("notification_consent_responded", mapOf("choice" to "activated", "severity" to "info"))
         NotificationPreferencesService.saveChoice(context, "info")
         val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
         val token = prefs.getString("fcm_token", null)
@@ -91,6 +97,7 @@ fun NotificationConsentScreen(onDismiss: () -> Unit) {
     }
 
     fun dismiss() {
+        AnalyticsService.track("notification_consent_responded", mapOf("choice" to "dismissed", "severity" to "none"))
         NotificationPreferencesService.saveChoice(context, "none")
         onDismiss()
     }

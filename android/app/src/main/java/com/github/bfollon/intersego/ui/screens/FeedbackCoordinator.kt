@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.data.FeedbackCategory
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.ErrorReportingService
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 
@@ -35,7 +36,11 @@ class FeedbackCoordinator {
     var presentedCategory by mutableStateOf<FeedbackCategory?>(null)
     var noConsentCategory by mutableStateOf<FeedbackCategory?>(null)
 
-    fun trigger(category: FeedbackCategory) {
+    fun trigger(category: FeedbackCategory, source: String) {
+        AnalyticsService.track(
+            "feedback_triggered",
+            mapOf("category" to category.name.lowercase(), "source" to source)
+        )
         if (MonitoringPreferencesService.hasUserOptedIn()) {
             presentedCategory = category
         } else {

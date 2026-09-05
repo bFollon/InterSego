@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.Leg
+import com.github.bfollon.intersego.services.AnalyticsService
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -109,7 +110,16 @@ fun JourneyResultsScreen(
                     )
                 }
                 else -> items(journeys) { journey ->
-                    JourneyCard(journey = journey, onClick = { onJourneySelected(journey) })
+                    JourneyCard(journey = journey, onClick = {
+                        AnalyticsService.track(
+                            "journey_result_selected",
+                            mapOf(
+                                "duration_min" to (journey.arrivalMin - journey.departureMin),
+                                "transfers" to journey.transferCount
+                            )
+                        )
+                        onJourneySelected(journey)
+                    })
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }

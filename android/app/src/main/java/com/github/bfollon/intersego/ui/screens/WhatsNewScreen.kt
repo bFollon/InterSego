@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -40,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.WhatsNewEntry
 import com.github.bfollon.intersego.services.WhatsNewService
 
@@ -58,6 +60,7 @@ fun WhatsNewScreen(
 ) {
     val context = LocalContext.current
     val entriesMaxHeight = (LocalConfiguration.current.screenHeightDp * 0.5f).dp
+    val entriesShown = remember { WhatsNewService.entriesToShow(context) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -104,7 +107,7 @@ fun WhatsNewScreen(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    WhatsNewService.entriesToShow(context).forEach { entry ->
+                    entriesShown.forEach { entry ->
                         WhatsNewEntryRow(entry)
                     }
                 }
@@ -113,6 +116,7 @@ fun WhatsNewScreen(
 
                 Button(
                     onClick = {
+                        AnalyticsService.track("whats_new_dismissed", mapOf("entries_shown" to entriesShown.size))
                         onDismiss()
                     },
                     modifier = Modifier.fillMaxWidth(),

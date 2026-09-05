@@ -107,6 +107,7 @@ struct RouteMapView: View {
                     Button {
                         if let swap = currentView?.swapAction {
                             currentViewId = swap.targetViewId
+                            AnalyticsService.shared.track("direction_swapped", with: ["screen": "route_map"])
                         }
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
@@ -118,6 +119,7 @@ struct RouteMapView: View {
             if currentViewId.isEmpty {
                 currentViewId = initialViewId
             }
+            AnalyticsService.shared.track("map_opened", with: ["route": route.id, "mode": allRoutesMode ? "all" : "single"])
         }
         .onChange(of: selectedEntryId) {
             currentViewId = initialViewId

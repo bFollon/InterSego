@@ -36,6 +36,7 @@ struct RemindersView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         showTutorial = true
+                        AnalyticsService.shared.track("tutorial_reopened", with: ["tutorial": "reminders"])
                     } label: {
                         Image(systemName: "questionmark.circle")
                     }
@@ -137,6 +138,7 @@ struct RemindersView: View {
                         Task {
                             await ReminderService.shared.cancelReminder(id: reminder.id)
                             reminders = await ReminderService.shared.getReminders()
+                            AnalyticsService.shared.track("reminder_cancelled", with: ["type": reminder.isDaily ? "daily" : "one_off"])
                         }
                     }
                 }

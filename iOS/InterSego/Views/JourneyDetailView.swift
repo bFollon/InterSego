@@ -59,7 +59,10 @@ struct JourneyDetailView: View {
                 ForEach(Array(journey.stepsWithWaits().enumerated()), id: \.offset) { _, step in
                     switch step {
                     case .leg(.ride(let ride)):
-                        Button(action: { onLegSelected(ride.routeId, ride.fromStop) }) {
+                        Button(action: {
+                            AnalyticsService.shared.track("journey_leg_tapped", with: ["route": ride.routeId])
+                            onLegSelected(ride.routeId, ride.fromStop)
+                        }) {
                             legRow(
                                 systemImage: "bus",
                                 iconColor: .accentColor,

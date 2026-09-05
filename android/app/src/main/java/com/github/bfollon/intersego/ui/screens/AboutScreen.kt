@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.FeedbackCategory
+import com.github.bfollon.intersego.services.AnalyticsService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -173,7 +174,7 @@ fun AboutScreen(
             )
 
             Button(
-                onClick = { openUrl(context, "https://ko-fi.com/bfollon") },
+                onClick = { openUrl(context, "https://ko-fi.com/bfollon", "kofi") },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF29ABE0),
                     contentColor = Color.White
@@ -206,7 +207,7 @@ fun AboutScreen(
             )
 
             Button(
-                onClick = { openUrl(context, "https://github.com/bFollon/InterSego") },
+                onClick = { openUrl(context, "https://github.com/bFollon/InterSego", "github") },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF24292E),
                     contentColor = Color.White
@@ -237,7 +238,7 @@ fun AboutScreen(
             )
 
             Button(
-                onClick = { openUrl(context, "https://www.linecar.es/metropolitano/segovia/") },
+                onClick = { openUrl(context, "https://www.linecar.es/metropolitano/segovia/", "linecar") },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF34C759),
                     contentColor = Color.White
@@ -268,7 +269,7 @@ fun AboutScreen(
             )
 
             Button(
-                onClick = { openUrl(context, "https://www.openstreetmap.org/copyright") },
+                onClick = { openUrl(context, "https://www.openstreetmap.org/copyright", "openstreetmap") },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF7EBC6A),
                     contentColor = Color.White
@@ -302,13 +303,13 @@ fun AboutScreen(
                 ContactCard(
                     label = "Reportar error",
                     icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = Color(0xFFFF9800)) },
-                    onClick = { feedback.trigger(FeedbackCategory.BUG) }
+                    onClick = { feedback.trigger(FeedbackCategory.BUG, "about") }
                 )
 
                 ContactCard(
                     label = "Enviar sugerencia",
                     icon = { Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    onClick = { feedback.trigger(FeedbackCategory.SUGGESTION) }
+                    onClick = { feedback.trigger(FeedbackCategory.SUGGESTION, "about") }
                 )
             }
         }
@@ -338,7 +339,7 @@ fun AboutScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable { openUrl(context, "https://github.com/bFollon") }
+                modifier = Modifier.clickable { openUrl(context, "https://github.com/bFollon", "github_profile") }
             )
         }
 
@@ -388,7 +389,8 @@ private fun ContactCard(
     }
 }
 
-private fun openUrl(context: Context, url: String) {
+private fun openUrl(context: Context, url: String, destination: String) {
+    AnalyticsService.track("about_link_tapped", mapOf("destination" to destination))
     context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
 }
 

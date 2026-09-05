@@ -174,7 +174,10 @@ struct DayScheduleView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     if let target = swapDirection {
-                        Button { currentDirection = target } label: {
+                        Button {
+                            currentDirection = target
+                            AnalyticsService.shared.track("direction_swapped", with: ["screen": "day_schedule"])
+                        } label: {
                             Image(systemName: "arrow.up.arrow.down")
                         }
                     }

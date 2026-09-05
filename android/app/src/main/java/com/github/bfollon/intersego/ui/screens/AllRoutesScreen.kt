@@ -25,6 +25,7 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.RouteSelectorEntry
 import com.github.bfollon.intersego.data.RouteView
+import com.github.bfollon.intersego.services.AnalyticsService
 
 /**
  * Screen displaying all route variants with a dropdown selector.
@@ -73,7 +74,10 @@ fun AllRoutesScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onMapSelected(currentViewId) }) {
+                    IconButton(onClick = {
+                        AnalyticsService.track("map_opened", mapOf("route" to route.id, "mode" to "all"))
+                        onMapSelected(currentViewId)
+                    }) {
                         Icon(
                             imageVector = Icons.Filled.Map,
                             contentDescription = "Ver en mapa"
@@ -81,6 +85,7 @@ fun AllRoutesScreen(
                     }
                     currentView.swapAction?.let { swap ->
                         IconButton(onClick = {
+                            AnalyticsService.track("direction_swapped", mapOf("screen" to "all_routes"))
                             currentViewId = swap.targetViewId
                         }) {
                             Icon(

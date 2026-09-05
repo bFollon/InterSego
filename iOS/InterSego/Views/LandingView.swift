@@ -29,7 +29,10 @@ struct LandingView: View {
         VStack(spacing: 0) {
             HStack {
                 if let primary = sortedAlerts.first {
-                    Button(action: onShowAlertDetail) {
+                    Button(action: {
+                        AnalyticsService.shared.track("alert_banner_tapped", with: ["severity": primary.severity])
+                        onShowAlertDetail()
+                    }) {
                         HStack(spacing: 4) {
                             Image(systemName: alertIconName(primary.severity))
                                 .font(.caption.weight(.semibold))
@@ -109,7 +112,10 @@ struct LandingView: View {
                 .disabled(isBoardingBus || boardingBusConfirmed)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    Button(action: onMainCardTap) {
+                    Button(action: {
+                        AnalyticsService.shared.track("main_card_tapped", with: ["action": mainAction.rawValue])
+                        onMainCardTap()
+                    }) {
                         SquareCard(label: mainAction.label) {
                             MainLandingActionIcon(action: mainAction)
                         }
@@ -117,7 +123,10 @@ struct LandingView: View {
                     .buttonStyle(.plain)
                     .aspectRatio(1, contentMode: .fit)
 
-                    Button(action: onShowOtrasOpciones) {
+                    Button(action: {
+                        AnalyticsService.shared.track("otras_opciones_opened")
+                        onShowOtrasOpciones()
+                    }) {
                         SquareCard(label: "Más opciones") {
                             Image(systemName: "square.grid.2x2")
                                 .font(.system(size: 24))

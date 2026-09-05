@@ -32,6 +32,7 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.JourneyStep
 import com.github.bfollon.intersego.data.Leg
+import com.github.bfollon.intersego.services.AnalyticsService
 
 private fun formatMin(minutesOfDay: Int): String {
     val h = (minutesOfDay / 60) % 24
@@ -108,7 +109,10 @@ fun JourneyDetailScreen(
                         if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         when (step) {
                             is JourneyStep.LegStep -> {
-                                val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> { onLegSelected(ride.routeId, ride.fromStop) } }
+                                val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> {
+                                    AnalyticsService.track("journey_leg_tapped", mapOf("route" to ride.routeId))
+                                    onLegSelected(ride.routeId, ride.fromStop)
+                                } }
                                 LegRow(leg = step.leg, stopName = stopName, onClick = onClick)
                             }
                             is JourneyStep.Wait -> WaitRow(minutes = step.minutes)

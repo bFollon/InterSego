@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.bfollon.intersego.data.ServiceAlert
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.MainLandingAction
 
 private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
@@ -103,7 +104,10 @@ fun LandingScreen(
                     AlertPill(
                         alert = primary,
                         extraCount = activeAlerts.size - 1,
-                        onClick = onShowAlertDetail,
+                        onClick = {
+                            AnalyticsService.track("alert_banner_tapped", mapOf("severity" to primary.severity))
+                            onShowAlertDetail()
+                        },
                     )
                 }
             },
@@ -200,7 +204,10 @@ fun LandingScreen(
             ) {
                 SquareLandingCard(
                     label = mainAction.label,
-                    onClick = onMainCardClick,
+                    onClick = {
+                        AnalyticsService.track("main_card_tapped", mapOf("action" to mainAction.name))
+                        onMainCardClick()
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     MainLandingActionIcon(mainAction)
@@ -208,7 +215,10 @@ fun LandingScreen(
 
                 SquareLandingCard(
                     label = "Más opciones",
-                    onClick = onNavigateToOtrasOpciones,
+                    onClick = {
+                        AnalyticsService.track("otras_opciones_opened")
+                        onNavigateToOtrasOpciones()
+                    },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(

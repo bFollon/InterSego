@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import com.github.bfollon.intersego.data.BusReminder
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.ReminderService
 import java.text.SimpleDateFormat
 import java.util.*
@@ -80,7 +81,10 @@ fun RemindersScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showTutorial = true }) {
+                    IconButton(onClick = {
+                        AnalyticsService.track("tutorial_reopened", mapOf("tutorial" to "reminders"))
+                        showTutorial = true
+                    }) {
                         Icon(
                             imageVector = Icons.Default.HelpOutline,
                             contentDescription = "Ayuda",
@@ -187,6 +191,7 @@ fun RemindersScreen(
                         ReminderCard(
                             reminder = reminder,
                             onCancel = {
+                                AnalyticsService.track("reminder_cancelled", mapOf("type" to if (reminder.isDaily) "daily" else "one_off"))
                                 reminderService.cancelReminder(reminder.id)
                                 reminders = reminderService.getReminders()
                             }

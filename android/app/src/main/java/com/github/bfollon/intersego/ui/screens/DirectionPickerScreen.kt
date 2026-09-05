@@ -229,10 +229,12 @@ fun DirectionPickerScreen(
                     }
 
                     items(group.directions) { option ->
+                        val isLastSelected = GuidedModePrefs.getLastViewId(stopId, option.routeId) == option.viewId
                         DirectionPickerItem(
                             direction = destinationFromDirection(option.direction),
-                            isLastSelected = GuidedModePrefs.getLastViewId(stopId, option.routeId) == option.viewId,
+                            isLastSelected = isLastSelected,
                             onClick = {
+                                AnalyticsService.track("direction_picker_used", mapOf("remembered" to isLastSelected))
                                 GuidedModePrefs.saveLastViewId(stopId, option.routeId, option.viewId)
                                 onDirectionSelected(option.routeId, option.viewId)
                             }

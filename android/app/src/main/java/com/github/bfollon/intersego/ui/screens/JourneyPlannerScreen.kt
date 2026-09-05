@@ -274,6 +274,7 @@ fun JourneyPlannerScreen(
                         val o = origin
                         val d = destination
                         if (o != null && d != null) {
+                            AnalyticsService.track("journey_search_submitted")
                             RecentJourneysService.record(context, RecentJourney(o.physicalStopId, o.name, d.physicalStopId, d.name))
                             if (timeMode == TimeMode.ARRIVE_BEFORE) {
                                 val arriveBeforeMin = arriveBeforeTime.hour * 60 + arriveBeforeTime.minute

@@ -85,6 +85,7 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         Button(action: {
+                            AnalyticsService.shared.track("about_link_tapped", with: ["destination": "kofi"])
                             openURL(URL(string: "https://ko-fi.com/bfollon")!)
                         }) {
                             HStack {
@@ -117,6 +118,7 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         Button(action: {
+                            AnalyticsService.shared.track("about_link_tapped", with: ["destination": "github"])
                             openURL(URL(string: "https://github.com/bFollon/InterSego")!)
                         }) {
                             HStack {
@@ -147,6 +149,7 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         Button(action: {
+                            AnalyticsService.shared.track("about_link_tapped", with: ["destination": "linecar"])
                             openURL(URL(string: "https://www.linecar.es/metropolitano/segovia/")!)
                         }) {
                             HStack {
@@ -177,7 +180,10 @@ struct AboutView: View {
                             .foregroundColor(.secondary)
 
                         VStack(spacing: 12) {
-                            Button(action: { feedback.trigger(.bug) }) {
+                            Button(action: {
+                                AnalyticsService.shared.track("feedback_triggered", with: ["category": "bug", "source": "about"])
+                                feedback.trigger(.bug)
+                            }) {
                                 HStack {
                                     Image(systemName: "exclamationmark.triangle")
                                         .foregroundColor(.orange)
@@ -194,7 +200,10 @@ struct AboutView: View {
                             }
                             .buttonStyle(PlainButtonStyle())
 
-                            Button(action: { feedback.trigger(.suggestion) }) {
+                            Button(action: {
+                                AnalyticsService.shared.track("feedback_triggered", with: ["category": "suggestion", "source": "about"])
+                                feedback.trigger(.suggestion)
+                            }) {
                                 HStack {
                                     Image(systemName: "lightbulb")
                                         .foregroundColor(.blue)
@@ -227,6 +236,7 @@ struct AboutView: View {
                             .italic()
 
                         Button(action: {
+                            AnalyticsService.shared.track("about_link_tapped", with: ["destination": "developer_github"])
                             if let url = URL(string: "https://github.com/bFollon") {
                                 openURL(url)
                             }

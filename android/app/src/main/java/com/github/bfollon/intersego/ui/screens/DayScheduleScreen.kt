@@ -42,6 +42,7 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.HolidayService
 import com.github.bfollon.intersego.services.ReminderService
@@ -215,7 +216,10 @@ fun DayScheduleScreen(
                 },
                 actions = {
                     if (swapDirection != null) {
-                        IconButton(onClick = { currentDirection = swapDirection }) {
+                        IconButton(onClick = {
+                            AnalyticsService.track("direction_swapped", mapOf("screen" to "day_schedule"))
+                            currentDirection = swapDirection
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
                                 contentDescription = "Cambiar dirección"

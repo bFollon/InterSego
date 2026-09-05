@@ -50,6 +50,7 @@ struct SettingsView: View {
                         get: { alertMinSeverity },
                         set: { newValue in
                             alertMinSeverity = newValue
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "alert_severity"])
                             NotificationPreferencesService.shared.saveChoice(minSeverity: newValue)
                             if let token = UserDefaults.standard.string(forKey: "apnsDeviceToken") {
                                 Task { await DeviceTokenService.shared.registerToken(token, platform: "ios", minSeverity: newValue) }
@@ -70,6 +71,7 @@ struct SettingsView: View {
                             get: { guidedModeEnabled },
                             set: { newValue in
                                 guidedModeEnabled = newValue
+                                AnalyticsService.shared.track("settings_changed", with: ["field": "guided_mode"])
                                 GuidedModePrefs.setGuidedModeEnabled(newValue)
                             }
                         )
@@ -89,6 +91,7 @@ struct SettingsView: View {
                         get: { mainAction },
                         set: { newValue in
                             mainAction = newValue
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "main_action"])
                             MainActionPrefs.setMainAction(newValue)
                         }
                     )) {
@@ -106,7 +109,10 @@ struct SettingsView: View {
                         value: $maxWaitMin,
                         minValue: 5,
                         maxValue: 240,
-                        onCommit: { TripPlannerPrefs.setMaxWaitMin($0) }
+                        onCommit: {
+                            TripPlannerPrefs.setMaxWaitMin($0)
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "trip_planner_tuning"])
+                        }
                     )
                     TripPlannerNumberRow(
                         title: "Margen en la misma parada (horario exacto)",
@@ -114,7 +120,10 @@ struct SettingsView: View {
                         value: $bufferSameStopTranscribed,
                         minValue: 0,
                         maxValue: 30,
-                        onCommit: { TripPlannerPrefs.setBufferSameStopTranscribed($0) },
+                        onCommit: {
+                            TripPlannerPrefs.setBufferSameStopTranscribed($0)
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "trip_planner_tuning"])
+                        },
                         showTightMarginWarning: bufferSameStopTranscribed < TripPlannerPrefs.recommendedMinBuffer,
                         onTightMarginWarningTap: { showTightMarginInfo = true }
                     )
@@ -124,7 +133,10 @@ struct SettingsView: View {
                         value: $bufferSameStopEstimated,
                         minValue: 0,
                         maxValue: 30,
-                        onCommit: { TripPlannerPrefs.setBufferSameStopEstimated($0) },
+                        onCommit: {
+                            TripPlannerPrefs.setBufferSameStopEstimated($0)
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "trip_planner_tuning"])
+                        },
                         showTightMarginWarning: bufferSameStopEstimated < TripPlannerPrefs.recommendedMinBuffer,
                         onTightMarginWarningTap: { showTightMarginInfo = true }
                     )
@@ -134,7 +146,10 @@ struct SettingsView: View {
                         value: $bufferWalkTranscribed,
                         minValue: 0,
                         maxValue: 30,
-                        onCommit: { TripPlannerPrefs.setBufferWalkTranscribed($0) },
+                        onCommit: {
+                            TripPlannerPrefs.setBufferWalkTranscribed($0)
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "trip_planner_tuning"])
+                        },
                         showTightMarginWarning: bufferWalkTranscribed < TripPlannerPrefs.recommendedMinBuffer,
                         onTightMarginWarningTap: { showTightMarginInfo = true }
                     )
@@ -144,11 +159,15 @@ struct SettingsView: View {
                         value: $bufferWalkEstimated,
                         minValue: 0,
                         maxValue: 30,
-                        onCommit: { TripPlannerPrefs.setBufferWalkEstimated($0) },
+                        onCommit: {
+                            TripPlannerPrefs.setBufferWalkEstimated($0)
+                            AnalyticsService.shared.track("settings_changed", with: ["field": "trip_planner_tuning"])
+                        },
                         showTightMarginWarning: bufferWalkEstimated < TripPlannerPrefs.recommendedMinBuffer,
                         onTightMarginWarningTap: { showTightMarginInfo = true }
                     )
                     Button("Restaurar valores") {
+                        AnalyticsService.shared.track("settings_changed", with: ["field": "trip_planner_tuning"])
                         TripPlannerPrefs.resetToDefaults()
                         maxWaitMin = TripPlannerPrefs.getMaxWaitMin()
                         bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed()

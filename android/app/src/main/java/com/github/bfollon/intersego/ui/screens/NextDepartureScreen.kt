@@ -482,14 +482,20 @@ fun NextDepartureScreen(
                 },
                 actions = {
                     if (swapDirection != null && mergedDirectionLabel == null) {
-                        IconButton(onClick = { currentDirection = swapDirection }) {
+                        IconButton(onClick = {
+                            AnalyticsService.track("direction_swapped", mapOf("screen" to "next_departure"))
+                            currentDirection = swapDirection
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
                                 contentDescription = "Cambiar dirección"
                             )
                         }
                     }
-                    IconButton(onClick = { showLiveUpdateTutorial = true }) {
+                    IconButton(onClick = {
+                        AnalyticsService.track("tutorial_reopened", mapOf("tutorial" to "live_updates"))
+                        showLiveUpdateTutorial = true
+                    }) {
                         Icon(
                             imageVector = Icons.Outlined.HelpOutline,
                             contentDescription = "Acerca de las actualizaciones en directo"
@@ -1591,7 +1597,10 @@ fun NextDepartureWithProgress(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     IconButton(
-                        onClick = { showBoardingInfo = true },
+                        onClick = {
+                            AnalyticsService.track("boarding_info_viewed")
+                            showBoardingInfo = true
+                        },
                         modifier = Modifier.size(20.dp)
                     ) {
                         Icon(
@@ -2003,6 +2012,7 @@ private fun SourceLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modif
             validRoutes.forEach { route ->
                 TextButton(
                     onClick = {
+                        AnalyticsService.track("source_link_tapped", mapOf("route" to route.id))
                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(route.sourceURL))
                         context.startActivity(intent)
                     },
@@ -2057,13 +2067,13 @@ private fun SourceLinksFooter(routes: List<BusRoute>, modifier: Modifier = Modif
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     TextButton(onClick = {
                         showFeedbackChoice = false
-                        feedback.trigger(FeedbackCategory.BUG)
+                        feedback.trigger(FeedbackCategory.BUG, "next_departure_footer")
                     }) {
                         Text("Reportar error")
                     }
                     TextButton(onClick = {
                         showFeedbackChoice = false
-                        feedback.trigger(FeedbackCategory.SUGGESTION)
+                        feedback.trigger(FeedbackCategory.SUGGESTION, "next_departure_footer")
                     }) {
                         Text("Enviar sugerencia")
                     }

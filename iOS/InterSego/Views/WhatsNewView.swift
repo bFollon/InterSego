@@ -88,6 +88,7 @@ struct WhatsNewView: View {
     }
 
     private func dismiss() {
+        AnalyticsService.shared.track("whats_new_dismissed", with: ["entries_shown": WhatsNewService.entriesToShow().count])
         WhatsNewService.markAsSeen()
         isPresented = false
     }

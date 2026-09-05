@@ -107,6 +107,8 @@ struct DirectionPickerView: View {
                         Section(header: LineNamePill(routeNumber: group.route.number)) {
                             ForEach(group.directions) { option in
                                 Button(action: {
+                                    let remembered = GuidedModePrefs.getLastViewId(stopId: stop.id, routeId: option.routeId) == option.viewId
+                                    AnalyticsService.shared.track("direction_picker_used", with: ["remembered": remembered])
                                     GuidedModePrefs.saveLastViewId(option.viewId, stopId: stop.id, routeId: option.routeId)
                                     onSelected(option.routeId, option.viewId)
                                 }) {

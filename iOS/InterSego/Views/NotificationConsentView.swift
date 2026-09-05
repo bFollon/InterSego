@@ -75,11 +75,13 @@ struct NotificationConsentView: View {
             } else if status == .denied {
                 effectiveSeverity = "none"
             }
+            AnalyticsService.shared.track("notification_consent_responded", with: ["choice": "activated", "severity": effectiveSeverity])
             saveAndRegister(minSeverity: effectiveSeverity)
         }
     }
 
     private func dismiss() {
+        AnalyticsService.shared.track("notification_consent_responded", with: ["choice": "dismissed"])
         saveAndRegister(minSeverity: "none")
     }
 

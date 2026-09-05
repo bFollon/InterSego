@@ -192,6 +192,7 @@ struct RouteStopsView: View {
                     Button {
                         if let swap = currentView.swapAction {
                             currentViewId = swap.targetViewId
+                            AnalyticsService.shared.track("direction_swapped", with: ["screen": "route_stops"])
                         }
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")

@@ -313,11 +313,17 @@ struct NextDepartureView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 4) {
                         if let target = swapDirection {
-                            Button { direction = target } label: {
+                            Button {
+                                direction = target
+                                AnalyticsService.shared.track("direction_swapped", with: ["screen": "next_departure"])
+                            } label: {
                                 Image(systemName: "arrow.up.arrow.down")
                             }
                         }
-                        Button { showLiveUpdateTutorial = true } label: {
+                        Button {
+                            showLiveUpdateTutorial = true
+                            AnalyticsService.shared.track("tutorial_reopened", with: ["tutorial": "live_updates"])
+                        } label: {
                             Image(systemName: "questionmark.circle")
                         }
                     }
@@ -1117,6 +1123,7 @@ private struct NextDepartureCard: View {
                         .foregroundColor(.secondary)
                     Button {
                         showBoardingInfo = true
+                        AnalyticsService.shared.track("boarding_info_viewed")
                     } label: {
                         Image(systemName: "info.circle")
                             .font(.caption)
@@ -1461,6 +1468,9 @@ private struct SourceLinksFooter: View {
                             .font(.caption)
                             .foregroundStyle(.tint)
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        AnalyticsService.shared.track("source_link_tapped", with: ["route": route.id])
+                    })
                 }
             }
 
@@ -1478,8 +1488,14 @@ private struct SourceLinksFooter: View {
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .confirmationDialog("¿Qué quieres hacer?", isPresented: $showFeedbackChoice, titleVisibility: .visible) {
-            Button("Reportar error") { feedback.trigger(.bug) }
-            Button("Enviar sugerencia") { feedback.trigger(.suggestion) }
+            Button("Reportar error") {
+                feedback.trigger(.bug)
+                AnalyticsService.shared.track("feedback_triggered", with: ["category": "bug", "source": "next_departure_footer"])
+            }
+            Button("Enviar sugerencia") {
+                feedback.trigger(.suggestion)
+                AnalyticsService.shared.track("feedback_triggered", with: ["category": "suggestion", "source": "next_departure_footer"])
+            }
             Button("Cancelar", role: .cancel) {}
         }
         .feedbackPresentation(feedback)

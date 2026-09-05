@@ -116,7 +116,13 @@ struct JourneyResultsView: View {
                 // over the whole group, not repeated per card.
                 ForEach(Array(journeys.enumerated()), id: \.offset) { index, journey in
                     Section {
-                        Button(action: { onJourneySelected(journey) }) {
+                        Button(action: {
+                            AnalyticsService.shared.track("journey_result_selected", with: [
+                                "duration_min": journey.arrivalMin - journey.departureMin,
+                                "transfers": journey.transferCount,
+                            ])
+                            onJourneySelected(journey)
+                        }) {
                             JourneyRow(journey: journey)
                         }
                         .foregroundStyle(.primary)

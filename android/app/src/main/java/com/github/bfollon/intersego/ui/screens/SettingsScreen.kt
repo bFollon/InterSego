@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.MainActionPrefs
@@ -202,6 +203,7 @@ fun SettingsScreen(
                                     onClick = {
                                         expanded = false
                                         alertMinSeverity = option.value
+                                        AnalyticsService.track("settings_changed", mapOf("field" to "alert_severity"))
                                         NotificationPreferencesService.saveChoice(context, option.value)
                                         val prefs = context.getSharedPreferences("fcm_prefs", android.content.Context.MODE_PRIVATE)
                                         val token = prefs.getString("fcm_token", null)
@@ -240,6 +242,7 @@ fun SettingsScreen(
                     checked = guidedModeEnabled,
                     onCheckedChange = { newValue ->
                         guidedModeEnabled = newValue
+                        AnalyticsService.track("settings_changed", mapOf("field" to "guided_mode"))
                         GuidedModePrefs.setGuidedModeEnabled(newValue)
                     }
                 )
@@ -318,6 +321,7 @@ fun SettingsScreen(
                                         onClick = {
                                             mainActionExpanded = false
                                             mainAction = option
+                                            AnalyticsService.track("settings_changed", mapOf("field" to "main_action"))
                                             MainActionPrefs.setMainAction(option)
                                         },
                                         contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
@@ -352,6 +356,7 @@ fun SettingsScreen(
                         maxValue = 240,
                         onValueChange = {
                             maxWaitMin = it
+                            AnalyticsService.track("settings_changed", mapOf("field" to "trip_planner_tuning"))
                             TripPlannerPrefs.setMaxWaitMin(it)
                         }
                     )
@@ -364,6 +369,7 @@ fun SettingsScreen(
                         maxValue = 30,
                         onValueChange = {
                             bufferSameStopTranscribed = it
+                            AnalyticsService.track("settings_changed", mapOf("field" to "trip_planner_tuning"))
                             TripPlannerPrefs.setBufferSameStopTranscribed(it)
                         },
                         showTightMarginWarning = bufferSameStopTranscribed < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
@@ -378,6 +384,7 @@ fun SettingsScreen(
                         maxValue = 30,
                         onValueChange = {
                             bufferSameStopEstimated = it
+                            AnalyticsService.track("settings_changed", mapOf("field" to "trip_planner_tuning"))
                             TripPlannerPrefs.setBufferSameStopEstimated(it)
                         },
                         showTightMarginWarning = bufferSameStopEstimated < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
@@ -392,6 +399,7 @@ fun SettingsScreen(
                         maxValue = 30,
                         onValueChange = {
                             bufferWalkTranscribed = it
+                            AnalyticsService.track("settings_changed", mapOf("field" to "trip_planner_tuning"))
                             TripPlannerPrefs.setBufferWalkTranscribed(it)
                         },
                         showTightMarginWarning = bufferWalkTranscribed < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
@@ -406,6 +414,7 @@ fun SettingsScreen(
                         maxValue = 30,
                         onValueChange = {
                             bufferWalkEstimated = it
+                            AnalyticsService.track("settings_changed", mapOf("field" to "trip_planner_tuning"))
                             TripPlannerPrefs.setBufferWalkEstimated(it)
                         },
                         showTightMarginWarning = bufferWalkEstimated < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER,
@@ -419,6 +428,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = {
+                            AnalyticsService.track("settings_changed", mapOf("field" to "trip_planner_tuning"))
                             TripPlannerPrefs.resetToDefaults()
                             maxWaitMin = TripPlannerPrefs.getMaxWaitMin()
                             bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed()

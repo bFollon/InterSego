@@ -113,6 +113,7 @@ struct JourneyPlannerView: View {
             Section {
                 Button("Buscar") {
                     guard let origin, let destination else { return }
+                    AnalyticsService.shared.track("journey_search_submitted")
                     RecentJourneysService.record(RecentJourney(
                         originStopId: origin.physicalStopId, originName: origin.name,
                         destinationStopId: destination.physicalStopId, destinationName: destination.name

@@ -44,6 +44,7 @@ import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.PolylineLoader
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -106,7 +107,10 @@ fun RouteMapScreen(
                 },
                 actions = {
                     currentView.swapAction?.let { swap ->
-                        IconButton(onClick = { currentViewId = swap.targetViewId }) {
+                        IconButton(onClick = {
+                            AnalyticsService.track("direction_swapped", mapOf("screen" to "route_map"))
+                            currentViewId = swap.targetViewId
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.SwapVert,
                                 contentDescription = "Cambiar dirección"

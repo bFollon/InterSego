@@ -99,7 +99,10 @@ fun RouteStopsScreen(
                 },
                 actions = {
                     if (currentView != null) {
-                        IconButton(onClick = { onMapSelected(currentViewId) }) {
+                        IconButton(onClick = {
+                            AnalyticsService.track("map_opened", mapOf("route" to route.id, "mode" to "single"))
+                            onMapSelected(currentViewId)
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.Map,
                                 contentDescription = "Ver en mapa"
@@ -107,6 +110,7 @@ fun RouteStopsScreen(
                         }
                         currentView.swapAction?.let { swap ->
                             IconButton(onClick = {
+                                AnalyticsService.track("direction_swapped", mapOf("screen" to "route_stops"))
                                 currentViewId = swap.targetViewId
                             }) {
                                 Icon(
