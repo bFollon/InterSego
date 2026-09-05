@@ -22,7 +22,7 @@ android {
         applicationId = "com.github.bfollon.intersego"
         minSdk = 26
         targetSdk = 36
-        versionCode = 42
+        versionCode = 43
         versionName = "2.15.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
