@@ -24,13 +24,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Coffee
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -181,6 +186,8 @@ fun AboutScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(Icons.Filled.Coffee, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Cómpreme un Ko-fi ☕", fontWeight = FontWeight.Medium)
             }
         }
@@ -214,6 +221,8 @@ fun AboutScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(Icons.Filled.Code, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Ver en GitHub", fontWeight = FontWeight.Medium)
             }
         }
@@ -232,7 +241,7 @@ fun AboutScreen(
             )
 
             Text(
-                text = "Los horarios provienen de los PDFs oficiales publicados por Linecar, la empresa concesionaria del servicio de autobuses interurbanos de Segovia:",
+                text = "Los horarios provienen de los PDFs oficiales publicados por Linecar y AvanzaBus, las empresas concesionarias del servicio de autobuses interurbanos de Segovia:",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -245,7 +254,22 @@ fun AboutScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(Icons.Filled.DirectionsBus, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "Linecar — Metropolitano Segovia", fontWeight = FontWeight.Medium)
+            }
+
+            Button(
+                onClick = { openUrl(context, "https://segovia.avanzagrupo.com/", "avanzabus") },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0057B8),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Filled.DirectionsBus, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "AvanzaBus — Segovia", fontWeight = FontWeight.Medium)
             }
         }
 
@@ -276,6 +300,8 @@ fun AboutScreen(
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                Icon(Icons.Filled.Map, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(text = "OpenStreetMap — Copyright y licencia", fontWeight = FontWeight.Medium)
             }
         }
@@ -328,7 +354,7 @@ fun AboutScreen(
             )
 
             Text(
-                text = "Los horarios mostrados son informativos y pueden no reflejar cambios de última hora. Se recomienda confirmar la información con Linecar antes de desplazarse.",
+                text = "Los horarios mostrados son informativos y pueden no reflejar cambios de última hora. Se recomienda confirmar la información con Linecar o AvanzaBus antes de desplazarse.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontStyle = FontStyle.Italic

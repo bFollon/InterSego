@@ -144,7 +144,7 @@ struct AboutView: View {
                             .font(.headline)
                             .foregroundColor(.primary)
 
-                        Text("Los horarios provienen de los PDFs oficiales publicados por Linecar, la empresa concesionaria del servicio de autobuses interurbanos de Segovia:")
+                        Text("Los horarios provienen de los PDFs oficiales publicados por Linecar y AvanzaBus, las empresas concesionarias del servicio de autobuses interurbanos de Segovia:")
                             .font(.body)
                             .foregroundColor(.secondary)
 
@@ -162,6 +162,24 @@ struct AboutView: View {
                             .padding(.horizontal, 20)
                             .padding(.vertical, 12)
                             .background(Color.green)
+                            .cornerRadius(25)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+
+                        Button(action: {
+                            AnalyticsService.shared.track("about_link_tapped", with: ["destination": "avanzabus"])
+                            openURL(URL(string: "https://segovia.avanzagrupo.com/")!)
+                        }) {
+                            HStack {
+                                Image(systemName: "bus.fill")
+                                    .foregroundColor(.white)
+                                Text("AvanzaBus — Segovia")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(Color.blue)
                             .cornerRadius(25)
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -230,7 +248,7 @@ struct AboutView: View {
                             .font(.headline)
                             .foregroundColor(.primary)
 
-                        Text("Los horarios mostrados son informativos y pueden no reflejar cambios de última hora. Se recomienda confirmar la información con Linecar antes de desplazarse.")
+                        Text("Los horarios mostrados son informativos y pueden no reflejar cambios de última hora. Se recomienda confirmar la información con Linecar o AvanzaBus antes de desplazarse.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                             .italic()
