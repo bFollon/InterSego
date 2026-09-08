@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.edit
@@ -75,6 +76,12 @@ object WhatsNewService {
             title = "Mapa en tu itinerario",
             body = "Al elegir una combinación en “Planifica tu viaje” ahora verás un mapa con el recorrido completo: cada trayecto en autobús con su propio color y los transbordos marcados sobre el plano.",
             version = "2.15.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.Star,
+            title = "Paradas favoritas",
+            body = "Marca con la estrella tus paradas de uso frecuente desde la pantalla de horarios. Accede a ellas al instante desde “Más opciones” → “Favoritos”.",
+            version = "2.16.0",
         ),
     )
 

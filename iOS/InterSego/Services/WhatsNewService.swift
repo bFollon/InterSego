@@ -65,6 +65,12 @@ enum WhatsNewService {
             body: "Al elegir una combinación en \u{201c}Planifica tu viaje\u{201d} ahora verás un mapa con el recorrido completo: cada trayecto en autobús con su propio color y los transbordos marcados sobre el plano.",
             version: "3.13.0"
         ),
+        WhatsNewEntry(
+            icon: "star",
+            title: "Paradas favoritas",
+            body: "Marca con la estrella tus paradas de uso frecuente desde la pantalla de horarios. Accede a ellas al instante desde \u{201c}Más opciones\u{201d} → \u{201c}Favoritos\u{201d}.",
+            version: "3.14.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,
