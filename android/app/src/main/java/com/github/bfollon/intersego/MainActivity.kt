@@ -135,6 +135,9 @@ import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.TripPlannerPrefs
 import com.github.bfollon.intersego.services.MainActionPrefs
 import com.github.bfollon.intersego.services.MainLandingAction
+import com.github.bfollon.intersego.services.FavoriteStopsPrefs
+import com.github.bfollon.intersego.data.FavoriteStop
+import com.github.bfollon.intersego.ui.screens.FavoriteStopsScreen
 import com.github.bfollon.intersego.ui.screens.RemindersScreen
 import com.github.bfollon.intersego.ui.screens.DirectionPickerScreen
 import com.github.bfollon.intersego.ui.screens.SettingsScreen
@@ -248,6 +251,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         GuidedModePrefs.initialize(this)
         TripPlannerPrefs.initialize(this)
         MainActionPrefs.initialize(this)
+        FavoriteStopsPrefs.initialize(this)
 
         // Cleanup expired cache entries on app start
         CoordinateCache.cleanupExpiredEntries()
@@ -928,6 +932,7 @@ fun AppNavigation(
                 },
                 onPlanJourney = { navController.navigate("journey_planner") },
                 onNavigateToRouteList = { navController.navigate("route_selection") },
+                onShowFavorites = { navController.navigate("favorite_stops") },
                 mainAction = MainActionPrefs.getMainAction(),
             )
         }
@@ -1254,6 +1259,15 @@ fun AppNavigation(
             RemindersScreen(
                 reminderService = reminderService,
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("favorite_stops") {
+            FavoriteStopsScreen(
+                onBack = { navController.popBackStack() },
+                onSelectFavorite = { fav ->
+                    navController.navigate("next_departure/${fav.stopId}/${fav.routeId}/${fav.viewId}")
+                }
             )
         }
 

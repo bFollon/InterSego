@@ -24,6 +24,7 @@ enum OtrasOpcionesDestination: Hashable {
     case home
     case routeList(Date)
     case journeyPlanner
+    case favorites
 }
 
 struct OtrasOpcionesRouteSelection: Hashable {
@@ -248,7 +249,23 @@ struct ContentView: View {
                             onNavigateToRouteList: {
                                 navigationPath.append(HomeDestination.routeList)
                             },
+                            onShowFavorites: {
+                                navigationPath.append(OtrasOpcionesDestination.favorites)
+                            },
                             mainAction: mainAction,
+                        )
+                    case .favorites:
+                        FavoriteStopsView(
+                            onSelectFavorite: { favorite in
+                                let stopsById = try? TimetableLoader().loadBusStopsById(favorite.routeId)
+                                // Falls back to a minimal stop built from the favorite's own snapshot
+                                // if the route's stop data can no longer be found (e.g. a route was
+                                // dropped from the bundle) — a tap should always navigate somewhere
+                                // rather than silently doing nothing.
+                                let stop = stopsById?[favorite.stopId]
+                                    ?? BusStop(id: favorite.stopId, name: favorite.stopName, coordinates: "0, 0")
+                                navigationPath.append(StopSelection(stop: stop, primaryRouteId: favorite.routeId, primaryViewId: favorite.viewId))
+                            },
                         )
                     case .routeList(let date):
                         RouteSelectionView(

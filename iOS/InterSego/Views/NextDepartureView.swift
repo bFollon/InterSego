@@ -91,6 +91,9 @@ struct NextDepartureView: View {
     @AppStorage("liveUpdateTutorialShown") private var liveUpdateTutorialShown = false
     @State private var showLiveUpdateTutorial = false
 
+    // Favorite stop state
+    @State private var isFavorited = false
+
     // Boarding state
     @State private var boardingConfirmed = false
     @State private var boardingSubmitting = false
@@ -186,6 +189,17 @@ struct NextDepartureView: View {
 
     private var singleActiveRoute: BusRoute? {
         activeRoutesData.count == 1 ? activeRoutesData.first?.route : nil
+    }
+
+    /// The route to favorite: only resolvable once a single route+direction context exists
+    /// (a specific line is selected, or the stop is only served by one route).
+    private var favoriteRoute: BusRoute? {
+        singleActiveRoute ?? (selectedRouteId.flatMap { id in routesData.first { $0.route.id == id }?.route })
+    }
+
+    private var favoriteView: RouteView? {
+        guard let route = favoriteRoute else { return nil }
+        return routesData.first { $0.route.id == route.id }?.views.first { $0.direction == direction }
     }
 
     private var currentTripKey: String? {
@@ -320,6 +334,13 @@ struct NextDepartureView: View {
                                 Image(systemName: "arrow.up.arrow.down")
                             }
                         }
+                        if favoriteRoute != nil, favoriteView != nil {
+                            Button {
+                                toggleFavorite()
+                            } label: {
+                                Image(systemName: isFavorited ? "star.fill" : "star")
+                            }
+                        }
                         Button {
                             showLiveUpdateTutorial = true
                             AnalyticsService.shared.track("tutorial_reopened", with: ["tutorial": "live_updates"])
@@ -329,6 +350,8 @@ struct NextDepartureView: View {
                     }
                 }
             }
+            .onChange(of: direction) { _, _ in refreshFavoriteState() }
+            .onChange(of: selectedRouteId) { _, _ in refreshFavoriteState() }
             .task {
                 await loadTimetables()
                 AnalyticsService.shared.track("next_departure_viewed", with: ["stop": stop.id])
@@ -573,6 +596,28 @@ struct NextDepartureView: View {
 
         if departuresData.routes.isEmpty { errorMessage = "Error al cargar horarios" }
         isLoading = false
+        refreshFavoriteState()
+    }
+
+    // MARK: - Favorite stop
+
+    private func refreshFavoriteState() {
+        guard let route = favoriteRoute, let view = favoriteView else {
+            isFavorited = false
+            return
+        }
+        isFavorited = FavoriteStopsPrefs.isFavorite(stopId: stop.id, routeId: route.id, viewId: view.id)
+    }
+
+    private func toggleFavorite() {
+        guard let route = favoriteRoute, let view = favoriteView else { return }
+        let favorite = FavoriteStop(
+            stopId: stop.id, stopName: stop.name,
+            routeId: route.id, routeNumber: route.number,
+            viewId: view.id, direction: direction, mergedDirectionLabel: mergedDirectionLabel
+        )
+        isFavorited = FavoriteStopsPrefs.toggle(favorite)
+        AnalyticsService.shared.track("favorite_stop_toggled", with: ["favorited": String(isFavorited)])
     }
 
     // MARK: - Reminder helpers

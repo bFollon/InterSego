@@ -51,6 +51,9 @@
 		A10000010000000000000051 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000051 /* Secrets.swift */; };
 		A10000010000000000000052 /* LiveUpdateTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000052 /* LiveUpdateTutorialView.swift */; };
 		A10000010000000000000053 /* GuidedModePrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000053 /* GuidedModePrefs.swift */; };
+		A10000010000000000000305 /* FavoriteStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000305 /* FavoriteStop.swift */; };
+		A10000010000000000000306 /* FavoriteStopsPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000306 /* FavoriteStopsPrefs.swift */; };
+		A10000010000000000000307 /* FavoriteStopsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000307 /* FavoriteStopsView.swift */; };
 		A10000010000000000000304 /* MainActionPrefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000304 /* MainActionPrefs.swift */; };
 		A10000010000000000000054 /* DirectionPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000054 /* DirectionPickerView.swift */; };
 		A10000010000000000000055 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000010000000000000055 /* SettingsView.swift */; };
@@ -146,6 +149,9 @@
 		A20000010000000000000051 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		A20000010000000000000052 /* LiveUpdateTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveUpdateTutorialView.swift; sourceTree = "<group>"; };
 		A20000010000000000000053 /* GuidedModePrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidedModePrefs.swift; sourceTree = "<group>"; };
+		A20000010000000000000305 /* FavoriteStop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteStop.swift; sourceTree = "<group>"; };
+		A20000010000000000000306 /* FavoriteStopsPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteStopsPrefs.swift; sourceTree = "<group>"; };
+		A20000010000000000000307 /* FavoriteStopsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteStopsView.swift; sourceTree = "<group>"; };
 		A20000010000000000000304 /* MainActionPrefs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainActionPrefs.swift; sourceTree = "<group>"; };
 		A20000010000000000000054 /* DirectionPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionPickerView.swift; sourceTree = "<group>"; };
 		A20000010000000000000055 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -272,6 +278,7 @@
 				A2000001000000000000004F /* BoardingRequest.swift */,
 				A2000001000000000000009A /* AlternateLocation.swift */,
 				A200000100000000000000A4 /* FeedbackCategory.swift */,
+				A20000010000000000000305 /* FavoriteStop.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -311,6 +318,7 @@
 				B00000010000000000000020 /* StopDirectoryService.swift */,
 				B00000010000000000000022 /* RecentJourneysService.swift */,
 				B00000010000000000000024 /* JourneySearchCoordinator.swift */,
+				A20000010000000000000306 /* FavoriteStopsPrefs.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -352,6 +360,7 @@
 				B0000001000000000000002A /* JourneyResultsView.swift */,
 				B0000001000000000000002C /* JourneyDetailView.swift */,
 				B00000010000000000000030 /* ItineraryMapView.swift */,
+				A20000010000000000000307 /* FavoriteStopsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -550,6 +559,9 @@
 				A10000010000000000000060 /* OtrasOpcionesView.swift in Sources */,
 				A10000010000000000000061 /* WhatsNewService.swift in Sources */,
 				A10000010000000000000062 /* WhatsNewView.swift in Sources */,
+				A10000010000000000000305 /* FavoriteStop.swift in Sources */,
+				A10000010000000000000306 /* FavoriteStopsPrefs.swift in Sources */,
+				A10000010000000000000307 /* FavoriteStopsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

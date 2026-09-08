@@ -21,6 +21,7 @@ struct OtrasOpcionesView: View {
     let onCheckAnotherDay: (Date) -> Void
     let onPlanJourney: () -> Void
     let onNavigateToRouteList: () -> Void
+    let onShowFavorites: () -> Void
     var mainAction: MainLandingAction = .routes
 
     @State private var showDatePicker = false
@@ -54,6 +55,16 @@ struct OtrasOpcionesView: View {
                 .buttonStyle(.plain)
                 .aspectRatio(1, contentMode: .fit)
             }
+            Button(action: onShowFavorites) {
+                SquareCard(label: "Favoritos") {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.accentColor)
+                        .frame(width: 40, height: 40)
+                }
+            }
+            .buttonStyle(.plain)
+            .aspectRatio(1, contentMode: .fit)
         }
         .padding(.horizontal, 24)
         .padding(.top, 24)

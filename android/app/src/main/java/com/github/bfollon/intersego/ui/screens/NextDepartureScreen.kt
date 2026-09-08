@@ -56,6 +56,8 @@ import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.WbSunny
@@ -121,7 +123,9 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.data.DepartureTime
 import com.github.bfollon.intersego.data.FeedbackCategory
+import com.github.bfollon.intersego.data.FavoriteStop
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.FavoriteStopsPrefs
 import com.github.bfollon.intersego.services.BoardingService
 import com.github.bfollon.intersego.services.DebugConfig
 import com.github.bfollon.intersego.services.DeparturesService
@@ -467,6 +471,17 @@ fun NextDepartureScreen(
         loadedRoutes.first().route
     } else null
 
+    // Favoriting needs a concrete stop+route+direction combo — only available once a single
+    // route context is resolved (activeSingleRoute/activeView), same precondition the swap
+    // button relies on for mergedDirectionLabel.
+    var isFavorite by remember(stop.id, activeSingleRoute?.id, activeView?.id) {
+        mutableStateOf(
+            if (activeSingleRoute != null && activeView != null) {
+                FavoriteStopsPrefs.isFavorite(stop.id, activeSingleRoute.id, activeView.id)
+            } else false
+        )
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -481,6 +496,31 @@ fun NextDepartureScreen(
                     }
                 },
                 actions = {
+                    if (activeSingleRoute != null && activeView != null) {
+                        IconButton(onClick = {
+                            val route = activeSingleRoute
+                            val view = activeView
+                            val newState = !isFavorite
+                            isFavorite = newState
+                            FavoriteStopsPrefs.toggle(
+                                FavoriteStop(
+                                    stopId = stop.id,
+                                    stopName = stop.name,
+                                    routeId = route.id,
+                                    routeNumber = route.number,
+                                    viewId = view.id,
+                                    direction = direction,
+                                    mergedDirectionLabel = mergedDirectionLabel
+                                )
+                            )
+                            AnalyticsService.track("favorite_stop_toggled", mapOf("favorited" to newState.toString()))
+                        }) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Filled.Star else Icons.Filled.StarBorder,
+                                contentDescription = if (isFavorite) "Quitar de favoritos" else "Añadir a favoritos"
+                            )
+                        }
+                    }
                     if (swapDirection != null && mergedDirectionLabel == null) {
                         IconButton(onClick = {
                             AnalyticsService.track("direction_swapped", mapOf("screen" to "next_departure"))
