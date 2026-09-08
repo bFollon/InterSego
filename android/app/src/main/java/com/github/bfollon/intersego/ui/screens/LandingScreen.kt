@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,12 +32,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +58,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -65,21 +69,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.bfollon.intersego.data.ServiceAlert
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.LandingSlot
 import com.github.bfollon.intersego.services.MainLandingAction
 
 private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
 private val GreenBorder = Color(0xFF34C759).copy(alpha = 0.3f)
 private val GreenConfirmed = Color(0xFF34C759)
 
+/** Resolves each pool action to its navigation callback. Shared with the "Más opciones" hub. */
+internal data class LandingActionCallbacks(
+    val onNavigateToRouteList: () -> Unit,
+    val onPlanJourney: () -> Unit,
+    val onShowReminders: () -> Unit,
+    val onOpenAnotherDay: () -> Unit,
+    val onShowFavorites: () -> Unit,
+    val onBoardBus: () -> Unit,
+) {
+    fun forAction(action: MainLandingAction): () -> Unit = when (action) {
+        MainLandingAction.ROUTES -> onNavigateToRouteList
+        MainLandingAction.ROUTE_PLANNER -> onPlanJourney
+        MainLandingAction.REMINDERS -> onShowReminders
+        MainLandingAction.ANOTHER_DAY -> onOpenAnotherDay
+        MainLandingAction.FAVORITES -> onShowFavorites
+        MainLandingAction.BOARD_BUS -> onBoardBus
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LandingScreen(
-    onMainCardClick: () -> Unit,
-    mainAction: MainLandingAction = MainLandingAction.ROUTES,
+    landingSlots: Map<LandingSlot, MainLandingAction> = LandingSlot.entries.associateWith { it.default },
     onFindClosestStop: () -> Unit = {},
     onShowAbout: () -> Unit = {},
     onShowSettings: () -> Unit = {},
     onNavigateToOtrasOpciones: () -> Unit = {},
+    onNavigateToRouteList: () -> Unit = {},
+    onPlanJourney: () -> Unit = {},
+    onShowReminders: () -> Unit = {},
+    onOpenAnotherDay: () -> Unit = {},
+    onShowFavorites: () -> Unit = {},
     onBoardBus: () -> Unit = {},
     isSearchingClosestStop: Boolean = false,
     closestStopError: String? = null,
@@ -89,6 +117,19 @@ fun LandingScreen(
     activeAlerts: List<ServiceAlert> = emptyList(),
     onShowAlertDetail: () -> Unit = {},
 ) {
+    val callbacks = LandingActionCallbacks(
+        onNavigateToRouteList = onNavigateToRouteList,
+        onPlanJourney = onPlanJourney,
+        onShowReminders = onShowReminders,
+        onOpenAnotherDay = onOpenAnotherDay,
+        onShowFavorites = onShowFavorites,
+        onBoardBus = onBoardBus,
+    )
+    val slot1 = landingSlots.getValue(LandingSlot.MAIN_1)
+    val slot2 = landingSlots.getValue(LandingSlot.MAIN_2)
+    val extra1 = landingSlots.getValue(LandingSlot.EXTRA_1)
+    val extra2 = landingSlots.getValue(LandingSlot.EXTRA_2)
+    val boardingBusVisible = MainLandingAction.BOARD_BUS in landingSlots.values
     val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
 
     Column(
@@ -176,56 +217,63 @@ fun LandingScreen(
                 }
             }
 
-            // Full-width: Estoy en el autobús
-            HorizontalLandingCard(
-                label = if (boardingBusConfirmed) "¡Gracias por confirmar!" else "Estoy en el autobús",
-                labelColor = if (boardingBusConfirmed) GreenConfirmed else null,
-                showChevron = false,
-                isLoading = isBoardingBus,
-                onClick = onBoardBus,
-                enabled = !isBoardingBus && !boardingBusConfirmed
-            ) {
-                if (isBoardingBus) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                } else {
-                    Icon(
-                        imageVector = Icons.Filled.DirectionsBus,
-                        contentDescription = null,
-                        tint = if (boardingBusConfirmed) GreenConfirmed else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            // 2-column square grid
+            // 2-column square grid: Acción principal 1 + Acción principal 2
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                SquareLandingCard(
-                    label = mainAction.label,
-                    onClick = {
-                        AnalyticsService.track("main_card_tapped", mapOf("action" to mainAction.name))
-                        onMainCardClick()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    MainLandingActionIcon(mainAction)
-                }
+                LandingActionSquare(
+                    action = slot1,
+                    modifier = Modifier.weight(1f),
+                    callbacks = callbacks,
+                    isBoardingBus = isBoardingBus,
+                    boardingBusConfirmed = boardingBusConfirmed,
+                )
+                LandingActionSquare(
+                    action = slot2,
+                    modifier = Modifier.weight(1f),
+                    callbacks = callbacks,
+                    isBoardingBus = isBoardingBus,
+                    boardingBusConfirmed = boardingBusConfirmed,
+                )
+            }
 
-                SquareLandingCard(
+            // 3-column pill row: 2 configurable "acción adicional" + Más opciones (always last)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                LandingActionPill(
+                    action = extra1,
+                    modifier = Modifier.weight(1f),
+                    callbacks = callbacks,
+                    isBoardingBus = isBoardingBus,
+                    boardingBusConfirmed = boardingBusConfirmed,
+                )
+                LandingActionPill(
+                    action = extra2,
+                    modifier = Modifier.weight(1f),
+                    callbacks = callbacks,
+                    isBoardingBus = isBoardingBus,
+                    boardingBusConfirmed = boardingBusConfirmed,
+                )
+
+                PillLandingCard(
                     label = "Más opciones",
                     onClick = {
                         AnalyticsService.track("otras_opciones_opened")
                         onNavigateToOtrasOpciones()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    tint = MaterialTheme.colorScheme.surface,
+                    border = MaterialTheme.colorScheme.outlineVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Apps,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp).padding(8.dp)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -241,7 +289,7 @@ fun LandingScreen(
                         .padding(horizontal = 8.dp)
                 )
             }
-            if (boardingBusError != null) {
+            if (boardingBusVisible && boardingBusError != null) {
                 Text(
                     text = boardingBusError,
                     style = MaterialTheme.typography.bodySmall,
@@ -314,55 +362,197 @@ internal fun HorizontalLandingCard(
 }
 
 @Composable
+internal fun LandingActionSquare(
+    action: MainLandingAction,
+    modifier: Modifier,
+    callbacks: LandingActionCallbacks,
+    isBoardingBus: Boolean,
+    boardingBusConfirmed: Boolean,
+) {
+    val isBoard = action == MainLandingAction.BOARD_BUS
+    val confirmed = isBoard && boardingBusConfirmed
+    val loading = isBoard && isBoardingBus
+    val accent = if (isBoard) GreenConfirmed else MaterialTheme.colorScheme.primary
+    val tint = if (isBoard) GreenTint else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+    val border = if (isBoard) GreenBorder else MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+
+    SquareLandingCard(
+        label = if (confirmed) "¡Gracias por confirmar!" else action.label,
+        subtitle = if (confirmed) "Viaje confirmado" else action.subtitle,
+        onClick = {
+            if (!isBoard) {
+                AnalyticsService.track("main_card_tapped", mapOf("action" to action.name))
+            }
+            callbacks.forAction(action)()
+        },
+        modifier = modifier,
+        tint = tint,
+        border = border,
+        accentColor = accent,
+        enabled = !loading && !confirmed,
+    ) {
+        if (loading) {
+            CircularProgressIndicator(modifier = Modifier.size(32.dp), color = accent, strokeWidth = 2.5.dp)
+        } else {
+            MainLandingActionIcon(action, size = 36, confirmed = confirmed)
+        }
+    }
+}
+
+@Composable
+internal fun LandingActionPill(
+    action: MainLandingAction,
+    modifier: Modifier,
+    callbacks: LandingActionCallbacks,
+    isBoardingBus: Boolean,
+    boardingBusConfirmed: Boolean,
+) {
+    val isBoard = action == MainLandingAction.BOARD_BUS
+    val confirmed = isBoard && boardingBusConfirmed
+    val loading = isBoard && isBoardingBus
+    val accent = if (isBoard) GreenConfirmed else MaterialTheme.colorScheme.primary
+    val tint = if (isBoard) GreenTint else MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+    val border = if (isBoard) GreenBorder else MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+
+    PillLandingCard(
+        label = if (confirmed) "¡Confirmado!" else action.label,
+        onClick = callbacks.forAction(action),
+        modifier = modifier,
+        tint = tint,
+        border = border,
+        contentColor = accent,
+        enabled = !loading && !confirmed,
+    ) {
+        if (loading) {
+            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = accent, strokeWidth = 2.5.dp)
+        } else {
+            MainLandingActionIcon(action, size = 26, confirmed = confirmed, glyphScale = 1f)
+        }
+    }
+}
+
+@Composable
 internal fun SquareLandingCard(
     label: String,
+    subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    tint: Color,
+    border: Color,
+    accentColor: Color,
+    enabled: Boolean = true,
     icon: @Composable () -> Unit
 ) {
     Column(
         modifier = modifier
             .aspectRatio(1f)
-            .shadow(4.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .clip(RoundedCornerShape(20.dp))
+            .background(tint)
+            .border(1.dp, border, RoundedCornerShape(20.dp))
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        icon()
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
-        )
+        Box(contentAlignment = Alignment.TopStart) {
+            icon()
+        }
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                fontWeight = FontWeight.Bold,
+                color = if (enabled) accentColor else accentColor.copy(alpha = 0.5f),
+                maxLines = 2
+            )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                color = accentColor.copy(alpha = 0.65f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }
 
 @Composable
-internal fun MainLandingActionIcon(action: MainLandingAction, size: Int = 40) {
+internal fun PillLandingCard(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tint: Color,
+    contentColor: Color,
+    border: Color? = null,
+    enabled: Boolean = true,
+    icon: @Composable () -> Unit
+) {
+    val twoLineHeight = with(LocalDensity.current) {
+        (MaterialTheme.typography.labelMedium.lineHeight.toDp()) * 2
+    }
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(tint)
+            .then(if (border != null) Modifier.border(1.dp, border, RoundedCornerShape(18.dp)) else Modifier)
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(vertical = 16.dp, horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        icon()
+        Box(modifier = Modifier.height(twoLineHeight), contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor,
+                textAlign = TextAlign.Center,
+                maxLines = 2
+            )
+        }
+    }
+}
+
+@Composable
+internal fun MainLandingActionIcon(
+    action: MainLandingAction,
+    size: Int = 40,
+    confirmed: Boolean = false,
+    glyphScale: Float = 0.72f
+) {
+    val glyphSize = (size * glyphScale).dp
     when (action) {
         MainLandingAction.ROUTES -> BusLineIcon(size = size)
         MainLandingAction.ROUTE_PLANNER -> Icon(
             imageVector = Icons.Filled.Route,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(size.dp).padding(8.dp)
+            modifier = Modifier.size(glyphSize)
         )
         MainLandingAction.REMINDERS -> Icon(
             imageVector = Icons.Filled.Notifications,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(size.dp).padding(8.dp)
+            modifier = Modifier.size(glyphSize)
         )
         MainLandingAction.ANOTHER_DAY -> Icon(
             imageVector = Icons.Filled.CalendarMonth,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(size.dp).padding(8.dp)
+            modifier = Modifier.size(glyphSize)
+        )
+        MainLandingAction.BOARD_BUS -> Icon(
+            imageVector = if (confirmed) Icons.Filled.CheckCircle else Icons.Filled.DirectionsBus,
+            contentDescription = null,
+            tint = GreenConfirmed,
+            modifier = Modifier.size(glyphSize)
+        )
+        MainLandingAction.FAVORITES -> Icon(
+            imageVector = Icons.Filled.Star,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(glyphSize)
         )
     }
 }

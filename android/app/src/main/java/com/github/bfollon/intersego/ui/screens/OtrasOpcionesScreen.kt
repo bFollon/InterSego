@@ -15,10 +15,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,12 +43,10 @@ import java.time.LocalDate
 
 private const val MILLIS_PER_DAY = 86_400_000L
 
-private data class MenuCard(val label: String, val onClick: () -> Unit, val icon: @Composable () -> Unit)
-
 /**
- * Menu screen reached from Landing's "Más opciones" card — groups secondary features
- * (reminders, trip planning, and future entries like "Cómo llegar") behind one grid, the
- * same style as Landing's own square-card grid.
+ * Menu screen reached from Landing's "Más opciones" card — shows whichever pool actions
+ * aren't currently pinned to one of Landing's 4 configurable slots, in the same square-card
+ * style as Landing's own grid.
  *
  * "Consultar otro día" asks for the target date here, before route/stop selection: a route's
  * stops and views can differ completely by day type (e.g. M1's circularA/B, M6's 7 variants),
@@ -65,32 +61,25 @@ fun OtrasOpcionesScreen(
     onPlanJourney: () -> Unit,
     onNavigateToRouteList: () -> Unit,
     onShowFavorites: () -> Unit,
-    mainAction: MainLandingAction = MainLandingAction.ROUTES,
+    onBoardBus: () -> Unit,
+    pinnedActions: Set<MainLandingAction>,
+    isBoardingBus: Boolean = false,
+    boardingBusConfirmed: Boolean = false,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
 
-    // The action bound to Landing's main card is dropped here so every action stays reachable
-    // regardless of which one the user picked as their main card.
-    val visibleActions = MainLandingAction.entries.filter { it != mainAction }
-    fun onClickFor(action: MainLandingAction): () -> Unit = when (action) {
-        MainLandingAction.ROUTES -> onNavigateToRouteList
-        MainLandingAction.ROUTE_PLANNER -> onPlanJourney
-        MainLandingAction.REMINDERS -> onShowReminders
-        MainLandingAction.ANOTHER_DAY -> { { showDatePicker = true } }
-    }
+    // Whichever pool actions aren't pinned to one of Landing's 4 slots land here, so every
+    // action stays reachable regardless of how the user configured their Landing screen.
+    val visibleActions = MainLandingAction.entries.filter { it !in pinnedActions }
+    val callbacks = LandingActionCallbacks(
+        onNavigateToRouteList = onNavigateToRouteList,
+        onPlanJourney = onPlanJourney,
+        onShowReminders = onShowReminders,
+        onOpenAnotherDay = { showDatePicker = true },
+        onShowFavorites = onShowFavorites,
+        onBoardBus = onBoardBus,
+    )
 
-    // "Favoritos" isn't one of the 4 pinnable MainLandingAction cards — it's an always-present
-    // extra entry, appended after the rotating actions.
-    val menuCards: List<MenuCard> = visibleActions.map { action ->
-        MenuCard(label = action.label, onClick = onClickFor(action)) { MainLandingActionIcon(action) }
-    } + MenuCard(label = "Favoritos", onClick = onShowFavorites) {
-        Icon(
-            imageVector = Icons.Filled.Star,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(40.dp)
-        )
-    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -113,17 +102,18 @@ fun OtrasOpcionesScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            menuCards.chunked(2).forEach { rowCards ->
+            visibleActions.chunked(2).forEach { rowActions ->
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    rowCards.forEach { card ->
-                        SquareLandingCard(
-                            label = card.label,
-                            onClick = card.onClick,
+                    rowActions.forEach { action ->
+                        LandingActionSquare(
+                            action = action,
                             modifier = Modifier.weight(1f),
-                            icon = card.icon
+                            callbacks = callbacks,
+                            isBoardingBus = isBoardingBus,
+                            boardingBusConfirmed = boardingBusConfirmed,
                         )
                     }
-                    if (rowCards.size < 2) {
+                    if (rowActions.size < 2) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
                 }

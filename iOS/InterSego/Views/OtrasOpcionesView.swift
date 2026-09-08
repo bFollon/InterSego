@@ -9,9 +9,9 @@
 
 import SwiftUI
 
-/// Menu screen reached from Landing's "Más opciones" card — groups secondary features
-/// (reminders, trip planning, and future entries like "Cómo llegar") behind one grid, the
-/// same style as Landing's own square-card grid.
+/// Menu screen reached from Landing's "Más opciones" card — shows whichever pool actions
+/// aren't currently pinned to one of Landing's 4 configurable slots, in the same square-card
+/// style as Landing's own grid.
 ///
 /// "Consultar otro día" asks for the target date here, before route/stop selection: a route's
 /// stops and views can differ completely by day type (e.g. M1's circularA/B, M6's 7 variants),
@@ -22,49 +22,43 @@ struct OtrasOpcionesView: View {
     let onPlanJourney: () -> Void
     let onNavigateToRouteList: () -> Void
     let onShowFavorites: () -> Void
-    var mainAction: MainLandingAction = .routes
+    let onBoardBus: () -> Void
+    let pinnedActions: Set<MainLandingAction>
+    var isBoardingBus: Bool = false
+    var boardingBusConfirmed: Bool = false
 
     @State private var showDatePicker = false
     @State private var pickedDate = Date()
 
     private let columns = [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)]
 
-    // The action bound to Landing's main card is dropped here so every action stays reachable
-    // regardless of which one the user picked as their main card.
+    // Whichever pool actions aren't pinned to one of Landing's 4 slots land here, so every
+    // action stays reachable regardless of how the user configured their Landing screen.
     private var visibleActions: [MainLandingAction] {
-        MainLandingAction.allCases.filter { $0 != mainAction }
+        MainLandingAction.allCases.filter { !pinnedActions.contains($0) }
     }
 
-    private func onTapFor(_ action: MainLandingAction) -> () -> Void {
-        switch action {
-        case .routes: return onNavigateToRouteList
-        case .routePlanner: return onPlanJourney
-        case .reminders: return onShowReminders
-        case .anotherDay: return { showDatePicker = true }
-        }
+    private var callbacks: LandingActionCallbacks {
+        LandingActionCallbacks(
+            onNavigateToRouteList: onNavigateToRouteList,
+            onPlanJourney: onPlanJourney,
+            onShowReminders: onShowReminders,
+            onOpenAnotherDay: { showDatePicker = true },
+            onShowFavorites: onShowFavorites,
+            onBoardBus: onBoardBus,
+        )
     }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 16) {
             ForEach(visibleActions, id: \.self) { action in
-                Button(action: onTapFor(action)) {
-                    SquareCard(label: action.label) {
-                        MainLandingActionIcon(action: action)
-                    }
-                }
-                .buttonStyle(.plain)
-                .aspectRatio(1, contentMode: .fit)
+                LandingActionSquare(
+                    action: action,
+                    callbacks: callbacks,
+                    isBoardingBus: isBoardingBus,
+                    boardingBusConfirmed: boardingBusConfirmed,
+                )
             }
-            Button(action: onShowFavorites) {
-                SquareCard(label: "Favoritos") {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.accentColor)
-                        .frame(width: 40, height: 40)
-                }
-            }
-            .buttonStyle(.plain)
-            .aspectRatio(1, contentMode: .fit)
         }
         .padding(.horizontal, 24)
         .padding(.top, 24)

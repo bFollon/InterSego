@@ -109,7 +109,7 @@ struct ContentView: View {
     @State private var landingBoardingSubmitting = false
     @State private var showNoServiceSheet = false
     @State private var noServiceStop: BusStop? = nil
-    @State private var mainAction = MainActionPrefs.getMainAction()
+    @State private var landingSlots = LandingLayoutPrefs.getSlots()
 
     var body: some View {
         ZStack {
@@ -117,19 +117,7 @@ struct ContentView: View {
                 Group {
                     if isInitialized {
                         LandingView(
-                            onMainCardTap: {
-                                switch mainAction {
-                                case .routes:
-                                    navigationPath.append(HomeDestination.routeList)
-                                case .routePlanner:
-                                    navigationPath.append(OtrasOpcionesDestination.journeyPlanner)
-                                case .reminders:
-                                    showReminders = true
-                                case .anotherDay:
-                                    navigationPath.append(OtrasOpcionesDestination.home)
-                                }
-                            },
-                            mainAction: mainAction,
+                            landingSlots: landingSlots,
                             onFindClosestStop: {
                                 Task {
                                     isSearchingClosestStop = true
@@ -163,6 +151,21 @@ struct ContentView: View {
                             },
                             onShowOtrasOpciones: {
                                 navigationPath.append(OtrasOpcionesDestination.home)
+                            },
+                            onNavigateToRouteList: {
+                                navigationPath.append(HomeDestination.routeList)
+                            },
+                            onPlanJourney: {
+                                navigationPath.append(OtrasOpcionesDestination.journeyPlanner)
+                            },
+                            onShowReminders: {
+                                showReminders = true
+                            },
+                            onOpenAnotherDay: {
+                                navigationPath.append(OtrasOpcionesDestination.home)
+                            },
+                            onShowFavorites: {
+                                navigationPath.append(OtrasOpcionesDestination.favorites)
                             },
                             onBoardBus: {
                                 Task {
@@ -252,7 +255,56 @@ struct ContentView: View {
                             onShowFavorites: {
                                 navigationPath.append(OtrasOpcionesDestination.favorites)
                             },
-                            mainAction: mainAction,
+                            onBoardBus: {
+                                Task {
+                                    isSearchingBoardingStop = true
+                                    landingBoardingError = nil
+                                    do {
+                                        let selection = try await ClosestStopService.shared.findClosest()
+                                        let stop = selection.stop
+                                        let routeIds = await RouteDataService.shared.getRoutesForStop(stopId: stop.id)
+                                        let allRoutes = BusRouteRegistry.knownRoutes()
+                                        let now = Date()
+                                        let weekday = Calendar.current.component(.weekday, from: now)
+                                        let todayDayTypes = TimetableQuery.dayTypesForDate(now)
+                                        let h = Calendar.current.component(.hour, from: now)
+                                        let m = Calendar.current.component(.minute, from: now)
+                                        let currentMinutes = h * 60 + m
+                                        var options: [LandingBoardingOption] = []
+                                        for routeId in routeIds.sorted() {
+                                            guard let route = allRoutes.first(where: { $0.id == routeId }) else { continue }
+                                            let timetables = await TimetableService.shared.loadTimetables(routeId: routeId)
+                                            var seen = Set<String>()
+                                            var dirs: [String] = []
+                                            for t in timetables where t.stopId == stop.id && todayDayTypes.contains(t.dayType) {
+                                                guard let d = t.direction else { continue }
+                                                let hasNearbyDeparture = t.seasonalDepartures(weekday: weekday)
+                                                    .contains { abs($0.minutesSinceMidnight - currentMinutes) <= 20 }
+                                                if hasNearbyDeparture, seen.insert(d).inserted { dirs.append(d) }
+                                            }
+                                            if !dirs.isEmpty {
+                                                options.append(LandingBoardingOption(route: route, directions: dirs, timetables: timetables))
+                                            }
+                                        }
+                                        if options.isEmpty {
+                                            noServiceStop = stop
+                                            showNoServiceSheet = true
+                                        } else {
+                                            landingBoardingStop = stop
+                                            landingBoardingOptions = options
+                                            showLandingBoardingPicker = true
+                                        }
+                                    } catch let error as ClosestStopError {
+                                        landingBoardingError = error.errorDescription
+                                    } catch {
+                                        landingBoardingError = "No se pudo encontrar la parada más cercana."
+                                    }
+                                    isSearchingBoardingStop = false
+                                }
+                            },
+                            pinnedActions: Set(landingSlots.values),
+                            isBoardingBus: isSearchingBoardingStop || landingBoardingSubmitting,
+                            boardingBusConfirmed: landingBoardingConfirmed,
                         )
                     case .favorites:
                         FavoriteStopsView(
@@ -403,7 +455,7 @@ struct ContentView: View {
                     RemindersView()
                 }
                 .sheet(isPresented: $showSettings, onDismiss: {
-                    mainAction = MainActionPrefs.getMainAction()
+                    landingSlots = LandingLayoutPrefs.getSlots()
                 }) {
                     SettingsView()
                 }

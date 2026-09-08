@@ -9,13 +9,48 @@
 
 import SwiftUI
 
+/// Reports each pill's natural (unconstrained) label height so the pill row can equalize on
+/// the tallest one — safer than approximating a fixed height from font metrics, which risks
+/// under-reserving space and clipping real 2-line labels into an ellipsis.
+private struct PillLabelHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Resolves each pool action to its navigation callback. Shared with the "Más opciones" hub.
+struct LandingActionCallbacks {
+    let onNavigateToRouteList: () -> Void
+    let onPlanJourney: () -> Void
+    let onShowReminders: () -> Void
+    let onOpenAnotherDay: () -> Void
+    let onShowFavorites: () -> Void
+    let onBoardBus: () -> Void
+
+    func forAction(_ action: MainLandingAction) -> () -> Void {
+        switch action {
+        case .routes: return onNavigateToRouteList
+        case .routePlanner: return onPlanJourney
+        case .reminders: return onShowReminders
+        case .anotherDay: return onOpenAnotherDay
+        case .favorites: return onShowFavorites
+        case .boardBus: return onBoardBus
+        }
+    }
+}
+
 struct LandingView: View {
-    let onMainCardTap: () -> Void
-    var mainAction: MainLandingAction = .routes
+    let landingSlots: [LandingSlot: MainLandingAction]
     let onFindClosestStop: () -> Void
     let onShowAbout: () -> Void
     let onShowSettings: () -> Void
     let onShowOtrasOpciones: () -> Void
+    let onNavigateToRouteList: () -> Void
+    let onPlanJourney: () -> Void
+    let onShowReminders: () -> Void
+    let onOpenAnotherDay: () -> Void
+    let onShowFavorites: () -> Void
     let onBoardBus: () -> Void
     let isSearchingClosestStop: Bool
     let closestStopError: String?
@@ -24,6 +59,25 @@ struct LandingView: View {
     let boardingBusError: String?
     let activeAlerts: [ServiceAlert]
     let onShowAlertDetail: () -> Void
+
+    @State private var pillLabelHeight: CGFloat? = nil
+
+    private var callbacks: LandingActionCallbacks {
+        LandingActionCallbacks(
+            onNavigateToRouteList: onNavigateToRouteList,
+            onPlanJourney: onPlanJourney,
+            onShowReminders: onShowReminders,
+            onOpenAnotherDay: onOpenAnotherDay,
+            onShowFavorites: onShowFavorites,
+            onBoardBus: onBoardBus,
+        )
+    }
+
+    private var slot1: MainLandingAction { landingSlots[.main1] ?? LandingSlot.main1.defaultAction }
+    private var slot2: MainLandingAction { landingSlots[.main2] ?? LandingSlot.main2.defaultAction }
+    private var extra1: MainLandingAction { landingSlots[.extra1] ?? LandingSlot.extra1.defaultAction }
+    private var extra2: MainLandingAction { landingSlots[.extra2] ?? LandingSlot.extra2.defaultAction }
+    private var boardingBusVisible: Bool { landingSlots.values.contains(.boardBus) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -96,47 +150,57 @@ struct LandingView: View {
                 .buttonStyle(.plain)
                 .disabled(isSearchingClosestStop)
 
-                Button(action: onBoardBus) {
-                    HorizontalCard(
-                        label: boardingBusConfirmed ? "¡Gracias por confirmar!" : "Estoy en el autobús",
-                        labelColor: boardingBusConfirmed ? Color(UIColor.systemGreen) : .accentColor,
-                        showChevron: false,
-                        isLoading: isBoardingBus,
-                    ) {
-                        Image(systemName: boardingBusConfirmed ? "checkmark.circle.fill" : "bus")
-                            .font(.system(size: 24))
-                            .foregroundColor(boardingBusConfirmed ? Color(UIColor.systemGreen) : .accentColor)
-                    }
-                }
-                .buttonStyle(.plain)
-                .disabled(isBoardingBus || boardingBusConfirmed)
-
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                    Button(action: {
-                        AnalyticsService.shared.track("main_card_tapped", with: ["action": mainAction.rawValue])
-                        onMainCardTap()
-                    }) {
-                        SquareCard(label: mainAction.label) {
-                            MainLandingActionIcon(action: mainAction)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .aspectRatio(1, contentMode: .fit)
+                    LandingActionSquare(
+                        action: slot1,
+                        callbacks: callbacks,
+                        isBoardingBus: isBoardingBus,
+                        boardingBusConfirmed: boardingBusConfirmed,
+                    )
+                    LandingActionSquare(
+                        action: slot2,
+                        callbacks: callbacks,
+                        isBoardingBus: isBoardingBus,
+                        boardingBusConfirmed: boardingBusConfirmed,
+                    )
+                }
+
+                HStack(spacing: 12) {
+                    LandingActionPill(
+                        action: extra1,
+                        callbacks: callbacks,
+                        isBoardingBus: isBoardingBus,
+                        boardingBusConfirmed: boardingBusConfirmed,
+                        labelHeight: pillLabelHeight,
+                    )
+                    LandingActionPill(
+                        action: extra2,
+                        callbacks: callbacks,
+                        isBoardingBus: isBoardingBus,
+                        boardingBusConfirmed: boardingBusConfirmed,
+                        labelHeight: pillLabelHeight,
+                    )
 
                     Button(action: {
                         AnalyticsService.shared.track("otras_opciones_opened")
                         onShowOtrasOpciones()
                     }) {
-                        SquareCard(label: "Más opciones") {
+                        PillCard(
+                            label: "Más opciones",
+                            tint: Color(UIColor.secondarySystemGroupedBackground),
+                            border: nil,
+                            contentColor: .secondary,
+                            elevated: true,
+                            labelHeight: pillLabelHeight,
+                        ) {
                             Image(systemName: "square.grid.2x2")
                                 .font(.system(size: 24))
-                                .foregroundColor(.accentColor)
-                                .frame(width: 40, height: 40)
+                                .foregroundColor(.secondary)
                         }
                     }
                     .buttonStyle(.plain)
-                    .aspectRatio(1, contentMode: .fit)
                 }
+                .onPreferenceChange(PillLabelHeightKey.self) { pillLabelHeight = $0 }
 
                 if let error = closestStopError {
                     Text(error)
@@ -145,7 +209,7 @@ struct LandingView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
                 }
-                if let error = boardingBusError {
+                if boardingBusVisible, let error = boardingBusError {
                     Text(error)
                         .font(.caption)
                         .foregroundColor(.red)
@@ -203,6 +267,84 @@ struct LandingView: View {
     }
 }
 
+/// One of Landing's 2 square "acción principal" cards — resolves label/subtitle/icon/tap
+/// from the pool action, special-casing `.boardBus`'s live loading/confirmed state.
+struct LandingActionSquare: View {
+    let action: MainLandingAction
+    let callbacks: LandingActionCallbacks
+    let isBoardingBus: Bool
+    let boardingBusConfirmed: Bool
+
+    private var isBoard: Bool { action == .boardBus }
+    private var confirmed: Bool { isBoard && boardingBusConfirmed }
+    private var loading: Bool { isBoard && isBoardingBus }
+    private var accent: Color { isBoard ? Color(UIColor.systemGreen) : .accentColor }
+    private var tint: Color { isBoard ? Color.green.opacity(0.1) : Color.accentColor.opacity(0.08) }
+    private var border: Color { isBoard ? Color.green.opacity(0.3) : Color.accentColor.opacity(0.18) }
+
+    var body: some View {
+        Button(action: {
+            if !isBoard {
+                AnalyticsService.shared.track("main_card_tapped", with: ["action": action.rawValue])
+            }
+            callbacks.forAction(action)()
+        }) {
+            SquareCard(
+                label: confirmed ? "¡Gracias por confirmar!" : action.label,
+                subtitle: confirmed ? "Viaje confirmado" : action.subtitle,
+                tint: tint,
+                border: border,
+                accentColor: accent,
+            ) {
+                if loading {
+                    ProgressView().frame(width: 32, height: 32)
+                } else {
+                    MainLandingActionIcon(action: action, size: 36, confirmed: confirmed)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .aspectRatio(1, contentMode: .fit)
+        .disabled(loading || confirmed)
+    }
+}
+
+/// One of Landing's 2 compact "acción adicional" pills — same resolution as `LandingActionSquare`.
+struct LandingActionPill: View {
+    let action: MainLandingAction
+    let callbacks: LandingActionCallbacks
+    let isBoardingBus: Bool
+    let boardingBusConfirmed: Bool
+    var labelHeight: CGFloat? = nil
+
+    private var isBoard: Bool { action == .boardBus }
+    private var confirmed: Bool { isBoard && boardingBusConfirmed }
+    private var loading: Bool { isBoard && isBoardingBus }
+    private var accent: Color { isBoard ? Color(UIColor.systemGreen) : .accentColor }
+    private var tint: Color { isBoard ? Color.green.opacity(0.1) : Color.accentColor.opacity(0.08) }
+    private var border: Color { isBoard ? Color.green.opacity(0.3) : Color.accentColor.opacity(0.18) }
+
+    var body: some View {
+        Button(action: callbacks.forAction(action)) {
+            PillCard(
+                label: confirmed ? "¡Confirmado!" : action.label,
+                tint: tint,
+                border: border,
+                contentColor: accent,
+                labelHeight: labelHeight,
+            ) {
+                if loading {
+                    ProgressView().frame(width: 24, height: 24)
+                } else {
+                    MainLandingActionIcon(action: action, size: 28, confirmed: confirmed)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(loading || confirmed)
+    }
+}
+
 struct HorizontalCard<Icon: View>: View {
     let label: String
     var labelColor: Color = .accentColor
@@ -247,27 +389,106 @@ struct HorizontalCard<Icon: View>: View {
 
 struct SquareCard<Icon: View>: View {
     let label: String
+    var subtitle: String? = nil
+    var tint: Color = Color(UIColor.secondarySystemGroupedBackground)
+    var border: Color? = nil
+    var accentColor: Color = .accentColor
     @ViewBuilder let icon: () -> Icon
 
     var body: some View {
-        VStack(spacing: 12) {
+        Group {
+            if let subtitle {
+                VStack(alignment: .leading, spacing: 0) {
+                    icon()
+                        .frame(width: 36, height: 36, alignment: .topLeading)
+                    Spacer(minLength: 8)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(label)
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(accentColor)
+                            .multilineTextAlignment(.leading)
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundColor(accentColor.opacity(0.7))
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(1)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(18)
+            } else {
+                VStack(spacing: 12) {
+                    icon()
+                    Text(label)
+                        .font(.headline)
+                        .foregroundColor(accentColor)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(16)
+            }
+        }
+        .background(tint)
+        .overlay(
+            Group {
+                if let border {
+                    RoundedRectangle(cornerRadius: 20).stroke(border, lineWidth: 1)
+                }
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: subtitle != nil ? 20 : 16))
+        .shadow(color: border == nil ? .black.opacity(0.1) : .clear, radius: 4, y: 2)
+    }
+}
+
+struct PillCard<Icon: View>: View {
+    let label: String
+    let tint: Color
+    var border: Color? = nil
+    let contentColor: Color
+    var elevated: Bool = false
+    /// Shared height applied once known (see `PillLabelHeightKey`); nil on the first, measuring pass.
+    var labelHeight: CGFloat? = nil
+    @ViewBuilder let icon: () -> Icon
+
+    var body: some View {
+        VStack(spacing: 8) {
             icon()
             Text(label)
-                .font(.headline)
-                .foregroundColor(.accentColor)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundColor(contentColor)
                 .multilineTextAlignment(.center)
+                .frame(height: labelHeight, alignment: .center)
+                .background(
+                    GeometryReader { geo in
+                        Color.clear.preference(key: PillLabelHeightKey.self, value: geo.size.height)
+                    }
+                )
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(16)
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 8)
+        .background(tint)
+        .overlay(
+            Group {
+                if let border {
+                    RoundedRectangle(cornerRadius: 18).stroke(border, lineWidth: 1)
+                }
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: elevated ? .black.opacity(0.08) : .clear, radius: elevated ? 4 : 0, y: elevated ? 2 : 0)
     }
 }
 
 struct MainLandingActionIcon: View {
     let action: MainLandingAction
     var size: CGFloat = 40
+    var confirmed: Bool = false
+
+    private var glyphSize: CGFloat { size * 0.7 }
 
     var body: some View {
         switch action {
@@ -275,17 +496,27 @@ struct MainLandingActionIcon: View {
             BusLineIcon(size: size)
         case .routePlanner:
             Image(systemName: "point.topleft.down.curvedto.point.bottomright.up")
-                .font(.system(size: 24))
+                .font(.system(size: glyphSize))
                 .foregroundColor(.accentColor)
                 .frame(width: size, height: size)
         case .reminders:
             Image(systemName: "bell.fill")
-                .font(.system(size: 24))
+                .font(.system(size: glyphSize))
                 .foregroundColor(.accentColor)
                 .frame(width: size, height: size)
         case .anotherDay:
             Image(systemName: "calendar")
-                .font(.system(size: 24))
+                .font(.system(size: glyphSize))
+                .foregroundColor(.accentColor)
+                .frame(width: size, height: size)
+        case .boardBus:
+            Image(systemName: confirmed ? "checkmark.circle.fill" : "bus")
+                .font(.system(size: glyphSize))
+                .foregroundColor(Color(UIColor.systemGreen))
+                .frame(width: size, height: size)
+        case .favorites:
+            Image(systemName: "star.fill")
+                .font(.system(size: glyphSize))
                 .foregroundColor(.accentColor)
                 .frame(width: size, height: size)
         }

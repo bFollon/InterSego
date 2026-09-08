@@ -35,11 +35,15 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.background
@@ -133,7 +137,8 @@ import com.github.bfollon.intersego.services.OsmTileFetcher
 import com.github.bfollon.intersego.services.TileCacheService
 import com.github.bfollon.intersego.services.GuidedModePrefs
 import com.github.bfollon.intersego.services.TripPlannerPrefs
-import com.github.bfollon.intersego.services.MainActionPrefs
+import com.github.bfollon.intersego.services.LandingLayoutPrefs
+import com.github.bfollon.intersego.services.LandingSlot
 import com.github.bfollon.intersego.services.MainLandingAction
 import com.github.bfollon.intersego.services.FavoriteStopsPrefs
 import com.github.bfollon.intersego.data.FavoriteStop
@@ -250,7 +255,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
         CoordinateCache.initialize(this)
         GuidedModePrefs.initialize(this)
         TripPlannerPrefs.initialize(this)
-        MainActionPrefs.initialize(this)
+        LandingLayoutPrefs.initialize(this)
         FavoriteStopsPrefs.initialize(this)
 
         // Cleanup expired cache entries on app start
@@ -814,20 +819,27 @@ fun AppNavigation(
         startDestination = "landing"
     ) {
         composable("landing") {
-            val mainAction = MainActionPrefs.getMainAction()
-            LandingScreen(
-                mainAction = mainAction,
-                onMainCardClick = {
-                    when (mainAction) {
-                        MainLandingAction.ROUTES -> navController.navigate("route_selection")
-                        MainLandingAction.ROUTE_PLANNER -> navController.navigate("journey_planner")
-                        MainLandingAction.REMINDERS -> navController.navigate("reminders")
-                        MainLandingAction.ANOTHER_DAY -> navController.navigate("otras_opciones")
+            var landingSlots by remember { mutableStateOf(LandingLayoutPrefs.getSlots()) }
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        landingSlots = LandingLayoutPrefs.getSlots()
                     }
-                },
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+            LandingScreen(
+                landingSlots = landingSlots,
                 onShowAbout = { showAboutModal = true },
                 onShowSettings = { navController.navigate("settings") },
                 onNavigateToOtrasOpciones = { navController.navigate("otras_opciones") },
+                onNavigateToRouteList = { navController.navigate("route_selection") },
+                onPlanJourney = { navController.navigate("journey_planner") },
+                onShowReminders = { navController.navigate("reminders") },
+                onOpenAnotherDay = { navController.navigate("otras_opciones") },
+                onShowFavorites = { navController.navigate("favorite_stops") },
                 onFindClosestStop = {
                     closestStopError = null
                     if (locationMgr.hasLocationPermission()) {
@@ -933,7 +945,17 @@ fun AppNavigation(
                 onPlanJourney = { navController.navigate("journey_planner") },
                 onNavigateToRouteList = { navController.navigate("route_selection") },
                 onShowFavorites = { navController.navigate("favorite_stops") },
-                mainAction = MainActionPrefs.getMainAction(),
+                onBoardBus = {
+                    landingBoardingError = null
+                    if (locationMgr.hasLocationPermission()) {
+                        launchBoardingSearch()
+                    } else {
+                        boardingPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
+                },
+                pinnedActions = LandingLayoutPrefs.getSlots().values.toSet(),
+                isBoardingBus = isSearchingBoardingStop || landingBoardingSubmitting,
+                boardingBusConfirmed = landingBoardingConfirmed,
             )
         }
 
