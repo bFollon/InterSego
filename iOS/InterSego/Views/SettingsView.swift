@@ -88,7 +88,6 @@ struct SettingsView: View {
                         .padding(.vertical, 4)
 
                     ForEach(LandingSlot.allCases, id: \.self) { slot in
-                        let takenElsewhere = Set(landingSlots.filter { $0.key != slot }.values)
                         Picker(slot.label, selection: Binding(
                             get: { landingSlots[slot] ?? slot.defaultAction },
                             set: { newValue in
@@ -97,7 +96,7 @@ struct SettingsView: View {
                                 AnalyticsService.shared.track("settings_changed", with: ["field": slot.rawValue])
                             }
                         )) {
-                            ForEach(MainLandingAction.allCases.filter { !takenElsewhere.contains($0) }, id: \.self) { option in
+                            ForEach(MainLandingAction.allCases, id: \.self) { option in
                                 Text(option.label).tag(option)
                             }
                         }

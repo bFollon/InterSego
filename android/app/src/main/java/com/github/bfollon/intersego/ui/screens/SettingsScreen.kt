@@ -280,7 +280,6 @@ fun SettingsScreen(
                         LandingSlotPickerRow(
                             slot = slot,
                             current = landingSlots.getValue(slot),
-                            takenElsewhere = landingSlots.filterKeys { it != slot }.values.toSet(),
                             onSelect = { option ->
                                 LandingLayoutPrefs.setAction(slot, option)
                                 landingSlots = LandingLayoutPrefs.getSlots()
@@ -649,7 +648,6 @@ private fun SettingsNumberRow(
 private fun LandingSlotPickerRow(
     slot: LandingSlot,
     current: MainLandingAction,
-    takenElsewhere: Set<MainLandingAction>,
     onSelect: (MainLandingAction) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -692,7 +690,7 @@ private fun LandingSlotPickerRow(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                MainLandingAction.entries.filter { it !in takenElsewhere }.forEach { option ->
+                MainLandingAction.entries.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.label) },
                         onClick = {
