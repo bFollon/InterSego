@@ -48,7 +48,8 @@ import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.DeviceTokenService
 import com.github.bfollon.intersego.services.GuidedModePrefs
-import com.github.bfollon.intersego.services.MainActionPrefs
+import com.github.bfollon.intersego.services.LandingLayoutPrefs
+import com.github.bfollon.intersego.services.LandingSlot
 import com.github.bfollon.intersego.services.MainLandingAction
 import com.github.bfollon.intersego.services.MonitoringPreferencesService
 import com.github.bfollon.intersego.services.NotificationPreferencesService
@@ -82,8 +83,8 @@ fun SettingsScreen(
     var guidedModeEnabled by remember {
         mutableStateOf(GuidedModePrefs.isGuidedModeEnabled())
     }
-    var mainAction by remember {
-        mutableStateOf(MainActionPrefs.getMainAction())
+    var landingSlots by remember {
+        mutableStateOf(LandingLayoutPrefs.getSlots())
     }
     var errorsEnabled by remember {
         mutableStateOf(MonitoringPreferencesService.hasUserOptedIn())
@@ -250,9 +251,9 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Section: Acción principal
+            // Section: Personalizar pantalla de inicio
             Text(
-                text = "Acción principal",
+                text = "Personalizar pantalla de inicio",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
@@ -269,65 +270,24 @@ fun SettingsScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                     ) {
                         Text(
-                            text = "Elige qué opción aparece en la tarjeta principal de la pantalla de inicio.",
+                            text = "Elige qué acciones aparecen en la pantalla de inicio. Cada una solo puede ocupar un sitio a la vez.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     HorizontalDivider()
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        var mainActionExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = mainActionExpanded,
-                            onExpandedChange = { mainActionExpanded = it },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .menuAnchor()
-                                    .padding(vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Tarjeta principal",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Text(
-                                        text = mainAction.label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
+                    LandingSlot.entries.forEachIndexed { index, slot ->
+                        LandingSlotPickerRow(
+                            slot = slot,
+                            current = landingSlots.getValue(slot),
+                            onSelect = { option ->
+                                LandingLayoutPrefs.setAction(slot, option)
+                                landingSlots = LandingLayoutPrefs.getSlots()
+                                AnalyticsService.track("settings_changed", mapOf("field" to slot.id))
                             }
-                            ExposedDropdownMenu(
-                                expanded = mainActionExpanded,
-                                onDismissRequest = { mainActionExpanded = false }
-                            ) {
-                                MainLandingAction.entries.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option.label) },
-                                        onClick = {
-                                            mainActionExpanded = false
-                                            mainAction = option
-                                            AnalyticsService.track("settings_changed", mapOf("field" to "main_action"))
-                                            MainActionPrefs.setMainAction(option)
-                                        },
-                                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                                    )
-                                }
-                            }
+                        )
+                        if (index < LandingSlot.entries.size - 1) {
+                            HorizontalDivider()
                         }
                     }
                 }
@@ -679,6 +639,68 @@ private fun SettingsNumberRow(
         if (showTightMarginWarning) {
             Spacer(modifier = Modifier.height(4.dp))
             TightMarginWarningPill(onClick = onTightMarginWarningClick)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LandingSlotPickerRow(
+    slot: LandingSlot,
+    current: MainLandingAction,
+    onSelect: (MainLandingAction) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = slot.label,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = current.label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                MainLandingAction.entries.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.label) },
+                        onClick = {
+                            expanded = false
+                            onSelect(option)
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    )
+                }
+            }
         }
     }
 }

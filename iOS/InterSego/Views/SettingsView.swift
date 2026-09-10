@@ -19,7 +19,7 @@ private let alertSeverityOptions: [(value: String, label: String, description: S
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var guidedModeEnabled = GuidedModePrefs.isGuidedModeEnabled()
-    @State private var mainAction = MainActionPrefs.getMainAction()
+    @State private var landingSlots = LandingLayoutPrefs.getSlots()
     @State private var errorsEnabled = MonitoringPreferencesService.shared.hasUserOptedIn()
     @State private var analyticsEnabled = MonitoringPreferencesService.shared.hasUserOptedInToAnalytics()
     @State private var alertMinSeverity = NotificationPreferencesService.shared.getAlertMinSeverity()
@@ -81,25 +81,27 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
-                Section(header: Text("Acción principal")) {
-                    Text("Elige qué opción aparece en la tarjeta principal de la pantalla de inicio.")
+                Section(header: Text("Personalizar pantalla de inicio")) {
+                    Text("Elige qué acciones aparecen en la pantalla de inicio. Cada una solo puede ocupar un sitio a la vez.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .padding(.vertical, 4)
 
-                    Picker("Tarjeta principal", selection: Binding(
-                        get: { mainAction },
-                        set: { newValue in
-                            mainAction = newValue
-                            AnalyticsService.shared.track("settings_changed", with: ["field": "main_action"])
-                            MainActionPrefs.setMainAction(newValue)
+                    ForEach(LandingSlot.allCases, id: \.self) { slot in
+                        Picker(slot.label, selection: Binding(
+                            get: { landingSlots[slot] ?? slot.defaultAction },
+                            set: { newValue in
+                                LandingLayoutPrefs.setAction(slot, newValue)
+                                landingSlots = LandingLayoutPrefs.getSlots()
+                                AnalyticsService.shared.track("settings_changed", with: ["field": slot.rawValue])
+                            }
+                        )) {
+                            ForEach(MainLandingAction.allCases, id: \.self) { option in
+                                Text(option.label).tag(option)
+                            }
                         }
-                    )) {
-                        ForEach(MainLandingAction.allCases, id: \.self) { option in
-                            Text(option.label).tag(option)
-                        }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
                 }
 
                 Section(header: Text("Planifica tu viaje")) {
