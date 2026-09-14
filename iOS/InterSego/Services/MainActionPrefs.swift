@@ -37,7 +37,7 @@ enum MainLandingAction: String, CaseIterable {
         case .routePlanner: return "Encuentra tu ruta"
         case .reminders: return "Avisos programados"
         case .anotherDay: return "Horarios de otro día"
-        case .favorites: return "Tus paradas guardadas"
+        case .favorites: return "Paradas guardadas"
         }
     }
 }

@@ -22,7 +22,7 @@ enum class MainLandingAction(val id: String, val label: String, val subtitle: St
     ROUTE_PLANNER("route_planner", "Planificar viaje", "Encuentra tu ruta"),
     REMINDERS("reminders", "Mis recordatorios", "Avisos programados"),
     ANOTHER_DAY("another_day", "Consultar otro día", "Horarios de otro día"),
-    FAVORITES("favorites", "Favoritos", "Tus paradas guardadas");
+    FAVORITES("favorites", "Favoritos", "Paradas guardadas");
 
     companion object {
         fun fromId(id: String?): MainLandingAction? = entries.find { it.id == id }
