@@ -9,6 +9,7 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.filled.Coffee
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -192,7 +194,38 @@ fun AboutScreen(
             }
         }
 
-        // TODO: Add App Store review section once InterSego is published on the App Store / Google Play.
+        Spacer(modifier = Modifier.height(16.dp))
+        HorizontalDivider()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Review Section
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                text = "¿Le gusta la app?",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Text(
+                text = "Una reseña en Google Play nos ayuda mucho a llegar a más gente en Segovia:",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Button(
+                onClick = { openPlayStoreReview(context) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF9800),
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Filled.Star, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Valorar en Google Play", fontWeight = FontWeight.Medium)
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
@@ -418,6 +451,18 @@ private fun ContactCard(
 private fun openUrl(context: Context, url: String, destination: String) {
     AnalyticsService.track("about_link_tapped", mapOf("destination" to destination))
     context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+}
+
+private fun openPlayStoreReview(context: Context) {
+    AnalyticsService.track("about_link_tapped", mapOf("destination" to "play_store_review"))
+    val packageName = context.packageName
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, "market://details?id=$packageName".toUri()))
+    } catch (_: ActivityNotFoundException) {
+        context.startActivity(
+            Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$packageName".toUri())
+        )
+    }
 }
 
 @Preview(showBackground = true)

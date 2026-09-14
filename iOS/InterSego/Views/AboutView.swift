@@ -103,7 +103,34 @@ struct AboutView: View {
                         .buttonStyle(PlainButtonStyle())
                     }
 
-                    // TODO: Add App Store review section once InterSego is published on the App Store.
+                    // Review Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("¿Le gusta la app?")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        Text("Una reseña en la App Store nos ayuda mucho a llegar a más gente en Segovia:")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+
+                        Button(action: {
+                            AnalyticsService.shared.track("about_link_tapped", with: ["destination": "app_store_review"])
+                            openURL(URL(string: "https://apps.apple.com/app/id6759936464?action=write-review")!)
+                        }) {
+                            HStack {
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.white)
+                                Text("Valorar en la App Store")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.white)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(Color.orange)
+                            .cornerRadius(25)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
 
                     Divider()
 
