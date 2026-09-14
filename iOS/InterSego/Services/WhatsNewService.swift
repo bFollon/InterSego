@@ -71,6 +71,12 @@ enum WhatsNewService {
             body: "Marca con la estrella tus paradas de uso frecuente desde la pantalla de horarios. Accede a ellas al instante desde \u{201c}Más opciones\u{201d} → \u{201c}Favoritos\u{201d}.",
             version: "3.14.0"
         ),
+        WhatsNewEntry(
+            icon: "square.grid.2x2",
+            title: "Tu pantalla de inicio, a tu medida",
+            body: "En Configuración → \u{201c}Pantalla de inicio\u{201d} puedes elegir qué acción aparece en cada una de las 4 tarjetas: Estoy en el autobús, Líneas de bus, Planificar viaje, Mis recordatorios, Consultar otro día o Favoritos.",
+            version: "3.15.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,

@@ -83,6 +83,12 @@ object WhatsNewService {
             body = "Marca con la estrella tus paradas de uso frecuente desde la pantalla de horarios. Accede a ellas al instante desde “Más opciones” → “Favoritos”.",
             version = "2.16.0",
         ),
+        WhatsNewEntry(
+            icon = Icons.Filled.Dashboard,
+            title = "Tu pantalla de inicio, a tu medida",
+            body = "En Configuración → “Pantalla de inicio” puedes elegir qué acción aparece en cada una de las 4 tarjetas: Estoy en el autobús, Líneas de bus, Planificar viaje, Mis recordatorios, Consultar otro día o Favoritos.",
+            version = "2.17.0",
+        ),
     )
 
     /**
