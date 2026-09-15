@@ -1285,11 +1285,10 @@ private struct LaLigaBlockingLink: View {
 
     var body: some View {
         Link(destination: URL(string: url)!) {
-            HStack(spacing: 4) {
-                Text(text)
-                Image(systemName: "arrow.up.right")
-            }
-            .font(.subheadline.weight(.semibold))
+            Text("\(text) ↗")
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .simultaneousGesture(TapGesture().onEnded {
             AnalyticsService.shared.track("laliga_blocking_link_tapped", with: ["destination": destination])
