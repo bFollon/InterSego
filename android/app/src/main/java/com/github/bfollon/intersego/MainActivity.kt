@@ -10,6 +10,7 @@
 package com.github.bfollon.intersego
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
@@ -41,6 +42,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -104,6 +106,7 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.DayType
 import com.github.bfollon.intersego.services.CoordinateCache
 import com.github.bfollon.intersego.services.DebugConfig
+import com.github.bfollon.intersego.services.LaLigaBlockingService
 import com.github.bfollon.intersego.services.NetworkMonitor
 import com.github.bfollon.intersego.services.TimetableLoader
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -113,6 +116,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
@@ -160,6 +164,8 @@ import com.google.firebase.messaging.FirebaseMessaging
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 import androidx.core.content.edit
+import androidx.compose.foundation.clickable
+import androidx.core.net.toUri
 
 /**
  * Main activity for InterSego.
@@ -290,6 +296,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             val reminderService = remember { ReminderService(this@MainActivity) }
             val routeDataService = remember { RouteDataService(this@MainActivity) }
             var routes by remember { mutableStateOf<List<BusRoute>>(emptyList()) }
+            var laLigaBlockingSuspected by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
@@ -316,7 +323,10 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 
                 // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
                 if (NetworkMonitor.isOnline()) {
-                    launch { TimetableCacheService.fetchAllRoutes(this@MainActivity) }
+                    launch {
+                        TimetableCacheService.fetchAllRoutes(this@MainActivity)
+                        laLigaBlockingSuspected = LaLigaBlockingService.isLikelyBlocked
+                    }
                     launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
                     launch { HolidayService.refresh(this@MainActivity) }
                 }
@@ -331,7 +341,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                         AppNavigation(
                             routes = routes,
                             routeDataService = routeDataService,
-                            reminderService = reminderService
+                            reminderService = reminderService,
+                            laLigaBlockingSuspected = laLigaBlockingSuspected
                         )
                     }
 
@@ -496,6 +507,7 @@ fun AppNavigation(
     routes: List<BusRoute>,
     routeDataService: RouteDataService,
     reminderService: ReminderService,
+    laLigaBlockingSuspected: Boolean,
 ) {
     val navController = rememberNavController()
     val activity = LocalActivity.current as? MainActivity
@@ -512,6 +524,10 @@ fun AppNavigation(
         activeAlerts = AlertService.fetchActiveAlerts()
     }
     // --- End service alerts state ---
+
+    // --- LaLiga blocking banner state ---
+    var showLaLigaDetail by remember { mutableStateOf(false) }
+    // --- End LaLiga blocking banner state ---
 
     // --- Closest stop state ---
     val coroutineScope = rememberCoroutineScope()
@@ -863,6 +879,8 @@ fun AppNavigation(
                 boardingBusError = landingBoardingError,
                 activeAlerts = activeAlerts,
                 onShowAlertDetail = { showAlertDetail = true },
+                laLigaBlockingSuspected = laLigaBlockingSuspected,
+                onShowLaLigaDetail = { showLaLigaDetail = true },
             )
         }
 
@@ -1374,6 +1392,79 @@ fun AppNavigation(
         ) {
             AlertDetailSheet(alerts = activeAlerts)
         }
+    }
+
+    if (showLaLigaDetail) {
+        ModalBottomSheet(
+            onDismissRequest = { showLaLigaDetail = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            LaLigaBlockingDetailSheet()
+        }
+    }
+}
+
+@Composable
+private fun LaLigaBlockingDetailSheet() {
+    val context = LocalContext.current
+    val color = androidx.compose.ui.graphics.Color(0xFFE65100)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.SportsSoccer,
+                contentDescription = null,
+                tint = color,
+            )
+            Text(
+                text = "¿Por qué no se actualizan los horarios?",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Text(
+            text = "Ahora mismo no podemos conectar con nuestro servidor. Coincide con un partido de LaLiga, y probablemente se deba al bloqueo de direcciones IP que LaLiga ordena a los operadores españoles durante los partidos para cortar las retransmisiones piratas.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+            text = "El problema es que esas direcciones IP son compartidas por Cloudflare entre miles de webs legítimas — incluida, a veces, la nuestra — que quedan bloqueadas como daño colateral sin haber hecho nada ilegal.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+            text = "Desde diciembre de 2024 la Justicia española avala esta práctica, pese a las críticas de Cloudflare y de expertos en ciberseguridad, que la consideran un ataque a la neutralidad de la red.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Text(
+            text = "Esto no es un fallo de la app: mientras dure el bloqueo verás los horarios guardados en tu propio teléfono, que pueden no reflejar cambios muy recientes.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Text(
+            text = "Más información en hayahora.futbol →",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.clickable {
+                AnalyticsService.track("laliga_blocking_link_tapped")
+                context.startActivity(Intent(Intent.ACTION_VIEW, "https://hayahora.futbol".toUri()))
+            },
+        )
     }
 }
 

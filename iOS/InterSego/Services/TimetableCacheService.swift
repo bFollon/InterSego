@@ -131,18 +131,29 @@ actor TimetableCacheService {
     /// routes that exist on the server but not yet in the bundle or disk cache.
     /// Returns `nil` on any failure (offline / error) so callers can fall back to
     /// the bundle/disk-cache-only route list.
+    ///
+    /// Also reports reachability to `LaLigaBlockingService`, since this is our cheapest,
+    /// most frequent call to our own server and the natural place to notice it's down.
     private func fetchManifest() async -> [String]? {
         guard let url = URL(string: "\(AppConfig.boardingServerURL)/api/routes") else { return nil }
         var request = URLRequest(url: url)
         request.setValue("Bearer \(AppConfig.serverAPIKey)", forHTTPHeaderField: "Authorization")
         do {
             let (data, response) = try await session.data(for: request)
-            guard let http = response as? HTTPURLResponse else { return nil }
+            guard let http = response as? HTTPURLResponse else {
+                await LaLigaBlockingService.shared.onServerUnreachable()
+                return nil
+            }
             DebugConfig.debugPrint("TimetableCacheService: GET /api/routes → HTTP \(http.statusCode)")
-            guard http.statusCode == 200 else { return nil }
+            guard http.statusCode == 200 else {
+                await LaLigaBlockingService.shared.onServerUnreachable()
+                return nil
+            }
+            await LaLigaBlockingService.shared.onServerReachable()
             return try JSONDecoder().decode(RoutesManifest.self, from: data).routeIds
         } catch {
             DebugConfig.debugError("TimetableCacheService: manifest fetch error", error: error)
+            await LaLigaBlockingService.shared.onServerUnreachable()
             return nil
         }
     }

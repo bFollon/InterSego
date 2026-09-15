@@ -59,6 +59,8 @@ struct LandingView: View {
     let boardingBusError: String?
     let activeAlerts: [ServiceAlert]
     let onShowAlertDetail: () -> Void
+    let laLigaBlockingSuspected: Bool
+    let onShowLaLigaDetail: () -> Void
 
     @State private var pillLabelHeight: CGFloat? = nil
 
@@ -112,6 +114,32 @@ struct LandingView: View {
             }
             .padding(.horizontal, 24)
             .padding(.top, 8)
+
+            if laLigaBlockingSuspected {
+                Button(action: {
+                    AnalyticsService.shared.track("laliga_blocking_banner_tapped")
+                    onShowLaLigaDetail()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "soccerball")
+                            .font(.subheadline)
+                        Text("Sin conexión al servidor: posible bloqueo de LaLiga en curso")
+                            .font(.caption.weight(.medium))
+                            .multilineTextAlignment(.leading)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color.orange.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(.orange)
+                .padding(.horizontal, 24)
+                .padding(.top, 4)
+            }
 
             Spacer()
 

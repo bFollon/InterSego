@@ -126,6 +126,9 @@ object TimetableCacheService {
      * routes that exist on the server but not yet in the bundle or disk cache.
      * Returns `null` on any failure (offline / error) so callers can fall back to
      * the bundle/disk-cache-only route list.
+     *
+     * Also reports reachability to [LaLigaBlockingService], since this is our cheapest,
+     * most frequent call to our own server and the natural place to notice it's down.
      */
     private suspend fun fetchManifest(context: Context): List<String>? =
         withContext(Dispatchers.IO) {
@@ -136,11 +139,16 @@ object TimetableCacheService {
                     .build()
                 val response = client.newCall(request).execute()
                 DebugConfig.debugPrint("$TAG: GET /api/routes → HTTP ${response.code}")
-                if (response.code != 200) return@withContext null
+                if (response.code != 200) {
+                    LaLigaBlockingService.onServerUnreachable()
+                    return@withContext null
+                }
                 val body = response.body?.string() ?: return@withContext null
+                LaLigaBlockingService.onServerReachable()
                 json.decodeFromString<RoutesManifest>(body).routeIds
             } catch (e: Exception) {
                 DebugConfig.debugError("$TAG: manifest fetch error", e)
+                LaLigaBlockingService.onServerUnreachable()
                 null
             }
         }

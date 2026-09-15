@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
@@ -116,6 +117,8 @@ fun LandingScreen(
     boardingBusError: String? = null,
     activeAlerts: List<ServiceAlert> = emptyList(),
     onShowAlertDetail: () -> Unit = {},
+    laLigaBlockingSuspected: Boolean = false,
+    onShowLaLigaDetail: () -> Unit = {},
 ) {
     val callbacks = LandingActionCallbacks(
         onNavigateToRouteList = onNavigateToRouteList,
@@ -165,6 +168,16 @@ fun LandingScreen(
                 containerColor = MaterialTheme.colorScheme.background
             )
         )
+
+        if (laLigaBlockingSuspected) {
+            LaLigaBlockingBanner(
+                onClick = {
+                    AnalyticsService.track("laliga_blocking_banner_tapped")
+                    onShowLaLigaDetail()
+                },
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -602,6 +615,43 @@ private fun AlertPill(
             color = color,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun LaLigaBlockingBanner(onClick: () -> Unit) {
+    val color = Color(0xFFE65100)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(color.copy(alpha = 0.12f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.SportsSoccer,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Sin conexión al servidor: posible bloqueo de LaLiga en curso",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = color,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(12.dp),
         )
     }
 }

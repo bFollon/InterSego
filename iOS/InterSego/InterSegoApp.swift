@@ -98,6 +98,8 @@ struct ContentView: View {
     @State private var navigationPath = NavigationPath()
     @State private var activeAlerts: [ServiceAlert] = []
     @State private var showAlertDetail = false
+    @State private var laLigaBlockingSuspected = false
+    @State private var showLaLigaDetail = false
     @State private var isSearchingClosestStop = false
     @State private var closestStopError: String?
     @State private var isSearchingBoardingStop = false
@@ -221,6 +223,8 @@ struct ContentView: View {
                             boardingBusError: landingBoardingError,
                             activeAlerts: activeAlerts,
                             onShowAlertDetail: { showAlertDetail = true },
+                            laLigaBlockingSuspected: laLigaBlockingSuspected,
+                            onShowLaLigaDetail: { showLaLigaDetail = true },
                         )
                     }
                 }
@@ -447,6 +451,9 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showAlertDetail) {
                     AlertDetailSheet(alerts: activeAlerts)
+                }
+                .sheet(isPresented: $showLaLigaDetail) {
+                    LaLigaBlockingDetailSheet()
                 }
                 .sheet(isPresented: $showAbout) {
                     AboutView()
@@ -925,7 +932,10 @@ struct ContentView: View {
 
         // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
         if NetworkMonitor.shared.isOnline {
-            Task { await TimetableCacheService.shared.fetchAllRoutes() }
+            Task {
+                await TimetableCacheService.shared.fetchAllRoutes()
+                laLigaBlockingSuspected = await LaLigaBlockingService.shared.isLikelyBlocked
+            }
             Task { await PolylineCacheService.shared.fetchAllPolylines() }
             Task { await HolidayService.shared.refresh() }
         }
@@ -1206,6 +1216,53 @@ private struct AlertDetailCard: View {
         } else {
             return "\(dateFmt.string(from: start)) \(timeFmt.string(from: start)) – \(dateFmt.string(from: end)) \(timeFmt.string(from: end))"
         }
+    }
+}
+
+private struct LaLigaBlockingDetailSheet: View {
+    private let accent = Color.orange
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack(spacing: 8) {
+                    Image(systemName: "soccerball")
+                        .foregroundColor(accent)
+                    Text("¿Por qué no se actualizan los horarios?")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                }
+                .padding(.top, 48)
+
+                Text("Ahora mismo no podemos conectar con nuestro servidor. Coincide con un partido de LaLiga, y probablemente se deba al bloqueo de direcciones IP que LaLiga ordena a los operadores españoles durante los partidos para cortar las retransmisiones piratas.")
+                    .font(.subheadline)
+
+                Text("El problema es que esas direcciones IP son compartidas por Cloudflare entre miles de webs legítimas — incluida, a veces, la nuestra — que quedan bloqueadas como daño colateral sin haber hecho nada ilegal.")
+                    .font(.subheadline)
+
+                Text("Desde diciembre de 2024 la Justicia española avala esta práctica, pese a las críticas de Cloudflare y de expertos en ciberseguridad, que la consideran un ataque a la neutralidad de la red.")
+                    .font(.subheadline)
+
+                Text("Esto no es un fallo de la app: mientras dure el bloqueo verás los horarios guardados en tu propio teléfono, que pueden no reflejar cambios muy recientes.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                Link(destination: URL(string: "https://hayahora.futbol")!) {
+                    HStack(spacing: 4) {
+                        Text("Más información en hayahora.futbol")
+                        Image(systemName: "arrow.up.right")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+                .simultaneousGesture(TapGesture().onEnded {
+                    AnalyticsService.shared.track("laliga_blocking_link_tapped")
+                })
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+        }
+        .presentationDragIndicator(.visible)
+        .presentationDetents([.medium, .large])
     }
 }
 
