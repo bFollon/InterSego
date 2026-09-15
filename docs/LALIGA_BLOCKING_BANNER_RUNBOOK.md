@@ -131,21 +131,62 @@ usually are, since the surrounding sync logic is already async.
   - That it's court-sanctioned but contested (Cloudflare and security researchers have
     called it a net-neutrality violation; cite this rather than editorializing personally)
   - That it's not a bug — cached/bundled data is still shown, just possibly stale
-  - A link to `hayahora.futbol` for more information
-- Track two analytics events: banner tapped, and detail-sheet link tapped. No properties
-  needed — presence/absence of the event is the signal.
+  - A handful of source links (see "Sourcing links" below)
+- Track two analytics events: banner tapped, and detail-sheet link tapped (with a
+  `destination` prop on the latter — see below).
 
 ### Wording (Spanish, used verbatim in both existing implementations)
 
 Banner: *"Sin conexión al servidor: posible bloqueo de LaLiga en curso"*
 
-Detail sheet body (four short paragraphs + link):
+Detail sheet body (four short paragraphs + links):
 1. States the correlation with a live match and LaLiga's IP-blocking mechanism.
 2. Explains the Cloudflare collateral-damage mechanism (shared IPs, no wrongdoing).
 3. Cites the December 2024 Spanish court ruling and the criticism from Cloudflare/security
    researchers (net-neutrality concerns) — factual, sourced, not the app's own opinion.
 4. Reassures: not a bug, cached data is still shown, may just be stale.
-   Then a `hayahora.futbol` link.
+   Then the sourcing links.
+
+### Sourcing links
+
+Four links, each its own tappable line, each firing `laliga_blocking_link_tapped` with a
+`destination` prop so link-through rates are distinguishable in analytics:
+
+| `destination` | URL | Why |
+|---|---|---|
+| `hayahora` | `https://hayahora.futbol` | Live tracker — the same data source the app itself queries |
+| `laliga_statement` | `https://www.laliga.com/noticias/laliga-pone-un-buzon-a-disposicion-de-los-clientes-de-cloudflare-afectados-por-los-bloqueos` | LaLiga's own public statement acknowledging the collateral blocking and directing affected businesses to complain to Cloudflare — worth linking precisely because it's LaLiga's own words, not a third party's characterization of their position |
+| `ooni_report` | `https://ooni.org/post/2026-laliga-collateral/` | Independent, non-partisan technical measurement of the collateral damage (Open Observatory of Network Interference) |
+| `vercel_blog` | `https://vercel.com/blog/update-on-spain-and-laliga-blocks-of-the-internet` | A major public company (with presumable legal review) describing the identical situation affecting their own infrastructure — useful both as a source and as a "we're not alone / not overreacting" reference point |
+
+Pick equivalents for a future port if any of these go stale; the categories (live tracker,
+the blocking party's own statement, an independent technical source, a comparable
+company's account) matter more than these exact four URLs.
+
+## Legal note: naming "LaLiga" directly is fine
+
+Researched before writing the wording above — do not rename to something vague like
+"Spanish football corporation" out of caution; it doesn't reduce any real risk and makes the
+banner less accurate. Two independent legal bases both point the same way:
+
+- **Trademark**: EU Trade Mark Regulation Article 14(1)(c) protects "referential use" — naming
+  a trademark to identify its owner's actual goods/services/actions, provided it's no more
+  than necessary and doesn't imply endorsement or affiliation. Naming LaLiga as the entity
+  that ordered the blocking is a textbook case; this isn't "trademark use" in the competitive
+  sense at all (the app isn't selling anything under LaLiga's name). No ™/® symbols are
+  needed — those are for a mark's *owner* to use on their own goods, not a requirement for
+  third parties referring to it in text.
+- **Defamation / *derecho al honor* (the more relevant risk in Spain)**: mitigated by keeping
+  the wording hedged ("probablemente"), factual, and by attributing characterizations like
+  "attack on net neutrality" to named third parties (Cloudflare, security researchers) rather
+  than asserting them as the app's own opinion. Don't use unhedged pejorative language.
+
+Real-world precedent: Vercel's own blog names "LALIGA" plainly throughout (no ™/®, no logo,
+more critical in tone than this feature's wording) while describing the exact same collateral
+blocking of their infrastructure; Cloudflare, OONI, and mainstream Spanish outlets do the
+same. The actual open legal disputes here (Cloudflare/RootedCON vs. LaLiga, now before Spain's
+Constitutional Court) are about the blocking orders themselves, not about anyone's right to
+name LaLiga when describing them.
 
 ## Checklist
 
@@ -162,8 +203,9 @@ Detail sheet body (four short paragraphs + link):
 - [ ] Add the detail sheet (same file or adjacent) with the four-paragraph explanation + link
 - [ ] Wire the banner into the home/landing screen, above the generic offline/unreachable
       branch
-- [ ] Add two analytics events (banner tapped, link tapped) matching the app's existing
-      `AnalyticsService.track(...)` convention
+- [ ] Add two analytics events (banner tapped, link tapped — the latter with a `destination`
+      prop for the 4 sourcing links) matching the app's existing `AnalyticsService.track(...)`
+      convention
 - [ ] Update the app's feature tracker / architecture doc + analytics event table
 - [ ] Build both platforms before considering it done — `SourceKit`/editor diagnostics on
       newly-added Swift files are frequently stale-index noise (they'll also flag long-

@@ -1247,22 +1247,53 @@ private struct LaLigaBlockingDetailSheet: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                Link(destination: URL(string: "https://hayahora.futbol")!) {
-                    HStack(spacing: 4) {
-                        Text("Más información en hayahora.futbol")
-                        Image(systemName: "arrow.up.right")
-                    }
-                    .font(.subheadline.weight(.semibold))
+                VStack(alignment: .leading, spacing: 10) {
+                    LaLigaBlockingLink(
+                        text: "Seguimiento en directo de los bloqueos: hayahora.futbol",
+                        url: "https://hayahora.futbol",
+                        destination: "hayahora"
+                    )
+                    LaLigaBlockingLink(
+                        text: "Comunicado de LaLiga sobre el bloqueo a clientes de Cloudflare",
+                        url: "https://www.laliga.com/noticias/laliga-pone-un-buzon-a-disposicion-de-los-clientes-de-cloudflare-afectados-por-los-bloqueos",
+                        destination: "laliga_statement"
+                    )
+                    LaLigaBlockingLink(
+                        text: "Análisis técnico independiente del bloqueo (OONI)",
+                        url: "https://ooni.org/post/2026-laliga-collateral/",
+                        destination: "ooni_report"
+                    )
+                    LaLigaBlockingLink(
+                        text: "El caso de Vercel, afectado por el mismo bloqueo",
+                        url: "https://vercel.com/blog/update-on-spain-and-laliga-blocks-of-the-internet",
+                        destination: "vercel_blog"
+                    )
                 }
-                .simultaneousGesture(TapGesture().onEnded {
-                    AnalyticsService.shared.track("laliga_blocking_link_tapped")
-                })
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 32)
         }
         .presentationDragIndicator(.visible)
         .presentationDetents([.medium, .large])
+    }
+}
+
+private struct LaLigaBlockingLink: View {
+    let text: String
+    let url: String
+    let destination: String
+
+    var body: some View {
+        Link(destination: URL(string: url)!) {
+            HStack(spacing: 4) {
+                Text(text)
+                Image(systemName: "arrow.up.right")
+            }
+            .font(.subheadline.weight(.semibold))
+        }
+        .simultaneousGesture(TapGesture().onEnded {
+            AnalyticsService.shared.track("laliga_blocking_link_tapped", with: ["destination": destination])
+        })
     }
 }
 
