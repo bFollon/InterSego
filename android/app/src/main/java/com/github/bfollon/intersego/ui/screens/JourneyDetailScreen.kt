@@ -17,22 +17,33 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.JourneyStep
 import com.github.bfollon.intersego.data.Leg
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.JourneyReminderHelper
+import com.github.bfollon.intersego.services.ReminderService
+import com.github.bfollon.intersego.services.RouteDataService
+import java.time.LocalDate
 
 private fun formatMin(minutesOfDay: Int): String {
     val h = (minutesOfDay / 60) % 24
@@ -52,11 +63,30 @@ private fun formatDuration(minutes: Int): String =
 @Composable
 fun JourneyDetailScreen(
     journey: Journey,
+    date: LocalDate,
+    originName: String,
+    destinationName: String,
     stopName: (String) -> String,
     stopLookup: (String) -> BusStop?,
+    routesById: Map<String, BusRoute>,
+    stopsById: Map<String, BusStop>,
+    routeDataService: RouteDataService,
+    reminderService: ReminderService?,
     onBack: () -> Unit,
     onLegSelected: (routeId: String, stopId: String) -> Unit,
 ) {
+    val reminderContext = remember(journey, date, routesById, stopsById) {
+        JourneyReminderHelper.build(
+            journey = journey, date = date,
+            originName = originName, destinationName = destinationName,
+            routesById = routesById, stopsById = stopsById,
+            routeDataService = routeDataService,
+        )
+    }
+    val matchKey = reminderContext?.let { JourneyReminderHelper.matchKey(it) }
+    var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+    val isReminderSet = matchKey != null && reminderKeys.contains(matchKey)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -67,6 +97,33 @@ fun JourneyDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    if (reminderContext != null && reminderService != null) {
+                        IconButton(onClick = {
+                            if (isReminderSet) {
+                                reminderService.cancelReminder(
+                                    reminderContext.route.id, reminderContext.stop.id, reminderContext.direction,
+                                    reminderContext.departure.hour, reminderContext.departure.minute
+                                )
+                            } else {
+                                val result = reminderService.scheduleReminder(
+                                    reminderContext.departure, reminderContext.stop, reminderContext.route, reminderContext.direction,
+                                    dayType = reminderContext.dayType, journeyLabel = reminderContext.journeyLabel
+                                )
+                                if (result is ReminderService.ScheduleResult.Success) {
+                                    AnalyticsService.track("reminder_set", mapOf("type" to "journey"))
+                                }
+                            }
+                            reminderKeys = reminderService.activeMatchKeys()
+                        }) {
+                            Icon(
+                                imageVector = if (isReminderSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                                contentDescription = if (isReminderSet) "Cancelar recordatorio" else "Recuérdame salir",
+                                tint = if (isReminderSet) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)

@@ -14,6 +14,7 @@ import SwiftUI
 struct JourneyResultsContainer: View {
     let selection: JourneyResultsSelection
     let supportedRouteIds: [String]
+    let routes: [BusRoute]
     let onJourneySelected: (_ journey: Journey, _ stops: [String: BusStop]) -> Void
 
     @State private var journeys: [Journey] = []
@@ -38,6 +39,8 @@ struct JourneyResultsContainer: View {
             arriveBeforeMin: selection.arriveBeforeMin,
             journeys: journeys,
             isLoading: isLoading,
+            routesById: Dictionary(uniqueKeysWithValues: routes.map { ($0.id, $0) }),
+            stopsById: stopsById,
             onJourneySelected: { journey in onJourneySelected(journey, stopsById) },
         )
         .task {
@@ -77,7 +80,51 @@ struct JourneyResultsView: View {
     let arriveBeforeMin: Int?
     let journeys: [Journey]
     let isLoading: Bool
+    let routesById: [String: BusRoute]
+    let stopsById: [String: BusStop]
     let onJourneySelected: (Journey) -> Void
+
+    @State private var reminderKeys: Set<String> = []
+    @State private var reminderContexts: [Journey: JourneyReminderHelper.Context] = [:]
+
+    private func reminderContext(for journey: Journey) -> JourneyReminderHelper.Context? {
+        reminderContexts[journey]
+    }
+
+    private func loadReminderContexts() async {
+        for journey in journeys where reminderContexts[journey] == nil {
+            if let context = await JourneyReminderHelper.build(
+                journey: journey, date: date, originName: originName, destinationName: destinationName,
+                routesById: routesById, stopsById: stopsById
+            ) {
+                reminderContexts[journey] = context
+            }
+        }
+    }
+
+    private func toggleReminder(for journey: Journey) {
+        guard let context = reminderContext(for: journey) else { return }
+        let key = JourneyReminderHelper.matchKey(context)
+        Task {
+            if reminderKeys.contains(key) {
+                await ReminderService.shared.cancelReminder(
+                    routeId: context.route.id, stopId: context.stop.id, direction: context.direction,
+                    hour: context.departure.hour, minute: context.departure.minute
+                )
+            } else {
+                do {
+                    try await ReminderService.shared.scheduleReminder(
+                        departure: context.departure, stop: context.stop, route: context.route,
+                        direction: context.direction, dayType: context.dayType, journeyLabel: context.journeyLabel
+                    )
+                    AnalyticsService.shared.track("reminder_set", with: ["type": "journey"])
+                } catch {
+                    // Best-effort — the bell simply stays unset; the user can retry the tap.
+                }
+            }
+            reminderKeys = await ReminderService.shared.activeMatchKeys()
+        }
+    }
 
     var body: some View {
         List {
@@ -126,6 +173,18 @@ struct JourneyResultsView: View {
                             JourneyRow(journey: journey)
                         }
                         .foregroundStyle(.primary)
+                        if let context = reminderContext(for: journey) {
+                            let isSet = reminderKeys.contains(JourneyReminderHelper.matchKey(context))
+                            Button(action: { toggleReminder(for: journey) }) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: isSet ? "bell.fill" : "bell")
+                                    Text(isSet ? "Te avisaremos para salir" : "Recuérdame salir")
+                                }
+                                .font(.footnote)
+                                .foregroundStyle(isSet ? Color.accentColor : .secondary)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     } header: {
                         if index == 0 {
                             Text("Opciones")
@@ -137,6 +196,8 @@ struct JourneyResultsView: View {
         .listSectionSpacing(.compact)
         .navigationTitle("Resultados")
         .navigationBarTitleDisplayMode(.inline)
+        .task { reminderKeys = await ReminderService.shared.activeMatchKeys() }
+        .task(id: journeys) { await loadReminderContexts() }
     }
 }
 

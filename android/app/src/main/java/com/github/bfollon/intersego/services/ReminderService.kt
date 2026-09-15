@@ -155,7 +155,8 @@ class ReminderService(private val context: Context) {
         route: BusRoute,
         direction: String,
         isDaily: Boolean = false,
-        dayType: DayType? = null
+        dayType: DayType? = null,
+        journeyLabel: String? = null
     ): ScheduleResult {
         // Check POST_NOTIFICATIONS runtime permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -194,7 +195,8 @@ class ReminderService(private val context: Context) {
             seasonalNote = departure.seasonalAvailability.displayLabel,
             isDaily = isDaily,
             seasonalAvailability = departure.seasonalAvailability,
-            dayType = dayType
+            dayType = dayType,
+            journeyLabel = journeyLabel
         )
 
         scheduleAlarm(reminder)

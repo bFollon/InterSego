@@ -108,7 +108,7 @@ actor ReminderService {
 
     func scheduleReminder(
         departure: DepartureTime, stop: BusStop, route: BusRoute, direction: String,
-        isDaily: Bool = false, dayType: DayType? = nil
+        isDaily: Bool = false, dayType: DayType? = nil, journeyLabel: String? = nil
     ) async throws {
         ensureInitialized()
         let leadMins = isDaily ? getDailyLeadMinutes() : getDefaultLeadMinutes()
@@ -148,7 +148,8 @@ actor ReminderService {
             seasonalNote: departure.seasonalAvailability.displayLabel,
             isDaily: isDaily,
             seasonalAvailability: departure.seasonalAvailability,
-            dayType: dayType
+            dayType: dayType,
+            journeyLabel: journeyLabel
         )
 
         guard let token = currentDeviceToken(),
@@ -211,7 +212,7 @@ actor ReminderService {
                         leadMinutes: newLeadMinutes, fireDate: newFireDate,
                         seasonalNote: reminder.seasonalNote, isDaily: false,
                         seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType,
-                        serverId: sid
+                        serverId: sid, journeyLabel: reminder.journeyLabel
                     )
                     continue
                 }
@@ -224,7 +225,8 @@ actor ReminderService {
                 departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
                 leadMinutes: newLeadMinutes, fireDate: newFireDate,
                 seasonalNote: reminder.seasonalNote, isDaily: false,
-                seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
+                seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType,
+                journeyLabel: reminder.journeyLabel
             )
             if let token = currentDeviceToken(),
                let serverId = await postReminderToServer(updated, deviceToken: token) {
@@ -256,7 +258,7 @@ actor ReminderService {
                         leadMinutes: newLeadMinutes, fireDate: newFireDate,
                         seasonalNote: reminder.seasonalNote, isDaily: true,
                         seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType,
-                        serverId: sid
+                        serverId: sid, journeyLabel: reminder.journeyLabel
                     )
                     continue
                 }
@@ -269,7 +271,8 @@ actor ReminderService {
                 departureHour: reminder.departureHour, departureMinute: reminder.departureMinute,
                 leadMinutes: newLeadMinutes, fireDate: newFireDate,
                 seasonalNote: reminder.seasonalNote, isDaily: true,
-                seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType
+                seasonalAvailability: reminder.seasonalAvailability, dayType: reminder.dayType,
+                journeyLabel: reminder.journeyLabel
             )
             if let token = currentDeviceToken(),
                let serverId = await postReminderToServer(updated, deviceToken: token) {

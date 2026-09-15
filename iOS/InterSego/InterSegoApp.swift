@@ -49,6 +49,9 @@ struct JourneyResultsSelection: Hashable {
 struct JourneyDetailSelection: Hashable {
     let journey: Journey
     let stops: [String: BusStop]
+    let date: Date
+    let originName: String
+    let destinationName: String
 }
 
 struct StopSelection: Hashable {
@@ -351,8 +354,12 @@ struct ContentView: View {
                     JourneyResultsContainer(
                         selection: selection,
                         supportedRouteIds: routes.map(\.id),
+                        routes: routes,
                         onJourneySelected: { journey, stops in
-                            navigationPath.append(JourneyDetailSelection(journey: journey, stops: stops))
+                            navigationPath.append(JourneyDetailSelection(
+                                journey: journey, stops: stops, date: selection.date,
+                                originName: selection.originName, destinationName: selection.destinationName
+                            ))
                         },
                     )
                 }
@@ -361,6 +368,10 @@ struct ContentView: View {
                         journey: selection.journey,
                         stopName: { stopId in selection.stops[stopId]?.name ?? stopId },
                         stops: selection.stops,
+                        routes: routes,
+                        date: selection.date,
+                        originName: selection.originName,
+                        destinationName: selection.destinationName,
                         onLegSelected: { routeId, stopId in
                             if let stop = selection.stops[stopId] {
                                 navigationPath.append(StopSelection(stop: stop, primaryRouteId: routeId, primaryViewId: nil))

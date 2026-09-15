@@ -33,12 +33,18 @@ struct BusReminder: Identifiable, Equatable {
     let dayType: DayType?
     /// Server-assigned UUID returned after a successful POST /reminders. Nil until synced.
     var serverId: String?
+    /// Non-nil when this reminder was set from the journey planner rather than a regular
+    /// route/stop screen — e.g. "Plaza Mayor → Hospital". Shown as a badge in the reminders list
+    /// so it reads as "remember to leave for this trip" rather than a normal bus-departure alert.
+    /// Not synced to the server (best-effort only — a reinstall/token-rotation recovery via
+    /// `mergeFromServer` won't restore it).
+    let journeyLabel: String?
 
     // CodingKeys in the struct body so Swift can synthesize encode(to:)
     enum CodingKeys: String, CodingKey {
         case id, routeId, routeNumber, stopId, stopName, direction
         case departureHour, departureMinute, leadMinutes, fireDate, seasonalNote
-        case isDaily, seasonalAvailability, dayType, serverId
+        case isDaily, seasonalAvailability, dayType, serverId, journeyLabel
     }
 
     init(
@@ -46,7 +52,7 @@ struct BusReminder: Identifiable, Equatable {
         direction: String, departureHour: Int, departureMinute: Int, leadMinutes: Int,
         fireDate: Date, seasonalNote: String?,
         isDaily: Bool = false, seasonalAvailability: SeasonalAvailability? = nil,
-        dayType: DayType? = nil, serverId: String? = nil
+        dayType: DayType? = nil, serverId: String? = nil, journeyLabel: String? = nil
     ) {
         self.id = id
         self.routeId = routeId
@@ -63,6 +69,7 @@ struct BusReminder: Identifiable, Equatable {
         self.seasonalAvailability = seasonalAvailability
         self.dayType = dayType
         self.serverId = serverId
+        self.journeyLabel = journeyLabel
     }
 
     var departureDisplayString: String {
@@ -102,5 +109,6 @@ extension BusReminder: Codable {
         seasonalAvailability = try? c.decode(SeasonalAvailability.self, forKey: .seasonalAvailability)
         dayType = try? c.decode(DayType.self, forKey: .dayType)
         serverId = try? c.decode(String.self, forKey: .serverId)
+        journeyLabel = try? c.decode(String.self, forKey: .journeyLabel)
     }
 }

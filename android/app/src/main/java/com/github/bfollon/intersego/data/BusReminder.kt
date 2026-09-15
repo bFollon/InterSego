@@ -43,6 +43,14 @@ data class BusReminder(
     val dayType: DayType? = null,
     /** Server-assigned UUID returned by POST /reminders, used to delete from server on cancel. */
     val serverId: String? = null,
+    /**
+     * Non-null when this reminder was set from the journey planner rather than a regular
+     * route/stop screen — e.g. "Plaza Mayor → Hospital". Shown as a badge in the reminders list
+     * so it reads as "remember to leave for this trip" rather than a normal bus-departure alert.
+     * Not synced to the server (best-effort only — a reinstall/token-rotation recovery via
+     * `mergeFromServer` won't restore it).
+     */
+    val journeyLabel: String? = null,
 ) {
     val departureDisplayString: String
         get() = "%02d:%02d".format(departureHour, departureMinute)

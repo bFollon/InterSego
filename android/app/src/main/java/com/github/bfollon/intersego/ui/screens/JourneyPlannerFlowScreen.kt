@@ -12,9 +12,12 @@ package com.github.bfollon.intersego.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.services.JourneySearchCoordinator
+import com.github.bfollon.intersego.services.ReminderService
+import com.github.bfollon.intersego.services.RouteDataService
 import com.github.bfollon.intersego.services.StopDirectoryService
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -37,11 +40,15 @@ private sealed class FlowStep {
 @Composable
 fun JourneyPlannerFlowScreen(
     supportedRouteIds: List<String>,
+    routes: List<BusRoute>,
+    routeDataService: RouteDataService,
+    reminderService: ReminderService,
     onExit: () -> Unit,
     onOpenNextDeparture: (routeId: String, stopId: String) -> Unit,
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val routesById = remember(routes) { routes.associateBy { it.id } }
 
     var step by remember { mutableStateOf<FlowStep>(FlowStep.Picker) }
     var journeys by remember { mutableStateOf<List<Journey>>(emptyList()) }
@@ -96,6 +103,10 @@ fun JourneyPlannerFlowScreen(
                 arriveBeforeMin = current.arriveBeforeMin,
                 journeys = journeys,
                 isLoading = isSearching,
+                routesById = routesById,
+                stopsById = stopsById,
+                routeDataService = routeDataService,
+                reminderService = reminderService,
                 onJourneySelected = { journey -> step = FlowStep.Detail(journey, current) },
                 onBack = { step = FlowStep.Picker }
             )
@@ -103,8 +114,15 @@ fun JourneyPlannerFlowScreen(
         is FlowStep.Detail -> {
             JourneyDetailScreen(
                 journey = current.journey,
+                date = current.results.date,
+                originName = current.results.originName,
+                destinationName = current.results.destinationName,
                 stopName = { stopId -> stopNames[stopId] ?: stopId },
                 stopLookup = { stopId -> stopsById[stopId] },
+                routesById = routesById,
+                stopsById = stopsById,
+                routeDataService = routeDataService,
+                reminderService = reminderService,
                 onBack = { step = current.results },
                 onLegSelected = onOpenNextDeparture
             )

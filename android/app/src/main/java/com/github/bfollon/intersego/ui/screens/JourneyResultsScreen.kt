@@ -10,6 +10,7 @@
 package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,20 +20,32 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.FiberManualRecord
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.github.bfollon.intersego.data.BusRoute
+import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.Leg
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.services.JourneyReminderHelper
+import com.github.bfollon.intersego.services.ReminderService
+import com.github.bfollon.intersego.services.RouteDataService
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -60,9 +73,14 @@ fun JourneyResultsScreen(
     arriveBeforeMin: Int?,
     journeys: List<Journey>,
     isLoading: Boolean,
+    routesById: Map<String, BusRoute>,
+    stopsById: Map<String, BusStop>,
+    routeDataService: RouteDataService,
+    reminderService: ReminderService?,
     onJourneySelected: (Journey) -> Unit,
     onBack: () -> Unit,
 ) {
+    var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -110,16 +128,51 @@ fun JourneyResultsScreen(
                     )
                 }
                 else -> items(journeys) { journey ->
-                    JourneyCard(journey = journey, onClick = {
-                        AnalyticsService.track(
-                            "journey_result_selected",
-                            mapOf(
-                                "duration_min" to (journey.arrivalMin - journey.departureMin),
-                                "transfers" to journey.transferCount
-                            )
+                    val reminderContext = remember(journey, date, routesById, stopsById) {
+                        JourneyReminderHelper.build(
+                            journey = journey, date = date,
+                            originName = originName, destinationName = destinationName,
+                            routesById = routesById, stopsById = stopsById,
+                            routeDataService = routeDataService,
                         )
-                        onJourneySelected(journey)
-                    })
+                    }
+                    val matchKey = reminderContext?.let { JourneyReminderHelper.matchKey(it) }
+                    JourneyCard(
+                        journey = journey,
+                        isReminderSet = matchKey != null && reminderKeys.contains(matchKey),
+                        reminderAvailable = reminderContext != null && reminderService != null,
+                        onClick = {
+                            AnalyticsService.track(
+                                "journey_result_selected",
+                                mapOf(
+                                    "duration_min" to (journey.arrivalMin - journey.departureMin),
+                                    "transfers" to journey.transferCount
+                                )
+                            )
+                            onJourneySelected(journey)
+                        },
+                        onReminderToggle = {
+                            val context = reminderContext
+                            val service = reminderService
+                            if (context != null && service != null) {
+                                if (matchKey != null && reminderKeys.contains(matchKey)) {
+                                    service.cancelReminder(
+                                        context.route.id, context.stop.id, context.direction,
+                                        context.departure.hour, context.departure.minute
+                                    )
+                                } else {
+                                    val result = service.scheduleReminder(
+                                        context.departure, context.stop, context.route, context.direction,
+                                        dayType = context.dayType, journeyLabel = context.journeyLabel
+                                    )
+                                    if (result is ReminderService.ScheduleResult.Success) {
+                                        AnalyticsService.track("reminder_set", mapOf("type" to "journey"))
+                                    }
+                                }
+                                reminderKeys = service.activeMatchKeys()
+                            }
+                        }
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
@@ -167,7 +220,13 @@ private fun SummaryRow(icon: ImageVector, iconTint: Color, label: String, value:
 }
 
 @Composable
-private fun JourneyCard(journey: Journey, onClick: () -> Unit) {
+private fun JourneyCard(
+    journey: Journey,
+    isReminderSet: Boolean,
+    reminderAvailable: Boolean,
+    onClick: () -> Unit,
+    onReminderToggle: () -> Unit,
+) {
     val hasEstimatedLeg = journey.legs.any { it is Leg.Ride && it.isEstimated }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -201,6 +260,30 @@ private fun JourneyCard(journey: Journey, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary
                 )
+            }
+            if (reminderAvailable) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onReminderToggle)
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isReminderSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                        contentDescription = null,
+                        tint = if (isReminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        if (isReminderSet) "Te avisaremos para salir" else "Recuérdame salir",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isReminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

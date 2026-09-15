@@ -24,10 +24,52 @@ struct JourneyDetailView: View {
     let journey: Journey
     let stopName: (String) -> String
     let stops: [String: BusStop]
+    let routes: [BusRoute]
+    let date: Date
+    let originName: String
+    let destinationName: String
     let onLegSelected: (_ routeId: String, _ stopId: String) -> Void
+
+    @State private var reminderKeys: Set<String> = []
+    @State private var reminderContext: JourneyReminderHelper.Context?
+    @State private var reminderErrorMessage: String?
+    @State private var showReminderAlert = false
 
     private var hasEstimatedLeg: Bool {
         journey.legs.contains { if case .ride(let r) = $0 { return r.isEstimated } else { return false } }
+    }
+
+    private func loadReminderContext() async {
+        reminderContext = await JourneyReminderHelper.build(
+            journey: journey, date: date, originName: originName, destinationName: destinationName,
+            routesById: Dictionary(uniqueKeysWithValues: routes.map { ($0.id, $0) }), stopsById: stops
+        )
+    }
+
+    private func toggleReminder() {
+        guard let context = reminderContext else { return }
+        let key = JourneyReminderHelper.matchKey(context)
+        reminderErrorMessage = nil
+        Task {
+            if reminderKeys.contains(key) {
+                await ReminderService.shared.cancelReminder(
+                    routeId: context.route.id, stopId: context.stop.id, direction: context.direction,
+                    hour: context.departure.hour, minute: context.departure.minute
+                )
+            } else {
+                do {
+                    try await ReminderService.shared.scheduleReminder(
+                        departure: context.departure, stop: context.stop, route: context.route,
+                        direction: context.direction, dayType: context.dayType, journeyLabel: context.journeyLabel
+                    )
+                    AnalyticsService.shared.track("reminder_set", with: ["type": "journey"])
+                } catch {
+                    reminderErrorMessage = error.localizedDescription
+                    showReminderAlert = true
+                }
+            }
+            reminderKeys = await ReminderService.shared.activeMatchKeys()
+        }
     }
 
     var body: some View {
@@ -102,6 +144,25 @@ struct JourneyDetailView: View {
         }
         .navigationTitle("\(formatDuration(journey.arrivalMin - journey.departureMin)) · \(journey.transferCount == 0 ? "Directo" : "\(journey.transferCount) transbordo(s)")")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if reminderContext != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    let isSet = reminderContext.map { reminderKeys.contains(JourneyReminderHelper.matchKey($0)) } ?? false
+                    Button(action: toggleReminder) {
+                        Image(systemName: isSet ? "bell.fill" : "bell")
+                    }
+                }
+            }
+        }
+        .task {
+            reminderKeys = await ReminderService.shared.activeMatchKeys()
+            await loadReminderContext()
+        }
+        .alert("No se pudo programar el recordatorio", isPresented: $showReminderAlert, presenting: reminderErrorMessage) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { message in
+            Text(message)
+        }
     }
 
     private func tripSummaryRow(icon: String, iconColor: Color, label: String, stopName: String, time: String) -> some View {

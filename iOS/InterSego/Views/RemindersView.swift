@@ -212,6 +212,15 @@ private struct ReminderRow: View {
                 Text("Sale a las \(reminder.departureDisplayString)")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                if let journeyLabel = reminder.journeyLabel {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.turn.up.right.diamond")
+                            .font(.caption2)
+                        Text("Viaje: \(journeyLabel)")
+                            .font(.caption)
+                    }
+                    .foregroundColor(.blue)
+                }
                 HStack(spacing: 4) {
                     Image(systemName: reminder.isDaily ? "bell.fill" : "bell.fill")
                         .font(.caption2)
