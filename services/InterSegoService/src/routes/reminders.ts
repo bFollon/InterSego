@@ -50,6 +50,7 @@ const postReminderSchema = {
       isDaily:              { type: 'boolean' },
       dayType:              { type: ['string', 'null'], enum: [...DAY_TYPES, null] },
       seasonalAvailability: { type: ['string', 'null'], enum: [...SEASONAL, null] },
+      journeyLabel:         { type: ['string', 'null'], maxLength: 256 },
     },
   },
 } as const;

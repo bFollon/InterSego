@@ -124,6 +124,9 @@ export interface DeviceReminder {
   isDaily: boolean;
   dayType: DayType | null;
   seasonalAvailability: SeasonalAvailability | null;
+  /** Non-null when set from the journey planner (e.g. "Plaza Mayor → Hospital") rather than a
+   *  regular route/stop screen — the scheduler swaps in trip-specific notification copy for it. */
+  journeyLabel?: string | null;
   createdAt: string;
   nextFireAt: string | null;
 }
@@ -143,6 +146,7 @@ export interface PostReminderBody {
   isDaily: boolean;
   dayType: DayType | null;
   seasonalAvailability: SeasonalAvailability | null;
+  journeyLabel?: string | null;
 }
 
 export interface PostBoardingBody {

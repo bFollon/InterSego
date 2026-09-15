@@ -357,6 +357,7 @@ class ReminderService(private val context: Context) {
             put("isDaily", reminder.isDaily)
             put("dayType", reminder.dayType?.name?.lowercase())
             put("seasonalAvailability", reminder.seasonalAvailability?.name)
+            put("journeyLabel", reminder.journeyLabel)
         }.toString().toRequestBody("application/json".toMediaType())
 
         val request = Request.Builder()

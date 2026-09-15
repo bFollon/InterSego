@@ -444,7 +444,7 @@ actor ReminderService {
             leadMinutes: s.leadMinutes, fireDate: fireDate,
             seasonalNote: seasonal.flatMap { $0.displayLabel },
             isDaily: s.isDaily, seasonalAvailability: seasonal,
-            dayType: dayType, serverId: s.id
+            dayType: dayType, serverId: s.id, journeyLabel: s.journeyLabel
         )
     }
 
@@ -463,7 +463,8 @@ actor ReminderService {
             leadMinutes: reminder.leadMinutes,
             isDaily: reminder.isDaily,
             dayType: reminder.dayType?.rawValue.lowercased(),
-            seasonalAvailability: reminder.seasonalAvailability?.rawValue
+            seasonalAvailability: reminder.seasonalAvailability?.rawValue,
+            journeyLabel: reminder.journeyLabel
         )
         guard let body = try? JSONEncoder().encode(payload) else { return nil }
         do {
@@ -563,6 +564,7 @@ private struct ServerDeviceReminder: Decodable {
     let dayType: String?
     let seasonalAvailability: String?
     let nextFireAt: String?
+    let journeyLabel: String?
 }
 
 private struct ServerReminderPayload: Encodable {
@@ -580,6 +582,7 @@ private struct ServerReminderPayload: Encodable {
     let isDaily: Bool
     let dayType: String?
     let seasonalAvailability: String?
+    let journeyLabel: String?
 }
 
 private struct ServerReminderResponse: Decodable {

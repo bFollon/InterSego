@@ -89,10 +89,9 @@ async function processReminder(reminder: DeviceReminder, now: Date, windowEnd: D
 }
 
 async function sendPush(reminder: DeviceReminder): Promise<void> {
-  const notification = {
-    title: `Línea ${reminder.routeNumber} · ${reminder.stopName}`,
-    body: buildBody(reminder),
-  };
+  const notification = reminder.journeyLabel
+    ? { title: 'Prepárate para salir', body: buildJourneyBody(reminder) }
+    : { title: `Línea ${reminder.routeNumber} · ${reminder.stopName}`, body: buildBody(reminder) };
 
   if (reminder.platform === 'android') {
     const result = await sendFcm(notification, reminder.deviceToken);
@@ -134,4 +133,9 @@ async function sendPush(reminder: DeviceReminder): Promise<void> {
 function buildBody(r: DeviceReminder): string {
   const time = `${String(r.departureHour).padStart(2, '0')}:${String(r.departureMinute).padStart(2, '0')}`;
   return `Sale en ${r.leadMinutes} min — ${time}`;
+}
+
+function buildJourneyBody(r: DeviceReminder): string {
+  const time = `${String(r.departureHour).padStart(2, '0')}:${String(r.departureMinute).padStart(2, '0')}`;
+  return `Tu viaje con comienzo en ${r.routeNumber} · ${r.stopName} sale en ${r.leadMinutes} min — ${time}`;
 }
