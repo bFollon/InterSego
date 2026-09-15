@@ -188,10 +188,16 @@ struct JourneyResultsView: View {
                                     HStack(spacing: 6) {
                                         Image(systemName: isSet ? "bell.fill" : "bell")
                                         Text(isSet ? "Te avisaremos para salir" : "Recuérdame salir")
+                                        Spacer()
                                     }
                                     .font(.footnote)
                                     .foregroundStyle(isSet ? Color.accentColor : .secondary)
                                     .padding(.top, 8)
+                                    // .plain only makes the tight icon+text bounds tappable by
+                                    // default - stretch the label and claim the whole area
+                                    // (matching Android's full-row tap target) rather than
+                                    // requiring a precise tap on the text itself.
+                                    .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                             }
