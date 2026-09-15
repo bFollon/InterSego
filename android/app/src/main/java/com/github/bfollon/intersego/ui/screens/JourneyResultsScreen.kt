@@ -229,46 +229,52 @@ private fun JourneyCard(
 ) {
     val hasEstimatedLeg = journey.legs.any { it is Leg.Ride && it.isEstimated }
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Column(
+                modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = if (reminderAvailable) 12.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        "${formatMin(journey.departureMin)} — ${formatMin(journey.arrivalMin)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(formatDuration(journey.arrivalMin - journey.departureMin), style = MaterialTheme.typography.bodyMedium)
+                }
                 Text(
-                    "${formatMin(journey.departureMin)} — ${formatMin(journey.arrivalMin)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    if (journey.transferCount == 0) "Directo" else "${journey.transferCount} transbordo(s)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Text(formatDuration(journey.arrivalMin - journey.departureMin), style = MaterialTheme.typography.bodyMedium)
-            }
-            Text(
-                if (journey.transferCount == 0) "Directo" else "${journey.transferCount} transbordo(s)",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                journey.legs.forEach { leg ->
-                    when (leg) {
-                        is Leg.Ride -> LegChip(text = leg.routeId, icon = Icons.Filled.DirectionsBus)
-                        is Leg.Walk -> LegChip(text = "${leg.minutes} min", icon = Icons.AutoMirrored.Filled.DirectionsWalk)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    journey.legs.forEach { leg ->
+                        when (leg) {
+                            is Leg.Ride -> LegChip(text = leg.routeId, icon = Icons.Filled.DirectionsBus)
+                            is Leg.Walk -> LegChip(text = "${leg.minutes} min", icon = Icons.AutoMirrored.Filled.DirectionsWalk)
+                        }
                     }
                 }
-            }
-            if (hasEstimatedLeg) {
-                // Plain caption, matching iOS and the JourneyDetailScreen banner — a journey
-                // built partly on cluster-estimated times shouldn't look more precise than the
-                // app is elsewhere, but this is a secondary note, not an alert worth a card.
-                Text(
-                    "Horarios orientativos",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
+                if (hasEstimatedLeg) {
+                    // Plain caption, matching iOS and the JourneyDetailScreen banner — a journey
+                    // built partly on cluster-estimated times shouldn't look more precise than the
+                    // app is elsewhere, but this is a secondary note, not an alert worth a card.
+                    Text(
+                        "Horarios orientativos",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
             }
             if (reminderAvailable) {
+                // Inset divider, matching SearchSummaryCard's row dividers above rather than
+                // running edge-to-edge against the pill's own border.
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 4.dp)
-                        .clip(RoundedCornerShape(8.dp))
                         .clickable(onClick = onReminderToggle)
-                        .padding(vertical = 4.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {

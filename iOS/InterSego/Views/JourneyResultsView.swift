@@ -163,27 +163,38 @@ struct JourneyResultsView: View {
                 // over the whole group, not repeated per card.
                 ForEach(Array(journeys.enumerated()), id: \.offset) { index, journey in
                     Section {
-                        Button(action: {
-                            AnalyticsService.shared.track("journey_result_selected", with: [
-                                "duration_min": journey.arrivalMin - journey.departureMin,
-                                "transfers": journey.transferCount,
-                            ])
-                            onJourneySelected(journey)
-                        }) {
-                            JourneyRow(journey: journey)
-                        }
-                        .foregroundStyle(.primary)
-                        if let context = reminderContext(for: journey) {
-                            let isSet = reminderKeys.contains(JourneyReminderHelper.matchKey(context))
-                            Button(action: { toggleReminder(for: journey) }) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: isSet ? "bell.fill" : "bell")
-                                    Text(isSet ? "Te avisaremos para salir" : "Recuérdame salir")
-                                }
-                                .font(.footnote)
-                                .foregroundStyle(isSet ? Color.accentColor : .secondary)
+                        // One VStack = one List row, so its internal Divider renders inset like
+                        // SearchSummaryCard's row dividers above (not edge-to-edge against the
+                        // pill's own border, and not the default system row separator, which
+                        // only extends to the text inset and read as off-center).
+                        // .leading - VStack defaults to .center, which put the reminder row's
+                        // compact (content-hugging) width in the middle instead of flush left.
+                        VStack(alignment: .leading, spacing: 0) {
+                            Button(action: {
+                                AnalyticsService.shared.track("journey_result_selected", with: [
+                                    "duration_min": journey.arrivalMin - journey.departureMin,
+                                    "transfers": journey.transferCount,
+                                ])
+                                onJourneySelected(journey)
+                            }) {
+                                JourneyRow(journey: journey)
                             }
-                            .buttonStyle(.plain)
+                            .foregroundStyle(.primary)
+                            if let context = reminderContext(for: journey) {
+                                let isSet = reminderKeys.contains(JourneyReminderHelper.matchKey(context))
+                                Divider()
+                                    .padding(.top, 8)
+                                Button(action: { toggleReminder(for: journey) }) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: isSet ? "bell.fill" : "bell")
+                                        Text(isSet ? "Te avisaremos para salir" : "Recuérdame salir")
+                                    }
+                                    .font(.footnote)
+                                    .foregroundStyle(isSet ? Color.accentColor : .secondary)
+                                    .padding(.top, 8)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     } header: {
                         if index == 0 {
