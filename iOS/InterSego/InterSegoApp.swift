@@ -962,6 +962,17 @@ struct ContentView: View {
             }
             Task { await PolylineCacheService.shared.fetchAllPolylines() }
             Task { await HolidayService.shared.refresh() }
+        } else {
+            // No network at all — the fetch is never attempted, so without this the loader
+            // never appears and there's no feedback whatsoever. Show the error state directly
+            // rather than the ball, since we already know it'll fail.
+            Task {
+                isFetchingManifest = true
+                manifestFetchFailed = true
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                isFetchingManifest = false
+                manifestFetchFailed = false
+            }
         }
 
         // Analytics: app launch event

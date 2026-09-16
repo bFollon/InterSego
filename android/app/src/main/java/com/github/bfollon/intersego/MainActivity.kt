@@ -347,6 +347,17 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     }
                     launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
                     launch { HolidayService.refresh(this@MainActivity) }
+                } else {
+                    // No network at all — the fetch is never attempted, so without this the
+                    // loader never appears and there's no feedback whatsoever. Show the error
+                    // state directly rather than the ball, since we already know it'll fail.
+                    launch {
+                        isFetchingManifest = true
+                        manifestFetchFailed = true
+                        delay(1500)
+                        isFetchingManifest = false
+                        manifestFetchFailed = false
+                    }
                 }
             }
 
