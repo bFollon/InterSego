@@ -36,8 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
@@ -223,8 +226,10 @@ private fun SummaryRow(icon: ImageVector, iconTint: Color, label: String, value:
     }
 }
 
-/** Extra top inset reserved for [TightTransferPeekBanner] to peek out above the card. */
-val TightTransferPeekHeight = 32.dp
+/** Corner radius of [JourneyCard]'s [ElevatedCard] - shared with its [TightTransferPeekBanner]
+ * so the peeking banner's curve and hidden-height calculation can never drift out of sync with
+ * the card it backs (the two used to be two independently hardcoded 12dp values). */
+val JourneyCardCornerRadius = 12.dp
 
 @Composable
 private fun JourneyCard(
@@ -240,19 +245,16 @@ private fun JourneyCard(
         .filter { it < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER }
         .minOrNull()
 
-    // A Box, not just the card - when there's a tight transfer, TightTransferPeekBanner is drawn
-    // full width behind the card, with the card pushed down (top padding) so only a strip of the
-    // banner peeks out above the card's top edge, like a tab tucked behind it. Mirrors iOS's
-    // ZStack-based JourneyCard.
-    Box(modifier = Modifier.fillMaxWidth()) {
-        if (tightestMargin != null) {
-            TightTransferPeekBanner(title = "Transbordo ajustado · $tightestMargin min de margen")
-        }
+    PeekingBannerCard(
+        bannerTitle = tightestMargin?.let { "Transbordo ajustado · $it min de margen" },
+        cornerRadius = JourneyCardCornerRadius,
+    ) { topPadding ->
         ElevatedCard(
             onClick = onClick,
+            shape = RoundedCornerShape(JourneyCardCornerRadius),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (tightestMargin != null) TightTransferPeekHeight else 0.dp)
+                .padding(top = topPadding)
         ) {
             Column {
                 Column(
@@ -322,33 +324,43 @@ private fun JourneyCard(
 }
 
 /**
- * Warning banner tucked behind a card, peeking out above its top edge - see the `Box` in
- * [JourneyCard], and the equivalent one wrapping the "Pasos" card in JourneyDetailScreen. Solid-
- * filled (not the light tint used elsewhere for passive notes) since it needs to read as a
- * distinct layer sitting behind the card, not a tint within it. Bottom corners square, not
- * rounded - this banner is the same width as the card sitting on top of it, so a rounded bottom
- * corner here would clash with the card's own rounded top corner right where they overlap. Only
- * the top needs rounding (it's the only part that's ever actually visible, peeking above the
- * card). Mirrors iOS's TightTransferPeekBanner. Not `private` - shared with JourneyDetailScreen.
+ * Warning banner tucked behind a card, peeking out above its top edge - see [PeekingBannerCard],
+ * which wraps this together with the card it backs, both here in [JourneyCard] and for the
+ * "Pasos" card in JourneyDetailScreen. Solid-filled (not the light tint used elsewhere for
+ * passive notes) since it needs to read as a distinct layer sitting behind the card, not a tint
+ * within it. Bottom corners square, not rounded - this banner is the same width as the card
+ * sitting on top of it, so a rounded bottom corner here would clash with the card's own rounded
+ * top corner right where they overlap. Only the top needs rounding (it's the only part that's
+ * ever actually visible, peeking above the card). Not `private` - shared with JourneyDetailScreen.
  */
+/** Breathing room between the banner's own text and wherever the card in front of it starts -
+ * purely cosmetic (the [cornerRadius]-sized padding below already guarantees full coverage on
+ * its own), so a small fixed constant is fine here. Rides along on top of that minimum - see the
+ * `bottom` padding below. */
+private val TightTransferPeekVisibleGap = 6.dp
+
 @Composable
-fun TightTransferPeekBanner(title: String, subtitle: String? = null) {
+fun TightTransferPeekBanner(
+    title: String,
+    subtitle: String? = null,
+    cornerRadius: Dp,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+            .clip(RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = 0.dp, bottomEnd = 0.dp))
             .background(RouteOrange)
             // Bottom padding is the part that ends up hidden behind the card on top; only the
-            // top strip (icon + text) shows above the card's edge. A bit less when there's a
-            // second line - the caller reserves proportionally more peek height for that case,
-            // so less needs to stay hidden to still be fully covered.
-            // The hidden portion (this minus the caller's peek height) must stay at least as
-            // tall as the card's own corner radius, or the last sliver of the card's rounded
-            // corner has nothing opaque behind it - a background-colored gap right at the tip
-            // of the curve. Two-line banners reserve more here since their caller
-            // (JourneyDetailScreen's Pasos card) uses a taller peek (48dp vs. this card's
-            // TightTransferPeekHeight, 32dp), which eats further into the hidden portion.
-            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = if (subtitle != null) 48.dp else 20.dp),
+            // top strip (icon + text + TightTransferPeekVisibleGap) shows above the card's edge.
+            // `cornerRadius` is the hard minimum - the card's rounded top corner cuts away a
+            // quarter-circle of that radius, so the banner must stay opaque at least that far
+            // past the card's top edge or the tip of the curve has a background-colored gap
+            // behind it. [PeekingBannerCard] measures this banner's actual rendered height (which
+            // grows with the title/subtitle text and this gap) and derives the visible peek from
+            // that minus `cornerRadius` - so a longer stop name or a larger system font scale
+            // grows the peek automatically instead of relying on a hand-tuned guess per caller.
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = cornerRadius + TightTransferPeekVisibleGap),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -359,6 +371,46 @@ fun TightTransferPeekBanner(title: String, subtitle: String? = null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White)
             }
         }
+    }
+}
+
+/**
+ * Wraps [content] (a card) with an optional [TightTransferPeekBanner] tucked behind it, peeking
+ * out above the card's rounded top corners. `content` receives the top padding it must apply to
+ * itself (in addition to its own corner clipping/radius) - this composable only computes that
+ * offset, it doesn't draw the card.
+ *
+ * The peek height (how far the card is pushed down) is derived at layout time from the banner's
+ * own measured height ([onGloballyPositioned]) minus [cornerRadius], rather than a value
+ * hand-tuned per caller. That measured height already reflects however tall the banner's
+ * title/subtitle text actually renders - so it self-adjusts for a longer stop name, a wrapped
+ * line, or a larger system font scale instead of silently under- or over-shooting a guess made
+ * for one specific string at one specific text size. Not `private` - shared with
+ * JourneyDetailScreen.
+ */
+@Composable
+fun PeekingBannerCard(
+    bannerTitle: String?,
+    bannerSubtitle: String? = null,
+    cornerRadius: Dp,
+    content: @Composable (topPadding: Dp) -> Unit,
+) {
+    val density = LocalDensity.current
+    var bannerHeight by remember(bannerTitle, bannerSubtitle) { mutableStateOf(0.dp) }
+    val topPadding = if (bannerTitle != null) (bannerHeight - cornerRadius).coerceAtLeast(0.dp) else 0.dp
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (bannerTitle != null) {
+            TightTransferPeekBanner(
+                title = bannerTitle,
+                subtitle = bannerSubtitle,
+                cornerRadius = cornerRadius,
+                modifier = Modifier.onGloballyPositioned {
+                    bannerHeight = with(density) { it.size.height.toDp() }
+                }
+            )
+        }
+        content(topPadding)
     }
 }
 

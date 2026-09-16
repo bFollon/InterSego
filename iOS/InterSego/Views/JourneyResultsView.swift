@@ -8,6 +8,7 @@
  */
 
 import SwiftUI
+import UIKit
 
 /// Owns the async search + stop-lookup state for a `JourneyResultsSelection`, so
 /// `JourneyResultsView` itself stays a plain, previewable display component.
@@ -267,17 +268,11 @@ private struct JourneyCard: View {
     }
 
     var body: some View {
-        ZStack(alignment: .top) {
-            if let tightestMargin {
-                // The banner's own height (content + extra bottom padding) is taller than what
-                // ends up visible - the card on top covers its lower portion, so only a strip
-                // peeks out above the card's top edge, like a tab tucked behind it. Same width
-                // as the card - its bottom corners are square (see TightTransferPeekBanner), so
-                // there's no rounded edge left to clash with the card's own rounded top corners.
-                TightTransferPeekBanner(title: "Transbordo ajustado · \(tightestMargin) min de margen")
-            }
+        PeekingBannerCard(
+            bannerTitle: tightestMargin.map { "Transbordo ajustado · \($0) min de margen" },
+            cornerRadius: cardCornerRadius
+        ) {
             card
-                .padding(.top, tightestMargin != nil ? 32 : 0)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
@@ -362,19 +357,44 @@ private struct JourneyRow: View {
     }
 }
 
-/// Warning banner tucked behind a card, peeking out above its top edge - see `JourneyCard`'s
-/// `ZStack` here, and the equivalent one wrapping the "Pasos" card in JourneyDetailView. Solid-
-/// filled (not the light tint used elsewhere for passive notes like "Horarios orientativos")
-/// since it needs to read as a distinct layer sitting behind the card, not a tint within it.
-/// Not `private` - shared with JourneyDetailView.
+/// Warning banner tucked behind a card, peeking out above its top edge - see `PeekingBannerCard`,
+/// which wraps this together with the card it backs on both `JourneyCard` here and the "Pasos"
+/// card in JourneyDetailView. Solid-filled (not the light tint used elsewhere for passive notes
+/// like "Horarios orientativos") since it needs to read as a distinct layer sitting behind the
+/// card, not a tint within it. Not `private` - shared with JourneyDetailView.
 struct TightTransferPeekBanner: View {
     let title: String
     var subtitle: String? = nil
+    /// Shared with the card this banner backs - both the visible top strip's curve and the
+    /// minimum hidden height below it (see `PeekingBannerCard`) are derived from this, so the two
+    /// views can never drift out of sync the way a second hardcoded radius could.
+    let cornerRadius: CGFloat
+
+    fileprivate static let topPadding: CGFloat = 8
+    fileprivate static let lineSpacing: CGFloat = 2
+    /// Breathing room between the banner's own text and wherever the card in front of it starts -
+    /// purely cosmetic (the corner-radius padding below already guarantees full coverage on its
+    /// own), so a small fixed constant is fine here per-platform, same as the Android version.
+    fileprivate static let visibleGap: CGFloat = 6
+
+    /// Height of the visible strip that ends up peeking above the card: this banner's own top
+    /// padding plus its text content plus `visibleGap`, sized from the same Dynamic-Type-aware
+    /// font metric the text itself renders with (`.caption`) - not a value hand-tuned for one
+    /// specific string at one specific text size. `PeekingBannerCard` uses this (rather than
+    /// measuring the banner at layout time) to offset the card - a closed-form calculation avoids
+    /// the GeometryReader/PreferenceKey dance, which proved unreliable inside a `List` row (the
+    /// banner intermittently failed to render, and rows lost their full width).
+    static func visibleHeight(hasSubtitle: Bool) -> CGFloat {
+        let lineHeight = UIFont.preferredFont(forTextStyle: .caption1).lineHeight
+        let lines: CGFloat = hasSubtitle ? 2 : 1
+        let textHeight = lines * lineHeight + (hasSubtitle ? lineSpacing : 0)
+        return topPadding + textHeight + visibleGap
+    }
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle.fill")
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: Self.lineSpacing) {
                 Text(title)
                 if let subtitle {
                     Text(subtitle).fontWeight(.regular)
@@ -386,22 +406,47 @@ struct TightTransferPeekBanner: View {
         .fontWeight(.semibold)
         .foregroundStyle(.white)
         .padding(.horizontal, 12)
-        .padding(.top, 8)
+        .padding(.top, Self.topPadding)
         // Extra bottom padding - this is the part that ends up hidden behind the card on top;
-        // only the top strip (icon + text) shows above the card's edge. This must stay at least
-        // as tall as the card's own corner radius, or the last sliver of the card's rounded
-        // corner has nothing opaque behind it - a background-colored gap right at the tip of the
-        // curve. The two-line case reserves more here since its caller (JourneyDetailView's
-        // PasosCard) uses a taller peek (48 vs. this card's 32), which eats further into the
-        // hidden portion - both cards share the same 14pt corner radius.
-        .padding(.bottom, subtitle != nil ? 48 : 20)
+        // only the top strip (icon + text + `visibleGap`) shows above the card's edge. The
+        // `cornerRadius` portion is the hard minimum - the card's rounded top corner cuts away a
+        // quarter-circle of that radius, so the banner must stay opaque at least that far past
+        // the card's top edge or the tip of the curve has a background-colored gap behind it;
+        // `visibleGap` rides along on top of that minimum so `PeekingBannerCard`'s offset
+        // (`visibleHeight`, which also includes `visibleGap`) and this padding stay in lockstep.
+        .padding(.bottom, cornerRadius + Self.visibleGap)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange)
         // Bottom corners square, not rounded - this banner is the same width as the card sitting
         // on top of it, so a rounded bottom corner here would clash with the card's own rounded
         // top corner right where they overlap. Only the top needs rounding (it's the only part
-        // that's ever actually visible, peeking above the card). Radius matches both callers'
-        // cardCornerRadius (14) so the visible top strip curves exactly like the card it backs.
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 14))
+        // that's ever actually visible, peeking above the card).
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: cornerRadius, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: cornerRadius))
+    }
+}
+
+/// Wraps `content` (a card) with an optional `TightTransferPeekBanner` tucked behind it, peeking
+/// out above the card's rounded top corners. `content` should still apply its own corner
+/// clipping/radius - this view only handles the offset between the two layers.
+///
+/// The peek height (how far the card is pushed down) comes from `TightTransferPeekBanner.
+/// visibleHeight`, a closed-form calculation from the same font metric the banner's text renders
+/// with - not a value hand-tuned per caller, and not something measured at layout time (an
+/// earlier GeometryReader/PreferenceKey-based version of this view proved unreliable inside a
+/// `List` row). Not `private` - shared with JourneyDetailView.
+struct PeekingBannerCard<Content: View>: View {
+    var bannerTitle: String?
+    var bannerSubtitle: String? = nil
+    let cornerRadius: CGFloat
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            if let bannerTitle {
+                TightTransferPeekBanner(title: bannerTitle, subtitle: bannerSubtitle, cornerRadius: cornerRadius)
+            }
+            content()
+                .padding(.top, bannerTitle != nil ? TightTransferPeekBanner.visibleHeight(hasSubtitle: bannerSubtitle != nil) : 0)
+        }
     }
 }

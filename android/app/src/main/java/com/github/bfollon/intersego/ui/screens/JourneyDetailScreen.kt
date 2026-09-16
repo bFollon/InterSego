@@ -185,24 +185,20 @@ fun JourneyDetailScreen(
                 SectionHeader("Pasos")
             }
             item {
-                // A Box, not just the card - when there's a tight transfer, TightTransferPeekBanner
-                // is drawn full width behind the card, with the card pushed down (top padding) so
-                // only a strip of the banner peeks out above the card's rounded top corners, like a
-                // tab tucked behind it. Same pattern as JourneyResultsScreen's JourneyCard - and
-                // same banner, styled the same as the results-list warning rather than the light
-                // tint this screen used to show under the map.
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (tightMargin != null) {
-                        TightTransferPeekBanner(
-                            title = "Transbordo ajustado en ${stopName(tightMargin.stopId)}",
-                            subtitle = "${tightMargin.marginMin} min de margen"
-                        )
-                    }
+                // PeekingBannerCard draws TightTransferPeekBanner full width behind the card, with
+                // the card pushed down (top padding) so only a strip of the banner peeks out above
+                // the card's rounded top corners, like a tab tucked behind it. Same pattern as
+                // JourneyResultsScreen's JourneyCard - and same banner, styled the same as the
+                // results-list warning rather than the light tint this screen used to show under
+                // the map. GroupedCardCornerRadius (20dp) is shared with GroupedCard's own shape
+                // below so the banner's curve/hidden-height can't drift out of sync with the card.
+                PeekingBannerCard(
+                    bannerTitle = tightMargin?.let { "Transbordo ajustado en ${stopName(it.stopId)}" },
+                    bannerSubtitle = tightMargin?.let { "${it.marginMin} min de margen" },
+                    cornerRadius = GroupedCardCornerRadius,
+                ) { topPadding ->
                     GroupedCard(
-                        // Taller than JourneyResultsScreen's JourneyCard (TightTransferPeekHeight,
-                        // 32dp) - this banner is two lines (stop name + margin) instead of one, so
-                        // more of it needs to peek above the card to stay fully visible.
-                        modifier = Modifier.padding(top = if (tightMargin != null) 48.dp else 0.dp)
+                        modifier = Modifier.padding(top = topPadding)
                     ) {
                         val steps = journey.stepsWithWaits()
                         steps.forEachIndexed { index, step ->

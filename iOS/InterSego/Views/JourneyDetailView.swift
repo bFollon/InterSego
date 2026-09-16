@@ -167,8 +167,8 @@ struct JourneyDetailView: View {
 
 /// The "Pasos" leg-by-leg breakdown, drawn as a self-contained card (see the `.listRowInsets`/
 /// `.listRowBackground` bypass at the call site) so a tight-transfer warning can be layered as a
-/// banner tucked behind it, peeking out above its top edge - same pattern and same
-/// `TightTransferPeekBanner` as JourneyResultsView's `JourneyCard`.
+/// banner tucked behind it, peeking out above its top edge - same `PeekingBannerCard`/
+/// `TightTransferPeekBanner` pattern as JourneyResultsView's `JourneyCard`.
 private struct PasosCard: View {
     let journey: Journey
     let stopName: (String) -> String
@@ -177,20 +177,14 @@ private struct PasosCard: View {
     let onLegSelected: (_ routeId: String, _ stopId: String) -> Void
 
     private let cardCornerRadius: CGFloat = 14
-    /// Taller than JourneyResultsView's JourneyCard (32) - this banner is two lines (stop name +
-    /// margin) instead of one, so more of it needs to peek above the card to stay fully visible.
-    private let peekHeight: CGFloat = 48
 
     var body: some View {
-        ZStack(alignment: .top) {
-            if let tightMargin {
-                TightTransferPeekBanner(
-                    title: "Transbordo ajustado en \(stopName(tightMargin.stopId))",
-                    subtitle: "\(tightMargin.marginMin) min de margen"
-                )
-            }
+        PeekingBannerCard(
+            bannerTitle: tightMargin.map { "Transbordo ajustado en \(stopName($0.stopId))" },
+            bannerSubtitle: tightMargin.map { "\($0.marginMin) min de margen" },
+            cornerRadius: cardCornerRadius
+        ) {
             card
-                .padding(.top, tightMargin != nil ? peekHeight : 0)
         }
     }
 
