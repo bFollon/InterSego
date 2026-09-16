@@ -363,9 +363,11 @@ private struct JourneyRow: View {
 
 /// Warning banner tucked behind a card, peeking out above its top edge - see `PeekingBannerCard`,
 /// which wraps this together with the card it backs on both `JourneyCard` here and the "Pasos"
-/// card in JourneyDetailView. Solid-filled (not the light tint used elsewhere for passive notes
-/// like "Horarios orientativos") since it needs to read as a distinct layer sitting behind the
-/// card, not a tint within it. Not `private` - shared with JourneyDetailView.
+/// card in JourneyDetailView. Light orange tint matching the app's other warning surfaces
+/// (`FestivoBanner`, the LaLiga blocking banner, the service-alerts pill - all `.opacity(0.12)`
+/// background + full-color foreground) rather than a solid fill - the List row it sits behind is
+/// itself opaque, so the tint still fully backs the card's rounded corner with no visible gap.
+/// Not `private` - shared with JourneyDetailView.
 struct TightTransferPeekBanner: View {
     let title: String
     var subtitle: String? = nil
@@ -408,7 +410,7 @@ struct TightTransferPeekBanner: View {
         }
         .font(.caption)
         .fontWeight(.semibold)
-        .foregroundStyle(.white)
+        .foregroundStyle(.orange)
         .padding(.horizontal, 12)
         .padding(.top, Self.topPadding)
         // Extra bottom padding - this is the part that ends up hidden behind the card on top;
@@ -420,7 +422,7 @@ struct TightTransferPeekBanner: View {
         // (`visibleHeight`, which also includes `visibleGap`) and this padding stay in lockstep.
         .padding(.bottom, cornerRadius + Self.visibleGap)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.orange)
+        .background(Color.orange.opacity(0.12))
         // Bottom corners square, not rounded - this banner is the same width as the card sitting
         // on top of it, so a rounded bottom corner here would clash with the card's own rounded
         // top corner right where they overlap. Only the top needs rounding (it's the only part

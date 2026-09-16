@@ -52,7 +52,7 @@ import com.github.bfollon.intersego.services.JourneyReminderHelper
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
 import com.github.bfollon.intersego.services.TripPlannerPrefs
-import com.github.bfollon.intersego.ui.theme.RouteOrange
+import com.github.bfollon.intersego.ui.theme.warningColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -323,22 +323,25 @@ private fun JourneyCard(
     }
 }
 
-/**
- * Warning banner tucked behind a card, peeking out above its top edge - see [PeekingBannerCard],
- * which wraps this together with the card it backs, both here in [JourneyCard] and for the
- * "Pasos" card in JourneyDetailScreen. Solid-filled (not the light tint used elsewhere for
- * passive notes) since it needs to read as a distinct layer sitting behind the card, not a tint
- * within it. Bottom corners square, not rounded - this banner is the same width as the card
- * sitting on top of it, so a rounded bottom corner here would clash with the card's own rounded
- * top corner right where they overlap. Only the top needs rounding (it's the only part that's
- * ever actually visible, peeking above the card). Not `private` - shared with JourneyDetailScreen.
- */
 /** Breathing room between the banner's own text and wherever the card in front of it starts -
  * purely cosmetic (the [cornerRadius]-sized padding below already guarantees full coverage on
  * its own), so a small fixed constant is fine here. Rides along on top of that minimum - see the
  * `bottom` padding below. */
 private val TightTransferPeekVisibleGap = 6.dp
 
+/**
+ * Warning banner tucked behind a card, peeking out above its top edge - see [PeekingBannerCard],
+ * which wraps this together with the card it backs, both here in [JourneyCard] and for the
+ * "Pasos" card in JourneyDetailScreen. Light tint matching the app's other warning surfaces (the
+ * disclaimer cards in NextDepartureScreen: [warningColor] at 15% alpha background + full-color
+ * icon/text) rather than a solid fill - the surface it sits behind (the screen background,
+ * revealed through this row's `listRowBackground`-equivalent transparency) is itself opaque, so
+ * the tint still fully backs the card's rounded corner with no visible gap. Bottom corners
+ * square, not rounded - this banner is the same width as the card sitting on top of it, so a
+ * rounded bottom corner here would clash with the card's own rounded top corner right where they
+ * overlap. Only the top needs rounding (it's the only part that's ever actually visible, peeking
+ * above the card). Not `private` - shared with JourneyDetailScreen.
+ */
 @Composable
 fun TightTransferPeekBanner(
     title: String,
@@ -346,11 +349,12 @@ fun TightTransferPeekBanner(
     cornerRadius: Dp,
     modifier: Modifier = Modifier,
 ) {
+    val warning = warningColor()
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = 0.dp, bottomEnd = 0.dp))
-            .background(RouteOrange)
+            .background(warning.copy(alpha = 0.15f))
             // Bottom padding is the part that ends up hidden behind the card on top; only the
             // top strip (icon + text + TightTransferPeekVisibleGap) shows above the card's edge.
             // `cornerRadius` is the hard minimum - the card's rounded top corner cuts away a
@@ -364,11 +368,11 @@ fun TightTransferPeekBanner(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Icon(Icons.Filled.Warning, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        Icon(Icons.Filled.Warning, contentDescription = null, tint = warning, modifier = Modifier.size(16.dp))
         Column {
-            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = warning)
             if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = warning)
             }
         }
     }
