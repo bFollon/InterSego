@@ -77,6 +77,24 @@ enum WhatsNewService {
             body: "En Configuración → \u{201c}Pantalla de inicio\u{201d} puedes elegir qué acción aparece en cada una de las 4 tarjetas: Estoy en el autobús, Líneas de bus, Planificar viaje, Mis recordatorios, Consultar otro día o Favoritos.",
             version: "3.15.0"
         ),
+        WhatsNewEntry(
+            icon: "soccerball",
+            title: "Aviso de bloqueo por LaLiga",
+            body: "Si nuestro servidor no responde durante un partido, ahora te lo indicamos con un aviso específico en lugar de un simple \u{201c}sin conexión\u{201d}, explicando por qué ocurre y con enlaces a más información.",
+            version: "3.17.0"
+        ),
+        WhatsNewEntry(
+            icon: "bell.badge",
+            title: "Recordatorios para tus viajes planificados",
+            body: "Al planificar un viaje con \u{201c}Cómo llegar\u{201d}, ahora puedes pedir que te avisemos cuándo salir de casa, incluyendo el tiempo de camino hasta la parada.",
+            version: "3.17.0"
+        ),
+        WhatsNewEntry(
+            icon: "exclamationmark.triangle",
+            title: "Aviso de transbordo ajustado",
+            body: "Los resultados de \u{201c}Cómo llegar\u{201d} ahora marcan los itinerarios con poco margen en un transbordo, para que sepas de antemano cuáles son más arriesgados.",
+            version: "3.17.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,

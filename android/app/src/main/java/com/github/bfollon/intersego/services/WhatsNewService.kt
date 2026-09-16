@@ -13,9 +13,12 @@ import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.edit
 import com.github.bfollon.intersego.BuildConfig
@@ -88,6 +91,24 @@ object WhatsNewService {
             title = "Tu pantalla de inicio, a tu medida",
             body = "En Configuración → “Pantalla de inicio” puedes elegir qué acción aparece en cada una de las 4 tarjetas: Estoy en el autobús, Líneas de bus, Planificar viaje, Mis recordatorios, Consultar otro día o Favoritos.",
             version = "2.17.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.SportsSoccer,
+            title = "Aviso de bloqueo por LaLiga",
+            body = "Si nuestro servidor no responde durante un partido, ahora te lo indicamos con un aviso específico en lugar de un simple \"sin conexión\", explicando por qué ocurre y con enlaces a más información.",
+            version = "2.19.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.NotificationsActive,
+            title = "Recordatorios para tus viajes planificados",
+            body = "Al planificar un viaje con \"Cómo llegar\", ahora puedes pedir que te avisemos cuándo salir de casa, incluyendo el tiempo de camino hasta la parada.",
+            version = "2.19.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.Warning,
+            title = "Aviso de transbordo ajustado",
+            body = "Los resultados de \"Cómo llegar\" ahora marcan los itinerarios con poco margen en un transbordo, para que sepas de antemano cuáles son más arriesgados.",
+            version = "2.19.0",
         ),
     )
 
