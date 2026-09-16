@@ -152,6 +152,8 @@ The app's most distinctive UI pattern: a configurable landing layout built from 
 ### Banners / alert pills
 Severity-coded compact pill (service alerts) and full-width colored banner (Festivo/holiday notice) — same visual language on both platforms: tinted background, colored left accent or icon, short label text, tap-to-expand-detail where applicable.
 
+**The light-tint warning fill is the only sanctioned warning surface.** The journey planner's tight-transfer transfer-margin banner (`TightTransferPeekBanner`, results list + detail "Pasos" card) was first shipped as a solid `#FF9800`/`RouteOrange` fill with white text — a one-off style with no precedent elsewhere in the app. Corrected to match every other warning surface: iOS `Color.orange.opacity(0.12)` background + `.orange` foreground (same formula as `FestivoBanner`, the LaLiga-blocking banner, and the service-alerts pill); Android the dedicated `warningColor()` token (already used by `NextDepartureScreen`'s disclaimer cards) at 15% alpha background + full-color foreground. Both stay fully opaque once composited over the screen's own opaque background, so this remains safe even for banners that must fully back another layer behind a rounded card corner (see the peeking-card pattern below) — light-tint is a color choice, not a transparency compromise.
+
 ### Navigation
 - **Android:** Top app bar for screen context; system predictive Back honored; no bottom navigation bar currently — navigation is stack-based from Landing.
 - **iOS:** Navigation stack with large titles collapsing to inline on scroll for detail screens; sheets for self-contained tasks (tutorials, About, favorites); left-edge swipe-back preserved.
@@ -169,3 +171,4 @@ Severity-coded compact pill (service alerts) and full-width colored banner (Fest
 - **Don't** introduce Material 3 Expressive shape-morphing, the expressive type scale, or expressive motion into Android without a deliberate decision — the current Android implementation is plain default Material 3, and this document does not commit to Expressive.
 - **Don't** add a fourth "success/confirmed" green. Reuse `#34C759` (the one actually wired to a confirmation UI today) unless a rebrand decision consolidates all three greens deliberately.
 - **Don't** recolor the app's primary/accent to brand-icon green (`#3CA27A`) as a side effect of an unrelated task — that's a scoped rebrand decision for the user to make explicitly, not an incidental fix.
+- **Don't** give a new warning/alert banner a solid color fill with white/light text. Every warning surface in the app uses a light tint (`.opacity(0.12)` on iOS, `warningColor()` at 15% alpha on Android) with full-color text/icon — see the Named Rule under Banners / alert pills.
