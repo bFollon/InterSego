@@ -211,7 +211,6 @@ Android and iOS version numbers drift from each other by design (different histo
 - If a feature exists on one platform but not the other, leave the row so drift is visible
 
 ### Commit Guidelines
-- Do not put any Claude co-authoring reference or link to claude.ai in commits
 - Before committing, allow the user to test the changes. Only commit after confirmation
 - NEVER push anything to the remote repository unless explicitly asked
 
