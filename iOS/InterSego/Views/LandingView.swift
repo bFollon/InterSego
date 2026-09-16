@@ -105,7 +105,7 @@ struct BouncingBallLoader: View {
 
             if hasError {
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 15, weight: .heavy))
                     .foregroundStyle(.red)
                     .opacity(errorBlinkVisible ? 1 : 0.25)
                     .frame(width: trackWidth, alignment: .center)

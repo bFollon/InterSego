@@ -39,7 +39,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
@@ -675,7 +674,29 @@ private fun BouncingBallLoader(
                     cap = StrokeCap.Round,
                 )
 
-                if (!hasError) {
+                if (hasError) {
+                    // Drawn by hand (not Icons.Default.Close) so the stroke can be made bold
+                    // enough to actually read at this size — the vector icon's default stroke
+                    // was too thin here.
+                    val crossRadius = ballRadius + 1.dp.toPx()
+                    val crossCenter = Offset(size.width / 2f, trackY)
+                    val crossColor = AlertCritical.copy(alpha = errorAlpha)
+                    val crossStroke = 2.5.dp.toPx()
+                    drawLine(
+                        color = crossColor,
+                        start = Offset(crossCenter.x - crossRadius, crossCenter.y - crossRadius),
+                        end = Offset(crossCenter.x + crossRadius, crossCenter.y + crossRadius),
+                        strokeWidth = crossStroke,
+                        cap = StrokeCap.Round,
+                    )
+                    drawLine(
+                        color = crossColor,
+                        start = Offset(crossCenter.x - crossRadius, crossCenter.y + crossRadius),
+                        end = Offset(crossCenter.x + crossRadius, crossCenter.y - crossRadius),
+                        strokeWidth = crossStroke,
+                        cap = StrokeCap.Round,
+                    )
+                } else {
                     val ballX = trackInset + (size.width - 2 * trackInset) * progress
                     // Flatten along the direction of travel (horizontal) and bulge perpendicular
                     // (vertical) — matches a ball bouncing off a wall it's moving into, not one
@@ -684,15 +705,6 @@ private fun BouncingBallLoader(
                         drawCircle(color = color, radius = ballRadius, center = Offset(ballX, trackY))
                     }
                 }
-            }
-
-            if (hasError) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = null,
-                    tint = AlertCritical.copy(alpha = errorAlpha),
-                    modifier = Modifier.size(14.dp),
-                )
             }
         }
 
