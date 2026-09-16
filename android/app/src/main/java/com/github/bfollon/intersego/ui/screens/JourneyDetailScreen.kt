@@ -46,7 +46,6 @@ import com.github.bfollon.intersego.services.JourneyReminderHelper
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
 import com.github.bfollon.intersego.services.TripPlannerPrefs
-import com.github.bfollon.intersego.ui.theme.warningColor
 import java.time.LocalDate
 
 private fun formatMin(minutesOfDay: Int): String {
@@ -90,8 +89,10 @@ fun JourneyDetailScreen(
     val matchKey = reminderContext?.let { JourneyReminderHelper.matchKey(it) }
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
     val isReminderSet = matchKey != null && reminderKeys.contains(matchKey)
-    val tightMargins = remember(journey) {
-        journey.transferMargins().filter { it.marginMin < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER }
+    // At most one: the planner never returns more than one mid-journey transfer (see
+    // docs/JOURNEY_PLANNER.md).
+    val tightMargin = remember(journey) {
+        journey.transferMargins().firstOrNull { it.marginMin < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER }
     }
 
     Scaffold(
@@ -144,9 +145,9 @@ fun JourneyDetailScreen(
                 SectionHeader("Itinerario")
             }
             item {
-                // One grouped card for the whole itinerary summary (departure/arrival rows, map,
-                // tight-transfer warnings) rather than separate floating cards - matches iOS,
-                // where these all live in one List Section and read as a single unified block.
+                // One grouped card for the whole itinerary summary (departure/arrival rows, map)
+                // rather than separate floating cards - matches iOS, where these all live in one
+                // List Section and read as a single unified block.
                 GroupedCard(modifier = Modifier.padding(bottom = 16.dp)) {
                     TripSummaryRow(
                         icon = Icons.Filled.FiberManualRecord,
@@ -164,55 +165,58 @@ fun JourneyDetailScreen(
                         time = formatMin(journey.arrivalMin)
                     )
                     // Full-bleed, no horizontal inset - matches iOS, where the map stretches to
-                    // the card's full width rather than sitting inset like the rows above it.
-                    // When there's no tight-transfer row below it, the map is the card's last
-                    // element - flush against the card's own bottom edge (no padding), so its
-                    // bottom corners use GroupedCard's own radius (20dp) instead of the map's
-                    // usual 12dp, matching the outer card's curve exactly rather than leaving a
-                    // gap or clipping unevenly against it.
+                    // the card's full width rather than sitting inset like the rows above it. The
+                    // map is always this card's last element, flush against its bottom edge (no
+                    // padding), so its bottom corners use GroupedCard's own radius (20dp) instead
+                    // of the map's usual 12dp, matching the outer card's curve exactly rather than
+                    // leaving a gap or clipping unevenly against it.
                     ItineraryMapView(
                         journey = journey,
                         stopLookup = stopLookup,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 16.dp, bottom = if (tightMargins.isEmpty()) 0.dp else 8.dp)
+                            .padding(top = 16.dp)
                             .height(220.dp)
-                            .clip(
-                                if (tightMargins.isEmpty())
-                                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
-                                else
-                                    RoundedCornerShape(12.dp)
-                            )
+                            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 20.dp, bottomEnd = 20.dp))
                     )
-                    if (tightMargins.isNotEmpty()) {
-                        Column(
-                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            tightMargins.forEach { margin ->
-                                TightTransferRow(stopName = stopName(margin.stopId), marginMin = margin.marginMin)
-                            }
-                        }
-                    }
                 }
             }
             item {
                 SectionHeader("Pasos")
             }
             item {
-                GroupedCard {
-                    val steps = journey.stepsWithWaits()
-                    steps.forEachIndexed { index, step ->
-                        if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                        when (step) {
-                            is JourneyStep.LegStep -> {
-                                val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> {
-                                    AnalyticsService.track("journey_leg_tapped", mapOf("route" to ride.routeId))
-                                    onLegSelected(ride.routeId, ride.fromStop)
-                                } }
-                                LegRow(leg = step.leg, stopName = stopName, onClick = onClick)
+                // A Box, not just the card - when there's a tight transfer, TightTransferPeekBanner
+                // is drawn full width behind the card, with the card pushed down (top padding) so
+                // only a strip of the banner peeks out above the card's rounded top corners, like a
+                // tab tucked behind it. Same pattern as JourneyResultsScreen's JourneyCard - and
+                // same banner, styled the same as the results-list warning rather than the light
+                // tint this screen used to show under the map.
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (tightMargin != null) {
+                        TightTransferPeekBanner(
+                            title = "Transbordo ajustado en ${stopName(tightMargin.stopId)}",
+                            subtitle = "${tightMargin.marginMin} min de margen"
+                        )
+                    }
+                    GroupedCard(
+                        // Taller than JourneyResultsScreen's JourneyCard (TightTransferPeekHeight,
+                        // 32dp) - this banner is two lines (stop name + margin) instead of one, so
+                        // more of it needs to peek above the card to stay fully visible.
+                        modifier = Modifier.padding(top = if (tightMargin != null) 48.dp else 0.dp)
+                    ) {
+                        val steps = journey.stepsWithWaits()
+                        steps.forEachIndexed { index, step ->
+                            if (index > 0) HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            when (step) {
+                                is JourneyStep.LegStep -> {
+                                    val onClick: (() -> Unit)? = (step.leg as? Leg.Ride)?.let { ride -> {
+                                        AnalyticsService.track("journey_leg_tapped", mapOf("route" to ride.routeId))
+                                        onLegSelected(ride.routeId, ride.fromStop)
+                                    } }
+                                    LegRow(leg = step.leg, stopName = stopName, onClick = onClick)
+                                }
+                                is JourneyStep.Wait -> WaitRow(minutes = step.minutes)
                             }
-                            is JourneyStep.Wait -> WaitRow(minutes = step.minutes)
                         }
                     }
                 }
@@ -285,26 +289,6 @@ private fun LegRow(leg: Leg, stopName: (String) -> String, onClick: (() -> Unit)
                     Text("${leg.minutes} min (${leg.meters} m)", style = MaterialTheme.typography.bodySmall)
                 }
             }
-        }
-    }
-}
-
-/** Per-transfer variant of [TightTransferBadge], naming the stop where the connection is tight. */
-@Composable
-private fun TightTransferRow(stopName: String, marginMin: Int) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(warningColor().copy(alpha = 0.12f))
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(Icons.Filled.Warning, contentDescription = null, tint = warningColor())
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text("Transbordo ajustado en $stopName", fontWeight = FontWeight.Medium)
-            Text("$marginMin min de margen", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

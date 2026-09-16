@@ -274,7 +274,7 @@ private struct JourneyCard: View {
                 // peeks out above the card's top edge, like a tab tucked behind it. Same width
                 // as the card - its bottom corners are square (see TightTransferPeekBanner), so
                 // there's no rounded edge left to clash with the card's own rounded top corners.
-                TightTransferPeekBanner(marginMin: tightestMargin)
+                TightTransferPeekBanner(title: "Transbordo ajustado · \(tightestMargin) min de margen")
             }
             card
                 .padding(.top, tightestMargin != nil ? 32 : 0)
@@ -362,17 +362,24 @@ private struct JourneyRow: View {
     }
 }
 
-/// Warning banner tucked behind a `JourneyCard`, peeking out above its top edge - see
-/// `JourneyCard`'s `ZStack`. Solid-filled (not the light tint used elsewhere for passive notes
-/// like "Horarios orientativos") since it needs to read as a distinct layer sitting behind the
-/// card, not a tint within it.
-private struct TightTransferPeekBanner: View {
-    let marginMin: Int
+/// Warning banner tucked behind a card, peeking out above its top edge - see `JourneyCard`'s
+/// `ZStack` here, and the equivalent one wrapping the "Pasos" card in JourneyDetailView. Solid-
+/// filled (not the light tint used elsewhere for passive notes like "Horarios orientativos")
+/// since it needs to read as a distinct layer sitting behind the card, not a tint within it.
+/// Not `private` - shared with JourneyDetailView.
+struct TightTransferPeekBanner: View {
+    let title: String
+    var subtitle: String? = nil
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle.fill")
-            Text("Transbordo ajustado · \(marginMin) min de margen")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                if let subtitle {
+                    Text(subtitle).fontWeight(.regular)
+                }
+            }
             Spacer(minLength: 0)
         }
         .font(.caption)
@@ -381,8 +388,10 @@ private struct TightTransferPeekBanner: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         // Extra bottom padding - this is the part that ends up hidden behind the card on top;
-        // only the top strip (icon + text) shows above the card's edge.
-        .padding(.bottom, 20)
+        // only the top strip (icon + text) shows above the card's edge. A bit less when there's
+        // a second line - the caller reserves proportionally more peek height for that case, so
+        // less needs to stay hidden to still be fully covered.
+        .padding(.bottom, subtitle != nil ? 16 : 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange)
         // Bottom corners square, not rounded - this banner is the same width as the card sitting

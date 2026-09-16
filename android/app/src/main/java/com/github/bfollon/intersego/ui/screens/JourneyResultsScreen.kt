@@ -224,7 +224,7 @@ private fun SummaryRow(icon: ImageVector, iconTint: Color, label: String, value:
 }
 
 /** Extra top inset reserved for [TightTransferPeekBanner] to peek out above the card. */
-private val TightTransferPeekHeight = 32.dp
+val TightTransferPeekHeight = 32.dp
 
 @Composable
 private fun JourneyCard(
@@ -246,7 +246,7 @@ private fun JourneyCard(
     // ZStack-based JourneyCard.
     Box(modifier = Modifier.fillMaxWidth()) {
         if (tightestMargin != null) {
-            TightTransferPeekBanner(marginMin = tightestMargin)
+            TightTransferPeekBanner(title = "Transbordo ajustado · $tightestMargin min de margen")
         }
         ElevatedCard(
             onClick = onClick,
@@ -322,34 +322,37 @@ private fun JourneyCard(
 }
 
 /**
- * Warning banner tucked behind a [JourneyCard], peeking out above its top edge - see the `Box`
- * in [JourneyCard]. Solid-filled (not the light tint [TightTransferRow] in JourneyDetailScreen
- * uses) since it needs to read as a distinct layer sitting behind the card, not a tint within it.
- * Bottom corners square, not rounded - this banner is the same width as the card sitting on top
- * of it, so a rounded bottom corner here would clash with the card's own rounded top corner right
- * where they overlap. Only the top needs rounding (it's the only part that's ever actually
- * visible, peeking above the card). Mirrors iOS's TightTransferPeekBanner.
+ * Warning banner tucked behind a card, peeking out above its top edge - see the `Box` in
+ * [JourneyCard], and the equivalent one wrapping the "Pasos" card in JourneyDetailScreen. Solid-
+ * filled (not the light tint used elsewhere for passive notes) since it needs to read as a
+ * distinct layer sitting behind the card, not a tint within it. Bottom corners square, not
+ * rounded - this banner is the same width as the card sitting on top of it, so a rounded bottom
+ * corner here would clash with the card's own rounded top corner right where they overlap. Only
+ * the top needs rounding (it's the only part that's ever actually visible, peeking above the
+ * card). Mirrors iOS's TightTransferPeekBanner. Not `private` - shared with JourneyDetailScreen.
  */
 @Composable
-private fun TightTransferPeekBanner(marginMin: Int) {
+fun TightTransferPeekBanner(title: String, subtitle: String? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
             .background(RouteOrange)
             // Bottom padding is the part that ends up hidden behind the card on top; only the
-            // top strip (icon + text) shows above the card's edge.
-            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 20.dp),
+            // top strip (icon + text) shows above the card's edge. A bit less when there's a
+            // second line - the caller reserves proportionally more peek height for that case,
+            // so less needs to stay hidden to still be fully covered.
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = if (subtitle != null) 16.dp else 20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Icon(Icons.Filled.Warning, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-        Text(
-            "Transbordo ajustado · $marginMin min de margen",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
+        Column {
+            Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color.White)
+            if (subtitle != null) {
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White)
+            }
+        }
     }
 }
 
