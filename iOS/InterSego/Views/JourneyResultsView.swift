@@ -274,7 +274,11 @@ private struct JourneyCard: View {
         ) {
             card
         }
-        .padding(.horizontal, 16)
+        // No horizontal padding - the Section this row sits in already provides the
+        // inset-grouped margin from the screen edges (via `.listRowInsets(EdgeInsets())` at the
+        // call site, which zeroes only the row's own inset, not the section's). Adding padding
+        // here on top of that doubled the margin, making the card visibly narrower than every
+        // other card-style row in the app (e.g. JourneyDetailView's PasosCard, which has none).
         .padding(.vertical, 6)
     }
 
