@@ -22,4 +22,15 @@ val RouteLightOrange = Color(0xFFFFB74D)
 // Semantic UI colors
 val SuccessGreen = Color(0xFF4CAF50)
 val WarningOrange = Color(0xFFFFA726)
-val WarningOrangeText = Color(0xFF8B5E00)  // Darker orange-brown for text on light orange backgrounds
+
+// Service alert severity (see DESIGN.md's documented alert-critical/warning/info palette;
+// warning and info reuse RouteOrange/BusBlue below since they already match those values)
+val AlertCritical = Color(0xFFD32F2F)
+
+// DESIGN.md's "confirmation-green" (#34C759, iOS-system green) - distinct from SuccessGreen above
+val ConfirmationGreen = Color(0xFF34C759)
+
+// "InterSego" wordmark gradient (splash screen, Landing header, About screen). The second stop
+// was previously a hard-coded #007AFF (Apple's system blue) duplicated across all 3 call sites -
+// not a documented token. Now reuses the app's own transit-blue primary instead.
+val WordmarkGradient = listOf(ConfirmationGreen, BusBlue)

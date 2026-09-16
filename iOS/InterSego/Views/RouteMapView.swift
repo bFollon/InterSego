@@ -28,6 +28,7 @@ struct RouteMapView: View {
     @State private var currentViewId: String = ""
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var routePolyline: [CLLocationCoordinate2D] = []
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var currentView: RouteView? {
         routeViews.first { $0.id == currentViewId } ?? routeViews.first
@@ -162,7 +163,7 @@ struct RouteMapView: View {
             latitudeDelta: (maxLat - minLat) * (1 + padding),
             longitudeDelta: (maxLon - minLon) * (1 + padding),
         )
-        withAnimation(.easeInOut(duration: 0.4)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.4)) {
             cameraPosition = .region(MKCoordinateRegion(center: center, span: span))
         }
     }

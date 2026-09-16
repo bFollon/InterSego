@@ -132,6 +132,7 @@ import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
 import com.github.bfollon.intersego.ui.screens.RouteStopsScreen
 import com.github.bfollon.intersego.ui.screens.TimetableScreen
 import com.github.bfollon.intersego.ui.theme.InterSegoTheme
+import com.github.bfollon.intersego.ui.theme.WordmarkGradient
 import coil.Coil
 import coil.ImageLoader
 import coil.ImageLoaderFactory
@@ -391,7 +392,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
 @Composable
 fun SplashScreen() {
     val iconGreen = Color(0xFF3CA27A)
-    val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
+    val gradientColors = WordmarkGradient
 
     var logoVisible by remember { mutableStateOf(false) }
     var textVisible by remember { mutableStateOf(false) }

@@ -687,13 +687,18 @@ private struct DayScheduleBellButton: View {
                     .foregroundColor(bellState == .off ? .secondary : .accentColor)
             }
         }
-        .frame(width: 30, height: 30)
+        // 44x44 meets HIG's minimum touch target - kept as tap/long-press gestures rather than
+        // a Button (which doesn't compose cleanly with a simultaneous long-press here), so
+        // VoiceOver needs an explicit button trait + label to announce this as actionable.
+        .frame(width: 44, height: 44)
         .contentShape(Rectangle())
         .onTapGesture { onTap() }
         .onLongPressGesture {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             onLongPress()
         }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(bellState == .off ? "Programar recordatorio" : "Cancelar recordatorio")
     }
 }
 

@@ -30,6 +30,7 @@ struct ItineraryMapView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var ridePolylines: [Int: [CLLocationCoordinate2D]] = [:]
     @State private var hasLoaded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private struct Waypoint: Identifiable {
         let id: String
@@ -178,7 +179,7 @@ struct ItineraryMapView: View {
             latitudeDelta: max((maxLat - minLat) * (1 + padding), 0.01),
             longitudeDelta: max((maxLon - minLon) * (1 + padding), 0.01),
         )
-        withAnimation(.easeInOut(duration: 0.4)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.4)) {
             cameraPosition = .region(MKCoordinateRegion(center: center, span: span))
         }
     }

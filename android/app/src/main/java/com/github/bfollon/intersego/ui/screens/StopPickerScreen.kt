@@ -76,7 +76,9 @@ fun StopPickerScreen(
             )
         }
     ) { paddingValues ->
-        Column(modifier = Modifier.padding(paddingValues)) {
+        // Edge-to-edge doesn't auto-resize for the IME - without this, the bottom of the stop
+        // list can end up hidden behind the keyboard while the search field above stays focused.
+        Column(modifier = Modifier.padding(paddingValues).imePadding()) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },

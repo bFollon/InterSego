@@ -136,7 +136,7 @@ import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TaggedDeparture
 import com.github.bfollon.intersego.services.TimetableService
 import com.github.bfollon.intersego.services.TimetableQueryUtils
-import com.github.bfollon.intersego.ui.theme.WarningOrange
+import com.github.bfollon.intersego.ui.theme.warningColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -965,7 +965,7 @@ fun FutureDayWarningCard(daysAhead: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = WarningOrange.copy(alpha = 0.15f)
+            containerColor = warningColor().copy(alpha = 0.15f)
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -979,13 +979,13 @@ fun FutureDayWarningCard(daysAhead: Int) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = "Advertencia",
-                tint = WarningOrange,
+                tint = warningColor(),
                 modifier = Modifier.size(20.dp)
             )
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
-                color = WarningOrange,
+                color = warningColor(),
                 lineHeight = 18.sp
             )
         }
@@ -1461,8 +1461,10 @@ fun BellIcon(
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
+        // 48dp meets Material 3's minimum touch target - the icon inside stays visually
+        // unchanged (32dp/22dp/13dp), only the tappable/long-pressable area grows.
         modifier = modifier
-            .size(36.dp)
+            .size(48.dp)
             .clip(CircleShape)
             .combinedClickable(
                 onClick = { onTap?.invoke() },
@@ -1920,7 +1922,7 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
                 onClickLabel = if (expanded) "Contraer aviso" else "Expandir aviso"
             ) { expanded = !expanded },
         colors = CardDefaults.cardColors(
-            containerColor = WarningOrange.copy(alpha = 0.15f)
+            containerColor = warningColor().copy(alpha = 0.15f)
         ),
         shape = RoundedCornerShape(8.dp)
     ) {
@@ -1939,20 +1941,20 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = null,
-                    tint = WarningOrange,
+                    tint = warningColor(),
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
                     text = "Horarios orientativos",
                     style = MaterialTheme.typography.labelMedium,
-                    color = WarningOrange,
+                    color = warningColor(),
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
                 Icon(
                     imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = null,
-                    tint = WarningOrange,
+                    tint = warningColor(),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -1962,7 +1964,7 @@ fun TimesDisclaimerCard(modifier: Modifier = Modifier) {
                     text = "Los horarios mostrados son orientativos y pueden variar. " +
                         "Consulta siempre la información oficial de Linecar para confirmar los horarios actuales.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = WarningOrange,
+                    color = warningColor(),
                     lineHeight = 18.sp
                 )
             }

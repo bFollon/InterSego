@@ -68,6 +68,7 @@ import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.FeedbackCategory
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.ui.theme.WordmarkGradient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +77,7 @@ fun AboutScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
+    val gradientColors = WordmarkGradient
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
     val versionName = packageInfo.versionName ?: "Unknown"
     val versionCode = packageInfo.longVersionCode

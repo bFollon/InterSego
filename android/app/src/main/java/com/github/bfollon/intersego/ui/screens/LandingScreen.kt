@@ -72,10 +72,15 @@ import com.github.bfollon.intersego.data.ServiceAlert
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.LandingSlot
 import com.github.bfollon.intersego.services.MainLandingAction
+import com.github.bfollon.intersego.ui.theme.AlertCritical
+import com.github.bfollon.intersego.ui.theme.BusBlue
+import com.github.bfollon.intersego.ui.theme.ConfirmationGreen
+import com.github.bfollon.intersego.ui.theme.RouteOrange
+import com.github.bfollon.intersego.ui.theme.WordmarkGradient
 
-private val GreenTint = Color(0xFF34C759).copy(alpha = 0.1f)
-private val GreenBorder = Color(0xFF34C759).copy(alpha = 0.3f)
-private val GreenConfirmed = Color(0xFF34C759)
+private val GreenTint = ConfirmationGreen.copy(alpha = 0.1f)
+private val GreenBorder = ConfirmationGreen.copy(alpha = 0.3f)
+private val GreenConfirmed = ConfirmationGreen
 
 /** Resolves each pool action to its navigation callback. Shared with the "Más opciones" hub. */
 internal data class LandingActionCallbacks(
@@ -133,7 +138,7 @@ fun LandingScreen(
     val extra1 = landingSlots.getValue(LandingSlot.EXTRA_1)
     val extra2 = landingSlots.getValue(LandingSlot.EXTRA_2)
     val boardingBusVisible = MainLandingAction.BOARD_BUS in landingSlots.values
-    val gradientColors = listOf(Color(0xFF34C759), Color(0xFF007AFF))
+    val gradientColors = WordmarkGradient
 
     Column(
         modifier = Modifier
@@ -657,9 +662,9 @@ private fun LaLigaBlockingBanner(onClick: () -> Unit) {
 }
 
 private fun alertColor(severity: String): Color = when (severity) {
-    "critical" -> Color(0xFFB00020)
-    "warning"  -> Color(0xFFE65100)
-    else       -> Color(0xFF1565C0)
+    "critical" -> AlertCritical
+    "warning"  -> RouteOrange
+    else       -> BusBlue
 }
 
 private fun alertIcon(severity: String): ImageVector = when (severity) {

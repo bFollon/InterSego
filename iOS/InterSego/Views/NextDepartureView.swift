@@ -944,10 +944,20 @@ private struct NoDeparturesCard: View {
 
 // MARK: - Times Disclaimer Card
 
-private let warningOrangeText = Color(red: 0.55, green: 0.37, blue: 0.0)
+// Dynamic rather than a fixed RGB literal: the fixed value (~#8C5E00) only meets WCAG AA
+// (~5:1) against the light-mode background (Color.orange.opacity(0.12) over a near-white
+// systemBackground). In dark mode that same fixed color drops to ~3.2:1 against the far darker
+// composited background, below the 4.5:1 minimum for this caption-sized text - so this needs its
+// own dark-mode variant, not just a semantic color that happens to track appearance automatically.
+private let warningOrangeText = Color(uiColor: UIColor { traits in
+    traits.userInterfaceStyle == .dark
+        ? UIColor(red: 230/255, green: 170/255, blue: 90/255, alpha: 1)
+        : UIColor(red: 0.55, green: 0.37, blue: 0.0, alpha: 1)
+})
 
 private struct TimesDisclaimerCard: View {
     @State private var isExpanded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -986,7 +996,7 @@ private struct TimesDisclaimerCard: View {
         .background(Color.orange.opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .onTapGesture {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
                 isExpanded.toggle()
             }
         }
@@ -1039,13 +1049,18 @@ private struct BellButton: View {
                     .foregroundColor(bellState == .off ? .secondary : .accentColor)
             }
         }
-        .frame(width: 30, height: 30)
+        // 44x44 meets HIG's minimum touch target - kept as tap/long-press gestures rather than
+        // a Button (which doesn't compose cleanly with a simultaneous long-press here), so
+        // VoiceOver needs an explicit button trait + label to announce this as actionable.
+        .frame(width: 44, height: 44)
         .contentShape(Rectangle())
         .onTapGesture { onTap?() }
         .onLongPressGesture {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             onLongPress?()
         }
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel(bellState == .off ? "Programar recordatorio" : "Cancelar recordatorio")
     }
 }
 

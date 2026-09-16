@@ -17,6 +17,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -54,3 +55,13 @@ fun InterSegoTheme(
         content = content
     )
 }
+
+/**
+ * Warning/disclaimer accent color (times-disclaimer banners, seasonal notes). Material 3's
+ * `ColorScheme` has no "warning" role, so - unlike `primary`/`secondary`, which come from
+ * `MaterialTheme.colorScheme` and pick up Dynamic Color automatically - this needs its own
+ * light/dark pairing, following the same lighter-in-dark-mode pattern already used for
+ * `RouteOrange`/`RouteLightOrange`.
+ */
+@Composable
+fun warningColor(): Color = if (isSystemInDarkTheme()) RouteLightOrange else WarningOrange
