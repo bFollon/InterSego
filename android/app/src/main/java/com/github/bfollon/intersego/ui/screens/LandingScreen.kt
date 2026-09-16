@@ -73,8 +73,8 @@ import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.LandingSlot
 import com.github.bfollon.intersego.services.MainLandingAction
 import com.github.bfollon.intersego.ui.theme.AlertCritical
-import com.github.bfollon.intersego.ui.theme.BusBlue
 import com.github.bfollon.intersego.ui.theme.ConfirmationGreen
+import com.github.bfollon.intersego.ui.theme.LaLigaOrange
 import com.github.bfollon.intersego.ui.theme.RouteOrange
 import com.github.bfollon.intersego.ui.theme.WordmarkGradient
 
@@ -626,7 +626,7 @@ private fun AlertPill(
 
 @Composable
 private fun LaLigaBlockingBanner(onClick: () -> Unit) {
-    val color = Color(0xFFE65100)
+    val color = LaLigaOrange
 
     Row(
         modifier = Modifier
@@ -661,10 +661,15 @@ private fun LaLigaBlockingBanner(onClick: () -> Unit) {
     }
 }
 
-private fun alertColor(severity: String): Color = when (severity) {
+// internal, not private - also used by MainActivity.kt's AlertDetailCard (was previously its own
+// separate, out-of-sync literal-color copy of this exact mapping). @Composable so "info" can
+// resolve through MaterialTheme.colorScheme.primary (Dynamic Color-aware) rather than a static
+// blue - matching what AlertDetailCard's own copy already did before being deduplicated here.
+@Composable
+internal fun alertColor(severity: String): Color = when (severity) {
     "critical" -> AlertCritical
     "warning"  -> RouteOrange
-    else       -> BusBlue
+    else       -> MaterialTheme.colorScheme.primary
 }
 
 private fun alertIcon(severity: String): ImageVector = when (severity) {

@@ -136,6 +136,7 @@ import com.github.bfollon.intersego.services.StaticMapService
 import com.github.bfollon.intersego.services.TaggedDeparture
 import com.github.bfollon.intersego.services.TimetableService
 import com.github.bfollon.intersego.services.TimetableQueryUtils
+import com.github.bfollon.intersego.ui.theme.RouteOrange
 import com.github.bfollon.intersego.ui.theme.warningColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -731,7 +732,7 @@ fun NextDepartureScreen(
                                         Icon(
                                             imageVector = Icons.Filled.AccessTime,
                                             contentDescription = null,
-                                            tint = Color(0xFFFF9800),
+                                            tint = RouteOrange,
                                             modifier = Modifier.size(56.dp)
                                         )
                                         Text(

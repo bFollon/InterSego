@@ -24,7 +24,8 @@ val SuccessGreen = Color(0xFF4CAF50)
 val WarningOrange = Color(0xFFFFA726)
 
 // Service alert severity (see DESIGN.md's documented alert-critical/warning/info palette;
-// warning and info reuse RouteOrange/BusBlue below since they already match those values)
+// warning reuses RouteOrange below since it already matches that value; info uses
+// MaterialTheme.colorScheme.primary directly at the call site for Dynamic Color awareness)
 val AlertCritical = Color(0xFFD32F2F)
 
 // DESIGN.md's "confirmation-green" (#34C759, iOS-system green) - distinct from SuccessGreen above
@@ -34,3 +35,7 @@ val ConfirmationGreen = Color(0xFF34C759)
 // was previously a hard-coded #007AFF (Apple's system blue) duplicated across all 3 call sites -
 // not a documented token. Now reuses the app's own transit-blue primary instead.
 val WordmarkGradient = listOf(ConfirmationGreen, BusBlue)
+
+// LaLiga IP-blocking banner + its detail sheet (see docs/LALIGA_BLOCKING_BANNER_RUNBOOK.md) -
+// previously an identical literal duplicated in LandingScreen.kt and MainActivity.kt.
+val LaLigaOrange = Color(0xFFE65100)

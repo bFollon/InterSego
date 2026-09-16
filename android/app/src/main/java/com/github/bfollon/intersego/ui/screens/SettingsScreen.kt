@@ -40,6 +40,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.github.bfollon.intersego.ui.theme.RouteOrange
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -500,7 +501,7 @@ fun SettingsScreen(
     if (showHowItWorks) {
         val levels = listOf(
             SeverityLevel(Icons.Default.Notifications,    MaterialTheme.colorScheme.primary,            "Todas",            "Informativas, advertencias e interrupciones graves"),
-            SeverityLevel(Icons.Default.Warning,          Color(0xFFF59E0BL),                           "Solo importantes", "Advertencias y alertas críticas"),
+            SeverityLevel(Icons.Default.Warning,          RouteOrange,                                   "Solo importantes", "Advertencias y alertas críticas"),
             SeverityLevel(Icons.Default.Error,            MaterialTheme.colorScheme.error,              "Solo críticas",    "Únicamente interrupciones graves del servicio"),
             SeverityLevel(Icons.Default.NotificationsOff, MaterialTheme.colorScheme.onSurfaceVariant,   "Desactivadas",     "Sin notificaciones de alertas"),
         )
@@ -712,11 +713,12 @@ private fun LandingSlotPickerRow(
 
 @Composable
 private fun TightMarginWarningPill(onClick: () -> Unit) {
-    val warningColor = Color(0xFFF59E0BL)
+    // Named pillColor, not warningColor - avoids shadowing ui.theme.warningColor().
+    val pillColor = RouteOrange
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))
-            .background(warningColor.copy(alpha = 0.15f))
+            .background(pillColor.copy(alpha = 0.15f))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -725,13 +727,13 @@ private fun TightMarginWarningPill(onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Default.Warning,
             contentDescription = null,
-            tint = warningColor,
+            tint = pillColor,
             modifier = Modifier.size(14.dp)
         )
         Text(
             text = "Margen ajustado — toca para más información",
             style = MaterialTheme.typography.labelSmall,
-            color = warningColor
+            color = pillColor
         )
     }
 }

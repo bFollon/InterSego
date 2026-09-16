@@ -123,6 +123,7 @@ import androidx.compose.foundation.layout.Arrangement
 import com.github.bfollon.intersego.ui.screens.AboutScreen
 import com.github.bfollon.intersego.ui.screens.AllRoutesScreen
 import com.github.bfollon.intersego.ui.screens.DayScheduleScreen
+import com.github.bfollon.intersego.ui.screens.alertColor
 import com.github.bfollon.intersego.ui.screens.OtrasOpcionesScreen
 import com.github.bfollon.intersego.ui.screens.LandingScreen
 import com.github.bfollon.intersego.services.DeviceTokenService
@@ -132,6 +133,8 @@ import com.github.bfollon.intersego.ui.screens.RouteSelectionScreen
 import com.github.bfollon.intersego.ui.screens.RouteStopsScreen
 import com.github.bfollon.intersego.ui.screens.TimetableScreen
 import com.github.bfollon.intersego.ui.theme.InterSegoTheme
+import com.github.bfollon.intersego.ui.theme.LaLigaOrange
+import com.github.bfollon.intersego.ui.theme.RouteOrange
 import com.github.bfollon.intersego.ui.theme.WordmarkGradient
 import coil.Coil
 import coil.ImageLoader
@@ -799,7 +802,7 @@ fun AppNavigation(
                 Icon(
                     imageVector = Icons.Filled.DirectionsBus,
                     contentDescription = null,
-                    tint = Color(0xFFFF9800),
+                    tint = RouteOrange,
                     modifier = Modifier.size(56.dp)
                 )
                 Text(
@@ -1410,7 +1413,7 @@ fun AppNavigation(
 
 @Composable
 private fun LaLigaBlockingDetailSheet() {
-    val color = androidx.compose.ui.graphics.Color(0xFFE65100)
+    val color = LaLigaOrange
 
     Column(
         modifier = Modifier
@@ -1528,11 +1531,7 @@ private fun AlertDetailSheet(alerts: List<ServiceAlert>) {
 
 @Composable
 private fun AlertDetailCard(alert: ServiceAlert) {
-    val color = when (alert.severity) {
-        "critical" -> androidx.compose.ui.graphics.Color(0xFFB00020)
-        "warning"  -> androidx.compose.ui.graphics.Color(0xFFE65100)
-        else       -> MaterialTheme.colorScheme.primary
-    }
+    val color = alertColor(alert.severity)
     val severityLabel = when (alert.severity) {
         "critical" -> "URGENTE"
         "warning"  -> "AVISO"

@@ -68,6 +68,7 @@ import androidx.core.net.toUri
 import com.github.bfollon.intersego.R
 import com.github.bfollon.intersego.data.FeedbackCategory
 import com.github.bfollon.intersego.services.AnalyticsService
+import com.github.bfollon.intersego.ui.theme.RouteOrange
 import com.github.bfollon.intersego.ui.theme.WordmarkGradient
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -217,7 +218,7 @@ fun AboutScreen(
             Button(
                 onClick = { openPlayStoreReview(context) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF9800),
+                    containerColor = RouteOrange,
                     contentColor = Color.White
                 ),
                 modifier = Modifier.fillMaxWidth()
@@ -362,7 +363,7 @@ fun AboutScreen(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 ContactCard(
                     label = "Reportar error",
-                    icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = Color(0xFFFF9800)) },
+                    icon = { Icon(Icons.Default.BugReport, contentDescription = null, tint = RouteOrange) },
                     onClick = { feedback.trigger(FeedbackCategory.BUG, "about") }
                 )
 
