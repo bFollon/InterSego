@@ -10,6 +10,7 @@
 package com.github.bfollon.intersego.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,7 +49,7 @@ import com.github.bfollon.intersego.services.JourneyReminderHelper
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
 import com.github.bfollon.intersego.services.TripPlannerPrefs
-import com.github.bfollon.intersego.ui.theme.warningColor
+import com.github.bfollon.intersego.ui.theme.RouteOrange
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -222,6 +223,9 @@ private fun SummaryRow(icon: ImageVector, iconTint: Color, label: String, value:
     }
 }
 
+/** Extra top inset reserved for [TightTransferPeekBanner] to peek out above the card. */
+private val TightTransferPeekHeight = 32.dp
+
 @Composable
 private fun JourneyCard(
     journey: Journey,
@@ -235,73 +239,117 @@ private fun JourneyCard(
         .map { it.marginMin }
         .filter { it < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER }
         .minOrNull()
-    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column {
-            Column(
-                modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = if (reminderAvailable) 12.dp else 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+
+    // A Box, not just the card - when there's a tight transfer, TightTransferPeekBanner is drawn
+    // full width behind the card, with the card pushed down (top padding) so only a strip of the
+    // banner peeks out above the card's top edge, like a tab tucked behind it. Mirrors iOS's
+    // ZStack-based JourneyCard.
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (tightestMargin != null) {
+            TightTransferPeekBanner(marginMin = tightestMargin)
+        }
+        ElevatedCard(
+            onClick = onClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = if (tightestMargin != null) TightTransferPeekHeight else 0.dp)
+        ) {
+            Column {
+                Column(
+                    modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp, bottom = if (reminderAvailable) 12.dp else 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            "${formatMin(journey.departureMin)} — ${formatMin(journey.arrivalMin)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(formatDuration(journey.arrivalMin - journey.departureMin), style = MaterialTheme.typography.bodyMedium)
+                    }
                     Text(
-                        "${formatMin(journey.departureMin)} — ${formatMin(journey.arrivalMin)}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        if (journey.transferCount == 0) "Directo" else "${journey.transferCount} transbordo(s)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(formatDuration(journey.arrivalMin - journey.departureMin), style = MaterialTheme.typography.bodyMedium)
-                }
-                Text(
-                    if (journey.transferCount == 0) "Directo" else "${journey.transferCount} transbordo(s)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    journey.legs.forEach { leg ->
-                        when (leg) {
-                            is Leg.Ride -> LegChip(text = leg.routeId, icon = Icons.Filled.DirectionsBus)
-                            is Leg.Walk -> LegChip(text = "${leg.minutes} min", icon = Icons.AutoMirrored.Filled.DirectionsWalk)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        journey.legs.forEach { leg ->
+                            when (leg) {
+                                is Leg.Ride -> LegChip(text = leg.routeId, icon = Icons.Filled.DirectionsBus)
+                                is Leg.Walk -> LegChip(text = "${leg.minutes} min", icon = Icons.AutoMirrored.Filled.DirectionsWalk)
+                            }
                         }
                     }
+                    if (hasEstimatedLeg) {
+                        // Plain caption, matching iOS and the JourneyDetailScreen banner — a journey
+                        // built partly on cluster-estimated times shouldn't look more precise than the
+                        // app is elsewhere, but this is a secondary note, not an alert worth a card.
+                        Text(
+                            "Horarios orientativos",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                 }
-                if (tightestMargin != null) {
-                    TightTransferBadge(marginMin = tightestMargin)
-                }
-                if (hasEstimatedLeg) {
-                    // Plain caption, matching iOS and the JourneyDetailScreen banner — a journey
-                    // built partly on cluster-estimated times shouldn't look more precise than the
-                    // app is elsewhere, but this is a secondary note, not an alert worth a card.
-                    Text(
-                        "Horarios orientativos",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-            }
-            if (reminderAvailable) {
-                // Inset divider, matching SearchSummaryCard's row dividers above rather than
-                // running edge-to-edge against the pill's own border.
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(onClick = onReminderToggle)
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isReminderSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
-                        contentDescription = null,
-                        tint = if (isReminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        if (isReminderSet) "Te avisaremos para salir" else "Recuérdame salir",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isReminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                if (reminderAvailable) {
+                    // Inset divider, matching SearchSummaryCard's row dividers above rather than
+                    // running edge-to-edge against the pill's own border.
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onReminderToggle)
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isReminderSet) Icons.Filled.Notifications else Icons.Outlined.Notifications,
+                            contentDescription = null,
+                            tint = if (isReminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            if (isReminderSet) "Te avisaremos para salir" else "Recuérdame salir",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isReminderSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+/**
+ * Warning banner tucked behind a [JourneyCard], peeking out above its top edge - see the `Box`
+ * in [JourneyCard]. Solid-filled (not the light tint [TightTransferRow] in JourneyDetailScreen
+ * uses) since it needs to read as a distinct layer sitting behind the card, not a tint within it.
+ * Bottom corners square, not rounded - this banner is the same width as the card sitting on top
+ * of it, so a rounded bottom corner here would clash with the card's own rounded top corner right
+ * where they overlap. Only the top needs rounding (it's the only part that's ever actually
+ * visible, peeking above the card). Mirrors iOS's TightTransferPeekBanner.
+ */
+@Composable
+private fun TightTransferPeekBanner(marginMin: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp))
+            .background(RouteOrange)
+            // Bottom padding is the part that ends up hidden behind the card on top; only the
+            // top strip (icon + text) shows above the card's edge.
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(Icons.Filled.Warning, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+        Text(
+            "Transbordo ajustado · $marginMin min de margen",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
     }
 }
 

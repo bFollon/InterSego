@@ -205,32 +205,6 @@ fun JourneyDetailScreen(
     }
 }
 
-/**
- * Subtle warning shown when a journey's tightest transfer margin falls below the recommended
- * safety threshold ([TripPlannerPrefs.RECOMMENDED_MIN_BUFFER]) — independent of whatever buffer
- * the user has configured the search to accept, so a user who's lowered their own buffer still
- * sees which specific results are riskier than others. Shared by [JourneyResultsScreen] (per
- * journey card) and [JourneyDetailScreen] (per transfer, see [TightTransferRow]).
- */
-@Composable
-fun TightTransferBadge(marginMin: Int) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(warningColor().copy(alpha = 0.12f))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Icon(Icons.Filled.Warning, contentDescription = null, tint = warningColor(), modifier = Modifier.size(14.dp))
-        Text(
-            "Transbordo ajustado · $marginMin min de margen",
-            style = MaterialTheme.typography.bodySmall,
-            color = warningColor()
-        )
-    }
-}
-
 @Composable
 fun SectionHeader(title: String) {
     Text(
