@@ -42,10 +42,13 @@ import com.github.bfollon.intersego.data.BusRoute
 import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.Leg
+import androidx.compose.material.icons.filled.Warning
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.JourneyReminderHelper
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
+import com.github.bfollon.intersego.services.TripPlannerPrefs
+import com.github.bfollon.intersego.ui.theme.warningColor
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -228,6 +231,10 @@ private fun JourneyCard(
     onReminderToggle: () -> Unit,
 ) {
     val hasEstimatedLeg = journey.legs.any { it is Leg.Ride && it.isEstimated }
+    val tightestMargin = journey.transferMargins()
+        .map { it.marginMin }
+        .filter { it < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER }
+        .minOrNull()
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column {
             Column(
@@ -254,6 +261,9 @@ private fun JourneyCard(
                             is Leg.Walk -> LegChip(text = "${leg.minutes} min", icon = Icons.AutoMirrored.Filled.DirectionsWalk)
                         }
                     }
+                }
+                if (tightestMargin != null) {
+                    TightTransferBadge(marginMin = tightestMargin)
                 }
                 if (hasEstimatedLeg) {
                     // Plain caption, matching iOS and the JourneyDetailScreen banner — a journey

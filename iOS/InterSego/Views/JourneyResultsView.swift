@@ -163,45 +163,26 @@ struct JourneyResultsView: View {
                 // over the whole group, not repeated per card.
                 ForEach(Array(journeys.enumerated()), id: \.offset) { index, journey in
                     Section {
-                        // One VStack = one List row, so its internal Divider renders inset like
-                        // SearchSummaryCard's row dividers above (not edge-to-edge against the
-                        // pill's own border, and not the default system row separator, which
-                        // only extends to the text inset and read as off-center).
-                        // .leading - VStack defaults to .center, which put the reminder row's
-                        // compact (content-hugging) width in the middle instead of flush left.
-                        VStack(alignment: .leading, spacing: 0) {
-                            Button(action: {
+                        JourneyCard(
+                            journey: journey,
+                            reminderContext: reminderContext(for: journey),
+                            isReminderSet: reminderContext(for: journey).map { reminderKeys.contains(JourneyReminderHelper.matchKey($0)) } ?? false,
+                            onSelect: {
                                 AnalyticsService.shared.track("journey_result_selected", with: [
                                     "duration_min": journey.arrivalMin - journey.departureMin,
                                     "transfers": journey.transferCount,
                                 ])
                                 onJourneySelected(journey)
-                            }) {
-                                JourneyRow(journey: journey)
-                            }
-                            .foregroundStyle(.primary)
-                            if let context = reminderContext(for: journey) {
-                                let isSet = reminderKeys.contains(JourneyReminderHelper.matchKey(context))
-                                Divider()
-                                    .padding(.top, 8)
-                                Button(action: { toggleReminder(for: journey) }) {
-                                    HStack(spacing: 6) {
-                                        Image(systemName: isSet ? "bell.fill" : "bell")
-                                        Text(isSet ? "Te avisaremos para salir" : "Recuérdame salir")
-                                        Spacer()
-                                    }
-                                    .font(.footnote)
-                                    .foregroundStyle(isSet ? Color.accentColor : .secondary)
-                                    .padding(.top, 8)
-                                    // .plain only makes the tight icon+text bounds tappable by
-                                    // default - stretch the label and claim the whole area
-                                    // (matching Android's full-row tap target) rather than
-                                    // requiring a precise tap on the text itself.
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
+                            },
+                            onReminderToggle: { toggleReminder(for: journey) }
+                        )
+                        // Opt this row out of the system inset-grouped row background/insets/
+                        // separator (same bypass ItineraryMapView's row uses in JourneyDetailView)
+                        // so JourneyCard can draw its own card chrome and let the tight-transfer
+                        // banner overflow above the card's top edge, tucked behind it.
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     } header: {
                         if index == 0 {
                             Text("Opciones")
@@ -263,6 +244,78 @@ private struct SearchSummaryCard: View {
     }
 }
 
+/// One journey result: the tappable summary row plus its optional reminder row, drawn as a
+/// self-contained card (rather than relying on the List's system inset-grouped row chrome — see
+/// the `.listRowInsets`/`.listRowBackground` bypass at the call site) so a tight-transfer warning
+/// can be layered as a banner tucked behind the card, peeking out above its top edge.
+private struct JourneyCard: View {
+    let journey: Journey
+    let reminderContext: JourneyReminderHelper.Context?
+    let isReminderSet: Bool
+    let onSelect: () -> Void
+    let onReminderToggle: () -> Void
+
+    private let cardCornerRadius: CGFloat = 14
+
+    /// The smallest transfer margin below the safety threshold, if any — `nil` for a direct
+    /// journey or one where every transfer already has a comfortable margin.
+    private var tightestMargin: Int? {
+        journey.transferMargins()
+            .map(\.marginMin)
+            .filter { $0 < TripPlannerPrefs.recommendedMinBuffer }
+            .min()
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            if let tightestMargin {
+                // The banner's own height (content + extra bottom padding) is taller than what
+                // ends up visible - the card on top covers its lower portion, so only a strip
+                // peeks out above the card's top edge, like a tab tucked behind it. Same width
+                // as the card - its bottom corners are square (see TightTransferPeekBanner), so
+                // there's no rounded edge left to clash with the card's own rounded top corners.
+                TightTransferPeekBanner(marginMin: tightestMargin)
+            }
+            card
+                .padding(.top, tightestMargin != nil ? 32 : 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+    }
+
+    private var card: some View {
+        // .leading - VStack defaults to .center, which put the reminder row's compact
+        // (content-hugging) width in the middle instead of flush left.
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onSelect) {
+                JourneyRow(journey: journey)
+            }
+            .foregroundStyle(.primary)
+            if reminderContext != nil {
+                Divider().padding(.top, 8)
+                Button(action: onReminderToggle) {
+                    HStack(spacing: 6) {
+                        Image(systemName: isReminderSet ? "bell.fill" : "bell")
+                        Text(isReminderSet ? "Te avisaremos para salir" : "Recuérdame salir")
+                        Spacer()
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(isReminderSet ? Color.accentColor : .secondary)
+                    .padding(.top, 8)
+                    // .plain only makes the tight icon+text bounds tappable by default - stretch
+                    // the label and claim the whole area (matching Android's full-row tap
+                    // target) rather than requiring a precise tap on the text itself.
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(16)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: cardCornerRadius))
+    }
+}
+
 private struct JourneyRow: View {
     let journey: Journey
 
@@ -306,5 +359,36 @@ private struct JourneyRow: View {
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+/// Warning banner tucked behind a `JourneyCard`, peeking out above its top edge - see
+/// `JourneyCard`'s `ZStack`. Solid-filled (not the light tint used elsewhere for passive notes
+/// like "Horarios orientativos") since it needs to read as a distinct layer sitting behind the
+/// card, not a tint within it.
+private struct TightTransferPeekBanner: View {
+    let marginMin: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+            Text("Transbordo ajustado · \(marginMin) min de margen")
+            Spacer(minLength: 0)
+        }
+        .font(.caption)
+        .fontWeight(.semibold)
+        .foregroundStyle(.white)
+        .padding(.horizontal, 12)
+        .padding(.top, 8)
+        // Extra bottom padding - this is the part that ends up hidden behind the card on top;
+        // only the top strip (icon + text) shows above the card's edge.
+        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange)
+        // Bottom corners square, not rounded - this banner is the same width as the card sitting
+        // on top of it, so a rounded bottom corner here would clash with the card's own rounded
+        // top corner right where they overlap. Only the top needs rounding (it's the only part
+        // that's ever actually visible, peeking above the card).
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12))
     }
 }

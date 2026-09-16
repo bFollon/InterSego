@@ -39,6 +39,14 @@ struct JourneyDetailView: View {
         journey.legs.contains { if case .ride(let r) = $0 { return r.isEstimated } else { return false } }
     }
 
+    /// Transfers whose actual margin falls below the recommended safety threshold — independent
+    /// of whatever buffer the search itself required, so this still flags a risky connection even
+    /// if the user has lowered their own buffer setting. See `TightTransferBadge` in
+    /// JourneyResultsView.
+    private var tightMargins: [Journey.TransferMargin] {
+        journey.transferMargins().filter { $0.marginMin < TripPlannerPrefs.recommendedMinBuffer }
+    }
+
     private func loadReminderContext() async {
         reminderContext = await JourneyReminderHelper.build(
             journey: journey, date: date, originName: originName, destinationName: destinationName,
@@ -94,6 +102,9 @@ struct JourneyDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
+                ForEach(tightMargins, id: \.stopId) { margin in
+                    tightTransferRow(margin: margin)
+                }
             } header: {
                 Text("Itinerario")
             }
@@ -179,6 +190,21 @@ struct JourneyDetailView: View {
             Text(time).font(.headline)
         }
         .padding(.vertical, 4)
+    }
+
+    private func tightTransferRow(margin: Journey.TransferMargin) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Transbordo ajustado en \(stopName(margin.stopId))").fontWeight(.medium)
+                Text("\(margin.marginMin) min de margen").font(.footnote).foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.12)))
     }
 
     private func legRow(systemImage: String, iconColor: Color, title: String, subtitle: String) -> some View {

@@ -9,9 +9,11 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -43,6 +46,8 @@ import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.JourneyReminderHelper
 import com.github.bfollon.intersego.services.ReminderService
 import com.github.bfollon.intersego.services.RouteDataService
+import com.github.bfollon.intersego.services.TripPlannerPrefs
+import com.github.bfollon.intersego.ui.theme.warningColor
 import java.time.LocalDate
 
 private fun formatMin(minutesOfDay: Int): String {
@@ -86,6 +91,9 @@ fun JourneyDetailScreen(
     val matchKey = reminderContext?.let { JourneyReminderHelper.matchKey(it) }
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
     val isReminderSet = matchKey != null && reminderKeys.contains(matchKey)
+    val tightMargins = remember(journey) {
+        journey.transferMargins().filter { it.marginMin < TripPlannerPrefs.RECOMMENDED_MIN_BUFFER }
+    }
 
     Scaffold(
         topBar = {
@@ -153,8 +161,12 @@ fun JourneyDetailScreen(
                         .fillMaxWidth()
                         .height(220.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = if (tightMargins.isEmpty()) 16.dp else 8.dp)
                 )
+            }
+            items(tightMargins) { margin ->
+                TightTransferRow(stopName = stopName(margin.stopId), marginMin = margin.marginMin)
+                Spacer(modifier = Modifier.height(8.dp))
             }
             item {
                 SectionHeader("Pasos")
@@ -190,6 +202,32 @@ fun JourneyDetailScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * Subtle warning shown when a journey's tightest transfer margin falls below the recommended
+ * safety threshold ([TripPlannerPrefs.RECOMMENDED_MIN_BUFFER]) — independent of whatever buffer
+ * the user has configured the search to accept, so a user who's lowered their own buffer still
+ * sees which specific results are riskier than others. Shared by [JourneyResultsScreen] (per
+ * journey card) and [JourneyDetailScreen] (per transfer, see [TightTransferRow]).
+ */
+@Composable
+fun TightTransferBadge(marginMin: Int) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(warningColor().copy(alpha = 0.12f))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Icon(Icons.Filled.Warning, contentDescription = null, tint = warningColor(), modifier = Modifier.size(14.dp))
+        Text(
+            "Transbordo ajustado · $marginMin min de margen",
+            style = MaterialTheme.typography.bodySmall,
+            color = warningColor()
+        )
     }
 }
 
@@ -272,6 +310,26 @@ private fun LegRow(leg: Leg, stopName: (String) -> String, onClick: (() -> Unit)
                     Text("${leg.minutes} min (${leg.meters} m)", style = MaterialTheme.typography.bodySmall)
                 }
             }
+        }
+    }
+}
+
+/** Per-transfer variant of [TightTransferBadge], naming the stop where the connection is tight. */
+@Composable
+private fun TightTransferRow(stopName: String, marginMin: Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(warningColor().copy(alpha = 0.12f))
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Filled.Warning, contentDescription = null, tint = warningColor())
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text("Transbordo ajustado en $stopName", fontWeight = FontWeight.Medium)
+            Text("$marginMin min de margen", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

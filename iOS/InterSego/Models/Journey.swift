@@ -79,6 +79,35 @@ struct Journey: Hashable {
     /// source of truth for this value — mirrored on Android as `Journey.LONG_WAIT_THRESHOLD_MIN`.
     static let longWaitThresholdMin = 5
 
+    /// The stop a mid-journey transfer boards at, and how many minutes elapse there between
+    /// arriving (by ride or by walk) and the connecting bus's departure. One entry per `Ride` leg
+    /// that isn't the journey's first leg — i.e. one per transfer, regardless of whether it's a
+    /// same-stop or walking connection. See `transferMargins()`.
+    struct TransferMargin: Hashable {
+        let stopId: String
+        let marginMin: Int
+    }
+
+    /// Computes `TransferMargin`s for every mid-journey transfer. This is the actual elapsed gap
+    /// for each connection — independent of whichever (possibly user-lowered) buffer the search
+    /// itself required to accept the journey — so callers can flag a transfer as tight against a
+    /// fixed safety threshold (`TripPlannerPrefs.recommendedMinBuffer`) regardless of search
+    /// settings. Mirrored on Android as `Journey.transferMargins()`.
+    func transferMargins() -> [TransferMargin] {
+        var margins: [TransferMargin] = []
+        var clock = departureMin
+        for (index, leg) in legs.enumerated() {
+            if index > 0, case .ride(let ride) = leg {
+                margins.append(TransferMargin(stopId: ride.fromStop, marginMin: ride.depMin - clock))
+            }
+            switch leg {
+            case .ride(let ride): clock = ride.arrMin
+            case .walk(let walk): clock += walk.minutes
+            }
+        }
+        return margins
+    }
+
     /// `legs` with a `.wait` step inserted before any Ride that follows more than
     /// `longWaitThresholdMin` minutes after the previous leg ends. Only mid-journey transfers are
     /// considered — never before the first leg, since that's simply when you start the journey,

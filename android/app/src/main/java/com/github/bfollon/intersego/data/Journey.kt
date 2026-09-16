@@ -70,6 +70,36 @@ data class Journey(
     }
 
     /**
+     * The stop a mid-journey transfer boards at, and how many minutes elapse there between
+     * arriving (by ride or by walk) and the connecting bus's departure. One entry per [Leg.Ride]
+     * that isn't the journey's first leg — i.e. one per transfer, regardless of whether it's a
+     * same-stop or walking connection. See [transferMargins].
+     */
+    data class TransferMargin(val stopId: String, val marginMin: Int)
+
+    /**
+     * Computes [TransferMargin]s for every mid-journey transfer. This is the actual elapsed gap
+     * for each connection — independent of whichever (possibly user-lowered) buffer the search
+     * itself required to accept the journey — so callers can flag a transfer as tight against a
+     * fixed safety threshold (`TripPlannerPrefs.recommendedMinBuffer`) regardless of search
+     * settings. Mirrored on iOS as `Journey.transferMargins()`.
+     */
+    fun transferMargins(): List<TransferMargin> {
+        val margins = mutableListOf<TransferMargin>()
+        var clock = departureMin
+        legs.forEachIndexed { index, leg ->
+            if (index > 0 && leg is Leg.Ride) {
+                margins.add(TransferMargin(stopId = leg.fromStop, marginMin = leg.depMin - clock))
+            }
+            clock = when (leg) {
+                is Leg.Ride -> leg.arrMin
+                is Leg.Walk -> clock + leg.minutes
+            }
+        }
+        return margins
+    }
+
+    /**
      * [legs] with a [JourneyStep.Wait] step inserted before any Ride that follows more than
      * [LONG_WAIT_THRESHOLD_MIN] minutes after the previous leg ends. Only mid-journey transfers
      * are considered — never before the first leg, since that's simply when you start the
