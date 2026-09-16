@@ -22,6 +22,7 @@ tmp/
 # Added by code-review-graph
 .code-review-graph/
 /android/.claude/settings.20260519_153213.bak
+.kiro/
 
 # skill-creator eval scratch output (PDFs/PNGs from benchmark runs, not needed for the skill itself)
 .claude/skills/*-workspace/
