@@ -400,7 +400,8 @@ struct TightTransferPeekBanner: View {
         // Bottom corners square, not rounded - this banner is the same width as the card sitting
         // on top of it, so a rounded bottom corner here would clash with the card's own rounded
         // top corner right where they overlap. Only the top needs rounding (it's the only part
-        // that's ever actually visible, peeking above the card).
-        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 12))
+        // that's ever actually visible, peeking above the card). Radius matches both callers'
+        // cardCornerRadius (14) so the visible top strip curves exactly like the card it backs.
+        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 14, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 14))
     }
 }

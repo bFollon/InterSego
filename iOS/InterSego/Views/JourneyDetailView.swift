@@ -251,7 +251,14 @@ private struct PasosCard: View {
                 Text(title).fontWeight(.medium)
                 Text(subtitle).font(.footnote).foregroundStyle(.secondary)
             }
+            Spacer(minLength: 0)
         }
         .padding(.vertical, 4)
+        // Explicit floor rather than relying on content height - this row lost the List row's
+        // automatic tap-target padding when PasosCard moved off List. Only the ride case is
+        // wrapped in a Button, but applying the floor here keeps all three row kinds visually
+        // consistent in height.
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 }
