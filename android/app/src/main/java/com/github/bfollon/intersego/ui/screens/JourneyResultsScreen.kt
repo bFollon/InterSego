@@ -342,7 +342,13 @@ fun TightTransferPeekBanner(title: String, subtitle: String? = null) {
             // top strip (icon + text) shows above the card's edge. A bit less when there's a
             // second line - the caller reserves proportionally more peek height for that case,
             // so less needs to stay hidden to still be fully covered.
-            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = if (subtitle != null) 16.dp else 20.dp),
+            // The hidden portion (this minus the caller's peek height) must stay at least as
+            // tall as the card's own corner radius, or the last sliver of the card's rounded
+            // corner has nothing opaque behind it - a background-colored gap right at the tip
+            // of the curve. Two-line banners reserve more here since their caller
+            // (JourneyDetailScreen's Pasos card) uses a taller peek (48dp vs. this card's
+            // TightTransferPeekHeight, 32dp), which eats further into the hidden portion.
+            .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = if (subtitle != null) 48.dp else 20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {

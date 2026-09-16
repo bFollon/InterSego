@@ -388,10 +388,13 @@ struct TightTransferPeekBanner: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         // Extra bottom padding - this is the part that ends up hidden behind the card on top;
-        // only the top strip (icon + text) shows above the card's edge. A bit less when there's
-        // a second line - the caller reserves proportionally more peek height for that case, so
-        // less needs to stay hidden to still be fully covered.
-        .padding(.bottom, subtitle != nil ? 16 : 20)
+        // only the top strip (icon + text) shows above the card's edge. This must stay at least
+        // as tall as the card's own corner radius, or the last sliver of the card's rounded
+        // corner has nothing opaque behind it - a background-colored gap right at the tip of the
+        // curve. The two-line case reserves more here since its caller (JourneyDetailView's
+        // PasosCard) uses a taller peek (48 vs. this card's 32), which eats further into the
+        // hidden portion - both cards share the same 14pt corner radius.
+        .padding(.bottom, subtitle != nil ? 48 : 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.orange)
         // Bottom corners square, not rounded - this banner is the same width as the card sitting
