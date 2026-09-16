@@ -175,9 +175,15 @@ actor TimetableCacheService {
     /// The route ID list is the union of bundled assets, the disk cache, and the server
     /// manifest (`fetchManifest`). Routes that are new (server-only, not yet seen on this
     /// device) also have their polylines fetched once their timetable is downloaded.
-    func fetchAllRoutes() async {
+    ///
+    /// Returns whether the manifest fetch itself succeeded — `false` means the server was
+    /// unreachable/timed out, letting the caller distinguish that from a normal completion
+    /// even though per-route fetches still fall back to bundle/disk cache either way.
+    @discardableResult
+    func fetchAllRoutes() async -> Bool {
         let knownIds = Set(bundleRouteIds + diskCacheRouteIds())
-        let manifestIds = (await fetchManifest())?.map { $0.lowercased() } ?? []
+        let manifest = await fetchManifest()
+        let manifestIds = manifest?.map { $0.lowercased() } ?? []
         let allIds = knownIds.union(manifestIds)
 
         DebugConfig.debugPrint("TimetableCacheService: Starting fetch for \(allIds.count) routes")
@@ -193,5 +199,6 @@ actor TimetableCacheService {
             }
         }
         DebugConfig.debugPrint("TimetableCacheService: Fetch complete, \(pendingUpdates.count) route(s) updated")
+        return manifest != nil
     }
 }

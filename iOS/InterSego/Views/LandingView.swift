@@ -28,9 +28,14 @@ private struct BouncingBallKeyframes {
 }
 
 /// Small indeterminate indicator shown while the app is contacting the server: a dot bouncing back
-/// and forth along a track, with a brief squash at each end.
+/// and forth along a track, with a brief squash at each end. When `hasError` is true, the ball is
+/// replaced with a blinking red X centered on the track, so a fetch timeout/failure reads as
+/// distinct from "still loading".
 struct BouncingBallLoader: View {
     var color: Color = .accentColor
+    var hasError: Bool = false
+
+    @State private var errorBlinkVisible = false
 
     private let trackWidth: CGFloat = 64
     private let trackHeight: CGFloat = 16
@@ -61,6 +66,7 @@ struct BouncingBallLoader: View {
             Circle()
                 .fill(color)
                 .frame(width: ballDiameter, height: ballDiameter)
+                .opacity(hasError ? 0 : 1)
                 .keyframeAnimator(
                     initialValue: BouncingBallKeyframes(),
                     repeating: true
@@ -96,6 +102,19 @@ struct BouncingBallLoader: View {
                         CubicKeyframe(1.22, duration: 0.08)
                     }
                 }
+
+            if hasError {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.red)
+                    .opacity(errorBlinkVisible ? 1 : 0.25)
+                    .frame(width: trackWidth, alignment: .center)
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 0.45).repeatForever(autoreverses: true)) {
+                            errorBlinkVisible = true
+                        }
+                    }
+            }
         }
         .frame(width: trackWidth, height: trackHeight)
     }
@@ -144,6 +163,7 @@ struct LandingView: View {
     let laLigaBlockingSuspected: Bool
     let onShowLaLigaDetail: () -> Void
     var isFetchingManifest: Bool = false
+    var manifestFetchFailed: Bool = false
 
     @State private var pillLabelHeight: CGFloat? = nil
 
@@ -168,7 +188,7 @@ struct LandingView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 if isFetchingManifest {
-                    BouncingBallLoader()
+                    BouncingBallLoader(hasError: manifestFetchFailed)
                 }
                 if let primary = sortedAlerts.first {
                     Button(action: {

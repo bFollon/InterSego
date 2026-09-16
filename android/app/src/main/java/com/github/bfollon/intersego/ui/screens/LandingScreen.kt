@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
@@ -137,6 +138,7 @@ fun LandingScreen(
     laLigaBlockingSuspected: Boolean = false,
     onShowLaLigaDetail: () -> Unit = {},
     isFetchingManifest: Boolean = false,
+    manifestFetchFailed: Boolean = false,
 ) {
     val callbacks = LandingActionCallbacks(
         onNavigateToRouteList = onNavigateToRouteList,
@@ -166,7 +168,7 @@ fun LandingScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (isFetchingManifest) {
-                        BouncingBallLoader()
+                        BouncingBallLoader(hasError = manifestFetchFailed)
                     }
                     val primary = alertsSortedBySeverity(activeAlerts).firstOrNull()
                     if (primary != null) {
@@ -605,11 +607,16 @@ internal fun BusLineIcon(size: Int) {
     }
 }
 
-/** Small indeterminate indicator shown while the app is contacting the server: a dot bouncing back and forth along a track. */
+/**
+ * Small indeterminate indicator shown while the app is contacting the server: a dot bouncing back
+ * and forth along a track. When [hasError] is true, the ball is replaced with a blinking red X
+ * centered on the track, so a fetch timeout/failure reads as distinct from "still loading".
+ */
 @Composable
 private fun BouncingBallLoader(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
+    hasError: Boolean = false,
 ) {
     val transition = rememberInfiniteTransition(label = "bouncingBall")
     val progress by transition.animateFloat(
@@ -628,6 +635,17 @@ private fun BouncingBallLoader(
     val squashWindow = 0.12f
     val squash = 1f - (edgeProximity / squashWindow).coerceIn(0f, 1f)
 
+    val errorTransition = rememberInfiniteTransition(label = "bouncingBallError")
+    val errorAlpha by errorTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 450, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "bouncingBallErrorAlpha",
+    )
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -640,24 +658,41 @@ private fun BouncingBallLoader(
             modifier = Modifier.size(14.dp),
         )
 
-        Canvas(modifier = Modifier.size(width = 64.dp, height = 16.dp)) {
-            val ballRadius = size.height / 2f - 2.dp.toPx()
-            val trackInset = ballRadius + 2.dp.toPx()
-            val trackY = size.height / 2f
+        Box(
+            modifier = Modifier.size(width = 64.dp, height = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val ballRadius = size.height / 2f - 2.dp.toPx()
+                val trackInset = ballRadius + 2.dp.toPx()
+                val trackY = size.height / 2f
 
-            drawLine(
-                color = color.copy(alpha = 0.25f),
-                start = Offset(trackInset, trackY),
-                end = Offset(size.width - trackInset, trackY),
-                strokeWidth = 2.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
+                drawLine(
+                    color = color.copy(alpha = 0.25f),
+                    start = Offset(trackInset, trackY),
+                    end = Offset(size.width - trackInset, trackY),
+                    strokeWidth = 2.dp.toPx(),
+                    cap = StrokeCap.Round,
+                )
 
-            val ballX = trackInset + (size.width - 2 * trackInset) * progress
-            // Flatten along the direction of travel (horizontal) and bulge perpendicular (vertical) —
-            // matches a ball bouncing off a wall it's moving into, not one dropping onto a floor.
-            scale(scaleX = 1f - squash * 0.12f, scaleY = 1f + squash * 0.12f, pivot = Offset(ballX, trackY)) {
-                drawCircle(color = color, radius = ballRadius, center = Offset(ballX, trackY))
+                if (!hasError) {
+                    val ballX = trackInset + (size.width - 2 * trackInset) * progress
+                    // Flatten along the direction of travel (horizontal) and bulge perpendicular
+                    // (vertical) — matches a ball bouncing off a wall it's moving into, not one
+                    // dropping onto a floor.
+                    scale(scaleX = 1f - squash * 0.12f, scaleY = 1f + squash * 0.12f, pivot = Offset(ballX, trackY)) {
+                        drawCircle(color = color, radius = ballRadius, center = Offset(ballX, trackY))
+                    }
+                }
+            }
+
+            if (hasError) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    tint = AlertCritical.copy(alpha = errorAlpha),
+                    modifier = Modifier.size(14.dp),
+                )
             }
         }
 

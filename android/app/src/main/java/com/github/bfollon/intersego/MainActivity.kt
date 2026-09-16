@@ -302,6 +302,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             var routes by remember { mutableStateOf<List<BusRoute>>(emptyList()) }
             var laLigaBlockingSuspected by remember { mutableStateOf(false) }
             var isFetchingManifest by remember { mutableStateOf(false) }
+            var manifestFetchFailed by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
@@ -331,10 +332,17 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     launch {
                         isFetchingManifest = true
                         try {
-                            TimetableCacheService.fetchAllRoutes(this@MainActivity)
+                            val manifestOk = TimetableCacheService.fetchAllRoutes(this@MainActivity)
+                            if (!manifestOk) {
+                                // Show the error state for a beat before the LaLiga/offline
+                                // banner (set below) takes over — otherwise it's never visible.
+                                manifestFetchFailed = true
+                                delay(1500)
+                            }
                             laLigaBlockingSuspected = LaLigaBlockingService.isLikelyBlocked
                         } finally {
                             isFetchingManifest = false
+                            manifestFetchFailed = false
                         }
                     }
                     launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
@@ -353,7 +361,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                             routeDataService = routeDataService,
                             reminderService = reminderService,
                             laLigaBlockingSuspected = laLigaBlockingSuspected,
-                            isFetchingManifest = isFetchingManifest
+                            isFetchingManifest = isFetchingManifest,
+                            manifestFetchFailed = manifestFetchFailed
                         )
                     }
 
@@ -520,6 +529,7 @@ fun AppNavigation(
     reminderService: ReminderService,
     laLigaBlockingSuspected: Boolean,
     isFetchingManifest: Boolean = false,
+    manifestFetchFailed: Boolean = false,
 ) {
     val navController = rememberNavController()
     val activity = LocalActivity.current as? MainActivity
@@ -894,6 +904,7 @@ fun AppNavigation(
                 laLigaBlockingSuspected = laLigaBlockingSuspected,
                 onShowLaLigaDetail = { showLaLigaDetail = true },
                 isFetchingManifest = isFetchingManifest,
+                manifestFetchFailed = manifestFetchFailed,
             )
         }
 

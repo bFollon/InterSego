@@ -104,6 +104,7 @@ struct ContentView: View {
     @State private var laLigaBlockingSuspected = false
     @State private var showLaLigaDetail = false
     @State private var isFetchingManifest = false
+    @State private var manifestFetchFailed = false
     @State private var isSearchingClosestStop = false
     @State private var closestStopError: String?
     @State private var isSearchingBoardingStop = false
@@ -230,6 +231,7 @@ struct ContentView: View {
                             laLigaBlockingSuspected: laLigaBlockingSuspected,
                             onShowLaLigaDetail: { showLaLigaDetail = true },
                             isFetchingManifest: isFetchingManifest,
+                            manifestFetchFailed: manifestFetchFailed,
                         )
                     }
                 }
@@ -947,9 +949,16 @@ struct ContentView: View {
         if NetworkMonitor.shared.isOnline {
             Task {
                 isFetchingManifest = true
-                await TimetableCacheService.shared.fetchAllRoutes()
+                let manifestOk = await TimetableCacheService.shared.fetchAllRoutes()
+                if !manifestOk {
+                    // Show the error state for a beat before the LaLiga/offline banner (set
+                    // below) takes over — otherwise it's never visible.
+                    manifestFetchFailed = true
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
+                }
                 laLigaBlockingSuspected = await LaLigaBlockingService.shared.isLikelyBlocked
                 isFetchingManifest = false
+                manifestFetchFailed = false
             }
             Task { await PolylineCacheService.shared.fetchAllPolylines() }
             Task { await HolidayService.shared.refresh() }

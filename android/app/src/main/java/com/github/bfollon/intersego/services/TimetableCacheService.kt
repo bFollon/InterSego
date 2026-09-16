@@ -177,12 +177,17 @@ object TimetableCacheService {
      * device) also have their polylines fetched once their timetable is downloaded.
      *
      * Safe to call on any dispatcher — internally runs on [Dispatchers.IO].
+     *
+     * Returns whether the manifest fetch itself succeeded — `false` means the server was
+     * unreachable/timed out, letting the caller distinguish that from a normal completion
+     * even though per-route fetches still fall back to bundle/disk cache either way.
      */
-    suspend fun fetchAllRoutes(context: Context) = coroutineScope {
+    suspend fun fetchAllRoutes(context: Context): Boolean = coroutineScope {
         val knownIds = (bundleRouteIds(context) + diskCacheRouteIds(context))
             .map { it.lowercase() }
             .toSet()
-        val manifestIds = fetchManifest(context)?.map { it.lowercase() } ?: emptyList()
+        val manifest = fetchManifest(context)
+        val manifestIds = manifest?.map { it.lowercase() } ?: emptyList()
         val allIds = knownIds + manifestIds
 
         DebugConfig.debugPrint("$TAG: Starting fetch for ${allIds.size} routes")
@@ -196,5 +201,6 @@ object TimetableCacheService {
             }
         }.awaitAll()
         DebugConfig.debugPrint("$TAG: Fetch complete, ${pendingUpdates.size} route(s) updated")
+        manifest != null
     }
 }
