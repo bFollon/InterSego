@@ -13,7 +13,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -145,28 +144,57 @@ fun JourneyDetailScreen(
                 SectionHeader("Itinerario")
             }
             item {
-                TripSummaryCard(
-                    originName = stopName(journey.legs.first().fromStop),
-                    destinationName = stopName(journey.legs.last().toStop),
-                    departureMin = journey.departureMin,
-                    arrivalMin = journey.arrivalMin,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            }
-            item {
-                ItineraryMapView(
-                    journey = journey,
-                    stopLookup = stopLookup,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .padding(bottom = if (tightMargins.isEmpty()) 16.dp else 8.dp)
-                )
-            }
-            items(tightMargins) { margin ->
-                TightTransferRow(stopName = stopName(margin.stopId), marginMin = margin.marginMin)
-                Spacer(modifier = Modifier.height(8.dp))
+                // One grouped card for the whole itinerary summary (departure/arrival rows, map,
+                // tight-transfer warnings) rather than separate floating cards - matches iOS,
+                // where these all live in one List Section and read as a single unified block.
+                GroupedCard(modifier = Modifier.padding(bottom = 16.dp)) {
+                    TripSummaryRow(
+                        icon = Icons.Filled.FiberManualRecord,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        label = "Salida",
+                        stopName = stopName(journey.legs.first().fromStop),
+                        time = formatMin(journey.departureMin)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    TripSummaryRow(
+                        icon = Icons.Filled.Place,
+                        iconTint = MaterialTheme.colorScheme.error,
+                        label = "Llegada",
+                        stopName = stopName(journey.legs.last().toStop),
+                        time = formatMin(journey.arrivalMin)
+                    )
+                    // Full-bleed, no horizontal inset - matches iOS, where the map stretches to
+                    // the card's full width rather than sitting inset like the rows above it.
+                    // When there's no tight-transfer row below it, the map is the card's last
+                    // element - flush against the card's own bottom edge (no padding), so its
+                    // bottom corners use GroupedCard's own radius (20dp) instead of the map's
+                    // usual 12dp, matching the outer card's curve exactly rather than leaving a
+                    // gap or clipping unevenly against it.
+                    ItineraryMapView(
+                        journey = journey,
+                        stopLookup = stopLookup,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = if (tightMargins.isEmpty()) 0.dp else 8.dp)
+                            .height(220.dp)
+                            .clip(
+                                if (tightMargins.isEmpty())
+                                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+                                else
+                                    RoundedCornerShape(12.dp)
+                            )
+                    )
+                    if (tightMargins.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            tightMargins.forEach { margin ->
+                                TightTransferRow(stopName = stopName(margin.stopId), marginMin = margin.marginMin)
+                            }
+                        }
+                    }
+                }
             }
             item {
                 SectionHeader("Pasos")
@@ -213,33 +241,6 @@ fun SectionHeader(title: String) {
         fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
     )
-}
-
-@Composable
-private fun TripSummaryCard(
-    originName: String,
-    destinationName: String,
-    departureMin: Int,
-    arrivalMin: Int,
-    modifier: Modifier = Modifier,
-) {
-    GroupedCard(modifier = modifier) {
-        TripSummaryRow(
-            icon = Icons.Filled.FiberManualRecord,
-            iconTint = MaterialTheme.colorScheme.primary,
-            label = "Salida",
-            stopName = originName,
-            time = formatMin(departureMin)
-        )
-        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-        TripSummaryRow(
-            icon = Icons.Filled.Place,
-            iconTint = MaterialTheme.colorScheme.error,
-            label = "Llegada",
-            stopName = destinationName,
-            time = formatMin(arrivalMin)
-        )
-    }
 }
 
 @Composable
