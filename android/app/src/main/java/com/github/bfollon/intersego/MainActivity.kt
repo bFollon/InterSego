@@ -301,6 +301,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             val routeDataService = remember { RouteDataService(this@MainActivity) }
             var routes by remember { mutableStateOf<List<BusRoute>>(emptyList()) }
             var laLigaBlockingSuspected by remember { mutableStateOf(false) }
+            var isFetchingManifest by remember { mutableStateOf(false) }
 
             LaunchedEffect(Unit) {
                 withContext(Dispatchers.IO) {
@@ -328,8 +329,13 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                 // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
                 if (NetworkMonitor.isOnline()) {
                     launch {
-                        TimetableCacheService.fetchAllRoutes(this@MainActivity)
-                        laLigaBlockingSuspected = LaLigaBlockingService.isLikelyBlocked
+                        isFetchingManifest = true
+                        try {
+                            TimetableCacheService.fetchAllRoutes(this@MainActivity)
+                            laLigaBlockingSuspected = LaLigaBlockingService.isLikelyBlocked
+                        } finally {
+                            isFetchingManifest = false
+                        }
                     }
                     launch { PolylineCacheService.fetchAllPolylines(this@MainActivity) }
                     launch { HolidayService.refresh(this@MainActivity) }
@@ -346,7 +352,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                             routes = routes,
                             routeDataService = routeDataService,
                             reminderService = reminderService,
-                            laLigaBlockingSuspected = laLigaBlockingSuspected
+                            laLigaBlockingSuspected = laLigaBlockingSuspected,
+                            isFetchingManifest = isFetchingManifest
                         )
                     }
 
@@ -512,6 +519,7 @@ fun AppNavigation(
     routeDataService: RouteDataService,
     reminderService: ReminderService,
     laLigaBlockingSuspected: Boolean,
+    isFetchingManifest: Boolean = false,
 ) {
     val navController = rememberNavController()
     val activity = LocalActivity.current as? MainActivity
@@ -885,6 +893,7 @@ fun AppNavigation(
                 onShowAlertDetail = { showAlertDetail = true },
                 laLigaBlockingSuspected = laLigaBlockingSuspected,
                 onShowLaLigaDetail = { showLaLigaDetail = true },
+                isFetchingManifest = isFetchingManifest,
             )
         }
 

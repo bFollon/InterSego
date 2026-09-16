@@ -103,6 +103,7 @@ struct ContentView: View {
     @State private var showAlertDetail = false
     @State private var laLigaBlockingSuspected = false
     @State private var showLaLigaDetail = false
+    @State private var isFetchingManifest = false
     @State private var isSearchingClosestStop = false
     @State private var closestStopError: String?
     @State private var isSearchingBoardingStop = false
@@ -228,6 +229,7 @@ struct ContentView: View {
                             onShowAlertDetail: { showAlertDetail = true },
                             laLigaBlockingSuspected: laLigaBlockingSuspected,
                             onShowLaLigaDetail: { showLaLigaDetail = true },
+                            isFetchingManifest: isFetchingManifest,
                         )
                     }
                 }
@@ -944,8 +946,10 @@ struct ContentView: View {
         // Background timetable + polyline refresh — non-blocking, uses disk cache + ETags
         if NetworkMonitor.shared.isOnline {
             Task {
+                isFetchingManifest = true
                 await TimetableCacheService.shared.fetchAllRoutes()
                 laLigaBlockingSuspected = await LaLigaBlockingService.shared.isLikelyBlocked
+                isFetchingManifest = false
             }
             Task { await PolylineCacheService.shared.fetchAllPolylines() }
             Task { await HolidayService.shared.refresh() }

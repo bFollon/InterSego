@@ -19,6 +19,88 @@ private struct PillLabelHeightKey: PreferenceKey {
     }
 }
 
+/// Keyframe values for `BouncingBallLoader`'s ball: horizontal position plus a squash-and-stretch
+/// scale pulse timed to hit as the ball touches each end of the track.
+private struct BouncingBallKeyframes {
+    var x: CGFloat = 0
+    var scaleX: CGFloat = 1
+    var scaleY: CGFloat = 1
+}
+
+/// Small indeterminate indicator shown while the app is contacting the server: a dot bouncing back
+/// and forth along a track, with a brief squash at each end.
+struct BouncingBallLoader: View {
+    var color: Color = .accentColor
+
+    private let trackWidth: CGFloat = 64
+    private let trackHeight: CGFloat = 16
+    private let ballDiameter: CGFloat = 8
+    private let legDuration: TimeInterval = 0.7
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "iphone")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+
+            trackView
+
+            Image(systemName: "cloud.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+        }
+    }
+
+    private var trackView: some View {
+        ZStack(alignment: .leading) {
+            Capsule()
+                .fill(color.opacity(0.25))
+                .frame(width: trackWidth - ballDiameter, height: 2)
+                .frame(width: trackWidth, height: trackHeight)
+
+            Circle()
+                .fill(color)
+                .frame(width: ballDiameter, height: ballDiameter)
+                .keyframeAnimator(
+                    initialValue: BouncingBallKeyframes(),
+                    repeating: true
+                ) { content, value in
+                    content
+                        .scaleEffect(x: value.scaleX, y: value.scaleY)
+                        .offset(x: value.x)
+                } keyframes: { _ in
+                    KeyframeTrack(\.x) {
+                        CubicKeyframe(0, duration: 0)
+                        CubicKeyframe(trackWidth - ballDiameter, duration: legDuration)
+                        CubicKeyframe(0, duration: legDuration)
+                    }
+                    // Flatten along the direction of travel (horizontal) and bulge perpendicular
+                    // (vertical) — matches a ball bouncing off a wall it's moving into, not one
+                    // dropping onto a floor.
+                    KeyframeTrack(\.scaleX) {
+                        CubicKeyframe(0.78, duration: 0)
+                        CubicKeyframe(1, duration: 0.08)
+                        CubicKeyframe(1, duration: legDuration - 0.16)
+                        CubicKeyframe(0.78, duration: 0.08)
+                        CubicKeyframe(1, duration: 0.08)
+                        CubicKeyframe(1, duration: legDuration - 0.16)
+                        CubicKeyframe(0.78, duration: 0.08)
+                    }
+                    KeyframeTrack(\.scaleY) {
+                        CubicKeyframe(1.22, duration: 0)
+                        CubicKeyframe(1, duration: 0.08)
+                        CubicKeyframe(1, duration: legDuration - 0.16)
+                        CubicKeyframe(1.22, duration: 0.08)
+                        CubicKeyframe(1, duration: 0.08)
+                        CubicKeyframe(1, duration: legDuration - 0.16)
+                        CubicKeyframe(1.22, duration: 0.08)
+                    }
+                }
+        }
+        .frame(width: trackWidth, height: trackHeight)
+    }
+}
+
 /// Resolves each pool action to its navigation callback. Shared with the "Más opciones" hub.
 struct LandingActionCallbacks {
     let onNavigateToRouteList: () -> Void
@@ -61,6 +143,7 @@ struct LandingView: View {
     let onShowAlertDetail: () -> Void
     let laLigaBlockingSuspected: Bool
     let onShowLaLigaDetail: () -> Void
+    var isFetchingManifest: Bool = false
 
     @State private var pillLabelHeight: CGFloat? = nil
 
@@ -83,7 +166,10 @@ struct LandingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 8) {
+                if isFetchingManifest {
+                    BouncingBallLoader()
+                }
                 if let primary = sortedAlerts.first {
                     Button(action: {
                         AnalyticsService.shared.track("alert_banner_tapped", with: ["severity": primary.severity])

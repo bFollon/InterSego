@@ -9,6 +9,12 @@
 
 package com.github.bfollon.intersego.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,10 +39,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsSoccer
@@ -52,6 +60,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,8 +68,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +88,7 @@ import com.github.bfollon.intersego.ui.theme.ConfirmationGreen
 import com.github.bfollon.intersego.ui.theme.LaLigaOrange
 import com.github.bfollon.intersego.ui.theme.RouteOrange
 import com.github.bfollon.intersego.ui.theme.WordmarkGradient
+import kotlin.math.min
 
 private val GreenTint = ConfirmationGreen.copy(alpha = 0.1f)
 private val GreenBorder = ConfirmationGreen.copy(alpha = 0.3f)
@@ -124,6 +136,7 @@ fun LandingScreen(
     onShowAlertDetail: () -> Unit = {},
     laLigaBlockingSuspected: Boolean = false,
     onShowLaLigaDetail: () -> Unit = {},
+    isFetchingManifest: Boolean = false,
 ) {
     val callbacks = LandingActionCallbacks(
         onNavigateToRouteList = onNavigateToRouteList,
@@ -148,16 +161,24 @@ fun LandingScreen(
     ) {
         TopAppBar(
             title = {
-                val primary = alertsSortedBySeverity(activeAlerts).firstOrNull()
-                if (primary != null) {
-                    AlertPill(
-                        alert = primary,
-                        extraCount = activeAlerts.size - 1,
-                        onClick = {
-                            AnalyticsService.track("alert_banner_tapped", mapOf("severity" to primary.severity))
-                            onShowAlertDetail()
-                        },
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (isFetchingManifest) {
+                        BouncingBallLoader()
+                    }
+                    val primary = alertsSortedBySeverity(activeAlerts).firstOrNull()
+                    if (primary != null) {
+                        AlertPill(
+                            alert = primary,
+                            extraCount = activeAlerts.size - 1,
+                            onClick = {
+                                AnalyticsService.track("alert_banner_tapped", mapOf("severity" to primary.severity))
+                                onShowAlertDetail()
+                            },
+                        )
+                    }
                 }
             },
             actions = {
@@ -581,6 +602,71 @@ internal fun BusLineIcon(size: Int) {
 
     Canvas(modifier = Modifier.size(size.dp)) {
         drawBusLineIcon(color)
+    }
+}
+
+/** Small indeterminate indicator shown while the app is contacting the server: a dot bouncing back and forth along a track. */
+@Composable
+private fun BouncingBallLoader(
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.primary,
+) {
+    val transition = rememberInfiniteTransition(label = "bouncingBall")
+    val progress by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 650, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "bouncingBallProgress",
+    )
+
+    // Squash-and-stretch pulse as the ball touches each end of the track — driven by the same
+    // progress value as the bounce itself, so it's tied to the turnaround, not an independent clock.
+    val edgeProximity = min(progress, 1f - progress)
+    val squashWindow = 0.12f
+    val squash = 1f - (edgeProximity / squashWindow).coerceIn(0f, 1f)
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Default.PhoneAndroid,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(14.dp),
+        )
+
+        Canvas(modifier = Modifier.size(width = 64.dp, height = 16.dp)) {
+            val ballRadius = size.height / 2f - 2.dp.toPx()
+            val trackInset = ballRadius + 2.dp.toPx()
+            val trackY = size.height / 2f
+
+            drawLine(
+                color = color.copy(alpha = 0.25f),
+                start = Offset(trackInset, trackY),
+                end = Offset(size.width - trackInset, trackY),
+                strokeWidth = 2.dp.toPx(),
+                cap = StrokeCap.Round,
+            )
+
+            val ballX = trackInset + (size.width - 2 * trackInset) * progress
+            // Flatten along the direction of travel (horizontal) and bulge perpendicular (vertical) —
+            // matches a ball bouncing off a wall it's moving into, not one dropping onto a floor.
+            scale(scaleX = 1f - squash * 0.12f, scaleY = 1f + squash * 0.12f, pivot = Offset(ballX, trackY)) {
+                drawCircle(color = color, radius = ballRadius, center = Offset(ballX, trackY))
+            }
+        }
+
+        Icon(
+            imageVector = Icons.Default.Cloud,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(14.dp),
+        )
     }
 }
 
