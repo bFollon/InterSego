@@ -86,6 +86,64 @@ class JourneyPlannerServiceTest : FunSpec({
         (result[0].legs[1] as Leg.Ride).depMin shouldBe 630 // the too-tight 621 trip must not have been used
     }
 
+    test("findJourneysWithTightTransfers surfaces the too-tight 621 connection in its own list") {
+        val routeA = singleVariantRoute(
+            "M1", listOf(stop("x"), stop("estacion-autobuses")),
+            listOf("x", "estacion-autobuses"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(600), dep(620))),
+        )
+        val routeB = singleVariantRoute(
+            "M6", listOf(stop("estacion-autobuses"), stop("y")),
+            listOf("estacion-autobuses", "y"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(621), dep(640)), listOf(dep(630), dep(650))),
+        )
+        val result = JourneyPlannerService.findJourneysWithTightTransfers(
+            listOf(routeA, routeB), emptyList(), query("x", "y"), bufferSameStopTranscribed = 3,
+        )
+
+        // Normal list is unchanged from the plain findJourneys behavior.
+        result.journeys.size shouldBe 1
+        result.journeys[0].arrivalMin shouldBe 650
+
+        // The 621 connection (1min margin, below the 3min buffer) shows up as a tight option instead
+        // of being silently dropped.
+        result.tightTransferJourneys.size shouldBe 1
+        result.tightTransferJourneys[0].arrivalMin shouldBe 640
+        (result.tightTransferJourneys[0].legs[1] as Leg.Ride).depMin shouldBe 621
+    }
+
+    test("a comfortable-margin connection excluded from the normal top result must not leak into the tight-transfer section") {
+        // Regression for a live-testing report: four connecting departures off the same M1 trip, all
+        // with a margin well above the configured buffer (10-25min vs. a 3min buffer) - none of
+        // these should ever be considered "tight". Dominance filtering correctly collapses them to
+        // just the earliest-arriving one (650, since they all share the same overall departure time
+        // and a later arrival on the same start is strictly worse) - the other three, though excluded
+        // from the shown result, are still comfortable connections and must not show up as "tight"
+        // options. (An earlier, buggy implementation diffed two independently-ranked/top-3-capped
+        // result lists, which let exactly this kind of dropped-but-comfortable candidate leak in.)
+        val routeA = singleVariantRoute(
+            "M1", listOf(stop("x"), stop("estacion-autobuses")),
+            listOf("x", "estacion-autobuses"), DayType.WEEKDAY,
+            trips = listOf(listOf(dep(600), dep(620))),
+        )
+        val routeB = singleVariantRoute(
+            "M6", listOf(stop("estacion-autobuses"), stop("y")),
+            listOf("estacion-autobuses", "y"), DayType.WEEKDAY,
+            trips = listOf(
+                listOf(dep(630), dep(650)),
+                listOf(dep(635), dep(655)),
+                listOf(dep(640), dep(660)),
+                listOf(dep(645), dep(665)),
+            ),
+        )
+        val result = JourneyPlannerService.findJourneysWithTightTransfers(
+            listOf(routeA, routeB), emptyList(), query("x", "y"), bufferSameStopTranscribed = 3,
+        )
+
+        result.journeys.map { it.arrivalMin } shouldBe listOf(650)
+        result.tightTransferJourneys.shouldBeEmpty()
+    }
+
     test("walking transfer Azoguejo <-> Estacion de Autobuses") {
         val routeA = singleVariantRoute(
             "M4", listOf(stop("x"), stop("azoguejo")),

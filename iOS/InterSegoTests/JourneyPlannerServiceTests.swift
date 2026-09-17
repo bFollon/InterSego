@@ -78,6 +78,65 @@ final class JourneyPlannerServiceTests: XCTestCase {
         XCTAssertEqual(secondLeg.depMin, 630) // the too-tight 621 trip must not have been used
     }
 
+    func testFindJourneysWithTightTransfersSurfacesTheTooTight621ConnectionInItsOwnList() {
+        let routeA = singleVariantRoute(
+            routeId: "M1", stops: [stop("x"), stop("estacion-autobuses")],
+            stopSequenceIds: ["x", "estacion-autobuses"], dayType: .weekday,
+            trips: [[dep(600), dep(620)]]
+        )
+        let routeB = singleVariantRoute(
+            routeId: "M6", stops: [stop("estacion-autobuses"), stop("y")],
+            stopSequenceIds: ["estacion-autobuses", "y"], dayType: .weekday,
+            trips: [[dep(621), dep(640)], [dep(630), dep(650)]]
+        )
+        let result = JourneyPlannerService.findJourneysWithTightTransfers(
+            routes: [routeA, routeB], transfers: [], query: query("x", "y"), bufferSameStopTranscribed: 3
+        )
+
+        // Normal list is unchanged from the plain findJourneys behavior.
+        XCTAssertEqual(result.journeys.count, 1)
+        XCTAssertEqual(result.journeys[0].arrivalMin, 650)
+
+        // The 621 connection (1min margin, below the 3min buffer) shows up as a tight option
+        // instead of being silently dropped.
+        XCTAssertEqual(result.tightTransferJourneys.count, 1)
+        XCTAssertEqual(result.tightTransferJourneys[0].arrivalMin, 640)
+        guard case .ride(let secondLeg) = result.tightTransferJourneys[0].legs[1] else { return XCTFail("expected a Ride leg") }
+        XCTAssertEqual(secondLeg.depMin, 621)
+    }
+
+    func testAComfortableMarginConnectionExcludedFromTheNormalTopResultMustNotLeakIntoTheTightTransferSection() {
+        // Regression for a live-testing report: four connecting departures off the same M1 trip, all
+        // with a margin well above the configured buffer (10-25min vs. a 3min buffer) - none of
+        // these should ever be considered "tight". Dominance filtering correctly collapses them to
+        // just the earliest-arriving one (650, since they all share the same overall departure time
+        // and a later arrival on the same start is strictly worse) - the other three, though excluded
+        // from the shown result, are still comfortable connections and must not show up as "tight"
+        // options. (An earlier, buggy implementation diffed two independently-ranked/top-3-capped
+        // result lists, which let exactly this kind of dropped-but-comfortable candidate leak in.)
+        let routeA = singleVariantRoute(
+            routeId: "M1", stops: [stop("x"), stop("estacion-autobuses")],
+            stopSequenceIds: ["x", "estacion-autobuses"], dayType: .weekday,
+            trips: [[dep(600), dep(620)]]
+        )
+        let routeB = singleVariantRoute(
+            routeId: "M6", stops: [stop("estacion-autobuses"), stop("y")],
+            stopSequenceIds: ["estacion-autobuses", "y"], dayType: .weekday,
+            trips: [
+                [dep(630), dep(650)],
+                [dep(635), dep(655)],
+                [dep(640), dep(660)],
+                [dep(645), dep(665)],
+            ]
+        )
+        let result = JourneyPlannerService.findJourneysWithTightTransfers(
+            routes: [routeA, routeB], transfers: [], query: query("x", "y"), bufferSameStopTranscribed: 3
+        )
+
+        XCTAssertEqual(result.journeys.map(\.arrivalMin), [650])
+        XCTAssertTrue(result.tightTransferJourneys.isEmpty)
+    }
+
     func testWalkingTransferAzoguejoToEstacion() {
         let routeA = singleVariantRoute(
             routeId: "M4", stops: [stop("x"), stop("azoguejo")],

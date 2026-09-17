@@ -59,6 +59,11 @@ enum JourneyPlannerService {
     static let defaultBufferWalkTranscribed = 15
     static let defaultBufferWalkEstimated = 15
 
+    // Floor buffer used by `findJourneysWithTightTransfers`'s relaxed second pass — 1 minute
+    // (not 0) so a "connection" isn't literally simultaneous with the arrival it depends on.
+    private static let tightTransferBufferFloor = 1
+    static let maxTightTransferResults = 3
+
     /// One physically contiguous, time-monotonic run of stops within a single trip. See `buildRideSegments`.
     private struct RideSegment {
         let routeId: String
@@ -73,19 +78,34 @@ enum JourneyPlannerService {
     /// see `rankAndDedupe`'s dedup key, which groups by this rather than by `Journey.legs`' route
     /// IDs so that two journeys boarding the exact same trip(s) but alighting/transferring at a
     /// different shared stop collapse together, while two journeys that simply happen to use the
-    /// same *route* at different times of day do not.
+    /// same *route* at different times of day do not. `hasTightTransfer` is only ever set by
+    /// `findJourneysWithTightTransfers`'s tagging pass — see `Reached.hasTightTransfer`.
     private struct Candidate {
         let journey: Journey
         let tripKeys: Set<String>
+        var hasTightTransfer: Bool = false
     }
 
     /// A stop reached during the search, with enough context to compute the next leg's buffer and to reconstruct legs.
+    /// `hasTightTransfer` is true once any mid-journey transfer on this path cleared only the relaxed
+    /// (`tightTransferBufferFloor`) buffer, not the real configured one — see `ridesFrom`'s `tagBuffer`
+    /// params, only ever passed by `findJourneysWithTightTransfers`. Always false for `findJourneys`.
     private struct Reached {
         let stop: String
         let timeMin: Int
         let isEstimatedArrival: Bool
         let legsFromOrigin: [Leg]
         let boardedTripKeys: Set<String> // trips already ridden on this path — a round-1 transfer must use a different one
+        var hasTightTransfer: Bool = false
+    }
+
+    /// Result of `findJourneysWithTightTransfers`: the normal, always-usable options plus a
+    /// smaller set of additional options that only clear a transfer with a below-recommended
+    /// margin — surfaced separately so a user who'd otherwise see no results (or fewer than they
+    /// might accept) knows they exist, rather than being silently dropped.
+    struct JourneySearchResult {
+        let journeys: [Journey]
+        let tightTransferJourneys: [Journey]
     }
 
     static func findJourneys(
@@ -98,6 +118,67 @@ enum JourneyPlannerService {
         bufferWalkTranscribed: Int = defaultBufferWalkTranscribed,
         bufferWalkEstimated: Int = defaultBufferWalkEstimated
     ) -> [Journey] {
+        let candidates = searchCandidates(
+            routes: routes, transfers: transfers, query: query, maxWaitMin: maxWaitMin,
+            bufferSameStopTranscribed: bufferSameStopTranscribed, bufferSameStopEstimated: bufferSameStopEstimated,
+            bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated
+        )
+        return rankFinal(candidates, deadline: query.arriveBeforeMin)
+    }
+
+    /// As `findJourneys`, but also returns a second, capped list of journeys whose only viable
+    /// mid-journey transfer has a margin strictly between `tightTransferBufferFloor` and the
+    /// configured buffer — i.e. journeys the normal search silently excludes. A single search pass
+    /// gates on the relaxed floor buffer (so it finds a strict superset of the normal results) and
+    /// tags each candidate with whether it only cleared that floor, not the real configured buffer
+    /// (see `ridesFrom`'s `tagBuffer` params) — candidates are then partitioned by that tag, rather
+    /// than diffing two separately-ranked/top-3-capped result lists, which would wrongly surface
+    /// plain normal-buffer-compliant candidates that simply didn't make the normal top 3. See
+    /// "Viajes con transbordos ajustados" in docs/JOURNEY_PLANNER.md.
+    static func findJourneysWithTightTransfers(
+        routes: [JourneyRouteData],
+        transfers: [TransferEdge],
+        query: JourneyQuery,
+        maxWaitMin: Int = defaultMaxWaitMin,
+        bufferSameStopTranscribed: Int = defaultBufferSameStopTranscribed,
+        bufferSameStopEstimated: Int = defaultBufferSameStopEstimated,
+        bufferWalkTranscribed: Int = defaultBufferWalkTranscribed,
+        bufferWalkEstimated: Int = defaultBufferWalkEstimated
+    ) -> JourneySearchResult {
+        let allCandidates = searchCandidates(
+            routes: routes, transfers: transfers, query: query, maxWaitMin: maxWaitMin,
+            bufferSameStopTranscribed: tightTransferBufferFloor, bufferSameStopEstimated: tightTransferBufferFloor,
+            bufferWalkTranscribed: tightTransferBufferFloor, bufferWalkEstimated: tightTransferBufferFloor,
+            tagSameStopTranscribed: bufferSameStopTranscribed, tagSameStopEstimated: bufferSameStopEstimated,
+            tagWalkTranscribed: bufferWalkTranscribed, tagWalkEstimated: bufferWalkEstimated
+        )
+        let normalCandidates = allCandidates.filter { !$0.hasTightTransfer }
+        let tightCandidates = allCandidates.filter { $0.hasTightTransfer }
+
+        let normalJourneys = rankFinal(normalCandidates, deadline: query.arriveBeforeMin)
+        let tightJourneys = Array(rankFinal(tightCandidates, deadline: query.arriveBeforeMin).prefix(maxTightTransferResults))
+
+        return JourneySearchResult(journeys: normalJourneys, tightTransferJourneys: tightJourneys)
+    }
+
+    private static func searchCandidates(
+        routes: [JourneyRouteData],
+        transfers: [TransferEdge],
+        query: JourneyQuery,
+        maxWaitMin: Int,
+        bufferSameStopTranscribed: Int,
+        bufferSameStopEstimated: Int,
+        bufferWalkTranscribed: Int,
+        bufferWalkEstimated: Int,
+        // When non-nil (only passed by findJourneysWithTightTransfers), the *gate* buffers above
+        // are expected to be the relaxed floor, and a candidate is tagged hasTightTransfer=true if
+        // its transfer margin falls short of these (the real configured buffers) instead — see
+        // ridesFrom. findJourneys never passes these, so its candidates are never tagged.
+        tagSameStopTranscribed: Int? = nil,
+        tagSameStopEstimated: Int? = nil,
+        tagWalkTranscribed: Int? = nil,
+        tagWalkEstimated: Int? = nil
+    ) -> [Candidate] {
         let segments = buildRideSegments(routes: routes, dayTypes: query.dayTypes, month: query.month, weekday: query.weekday)
         let walkNeighbors = buildWalkIndex(transfers)
 
@@ -163,23 +244,35 @@ enum JourneyPlannerService {
 
         for start in round1Starts {
             let buffer = start.isEstimatedArrival ? bufferSameStopEstimated : bufferSameStopTranscribed
-            for reached in ridesFrom(start, segments: segments, buffer: buffer, requireDifferentTripThan: start.boardedTripKeys, bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated, maxWaitMin: maxWaitMin) {
+            let tagBuffer = start.isEstimatedArrival ? tagSameStopEstimated : tagSameStopTranscribed
+            for reached in ridesFrom(
+                start, segments: segments, buffer: buffer, requireDifferentTripThan: start.boardedTripKeys,
+                bufferWalkTranscribed: bufferWalkTranscribed, bufferWalkEstimated: bufferWalkEstimated, maxWaitMin: maxWaitMin,
+                tagBuffer: tagBuffer, tagBufferWalkTranscribed: tagWalkTranscribed, tagBufferWalkEstimated: tagWalkEstimated
+            ) {
                 if reached.stop == query.destination {
-                    journeys.append(Candidate(journey: toJourney(reached), tripKeys: reached.boardedTripKeys))
+                    journeys.append(Candidate(journey: toJourney(reached), tripKeys: reached.boardedTripKeys, hasTightTransfer: reached.hasTightTransfer))
                 } else {
                     for edge in walkNeighbors[reached.stop] ?? [] {
                         let other = edge.from == reached.stop ? edge.to : edge.from
                         if other == query.destination {
                             let walkLeg = Leg.Walk(fromStop: reached.stop, toStop: other, meters: edge.meters, minutes: edge.walkMinutes)
-                            let extended = Reached(stop: other, timeMin: reached.timeMin + edge.walkMinutes, isEstimatedArrival: reached.isEstimatedArrival, legsFromOrigin: reached.legsFromOrigin + [.walk(walkLeg)], boardedTripKeys: reached.boardedTripKeys)
-                            journeys.append(Candidate(journey: toJourney(extended), tripKeys: extended.boardedTripKeys))
+                            let extended = Reached(stop: other, timeMin: reached.timeMin + edge.walkMinutes, isEstimatedArrival: reached.isEstimatedArrival, legsFromOrigin: reached.legsFromOrigin + [.walk(walkLeg)], boardedTripKeys: reached.boardedTripKeys, hasTightTransfer: reached.hasTightTransfer)
+                            journeys.append(Candidate(journey: toJourney(extended), tripKeys: extended.boardedTripKeys, hasTightTransfer: extended.hasTightTransfer))
                         }
                     }
                 }
             }
         }
 
-        if let deadline = query.arriveBeforeMin {
+        return journeys
+    }
+
+    /// Final ranking/dedup/deadline-filter step shared by `findJourneys` and
+    /// `findJourneysWithTightTransfers` — see the inline comment below for why arrive-before mode
+    /// ranks by latest-departure-first rather than closeness to the deadline.
+    private static func rankFinal(_ candidates: [Candidate], deadline: Int?) -> [Journey] {
+        if let deadline {
             // Latest departure first (least total time spent travelling/waiting), then fewest
             // transfers, then earliest arrival - NOT closeness to the deadline. Closeness alone
             // rewards riding further than necessary on the very trip that already reaches the
@@ -193,9 +286,9 @@ enum JourneyPlannerService {
             // ties exactly on arrival/transfers/departure (same trip, same everything) and would
             // otherwise slip through as a second, needlessly effortful "option." See
             // docs/JOURNEY_PLANNER.md.
-            return rankAndDedupe(journeys.filter { $0.journey.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin, totalWalkMinutes($0)] }
+            return rankAndDedupe(candidates.filter { $0.journey.arrivalMin <= deadline }) { [-$0.departureMin, $0.transferCount, $0.arrivalMin, totalWalkMinutes($0)] }
         } else {
-            return rankAndDedupe(journeys) { [$0.arrivalMin, $0.transferCount, -$0.departureMin, totalWalkMinutes($0)] }
+            return rankAndDedupe(candidates) { [$0.arrivalMin, $0.transferCount, -$0.departureMin, totalWalkMinutes($0)] }
         }
     }
 
@@ -209,6 +302,13 @@ enum JourneyPlannerService {
     /// rather than a same-trip continuation, and (as a side effect) is exactly what prevents a
     /// circular route from "teleporting": every ride is a single trip's own ordered stop
     /// sequence, walked strictly forward from a real boarding index, never re-entered out of order.
+    ///
+    /// `tagBuffer`/`tagBufferWalkTranscribed`/`tagBufferWalkEstimated`, when non-nil (only passed
+    /// by `findJourneysWithTightTransfers`), are the *real* configured buffers — selected via the
+    /// exact same same-stop/walk/estimated branching as `buffer` itself — used only to mark the
+    /// resulting `Reached.hasTightTransfer` when the actual margin clears `buffer` (the relaxed
+    /// floor gating the search) but not this stricter one. They never affect which connections are
+    /// found, only how they're tagged.
     private static func ridesFrom(
         _ start: Reached,
         segments: [RideSegment],
@@ -216,7 +316,10 @@ enum JourneyPlannerService {
         requireDifferentTripThan: Set<String>?,
         bufferWalkTranscribed: Int,
         bufferWalkEstimated: Int,
-        maxWaitMin: Int
+        maxWaitMin: Int,
+        tagBuffer: Int? = nil,
+        tagBufferWalkTranscribed: Int? = nil,
+        tagBufferWalkEstimated: Int? = nil
     ) -> [Reached] {
         let cameFromWalk: Bool = {
             if case .walk = start.legsFromOrigin.last { return true }
@@ -239,6 +342,15 @@ enum JourneyPlannerService {
                 // maxWaitMin caps genuine mid-journey transfer waits, not the gap between the
                 // query's departAfterMin and the first bus of the day.
                 if requireDifferentTripThan != nil && segment.minutesOfDay[i] - start.timeMin > maxWaitMin { continue }
+                var isTightThisHop = false
+                if requireDifferentTripThan != nil {
+                    let effectiveTagBuffer: Int? = cameFromWalk
+                        ? ((start.isEstimatedArrival || segment.isEstimated[i]) ? tagBufferWalkEstimated : tagBufferWalkTranscribed)
+                        : tagBuffer
+                    if let effectiveTagBuffer, segment.minutesOfDay[i] < start.timeMin + effectiveTagBuffer {
+                        isTightThisHop = true
+                    }
+                }
                 guard i + 1 < segment.stops.count else { continue }
                 for j in (i + 1)..<segment.stops.count {
                     let leg = Leg.Ride(
@@ -255,7 +367,8 @@ enum JourneyPlannerService {
                         timeMin: segment.minutesOfDay[j],
                         isEstimatedArrival: segment.isEstimated[j],
                         legsFromOrigin: start.legsFromOrigin + [.ride(leg)],
-                        boardedTripKeys: start.boardedTripKeys.union([segment.tripKey])
+                        boardedTripKeys: start.boardedTripKeys.union([segment.tripKey]),
+                        hasTightTransfer: start.hasTightTransfer || isTightThisHop
                     ))
                 }
             }

@@ -19,6 +19,7 @@ struct JourneyResultsContainer: View {
     let onJourneySelected: (_ journey: Journey, _ stops: [String: BusStop]) -> Void
 
     @State private var journeys: [Journey] = []
+    @State private var tightTransferJourneys: [Journey] = []
     @State private var isLoading = true
     @State private var stopsById: [String: BusStop] = [:]
     // `.task` reruns every time this view re-appears - including popping back from a pushed
@@ -39,6 +40,7 @@ struct JourneyResultsContainer: View {
             departAfterMin: selection.departAfterMin,
             arriveBeforeMin: selection.arriveBeforeMin,
             journeys: journeys,
+            tightTransferJourneys: tightTransferJourneys,
             isLoading: isLoading,
             routesById: Dictionary(uniqueKeysWithValues: routes.map { ($0.id, $0) }),
             stopsById: stopsById,
@@ -49,13 +51,15 @@ struct JourneyResultsContainer: View {
             hasSearched = true
             let entries = StopDirectoryService.buildDirectory(routeIds: supportedRouteIds)
             stopsById = Dictionary(uniqueKeysWithValues: entries.map { ($0.physicalStopId, $0.stop) })
-            journeys = await JourneySearchCoordinator.search(
+            let result = await JourneySearchCoordinator.search(
                 originPhysicalStopId: selection.originId,
                 destinationPhysicalStopId: selection.destinationId,
                 date: selection.date,
                 departAfterMin: selection.departAfterMin,
                 arriveBeforeMin: selection.arriveBeforeMin,
             )
+            journeys = result.journeys
+            tightTransferJourneys = result.tightTransferJourneys
             isLoading = false
         }
     }
@@ -71,8 +75,10 @@ private func formatDuration(_ minutes: Int) -> String {
     minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(minutes % 60) min"
 }
 
-/// Top 3 ranked journeys for the current query. Below-buffer transfers are already filtered out
-/// by the planner — what's shown here is always usable. See docs/JOURNEY_PLANNER.md.
+/// Top 3 ranked journeys for the current query, plus (below them, in their own section) up to
+/// `JourneyPlannerService.maxTightTransferResults` additional options whose transfer margin falls
+/// below the configured buffer — surfaced rather than silently dropped, so a user knows they
+/// exist. See docs/JOURNEY_PLANNER.md.
 struct JourneyResultsView: View {
     let originName: String
     let destinationName: String
@@ -80,6 +86,7 @@ struct JourneyResultsView: View {
     let departAfterMin: Int
     let arriveBeforeMin: Int?
     let journeys: [Journey]
+    var tightTransferJourneys: [Journey] = []
     let isLoading: Bool
     let routesById: [String: BusRoute]
     let stopsById: [String: BusStop]
@@ -93,7 +100,7 @@ struct JourneyResultsView: View {
     }
 
     private func loadReminderContexts() async {
-        for journey in journeys where reminderContexts[journey] == nil {
+        for journey in journeys + tightTransferJourneys where reminderContexts[journey] == nil {
             if let context = await JourneyReminderHelper.build(
                 journey: journey, date: date, originName: originName, destinationName: destinationName,
                 routesById: routesById, stopsById: stopsById
@@ -164,29 +171,25 @@ struct JourneyResultsView: View {
                 // over the whole group, not repeated per card.
                 ForEach(Array(journeys.enumerated()), id: \.offset) { index, journey in
                     Section {
-                        JourneyCard(
-                            journey: journey,
-                            reminderContext: reminderContext(for: journey),
-                            isReminderSet: reminderContext(for: journey).map { reminderKeys.contains(JourneyReminderHelper.matchKey($0)) } ?? false,
-                            onSelect: {
-                                AnalyticsService.shared.track("journey_result_selected", with: [
-                                    "duration_min": journey.arrivalMin - journey.departureMin,
-                                    "transfers": journey.transferCount,
-                                ])
-                                onJourneySelected(journey)
-                            },
-                            onReminderToggle: { toggleReminder(for: journey) }
-                        )
-                        // Opt this row out of the system inset-grouped row background/insets/
-                        // separator (same bypass ItineraryMapView's row uses in JourneyDetailView)
-                        // so JourneyCard can draw its own card chrome and let the tight-transfer
-                        // banner overflow above the card's top edge, tucked behind it.
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        journeyRow(journey)
                     } header: {
                         if index == 0 {
                             Text("Opciones")
+                        }
+                    }
+                }
+                if !tightTransferJourneys.isEmpty {
+                    Section {
+                        TightTransferSectionBanner()
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    } header: {
+                        Text("Viajes con transbordos ajustados")
+                    }
+                    ForEach(Array(tightTransferJourneys.enumerated()), id: \.offset) { _, journey in
+                        Section {
+                            journeyRow(journey)
                         }
                     }
                 }
@@ -196,7 +199,51 @@ struct JourneyResultsView: View {
         .navigationTitle("Resultados")
         .navigationBarTitleDisplayMode(.inline)
         .task { reminderKeys = await ReminderService.shared.activeMatchKeys() }
-        .task(id: journeys) { await loadReminderContexts() }
+        .task(id: journeys + tightTransferJourneys) { await loadReminderContexts() }
+    }
+
+    @ViewBuilder
+    private func journeyRow(_ journey: Journey) -> some View {
+        JourneyCard(
+            journey: journey,
+            reminderContext: reminderContext(for: journey),
+            isReminderSet: reminderContext(for: journey).map { reminderKeys.contains(JourneyReminderHelper.matchKey($0)) } ?? false,
+            onSelect: {
+                AnalyticsService.shared.track("journey_result_selected", with: [
+                    "duration_min": journey.arrivalMin - journey.departureMin,
+                    "transfers": journey.transferCount,
+                ])
+                onJourneySelected(journey)
+            },
+            onReminderToggle: { toggleReminder(for: journey) }
+        )
+        // Opt this row out of the system inset-grouped row background/insets/
+        // separator (same bypass ItineraryMapView's row uses in JourneyDetailView)
+        // so JourneyCard can draw its own card chrome and let the tight-transfer
+        // banner overflow above the card's top edge, tucked behind it.
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+    }
+}
+
+/// Explains the "Viajes con transbordos ajustados" section as a whole — distinct from each card's
+/// own `TightTransferPeekBanner`, which names that specific journey's margin. This one sits once
+/// at the top of the section so a user who'd otherwise see only the (possibly empty) main list
+/// knows these extra, less comfortable options exist at all.
+private struct TightTransferSectionBanner: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+            Text("Estos viajes requieren un transbordo con menos margen del configurado en los ajustes. Se muestran igualmente como alternativa, pero el cambio de autobús puede resultar más justo de lo habitual.")
+        }
+        .font(.caption)
+        .foregroundStyle(.orange)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.vertical, 6)
     }
 }
 

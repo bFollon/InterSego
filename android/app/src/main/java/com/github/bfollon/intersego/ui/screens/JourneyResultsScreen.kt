@@ -68,8 +68,10 @@ private fun formatDuration(minutes: Int): String =
 private fun formatSearchDate(date: LocalDate): String =
     if (date == LocalDate.now()) "Hoy" else date.format(DateTimeFormatter.ofPattern("d MMM"))
 
-/** Top 3 ranked journeys for the current query. Below-buffer transfers are already filtered out
- * by the planner - what's shown here is always usable. See docs/JOURNEY_PLANNER.md. */
+/** Top 3 ranked journeys for the current query, plus (below them, in their own section) up to
+ * [JourneyPlannerService.MAX_TIGHT_TRANSFER_RESULTS] additional options whose transfer margin
+ * falls below the configured buffer — surfaced rather than silently dropped, so a user knows
+ * they exist. See docs/JOURNEY_PLANNER.md. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JourneyResultsScreen(
@@ -79,6 +81,7 @@ fun JourneyResultsScreen(
     departAfterMin: Int,
     arriveBeforeMin: Int?,
     journeys: List<Journey>,
+    tightTransferJourneys: List<Journey> = emptyList(),
     isLoading: Boolean,
     routesById: Map<String, BusRoute>,
     stopsById: Map<String, BusStop>,
@@ -88,6 +91,55 @@ fun JourneyResultsScreen(
     onBack: () -> Unit,
 ) {
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+
+    @Composable
+    fun journeyItem(journey: Journey) {
+        val reminderContext = remember(journey, date, routesById, stopsById) {
+            JourneyReminderHelper.build(
+                journey = journey, date = date,
+                originName = originName, destinationName = destinationName,
+                routesById = routesById, stopsById = stopsById,
+                routeDataService = routeDataService,
+            )
+        }
+        val matchKey = reminderContext?.let { JourneyReminderHelper.matchKey(it) }
+        JourneyCard(
+            journey = journey,
+            isReminderSet = matchKey != null && reminderKeys.contains(matchKey),
+            reminderAvailable = reminderContext != null && reminderService != null,
+            onClick = {
+                AnalyticsService.track(
+                    "journey_result_selected",
+                    mapOf(
+                        "duration_min" to (journey.arrivalMin - journey.departureMin),
+                        "transfers" to journey.transferCount
+                    )
+                )
+                onJourneySelected(journey)
+            },
+            onReminderToggle = {
+                val context = reminderContext
+                val service = reminderService
+                if (context != null && service != null) {
+                    if (matchKey != null && reminderKeys.contains(matchKey)) {
+                        service.cancelReminder(
+                            context.route.id, context.stop.id, context.direction,
+                            context.departure.hour, context.departure.minute
+                        )
+                    } else {
+                        val result = service.scheduleReminder(
+                            context.departure, context.stop, context.route, context.direction,
+                            dayType = context.dayType, journeyLabel = context.journeyLabel
+                        )
+                        if (result is ReminderService.ScheduleResult.Success) {
+                            AnalyticsService.track("reminder_set", mapOf("type" to "journey"))
+                        }
+                    }
+                    reminderKeys = service.activeMatchKeys()
+                }
+            }
+        )
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -135,54 +187,52 @@ fun JourneyResultsScreen(
                     )
                 }
                 else -> items(journeys) { journey ->
-                    val reminderContext = remember(journey, date, routesById, stopsById) {
-                        JourneyReminderHelper.build(
-                            journey = journey, date = date,
-                            originName = originName, destinationName = destinationName,
-                            routesById = routesById, stopsById = stopsById,
-                            routeDataService = routeDataService,
-                        )
-                    }
-                    val matchKey = reminderContext?.let { JourneyReminderHelper.matchKey(it) }
-                    JourneyCard(
-                        journey = journey,
-                        isReminderSet = matchKey != null && reminderKeys.contains(matchKey),
-                        reminderAvailable = reminderContext != null && reminderService != null,
-                        onClick = {
-                            AnalyticsService.track(
-                                "journey_result_selected",
-                                mapOf(
-                                    "duration_min" to (journey.arrivalMin - journey.departureMin),
-                                    "transfers" to journey.transferCount
-                                )
-                            )
-                            onJourneySelected(journey)
-                        },
-                        onReminderToggle = {
-                            val context = reminderContext
-                            val service = reminderService
-                            if (context != null && service != null) {
-                                if (matchKey != null && reminderKeys.contains(matchKey)) {
-                                    service.cancelReminder(
-                                        context.route.id, context.stop.id, context.direction,
-                                        context.departure.hour, context.departure.minute
-                                    )
-                                } else {
-                                    val result = service.scheduleReminder(
-                                        context.departure, context.stop, context.route, context.direction,
-                                        dayType = context.dayType, journeyLabel = context.journeyLabel
-                                    )
-                                    if (result is ReminderService.ScheduleResult.Success) {
-                                        AnalyticsService.track("reminder_set", mapOf("type" to "journey"))
-                                    }
-                                }
-                                reminderKeys = service.activeMatchKeys()
-                            }
-                        }
-                    )
+                    journeyItem(journey)
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
+            if (!isLoading && tightTransferJourneys.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    SectionHeader("Viajes con transbordos ajustados")
+                }
+                item {
+                    TightTransferSectionBanner(modifier = Modifier.padding(bottom = 12.dp))
+                }
+                items(tightTransferJourneys) { journey ->
+                    journeyItem(journey)
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Explains the "Viajes con transbordos ajustados" section as a whole — distinct from each card's
+ * own [TightTransferPeekBanner], which names that specific journey's margin. This one sits once
+ * at the top of the section so a user who'd otherwise see only the (possibly empty) main list
+ * knows these extra, less comfortable options exist at all.
+ */
+@Composable
+private fun TightTransferSectionBanner(modifier: Modifier = Modifier) {
+    val warning = warningColor()
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = warning.copy(alpha = 0.15f),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(Icons.Filled.Warning, contentDescription = null, tint = warning, modifier = Modifier.size(18.dp))
+            Text(
+                "Estos viajes requieren un transbordo con menos margen del configurado en los ajustes. Se muestran igualmente como alternativa, pero el cambio de autobús puede resultar más justo de lo habitual.",
+                style = MaterialTheme.typography.bodySmall,
+                color = warning,
+            )
         }
     }
 }

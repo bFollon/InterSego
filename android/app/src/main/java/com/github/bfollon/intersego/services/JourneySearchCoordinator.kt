@@ -10,7 +10,6 @@
 package com.github.bfollon.intersego.services
 
 import android.content.Context
-import com.github.bfollon.intersego.data.Journey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -30,7 +29,7 @@ object JourneySearchCoordinator {
         date: LocalDate,
         departAfterMin: Int,
         arriveBeforeMin: Int? = null,
-    ): List<Journey> = withContext(Dispatchers.IO) {
+    ): JourneyPlannerService.JourneySearchResult = withContext(Dispatchers.IO) {
         val loader = TimetableLoader(context)
         val routeDataService = RouteDataService(context)
         val routes = routeDataService.getSupportedRoutes().mapNotNull { routeId ->
@@ -57,7 +56,7 @@ object JourneySearchCoordinator {
             arriveBeforeMin = arriveBeforeMin,
             nowMin = nowMin,
         )
-        JourneyPlannerService.findJourneys(
+        JourneyPlannerService.findJourneysWithTightTransfers(
             routes, transfers, query,
             maxWaitMin = TripPlannerPrefs.getMaxWaitMin(),
             bufferSameStopTranscribed = TripPlannerPrefs.getBufferSameStopTranscribed(),

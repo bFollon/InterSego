@@ -66,6 +66,11 @@ object JourneyPlannerService {
     const val DEFAULT_BUFFER_WALK_TRANSCRIBED = 15
     const val DEFAULT_BUFFER_WALK_ESTIMATED = 15
 
+    // Floor buffer used by [findJourneysWithTightTransfers]'s relaxed second pass — 1 minute
+    // (not 0) so a "connection" isn't literally simultaneous with the arrival it depends on.
+    private const val TIGHT_TRANSFER_BUFFER_FLOOR = 1
+    const val MAX_TIGHT_TRANSFER_RESULTS = 3
+
     /** One physically contiguous, time-monotonic run of stops within a single trip. See [buildRideSegments]. */
     private data class RideSegment(
         val routeId: String,
@@ -80,17 +85,28 @@ object JourneyPlannerService {
      * see [rankAndDedupe]'s dedup key, which groups by this rather than by [Journey.legs]' route
      * IDs so that two journeys boarding the exact same trip(s) but alighting/transferring at a
      * different shared stop collapse together, while two journeys that simply happen to use the
-     * same *route* at different times of day do not. */
-    private data class Candidate(val journey: Journey, val tripKeys: Set<String>)
+     * same *route* at different times of day do not. [hasTightTransfer] is only ever set by
+     * [findJourneysWithTightTransfers]'s tagging pass — see [Reached.hasTightTransfer]. */
+    private data class Candidate(val journey: Journey, val tripKeys: Set<String>, val hasTightTransfer: Boolean = false)
 
-    /** A stop reached during the search, with enough context to compute the next leg's buffer and to reconstruct legs. */
+    /** A stop reached during the search, with enough context to compute the next leg's buffer and to reconstruct legs.
+     * [hasTightTransfer] is true once any mid-journey transfer on this path cleared only the relaxed
+     * ([TIGHT_TRANSFER_BUFFER_FLOOR]) buffer, not the real configured one — see [ridesFrom]'s `tagBuffer`
+     * params, only ever passed by [findJourneysWithTightTransfers]. Always false for [findJourneys]. */
     private data class Reached(
         val stop: String,
         val timeMin: Int,
         val isEstimatedArrival: Boolean,
         val legsFromOrigin: List<Leg>,
         val boardedTripKeys: Set<String>, // trips already ridden on this path — a round-1 transfer must use a different one
+        val hasTightTransfer: Boolean = false,
     )
+
+    /** Result of [findJourneysWithTightTransfers]: the normal, always-usable options plus a
+     * smaller set of additional options that only clear a transfer with a below-recommended
+     * margin — surfaced separately so a user who'd otherwise see no results (or fewer than they
+     * might accept) knows they exist, rather than being silently dropped. */
+    data class JourneySearchResult(val journeys: List<Journey>, val tightTransferJourneys: List<Journey>)
 
     fun findJourneys(
         routes: List<JourneyRouteData>,
@@ -102,6 +118,72 @@ object JourneyPlannerService {
         bufferWalkTranscribed: Int = DEFAULT_BUFFER_WALK_TRANSCRIBED,
         bufferWalkEstimated: Int = DEFAULT_BUFFER_WALK_ESTIMATED,
     ): List<Journey> {
+        val candidates = searchCandidates(
+            routes, transfers, query, maxWaitMin,
+            bufferSameStopTranscribed, bufferSameStopEstimated, bufferWalkTranscribed, bufferWalkEstimated,
+        )
+        return rankFinal(candidates, query.arriveBeforeMin)
+    }
+
+    /**
+     * As [findJourneys], but also returns a second, capped list of journeys whose only viable
+     * mid-journey transfer has a margin strictly between [TIGHT_TRANSFER_BUFFER_FLOOR] and the
+     * configured buffer — i.e. journeys the normal search silently excludes. A single search pass
+     * gates on the relaxed floor buffer (so it finds a strict superset of the normal results) and
+     * tags each candidate with whether it only cleared that floor, not the real configured buffer
+     * (see [ridesFrom]'s `tagBuffer` params) — candidates are then partitioned by that tag, rather
+     * than diffing two separately-ranked/top-3-capped result lists, which would wrongly surface
+     * plain normal-buffer-compliant candidates that simply didn't make the normal top 3. See
+     * "Viajes con transbordos ajustados" in docs/JOURNEY_PLANNER.md.
+     */
+    fun findJourneysWithTightTransfers(
+        routes: List<JourneyRouteData>,
+        transfers: List<TransferEdge>,
+        query: JourneyQuery,
+        maxWaitMin: Int = DEFAULT_MAX_WAIT_MIN,
+        bufferSameStopTranscribed: Int = DEFAULT_BUFFER_SAME_STOP_TRANSCRIBED,
+        bufferSameStopEstimated: Int = DEFAULT_BUFFER_SAME_STOP_ESTIMATED,
+        bufferWalkTranscribed: Int = DEFAULT_BUFFER_WALK_TRANSCRIBED,
+        bufferWalkEstimated: Int = DEFAULT_BUFFER_WALK_ESTIMATED,
+    ): JourneySearchResult {
+        val allCandidates = searchCandidates(
+            routes, transfers, query, maxWaitMin,
+            bufferSameStopTranscribed = TIGHT_TRANSFER_BUFFER_FLOOR,
+            bufferSameStopEstimated = TIGHT_TRANSFER_BUFFER_FLOOR,
+            bufferWalkTranscribed = TIGHT_TRANSFER_BUFFER_FLOOR,
+            bufferWalkEstimated = TIGHT_TRANSFER_BUFFER_FLOOR,
+            tagSameStopTranscribed = bufferSameStopTranscribed,
+            tagSameStopEstimated = bufferSameStopEstimated,
+            tagWalkTranscribed = bufferWalkTranscribed,
+            tagWalkEstimated = bufferWalkEstimated,
+        )
+        val normalCandidates = allCandidates.filter { !it.hasTightTransfer }
+        val tightCandidates = allCandidates.filter { it.hasTightTransfer }
+
+        val normalJourneys = rankFinal(normalCandidates, query.arriveBeforeMin)
+        val tightJourneys = rankFinal(tightCandidates, query.arriveBeforeMin).take(MAX_TIGHT_TRANSFER_RESULTS)
+
+        return JourneySearchResult(normalJourneys, tightJourneys)
+    }
+
+    private fun searchCandidates(
+        routes: List<JourneyRouteData>,
+        transfers: List<TransferEdge>,
+        query: JourneyQuery,
+        maxWaitMin: Int,
+        bufferSameStopTranscribed: Int,
+        bufferSameStopEstimated: Int,
+        bufferWalkTranscribed: Int,
+        bufferWalkEstimated: Int,
+        // When non-null (only passed by findJourneysWithTightTransfers), the *gate* buffers above
+        // are expected to be the relaxed floor, and a candidate is tagged hasTightTransfer=true if
+        // its transfer margin falls short of these (the real configured buffers) instead — see
+        // ridesFrom. findJourneys never passes these, so its candidates are never tagged.
+        tagSameStopTranscribed: Int? = null,
+        tagSameStopEstimated: Int? = null,
+        tagWalkTranscribed: Int? = null,
+        tagWalkEstimated: Int? = null,
+    ): List<Candidate> {
         val segments = buildRideSegments(routes, query.dayTypes, query.month, query.weekday)
         val walkNeighbors = buildWalkIndex(transfers)
 
@@ -131,14 +213,14 @@ object JourneyPlannerService {
             for (reached in ridesFrom(start, segments, buffer = 0, requireDifferentTripThan = null, bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin)) {
                 round0RideReach += reached
                 if (reached.stop == query.destination) {
-                    journeys += Candidate(toJourney(reached), reached.boardedTripKeys)
+                    journeys += Candidate(toJourney(reached), reached.boardedTripKeys, reached.hasTightTransfer)
                 } else {
                     walkNeighbors[reached.stop]?.forEach { edge ->
                         val other = if (edge.from == reached.stop) edge.to else edge.from
                         if (other == query.destination) {
                             val walkLeg = Leg.Walk(reached.stop, other, edge.meters, edge.walkMinutes)
                             val arrived = reached.copy(stop = other, timeMin = reached.timeMin + edge.walkMinutes, legsFromOrigin = reached.legsFromOrigin + walkLeg)
-                            journeys += Candidate(toJourney(arrived), arrived.boardedTripKeys)
+                            journeys += Candidate(toJourney(arrived), arrived.boardedTripKeys, arrived.hasTightTransfer)
                         }
                     }
                 }
@@ -165,25 +247,36 @@ object JourneyPlannerService {
 
         for (start in round1Starts) {
             val buffer = if (start.isEstimatedArrival) bufferSameStopEstimated else bufferSameStopTranscribed
+            val tagBuffer = if (start.isEstimatedArrival) tagSameStopEstimated else tagSameStopTranscribed
             // Note: the *walk* buffer (vs. same-stop buffer) is selected per-segment inside ridesFrom
             // when the previous leg was a Walk — see there.
-            for (reached in ridesFrom(start, segments, buffer = buffer, requireDifferentTripThan = start.boardedTripKeys, bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin)) {
+            for (reached in ridesFrom(
+                start, segments, buffer = buffer, requireDifferentTripThan = start.boardedTripKeys,
+                bufferWalkTranscribed, bufferWalkEstimated, maxWaitMin,
+                tagBuffer, tagWalkTranscribed, tagWalkEstimated,
+            )) {
                 if (reached.stop == query.destination) {
-                    journeys += Candidate(toJourney(reached), reached.boardedTripKeys)
+                    journeys += Candidate(toJourney(reached), reached.boardedTripKeys, reached.hasTightTransfer)
                 } else {
                     walkNeighbors[reached.stop]?.forEach { edge ->
                         val other = if (edge.from == reached.stop) edge.to else edge.from
                         if (other == query.destination) {
                             val walkLeg = Leg.Walk(reached.stop, other, edge.meters, edge.walkMinutes)
                             val arrived = reached.copy(stop = other, timeMin = reached.timeMin + edge.walkMinutes, legsFromOrigin = reached.legsFromOrigin + walkLeg)
-                            journeys += Candidate(toJourney(arrived), arrived.boardedTripKeys)
+                            journeys += Candidate(toJourney(arrived), arrived.boardedTripKeys, arrived.hasTightTransfer)
                         }
                     }
                 }
             }
         }
 
-        val deadline = query.arriveBeforeMin
+        return journeys
+    }
+
+    /** Final ranking/dedup/deadline-filter step shared by [findJourneys] and
+     * [findJourneysWithTightTransfers] — see the inline comment below for why arrive-before mode
+     * ranks by latest-departure-first rather than closeness to the deadline. */
+    private fun rankFinal(candidates: List<Candidate>, deadline: Int?): List<Journey> {
         return if (deadline != null) {
             // Latest departure first (least total time spent travelling/waiting), then fewest
             // transfers, then earliest arrival - NOT closeness to the deadline. Closeness alone
@@ -198,9 +291,9 @@ object JourneyPlannerService {
             // ties exactly on arrival/transfers/departure (same trip, same everything) and would
             // otherwise slip through as a second, needlessly effortful "option." See
             // docs/JOURNEY_PLANNER.md.
-            rankAndDedupe(journeys.filter { it.journey.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin, it.totalWalkMinutes()) }
+            rankAndDedupe(candidates.filter { it.journey.arrivalMin <= deadline }) { listOf(-it.departureMin, it.transferCount, it.arrivalMin, it.totalWalkMinutes()) }
         } else {
-            rankAndDedupe(journeys) { listOf(it.arrivalMin, it.transferCount, -it.departureMin, it.totalWalkMinutes()) }
+            rankAndDedupe(candidates) { listOf(it.arrivalMin, it.transferCount, -it.departureMin, it.totalWalkMinutes()) }
         }
     }
 
@@ -215,6 +308,13 @@ object JourneyPlannerService {
      * rather than a same-trip continuation, and (as a side effect) is exactly what prevents a
      * circular route from "teleporting": every ride is a single trip's own ordered stop
      * sequence, walked strictly forward from a real boarding index, never re-entered out of order.
+     *
+     * [tagBuffer]/[tagBufferWalkTranscribed]/[tagBufferWalkEstimated], when non-null (only passed
+     * by [findJourneysWithTightTransfers]), are the *real* configured buffers — selected via the
+     * exact same same-stop/walk/estimated branching as [buffer] itself — used only to mark the
+     * resulting [Reached.hasTightTransfer] when the actual margin clears [buffer] (the relaxed
+     * floor gating the search) but not this stricter one. They never affect which connections are
+     * found, only how they're tagged.
      */
     private fun ridesFrom(
         start: Reached,
@@ -224,6 +324,9 @@ object JourneyPlannerService {
         bufferWalkTranscribed: Int,
         bufferWalkEstimated: Int,
         maxWaitMin: Int,
+        tagBuffer: Int? = null,
+        tagBufferWalkTranscribed: Int? = null,
+        tagBufferWalkEstimated: Int? = null,
     ): List<Reached> {
         val cameFromWalk = start.legsFromOrigin.lastOrNull() is Leg.Walk
         val results = mutableListOf<Reached>()
@@ -241,6 +344,14 @@ object JourneyPlannerService {
                 // query's departAfterMin and the first bus of the day — a query for "after 00:00"
                 // legitimately waiting until the morning's first departure is not a "long transfer".
                 if (requireDifferentTripThan != null && segment.minutesOfDay[i] - start.timeMin > maxWaitMin) continue
+                val isTightThisHop = requireDifferentTripThan != null && run {
+                    val effectiveTagBuffer = if (cameFromWalk) {
+                        if (start.isEstimatedArrival || segment.isEstimated[i]) tagBufferWalkEstimated else tagBufferWalkTranscribed
+                    } else {
+                        tagBuffer
+                    }
+                    effectiveTagBuffer != null && segment.minutesOfDay[i] < start.timeMin + effectiveTagBuffer
+                }
                 for (j in i + 1 until segment.stops.size) {
                     val leg = Leg.Ride(
                         routeId = segment.routeId,
@@ -257,6 +368,7 @@ object JourneyPlannerService {
                         isEstimatedArrival = segment.isEstimated[j],
                         legsFromOrigin = start.legsFromOrigin + leg,
                         boardedTripKeys = start.boardedTripKeys + segment.tripKey,
+                        hasTightTransfer = start.hasTightTransfer || isTightThisHop,
                     )
                 }
             }

@@ -20,7 +20,7 @@ enum JourneySearchCoordinator {
         date: Date,
         departAfterMin: Int,
         arriveBeforeMin: Int? = nil,
-    ) async -> [Journey] {
+    ) async -> JourneyPlannerService.JourneySearchResult {
         let loader = TimetableLoader()
         let supportedRouteIds = await RouteDataService.shared.getSupportedRoutes()
         let routes: [JourneyRouteData] = supportedRouteIds.compactMap { routeId in
@@ -47,7 +47,7 @@ enum JourneySearchCoordinator {
             arriveBeforeMin: arriveBeforeMin,
             nowMin: nowMin,
         )
-        return JourneyPlannerService.findJourneys(
+        return JourneyPlannerService.findJourneysWithTightTransfers(
             routes: routes, transfers: transfers, query: query,
             maxWaitMin: TripPlannerPrefs.getMaxWaitMin(),
             bufferSameStopTranscribed: TripPlannerPrefs.getBufferSameStopTranscribed(),

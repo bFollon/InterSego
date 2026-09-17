@@ -52,6 +52,7 @@ fun JourneyPlannerFlowScreen(
 
     var step by remember { mutableStateOf<FlowStep>(FlowStep.Picker) }
     var journeys by remember { mutableStateOf<List<Journey>>(emptyList()) }
+    var tightTransferJourneys by remember { mutableStateOf<List<Journey>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var stopNames by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var stopsById by remember { mutableStateOf<Map<String, BusStop>>(emptyMap()) }
@@ -88,7 +89,9 @@ fun JourneyPlannerFlowScreen(
                     step = results
                     isSearching = true
                     coroutineScope.launch {
-                        journeys = JourneySearchCoordinator.search(context, originId, destinationId, date, departAfterMin, arriveBeforeMin)
+                        val result = JourneySearchCoordinator.search(context, originId, destinationId, date, departAfterMin, arriveBeforeMin)
+                        journeys = result.journeys
+                        tightTransferJourneys = result.tightTransferJourneys
                         isSearching = false
                     }
                 }
@@ -102,6 +105,7 @@ fun JourneyPlannerFlowScreen(
                 departAfterMin = current.departAfterMin,
                 arriveBeforeMin = current.arriveBeforeMin,
                 journeys = journeys,
+                tightTransferJourneys = tightTransferJourneys,
                 isLoading = isSearching,
                 routesById = routesById,
                 stopsById = stopsById,
