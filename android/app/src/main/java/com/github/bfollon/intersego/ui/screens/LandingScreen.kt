@@ -668,7 +668,7 @@ private fun BouncingBallLoader(
         )
 
         Box(
-            modifier = Modifier.size(width = 64.dp, height = 16.dp),
+            modifier = Modifier.size(width = 64.dp, height = 13.dp),
             contentAlignment = Alignment.Center,
         ) {
             Canvas(modifier = Modifier.matchParentSize()) {
