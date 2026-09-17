@@ -11,6 +11,7 @@ package com.github.bfollon.intersego.services
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -116,6 +117,12 @@ object WhatsNewService {
             title = "Más opciones de viaje visibles",
             body = "Antes, los itinerarios con un margen de transbordo muy ajustado se ocultaban de los resultados de \"Cómo llegar\". Ahora aparecen en una sección aparte, para que sepas que existen aunque sean menos cómodos.",
             version = "2.20.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.CloudOff,
+            title = "Aviso cuando no hay conexión con el servidor",
+            body = "Si la app no logra conectar con nuestro servidor por cualquier motivo (sin conexión, servidor caído, etc.), ahora te lo indicamos con un aviso, para que sepas que los datos mostrados podrían no estar actualizados.",
+            version = "2.21.0",
         ),
     )
 

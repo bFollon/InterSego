@@ -101,6 +101,12 @@ enum WhatsNewService {
             body: "Antes, los itinerarios con un margen de transbordo muy ajustado se ocultaban de los resultados de \u{201c}Cómo llegar\u{201d}. Ahora aparecen en una sección aparte, para que sepas que existen aunque sean menos cómodos.",
             version: "3.18.0"
         ),
+        WhatsNewEntry(
+            icon: "icloud.slash",
+            title: "Aviso cuando no hay conexión con el servidor",
+            body: "Si la app no logra conectar con nuestro servidor por cualquier motivo (sin conexión, servidor caído, etc.), ahora te lo indicamos con un aviso, para que sepas que los datos mostrados podrían no estar actualizados.",
+            version: "3.19.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,
