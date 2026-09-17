@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.github.bfollon.intersego.ui.theme.RouteOrange
+import com.github.bfollon.intersego.ui.theme.warningColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -687,8 +688,11 @@ private fun LandingSlotPickerRow(
 
 @Composable
 private fun TightMarginWarningPill(onClick: () -> Unit) {
-    // Named pillColor, not warningColor - avoids shadowing ui.theme.warningColor().
-    val pillColor = RouteOrange
+    // Named pillColor, not warningColor - avoids shadowing ui.theme.warningColor() while still
+    // calling it (RouteOrange is a fixed, non-dark-mode-adaptive "route highlighting" token, a
+    // different value entirely - it doesn't lighten in dark mode the way every other tight-margin
+    // warning surface in the app does).
+    val pillColor = warningColor()
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(50))

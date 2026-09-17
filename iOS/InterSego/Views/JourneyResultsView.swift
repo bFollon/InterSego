@@ -160,7 +160,11 @@ struct JourneyResultsView: View {
                 }
             } else if journeys.isEmpty {
                 Section {
-                    Text("No hay viajes con margen suficiente para esta búsqueda. Prueba con otra hora.")
+                    // Doesn't claim there are no journeys at all - a tight-transfer section with
+                    // real options can still render right below this (see the sibling `if` after
+                    // this whole if/else-if/else chain), so "no journeys" here would contradict
+                    // what's on screen.
+                    Text("No hay viajes disponibles con el margen configurado.")
                         .foregroundStyle(.secondary)
                 } header: {
                     Text("Opciones")
@@ -179,19 +183,23 @@ struct JourneyResultsView: View {
                         }
                     }
                 }
-                if !tightTransferJourneys.isEmpty {
+            }
+            // Sibling to the if/else-if/else above, not nested inside its `else` - so this still
+            // renders when `journeys` is empty but `tightTransferJourneys` isn't (exactly the case
+            // this whole feature exists for: no comfortable-margin option, but tighter ones exist).
+            // Matches JourneyResultsScreen.kt's structure on Android.
+            if !isLoading && !tightTransferJourneys.isEmpty {
+                Section {
+                    TightTransferSectionBanner(onInfoTap: { showTightMarginInfo = true })
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                } header: {
+                    Text("Viajes con transbordos ajustados")
+                }
+                ForEach(Array(tightTransferJourneys.enumerated()), id: \.offset) { _, journey in
                     Section {
-                        TightTransferSectionBanner(onInfoTap: { showTightMarginInfo = true })
-                            .listRowInsets(EdgeInsets())
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    } header: {
-                        Text("Viajes con transbordos ajustados")
-                    }
-                    ForEach(Array(tightTransferJourneys.enumerated()), id: \.offset) { _, journey in
-                        Section {
-                            journeyRow(journey)
-                        }
+                        journeyRow(journey)
                     }
                 }
             }
@@ -458,9 +466,15 @@ struct TightTransferPeekBanner: View {
     /// measuring the banner at layout time) to offset the card - a closed-form calculation avoids
     /// the GeometryReader/PreferenceKey dance, which proved unreliable inside a `List` row (the
     /// banner intermittently failed to render, and rows lost their full width).
-    static func visibleHeight(hasSubtitle: Bool) -> CGFloat {
+    ///
+    /// `dynamicTypeSize` bumps the assumed line count by one at accessibility sizes (AX1+): the
+    /// title (e.g. "Transbordo ajustado · 3 min de margen") fits one line at standard sizes but
+    /// can wrap at those larger sizes, and without this the card in front would push down too
+    /// little, clipping the wrapped line behind it.
+    static func visibleHeight(hasSubtitle: Bool, dynamicTypeSize: DynamicTypeSize = .large) -> CGFloat {
         let lineHeight = UIFont.preferredFont(forTextStyle: .caption1).lineHeight
-        let lines: CGFloat = hasSubtitle ? 2 : 1
+        var lines: CGFloat = hasSubtitle ? 2 : 1
+        if dynamicTypeSize.isAccessibilitySize { lines += 1 }
         let textHeight = lines * lineHeight + (hasSubtitle ? lineSpacing : 0)
         return topPadding + textHeight + visibleGap
     }
@@ -536,13 +550,15 @@ struct PeekingBannerCard<Content: View>: View {
     var onBannerInfoTap: (() -> Void)? = nil
     @ViewBuilder var content: () -> Content
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         ZStack(alignment: .top) {
             if let bannerTitle {
                 TightTransferPeekBanner(title: bannerTitle, subtitle: bannerSubtitle, cornerRadius: cornerRadius, onInfoTap: onBannerInfoTap)
             }
             content()
-                .padding(.top, bannerTitle != nil ? TightTransferPeekBanner.visibleHeight(hasSubtitle: bannerSubtitle != nil) : 0)
+                .padding(.top, bannerTitle != nil ? TightTransferPeekBanner.visibleHeight(hasSubtitle: bannerSubtitle != nil, dynamicTypeSize: dynamicTypeSize) : 0)
         }
     }
 }

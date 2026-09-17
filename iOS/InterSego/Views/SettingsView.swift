@@ -333,9 +333,13 @@ private struct TightMarginInfoSheetHeightKey: PreferenceKey {
 /// below them at `.medium`, and a fixed height risks clipping the text at larger Dynamic Type
 /// sizes. No `NavigationStack` (its own sizing wouldn't match the measured VStack) - the title/
 /// close row is drawn directly so what's measured is exactly what's shown.
+///
+/// `sheetHeight` starts at a rough estimate (not 0/`.medium`) so the first presented frame is
+/// already close to the real, measured height - the `GeometryReader` correction that follows is
+/// then a small nudge instead of a large, visible snap from a much taller `.medium` sheet.
 struct TightMarginInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var sheetHeight: CGFloat = 0
+    @State private var sheetHeight: CGFloat = 260
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -357,8 +361,8 @@ struct TightMarginInfoSheet: View {
                 Color.clear.preference(key: TightMarginInfoSheetHeightKey.self, value: geometry.size.height)
             }
         }
-        .onPreferenceChange(TightMarginInfoSheetHeightKey.self) { sheetHeight = $0 }
-        .presentationDetents(sheetHeight > 0 ? [.height(sheetHeight)] : [.medium])
+        .onPreferenceChange(TightMarginInfoSheetHeightKey.self) { if $0 > 0 { sheetHeight = $0 } }
+        .presentationDetents([.height(sheetHeight)])
         .presentationDragIndicator(.visible)
     }
 }

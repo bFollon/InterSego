@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -183,8 +184,11 @@ fun JourneyResultsScreen(
                     }
                 }
                 journeys.isEmpty() -> item {
+                    // Doesn't claim there are no journeys at all - a tight-transfer section with
+                    // real options can still render right below this (see the `if` after the
+                    // `when` block), so "no journeys" here would contradict what's on screen.
                     Text(
-                        "No hay viajes disponibles con margen suficiente para esta búsqueda. Prueba con otra hora.",
+                        "No hay viajes disponibles con el margen configurado.",
                         modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
                         textAlign = TextAlign.Center
                     )
@@ -228,8 +232,13 @@ fun JourneyResultsScreen(
 private fun TightTransferSectionBanner(modifier: Modifier = Modifier, onInfoClick: () -> Unit) {
     val warning = warningColor()
     Surface(
-        onClick = onInfoClick,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(
+                onClickLabel = "Más información sobre el margen ajustado",
+                role = Role.Button,
+                onClick = onInfoClick,
+            ),
         shape = RoundedCornerShape(12.dp),
         color = warning.copy(alpha = 0.15f),
     ) {
@@ -429,7 +438,15 @@ fun TightTransferPeekBanner(
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = 0.dp, bottomEnd = 0.dp))
             .background(warning.copy(alpha = 0.15f))
-            .let { if (onInfoClick != null) it.clickable(onClick = onInfoClick) else it }
+            .let {
+                if (onInfoClick != null) {
+                    it.clickable(
+                        onClickLabel = "Más información sobre el margen ajustado",
+                        role = Role.Button,
+                        onClick = onInfoClick,
+                    )
+                } else it
+            }
             // Bottom padding is the part that ends up hidden behind the card on top; only the
             // top strip (icon + text + TightTransferPeekVisibleGap) shows above the card's edge.
             // `cornerRadius` is the hard minimum - the card's rounded top corner cuts away a
