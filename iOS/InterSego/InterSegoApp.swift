@@ -102,6 +102,7 @@ struct ContentView: View {
     @State private var activeAlerts: [ServiceAlert] = []
     @State private var showAlertDetail = false
     @State private var laLigaBlockingSuspected = false
+    @State private var serverUnreachable = false
     @State private var showLaLigaDetail = false
     @State private var isFetchingManifest = false
     @State private var manifestFetchFailed = false
@@ -230,6 +231,7 @@ struct ContentView: View {
                             onShowAlertDetail: { showAlertDetail = true },
                             laLigaBlockingSuspected: laLigaBlockingSuspected,
                             onShowLaLigaDetail: { showLaLigaDetail = true },
+                            serverUnreachable: serverUnreachable,
                             isFetchingManifest: isFetchingManifest,
                             manifestFetchFailed: manifestFetchFailed,
                         )
@@ -957,6 +959,10 @@ struct ContentView: View {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
                 }
                 laLigaBlockingSuspected = await LaLigaBlockingService.shared.isLikelyBlocked
+                // Persists after the beat above (unlike manifestFetchFailed, reset right below)
+                // so the Landing screen keeps showing *some* explanation for stale data — but
+                // only when LaLiga isn't already the more specific one.
+                serverUnreachable = !manifestOk && !laLigaBlockingSuspected
                 isFetchingManifest = false
                 manifestFetchFailed = false
             }
@@ -969,6 +975,8 @@ struct ContentView: View {
             Task {
                 isFetchingManifest = true
                 manifestFetchFailed = true
+                laLigaBlockingSuspected = false
+                serverUnreachable = true
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
                 isFetchingManifest = false
                 manifestFetchFailed = false

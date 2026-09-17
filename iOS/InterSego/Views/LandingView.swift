@@ -162,6 +162,7 @@ struct LandingView: View {
     let onShowAlertDetail: () -> Void
     let laLigaBlockingSuspected: Bool
     let onShowLaLigaDetail: () -> Void
+    var serverUnreachable: Bool = false
     var isFetchingManifest: Bool = false
     var manifestFetchFailed: Bool = false
 
@@ -243,6 +244,27 @@ struct LandingView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundColor(.orange)
+                .padding(.horizontal, 24)
+                .padding(.top, 4)
+            } else if serverUnreachable {
+                // Generic counterpart to the LaLiga banner above — shown when the server was
+                // unreachable at startup but there's no specific evidence of a LaLiga blocking
+                // wave (device fully offline, our server down for unrelated reasons, etc).
+                // Mutually exclusive with the LaLiga banner since both explain the same
+                // underlying symptom (stale/cached data) and only one cause is surfaced at a time.
+                HStack(spacing: 8) {
+                    Image(systemName: "icloud.slash")
+                        .font(.subheadline)
+                    Text("Sin conexión con el servidor: los datos mostrados pueden no estar actualizados")
+                        .font(.caption.weight(.medium))
+                        .multilineTextAlignment(.leading)
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color.red.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .foregroundColor(.red)
                 .padding(.horizontal, 24)
                 .padding(.top, 4)
             }

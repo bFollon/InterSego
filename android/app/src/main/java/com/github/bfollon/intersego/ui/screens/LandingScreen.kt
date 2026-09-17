@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
@@ -136,6 +137,7 @@ fun LandingScreen(
     onShowAlertDetail: () -> Unit = {},
     laLigaBlockingSuspected: Boolean = false,
     onShowLaLigaDetail: () -> Unit = {},
+    serverUnreachable: Boolean = false,
     isFetchingManifest: Boolean = false,
     manifestFetchFailed: Boolean = false,
 ) {
@@ -203,6 +205,8 @@ fun LandingScreen(
                     onShowLaLigaDetail()
                 },
             )
+        } else if (serverUnreachable) {
+            ServerUnreachableBanner()
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -790,6 +794,43 @@ private fun LaLigaBlockingBanner(onClick: () -> Unit) {
             contentDescription = null,
             tint = color,
             modifier = Modifier.size(12.dp),
+        )
+    }
+}
+
+/**
+ * Generic counterpart to [LaLigaBlockingBanner] — shown when our server was unreachable at
+ * startup but there's no specific evidence pointing to a LaLiga blocking wave (device fully
+ * offline, our server down for unrelated reasons, etc). Deliberately mutually exclusive with
+ * the LaLiga banner in [LandingScreen] rather than stacked, since both explain the same
+ * underlying symptom (stale/cached data) and only one cause should be surfaced at a time.
+ */
+@Composable
+private fun ServerUnreachableBanner() {
+    val color = AlertCritical
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 4.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CloudOff,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Sin conexión con el servidor: los datos mostrados pueden no estar actualizados",
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = color,
+            modifier = Modifier.weight(1f),
         )
     }
 }
