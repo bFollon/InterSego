@@ -95,6 +95,12 @@ enum WhatsNewService {
             body: "Los resultados de \u{201c}Cómo llegar\u{201d} ahora marcan los itinerarios con poco margen en un transbordo, para que sepas de antemano cuáles son más arriesgados.",
             version: "3.17.0"
         ),
+        WhatsNewEntry(
+            icon: "list.bullet.rectangle",
+            title: "Más opciones de viaje visibles",
+            body: "Antes, los itinerarios con un margen de transbordo muy ajustado se ocultaban de los resultados de \u{201c}Cómo llegar\u{201d}. Ahora aparecen en una sección aparte, para que sepas que existen aunque sean menos cómodos.",
+            version: "3.18.0"
+        ),
     ]
 
     /// Entries the user hasn't seen yet: `version > lastSeenVersion` and `version <= currentVersion`,

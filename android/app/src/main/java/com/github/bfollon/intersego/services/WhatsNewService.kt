@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.edit
@@ -109,6 +110,12 @@ object WhatsNewService {
             title = "Aviso de transbordo ajustado",
             body = "Los resultados de \"Cómo llegar\" ahora marcan los itinerarios con poco margen en un transbordo, para que sepas de antemano cuáles son más arriesgados.",
             version = "2.19.0",
+        ),
+        WhatsNewEntry(
+            icon = Icons.Filled.ViewList,
+            title = "Más opciones de viaje visibles",
+            body = "Antes, los itinerarios con un margen de transbordo muy ajustado se ocultaban de los resultados de \"Cómo llegar\". Ahora aparecen en una sección aparte, para que sepas que existen aunque sean menos cómodos.",
+            version = "2.20.0",
         ),
     )
 
