@@ -169,7 +169,7 @@ fun LandingScreen(
                     if (isFetchingManifest) {
                         BouncingBallLoader(hasError = manifestFetchFailed)
                     }
-                    val primary = alertsSortedBySeverity(activeAlerts).firstOrNull()
+                    val primary = if (isFetchingManifest) null else alertsSortedBySeverity(activeAlerts).firstOrNull()
                     if (primary != null) {
                         AlertPill(
                             alert = primary,

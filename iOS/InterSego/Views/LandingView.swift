@@ -190,7 +190,7 @@ struct LandingView: View {
                 if isFetchingManifest {
                     BouncingBallLoader(hasError: manifestFetchFailed)
                 }
-                if let primary = sortedAlerts.first {
+                if let primary = isFetchingManifest ? nil : sortedAlerts.first {
                     Button(action: {
                         AnalyticsService.shared.track("alert_banner_tapped", with: ["severity": primary.severity])
                         onShowAlertDetail()
