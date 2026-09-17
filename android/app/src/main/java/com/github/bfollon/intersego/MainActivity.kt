@@ -301,6 +301,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
             val routeDataService = remember { RouteDataService(this@MainActivity) }
             var routes by remember { mutableStateOf<List<BusRoute>>(emptyList()) }
             var laLigaBlockingSuspected by remember { mutableStateOf(false) }
+            var serverUnreachable by remember { mutableStateOf(false) }
             var isFetchingManifest by remember { mutableStateOf(false) }
             var manifestFetchFailed by remember { mutableStateOf(false) }
 
@@ -340,6 +341,10 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                                 delay(1500)
                             }
                             laLigaBlockingSuspected = LaLigaBlockingService.isLikelyBlocked
+                            // Persists after the beat above (unlike manifestFetchFailed, reset in
+                            // `finally`) so the Landing screen keeps showing *some* explanation for
+                            // stale data — but only when LaLiga isn't already the more specific one.
+                            serverUnreachable = !manifestOk && !laLigaBlockingSuspected
                         } finally {
                             isFetchingManifest = false
                             manifestFetchFailed = false
@@ -354,6 +359,8 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                     launch {
                         isFetchingManifest = true
                         manifestFetchFailed = true
+                        laLigaBlockingSuspected = false
+                        serverUnreachable = true
                         delay(1500)
                         isFetchingManifest = false
                         manifestFetchFailed = false
@@ -372,6 +379,7 @@ class MainActivity : ComponentActivity(), ImageLoaderFactory {
                             routeDataService = routeDataService,
                             reminderService = reminderService,
                             laLigaBlockingSuspected = laLigaBlockingSuspected,
+                            serverUnreachable = serverUnreachable,
                             isFetchingManifest = isFetchingManifest,
                             manifestFetchFailed = manifestFetchFailed
                         )
@@ -539,6 +547,7 @@ fun AppNavigation(
     routeDataService: RouteDataService,
     reminderService: ReminderService,
     laLigaBlockingSuspected: Boolean,
+    serverUnreachable: Boolean = false,
     isFetchingManifest: Boolean = false,
     manifestFetchFailed: Boolean = false,
 ) {
@@ -914,6 +923,7 @@ fun AppNavigation(
                 onShowAlertDetail = { showAlertDetail = true },
                 laLigaBlockingSuspected = laLigaBlockingSuspected,
                 onShowLaLigaDetail = { showLaLigaDetail = true },
+                serverUnreachable = serverUnreachable,
                 isFetchingManifest = isFetchingManifest,
                 manifestFetchFailed = manifestFetchFailed,
             )
