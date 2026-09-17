@@ -315,31 +315,51 @@ private struct TightMarginWarningPill: View {
     }
 }
 
+private struct TightMarginInfoSheetHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 /// Explains why a transfer margin below `TripPlannerPrefs.recommendedMinBuffer` is riskier —
 /// arrival/departure times are a prediction, not a live feed, so a tight connection leaves little
 /// room for a small delay. Shared by every "i"/warning-tap info affordance next to a tight-margin
 /// warning: the Settings buffer sliders here, and the results-list per-journey/section warnings
 /// on JourneyResultsView. Not `private` - referenced from JourneyResultsView.swift too.
+///
+/// Sized to its own content (via `TightMarginInfoSheetHeightKey`, measured post-layout) rather
+/// than a fixed `.medium`/`.height(_:)` detent - two short paragraphs left a lot of empty sheet
+/// below them at `.medium`, and a fixed height risks clipping the text at larger Dynamic Type
+/// sizes. No `NavigationStack` (its own sizing wouldn't match the measured VStack) - the title/
+/// close row is drawn directly so what's measured is exactly what's shown.
 struct TightMarginInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @State private var sheetHeight: CGFloat = 0
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Las horas de llegada son siempre una previsión, no una posición en tiempo real: incluso los horarios oficiales de Linecar son una estimación, y el autobús puede pasar unos minutos antes o después.")
-                Text("Con un margen menor de \(TripPlannerPrefs.recommendedMinBuffer) min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión.")
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Margen ajustado")
+                    .font(.headline)
                 Spacer()
+                Button("Cerrar") { dismiss() }
             }
-            .padding()
-            .navigationTitle("Margen ajustado")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cerrar") { dismiss() }
-                }
+            Text("Las horas de llegada son siempre una previsión, no una posición en tiempo real: incluso los horarios oficiales de Linecar son una estimación, y el autobús puede pasar unos minutos antes o después.")
+            Text("Con un margen menor de \(TripPlannerPrefs.recommendedMinBuffer) min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión.")
+        }
+        .padding()
+        // Extra breathing room below the drag indicator - the default .padding() alone put the
+        // title row right up against it.
+        .padding(.top, 8)
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: TightMarginInfoSheetHeightKey.self, value: geometry.size.height)
             }
         }
-        .presentationDetents([.medium])
+        .onPreferenceChange(TightMarginInfoSheetHeightKey.self) { sheetHeight = $0 }
+        .presentationDetents(sheetHeight > 0 ? [.height(sheetHeight)] : [.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 
