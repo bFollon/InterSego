@@ -222,52 +222,59 @@ struct LandingView: View {
             .padding(.horizontal, 24)
             .padding(.top, 8)
 
-            if laLigaBlockingSuspected {
-                Button(action: {
-                    AnalyticsService.shared.track("laliga_blocking_banner_tapped")
-                    onShowLaLigaDetail()
-                }) {
+            // Reserved slot, always at least this tall regardless of which (if any) banner is
+            // showing — otherwise the banner appearing/disappearing reflows every Spacer() below
+            // it (title block + action cards both shift; only the "Acerca de" button at the very
+            // bottom stays put, since it's the last fixed element in the stack).
+            VStack(spacing: 0) {
+                if laLigaBlockingSuspected {
+                    Button(action: {
+                        AnalyticsService.shared.track("laliga_blocking_banner_tapped")
+                        onShowLaLigaDetail()
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "soccerball")
+                                .font(.subheadline)
+                            Text("Sin conexión al servidor: posible bloqueo de LaLiga en curso")
+                                .font(.caption.weight(.medium))
+                                .multilineTextAlignment(.leading)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption2)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(Color.orange.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.orange)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 4)
+                } else if serverUnreachable {
+                    // Generic counterpart to the LaLiga banner above — shown when the server was
+                    // unreachable at startup but there's no specific evidence of a LaLiga blocking
+                    // wave (device fully offline, our server down for unrelated reasons, etc).
+                    // Mutually exclusive with the LaLiga banner since both explain the same
+                    // underlying symptom (stale/cached data) and only one cause is surfaced at a time.
                     HStack(spacing: 8) {
-                        Image(systemName: "soccerball")
+                        Image(systemName: "icloud.slash")
                             .font(.subheadline)
-                        Text("Sin conexión al servidor: posible bloqueo de LaLiga en curso")
+                        Text("Sin conexión con el servidor: los datos mostrados pueden no estar actualizados")
                             .font(.caption.weight(.medium))
                             .multilineTextAlignment(.leading)
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption2)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(Color.orange.opacity(0.12))
+                    .background(Color.red.opacity(0.12))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 4)
                 }
-                .buttonStyle(.plain)
-                .foregroundColor(.orange)
-                .padding(.horizontal, 24)
-                .padding(.top, 4)
-            } else if serverUnreachable {
-                // Generic counterpart to the LaLiga banner above — shown when the server was
-                // unreachable at startup but there's no specific evidence of a LaLiga blocking
-                // wave (device fully offline, our server down for unrelated reasons, etc).
-                // Mutually exclusive with the LaLiga banner since both explain the same
-                // underlying symptom (stale/cached data) and only one cause is surfaced at a time.
-                HStack(spacing: 8) {
-                    Image(systemName: "icloud.slash")
-                        .font(.subheadline)
-                    Text("Sin conexión con el servidor: los datos mostrados pueden no estar actualizados")
-                        .font(.caption.weight(.medium))
-                        .multilineTextAlignment(.leading)
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color.red.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .foregroundColor(.red)
-                .padding(.horizontal, 24)
-                .padding(.top, 4)
             }
+            .frame(minHeight: 68, alignment: .top)
 
             Spacer()
 

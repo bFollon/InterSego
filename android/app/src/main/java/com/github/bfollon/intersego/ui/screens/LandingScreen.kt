@@ -198,15 +198,21 @@ fun LandingScreen(
             )
         )
 
-        if (laLigaBlockingSuspected) {
-            LaLigaBlockingBanner(
-                onClick = {
-                    AnalyticsService.track("laliga_blocking_banner_tapped")
-                    onShowLaLigaDetail()
-                },
-            )
-        } else if (serverUnreachable) {
-            ServerUnreachableBanner()
+        // Reserved slot, always present at this minimum height regardless of which (if any)
+        // banner is showing — otherwise the banner appearing/disappearing reflows the three
+        // weight(1f) spacers below (title block + action cards both shift; only the bottom
+        // "Acerca de" button stays put, since it's the last fixed element).
+        Box(modifier = Modifier.fillMaxWidth().heightIn(min = 68.dp)) {
+            if (laLigaBlockingSuspected) {
+                LaLigaBlockingBanner(
+                    onClick = {
+                        AnalyticsService.track("laliga_blocking_banner_tapped")
+                        onShowLaLigaDetail()
+                    },
+                )
+            } else if (serverUnreachable) {
+                ServerUnreachableBanner()
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
