@@ -315,14 +315,19 @@ private struct TightMarginWarningPill: View {
     }
 }
 
-private struct TightMarginInfoSheet: View {
+/// Explains why a transfer margin below `TripPlannerPrefs.recommendedMinBuffer` is riskier —
+/// arrival/departure times are a prediction, not a live feed, so a tight connection leaves little
+/// room for a small delay. Shared by every "i"/warning-tap info affordance next to a tight-margin
+/// warning: the Settings buffer sliders here, and the results-list per-journey/section warnings
+/// on JourneyResultsView. Not `private` - referenced from JourneyResultsView.swift too.
+struct TightMarginInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Las horas de llegada son siempre una previsión, no una posición en tiempo real: incluso los horarios oficiales de Linecar son una estimación, y el autobús puede pasar unos minutos antes o después.")
-                Text("Con un margen menor de \(TripPlannerPrefs.recommendedMinBuffer) min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión. Redúcelo solo si conoces bien la puntualidad de esa línea.")
+                Text("Con un margen menor de \(TripPlannerPrefs.recommendedMinBuffer) min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión.")
                 Spacer()
             }
             .padding()

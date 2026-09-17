@@ -469,33 +469,7 @@ fun SettingsScreen(
     }
 
     if (showTightMarginInfo) {
-        ModalBottomSheet(
-            onDismissRequest = { showTightMarginInfo = false },
-            sheetState = rememberModalBottomSheetState()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = "Margen ajustado",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "Las horas de llegada son siempre una previsión, no una posición en tiempo real: incluso los horarios oficiales de Linecar son una estimación, y el autobús puede pasar unos minutos antes o después.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Con un margen menor de ${TripPlannerPrefs.RECOMMENDED_MIN_BUFFER} min, un pequeño retraso en el primer autobús puede hacer que pierdas el de conexión. Redúcelo solo si conoces bien la puntualidad de esa línea.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
+        TightMarginInfoSheet(onDismissRequest = { showTightMarginInfo = false })
     }
 
     if (showHowItWorks) {

@@ -47,6 +47,7 @@ import com.github.bfollon.intersego.data.BusStop
 import com.github.bfollon.intersego.data.Journey
 import com.github.bfollon.intersego.data.Leg
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Info
 import com.github.bfollon.intersego.services.AnalyticsService
 import com.github.bfollon.intersego.services.JourneyReminderHelper
 import com.github.bfollon.intersego.services.ReminderService
@@ -91,6 +92,7 @@ fun JourneyResultsScreen(
     onBack: () -> Unit,
 ) {
     var reminderKeys by remember { mutableStateOf(reminderService?.activeMatchKeys() ?: emptySet()) }
+    var showTightMarginInfo by remember { mutableStateOf(false) }
 
     @Composable
     fun journeyItem(journey: Journey) {
@@ -137,7 +139,8 @@ fun JourneyResultsScreen(
                     }
                     reminderKeys = service.activeMatchKeys()
                 }
-            }
+            },
+            onTightMarginInfoClick = { showTightMarginInfo = true },
         )
     }
     Scaffold(
@@ -197,7 +200,10 @@ fun JourneyResultsScreen(
                     SectionHeader("Viajes con transbordos ajustados")
                 }
                 item {
-                    TightTransferSectionBanner(modifier = Modifier.padding(bottom = 12.dp))
+                    TightTransferSectionBanner(
+                        modifier = Modifier.padding(bottom = 12.dp),
+                        onInfoClick = { showTightMarginInfo = true },
+                    )
                 }
                 items(tightTransferJourneys) { journey ->
                     journeyItem(journey)
@@ -205,6 +211,10 @@ fun JourneyResultsScreen(
                 }
             }
         }
+    }
+
+    if (showTightMarginInfo) {
+        TightMarginInfoSheet(onDismissRequest = { showTightMarginInfo = false })
     }
 }
 
@@ -215,15 +225,16 @@ fun JourneyResultsScreen(
  * knows these extra, less comfortable options exist at all.
  */
 @Composable
-private fun TightTransferSectionBanner(modifier: Modifier = Modifier) {
+private fun TightTransferSectionBanner(modifier: Modifier = Modifier, onInfoClick: () -> Unit) {
     val warning = warningColor()
     Surface(
+        onClick = onInfoClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = warning.copy(alpha = 0.15f),
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -232,6 +243,16 @@ private fun TightTransferSectionBanner(modifier: Modifier = Modifier) {
                 "Estos viajes requieren un transbordo con menos margen del configurado en los ajustes. Se muestran igualmente como alternativa, pero el cambio de autobús puede resultar más justo de lo habitual.",
                 style = MaterialTheme.typography.bodySmall,
                 color = warning,
+                modifier = Modifier.weight(1f),
+            )
+            // Purely decorative - the whole banner is already clickable (see Surface's own
+            // `onClick` above), so this just signals "tap for more info" without being a second,
+            // redundant tap target of its own.
+            Icon(
+                Icons.Outlined.Info,
+                contentDescription = null,
+                tint = warning,
+                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -288,6 +309,7 @@ private fun JourneyCard(
     reminderAvailable: Boolean,
     onClick: () -> Unit,
     onReminderToggle: () -> Unit,
+    onTightMarginInfoClick: () -> Unit,
 ) {
     val hasEstimatedLeg = journey.legs.any { it is Leg.Ride && it.isEstimated }
     val tightestMargin = journey.transferMargins()
@@ -298,6 +320,7 @@ private fun JourneyCard(
     PeekingBannerCard(
         bannerTitle = tightestMargin?.let { "Transbordo ajustado · $it min de margen" },
         cornerRadius = JourneyCardCornerRadius,
+        onBannerInfoClick = onTightMarginInfoClick,
     ) { topPadding ->
         ElevatedCard(
             onClick = onClick,
@@ -398,6 +421,7 @@ fun TightTransferPeekBanner(
     subtitle: String? = null,
     cornerRadius: Dp,
     modifier: Modifier = Modifier,
+    onInfoClick: (() -> Unit)? = null,
 ) {
     val warning = warningColor()
     Row(
@@ -405,6 +429,7 @@ fun TightTransferPeekBanner(
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = 0.dp, bottomEnd = 0.dp))
             .background(warning.copy(alpha = 0.15f))
+            .let { if (onInfoClick != null) it.clickable(onClick = onInfoClick) else it }
             // Bottom padding is the part that ends up hidden behind the card on top; only the
             // top strip (icon + text + TightTransferPeekVisibleGap) shows above the card's edge.
             // `cornerRadius` is the hard minimum - the card's rounded top corner cuts away a
@@ -419,11 +444,22 @@ fun TightTransferPeekBanner(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Icon(Icons.Filled.Warning, contentDescription = null, tint = warning, modifier = Modifier.size(16.dp))
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = warning)
             if (subtitle != null) {
                 Text(subtitle, style = MaterialTheme.typography.bodySmall, color = warning)
             }
+        }
+        if (onInfoClick != null) {
+            // Purely decorative - the whole banner is already clickable (see the Row's own
+            // `.clickable` above), so this just signals "tap for more info" without being a
+            // second, redundant tap target of its own.
+            Icon(
+                Icons.Outlined.Info,
+                contentDescription = null,
+                tint = warning,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }
@@ -447,6 +483,7 @@ fun PeekingBannerCard(
     bannerTitle: String?,
     bannerSubtitle: String? = null,
     cornerRadius: Dp,
+    onBannerInfoClick: (() -> Unit)? = null,
     content: @Composable (topPadding: Dp) -> Unit,
 ) {
     val density = LocalDensity.current
@@ -459,6 +496,7 @@ fun PeekingBannerCard(
                 title = bannerTitle,
                 subtitle = bannerSubtitle,
                 cornerRadius = cornerRadius,
+                onInfoClick = onBannerInfoClick,
                 modifier = Modifier.onGloballyPositioned {
                     bannerHeight = with(density) { it.size.height.toDp() }
                 }

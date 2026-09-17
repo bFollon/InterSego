@@ -94,6 +94,7 @@ struct JourneyResultsView: View {
 
     @State private var reminderKeys: Set<String> = []
     @State private var reminderContexts: [Journey: JourneyReminderHelper.Context] = [:]
+    @State private var showTightMarginInfo = false
 
     private func reminderContext(for journey: Journey) -> JourneyReminderHelper.Context? {
         reminderContexts[journey]
@@ -180,7 +181,7 @@ struct JourneyResultsView: View {
                 }
                 if !tightTransferJourneys.isEmpty {
                     Section {
-                        TightTransferSectionBanner()
+                        TightTransferSectionBanner(onInfoTap: { showTightMarginInfo = true })
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
@@ -200,6 +201,9 @@ struct JourneyResultsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { reminderKeys = await ReminderService.shared.activeMatchKeys() }
         .task(id: journeys + tightTransferJourneys) { await loadReminderContexts() }
+        .sheet(isPresented: $showTightMarginInfo) {
+            TightMarginInfoSheet()
+        }
     }
 
     @ViewBuilder
@@ -215,7 +219,8 @@ struct JourneyResultsView: View {
                 ])
                 onJourneySelected(journey)
             },
-            onReminderToggle: { toggleReminder(for: journey) }
+            onReminderToggle: { toggleReminder(for: journey) },
+            onTightMarginInfoTap: { showTightMarginInfo = true }
         )
         // Opt this row out of the system inset-grouped row background/insets/
         // separator (same bypass ItineraryMapView's row uses in JourneyDetailView)
@@ -232,11 +237,24 @@ struct JourneyResultsView: View {
 /// at the top of the section so a user who'd otherwise see only the (possibly empty) main list
 /// knows these extra, less comfortable options exist at all.
 private struct TightTransferSectionBanner: View {
+    let onInfoTap: () -> Void
+
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-            Text("Estos viajes requieren un transbordo con menos margen del configurado en los ajustes. Se muestran igualmente como alternativa, pero el cambio de autobús puede resultar más justo de lo habitual.")
+        // The whole banner is the tap target (not just the trailing icon) - Button + .plain style
+        // + explicit .contentShape covers the Spacer's empty area too, which a bare HStack tap
+        // gesture would otherwise miss.
+        Button(action: onInfoTap) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                Text("Estos viajes requieren un transbordo con menos margen del configurado en los ajustes. Se muestran igualmente como alternativa, pero el cambio de autobús puede resultar más justo de lo habitual.")
+                Spacer(minLength: 0)
+                // Purely decorative - the whole banner is already the tap target, so this just
+                // signals "tap for more info" without being a second, redundant tap target of its own.
+                Image(systemName: "info.circle")
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .font(.caption)
         .foregroundStyle(.orange)
         .padding(12)
@@ -302,6 +320,7 @@ private struct JourneyCard: View {
     let isReminderSet: Bool
     let onSelect: () -> Void
     let onReminderToggle: () -> Void
+    let onTightMarginInfoTap: () -> Void
 
     private let cardCornerRadius: CGFloat = 14
 
@@ -317,7 +336,8 @@ private struct JourneyCard: View {
     var body: some View {
         PeekingBannerCard(
             bannerTitle: tightestMargin.map { "Transbordo ajustado · \($0) min de margen" },
-            cornerRadius: cardCornerRadius
+            cornerRadius: cardCornerRadius,
+            onBannerInfoTap: onTightMarginInfoTap
         ) {
             card
         }
@@ -422,6 +442,7 @@ struct TightTransferPeekBanner: View {
     /// minimum hidden height below it (see `PeekingBannerCard`) are derived from this, so the two
     /// views can never drift out of sync the way a second hardcoded radius could.
     let cornerRadius: CGFloat
+    var onInfoTap: (() -> Void)? = nil
 
     fileprivate static let topPadding: CGFloat = 8
     fileprivate static let lineSpacing: CGFloat = 2
@@ -444,7 +465,11 @@ struct TightTransferPeekBanner: View {
         return topPadding + textHeight + visibleGap
     }
 
-    var body: some View {
+    // The whole banner is the tap target (not just the trailing icon), same as
+    // TightTransferSectionBanner - only the exposed top strip is actually reachable in practice,
+    // since the card pushed down on top of this banner (see PeekingBannerCard) absorbs touches
+    // over the hidden bottom portion.
+    private var bannerContent: some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle.fill")
             VStack(alignment: .leading, spacing: Self.lineSpacing) {
@@ -454,6 +479,23 @@ struct TightTransferPeekBanner: View {
                 }
             }
             Spacer(minLength: 0)
+            if onInfoTap != nil {
+                // Purely decorative - the whole banner is already the tap target, so this just
+                // signals "tap for more info" without being a second, redundant tap target of its own.
+                Image(systemName: "info.circle")
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    var body: some View {
+        Group {
+            if let onInfoTap {
+                Button(action: onInfoTap) { bannerContent }
+                    .buttonStyle(.plain)
+            } else {
+                bannerContent
+            }
         }
         .font(.caption)
         .fontWeight(.semibold)
@@ -491,12 +533,13 @@ struct PeekingBannerCard<Content: View>: View {
     var bannerTitle: String?
     var bannerSubtitle: String? = nil
     let cornerRadius: CGFloat
+    var onBannerInfoTap: (() -> Void)? = nil
     @ViewBuilder var content: () -> Content
 
     var body: some View {
         ZStack(alignment: .top) {
             if let bannerTitle {
-                TightTransferPeekBanner(title: bannerTitle, subtitle: bannerSubtitle, cornerRadius: cornerRadius)
+                TightTransferPeekBanner(title: bannerTitle, subtitle: bannerSubtitle, cornerRadius: cornerRadius, onInfoTap: onBannerInfoTap)
             }
             content()
                 .padding(.top, bannerTitle != nil ? TightTransferPeekBanner.visibleHeight(hasSubtitle: bannerSubtitle != nil) : 0)
