@@ -48,7 +48,10 @@ export function trackEvent(eventName: string, props?: Props): void {
     sessionId,
     eventName,
     systemProps: {
-      isDebug: process.env.NODE_ENV !== 'production',
+      // Always false: this is a server process, not a mobile debug/release
+      // build, and NODE_ENV isn't set in the deploy — leaving this tied to
+      // NODE_ENV silently bucketed every event as debug in the dashboard.
+      isDebug: false,
       osName: process.platform,
       osVersion: process.version,
       locale: 'es-ES',
