@@ -649,6 +649,10 @@ No body.
 
 ---
 
+## Analytics
+
+Every request (except `/health`) fires one Aptabase event named `"<METHOD> <route pattern>"` (e.g. `"GET /api/timetables/:routeId"`, not the literal route ID — keeps event names low-cardinality), with `{ status }` as a prop. Sent to the same self-hosted Aptabase instance used by the Android/iOS apps, under its own app key (`APTABASE_APP_KEY`/`APTABASE_HOST` in `.env`). No official Aptabase SDK exists for Node, so this posts directly to Aptabase's ingest API (`POST {APTABASE_HOST}/api/v0/event`) from `src/analytics.ts`. Fire-and-forget — a send failure is logged and never affects the response. Unset either env var to disable entirely.
+
 ## Reloading via SIGHUP
 
 As an alternative to the HTTP endpoints, send `SIGHUP` to the server process to reload the timetable, polyline, and holiday caches:

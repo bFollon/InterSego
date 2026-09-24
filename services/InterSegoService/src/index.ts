@@ -16,6 +16,7 @@
 
 import 'dotenv/config';
 import Fastify from 'fastify';
+import { trackEvent } from './analytics.js';
 import { initDb } from './db/index.js';
 import { initAlertBroadcaster } from './alertBroadcaster.js';
 import { alertsRoutes } from './routes/alerts.js';
@@ -31,6 +32,15 @@ const app = Fastify({ logger: true });
 
 app.get('/health', async (_request, reply) => {
   return reply.send({ status: 'ok' });
+});
+
+// Per-endpoint call counts, sent to the self-hosted Aptabase instance also
+// used by the apps (separate app key). Excludes /health — that's uptime
+// monitor traffic, not real endpoint usage.
+app.addHook('onResponse', async (request, reply) => {
+  const route = request.routeOptions.url ?? request.url;
+  if (route === '/health') return;
+  trackEvent(`${request.method} ${route}`, { status: reply.statusCode });
 });
 
 app.register(alertsRoutes);
