@@ -20,6 +20,7 @@ import { fetchLinecar } from '../http.js';
 import { getRouteStates, upsertRouteStates } from '../db/index.js';
 import { scrapePDFURLs } from '../scraper/index.js';
 import { sendChangeNotification } from '../notifier/index.js';
+import { trackEvent } from '../analytics.js';
 import type { ChangeDetail, RouteCheckState } from '../types.js';
 
 let checkInProgress = false;
@@ -49,11 +50,13 @@ export async function runCheck(log: FastifyBaseLogger): Promise<void> {
       log.info(`Scraped ${scrapedUrls.size} PDF URLs`);
     } catch (err) {
       log.error(`Scraping failed: ${err}`);
+      trackEvent('check_scrape_failed', { reason: String(err) });
       return;
     }
 
     if (scrapedUrls.size === 0) {
       log.error('Scraper returned 0 PDF URLs — possible page structure change; aborting check');
+      trackEvent('check_scrape_failed', { reason: 'zero_urls' });
       return;
     }
 
@@ -114,10 +117,16 @@ export async function runCheck(log: FastifyBaseLogger): Promise<void> {
         log.info(`Change notification sent for: ${changes.map((c) => c.routeId).join(', ')}`);
       } catch (err) {
         log.error(`Failed to send change notification: ${err}`);
+        trackEvent('check_notification_failed', { reason: String(err) });
       }
     } else {
       log.info('No changes detected');
     }
+
+    trackEvent('check_completed', {
+      routesScraped: scrapedUrls.size,
+      changesDetected: changes.length,
+    });
   } finally {
     checkInProgress = false;
   }

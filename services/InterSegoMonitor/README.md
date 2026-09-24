@@ -21,6 +21,8 @@ Copy `.env.example` to `.env` and fill in the values.
 | `NOTIFY_EMAIL` | Yes | — | Address to receive change notifications (`bfollon.dev@icloud.com`). |
 | `PORT` | No | `3701` | Port to listen on. |
 | `HOST` | No | `0.0.0.0` | Interface to bind to. Use `127.0.0.1` to restrict to localhost. |
+| `APTABASE_APP_KEY` | No | — | Self-hosted Aptabase app key for check-run analytics (own key, separate from InterSegoService and the apps). Leave unset to disable. |
+| `APTABASE_HOST` | No | — | Aptabase instance URL, e.g. `https://analytics.bfollon.dev`. Required alongside `APTABASE_APP_KEY`. |
 
 ## Deploy
 
@@ -84,6 +86,10 @@ All endpoints except `/health` require `Authorization: Bearer <API_KEY>`.
    - Compares against the stored state in `data/checksums.json`.
    - If any URL or hash changed, sends one summary email listing the affected routes.
 4. State survives restarts via `data/checksums.json`. The first run after deployment establishes the baseline — no email is sent on first run.
+
+## Analytics
+
+When `APTABASE_APP_KEY`/`APTABASE_HOST` are set, each check run reports its outcome to the same self-hosted Aptabase instance used by InterSegoService and the apps (own app key): `check_completed` (`routesScraped`, `changesDetected`), `check_scrape_failed` (scraping threw, or returned zero URLs), `check_notification_failed` (email send failed). Fire-and-forget, posted directly to Aptabase's ingest API from `src/analytics.ts` — a send failure is logged and never affects the check.
 
 ## Notes
 
