@@ -118,6 +118,8 @@ struct ContentView: View {
     @State private var showNoServiceSheet = false
     @State private var noServiceStop: BusStop? = nil
     @State private var landingSlots = LandingLayoutPrefs.getSlots()
+    @State private var showLandingAnotherDayPicker = false
+    @State private var landingAnotherDayPickedDate = Date()
 
     var body: some View {
         ZStack {
@@ -170,7 +172,7 @@ struct ContentView: View {
                                 showReminders = true
                             },
                             onOpenAnotherDay: {
-                                navigationPath.append(OtrasOpcionesDestination.home)
+                                showLandingAnotherDayPicker = true
                             },
                             onShowFavorites: {
                                 navigationPath.append(OtrasOpcionesDestination.favorites)
@@ -485,6 +487,17 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showNoServiceSheet) {
                     NoServiceNearbySheet(stop: noServiceStop)
+                }
+                .sheet(isPresented: $showLandingAnotherDayPicker) {
+                    AnotherDayDatePickerSheet(
+                        pickedDate: $landingAnotherDayPickedDate,
+                        onCancel: { showLandingAnotherDayPicker = false },
+                        onConfirm: { date in
+                            showLandingAnotherDayPicker = false
+                            AnalyticsService.shared.track("check_another_day")
+                            navigationPath.append(OtrasOpcionesDestination.routeList(date))
+                        },
+                    )
                 }
                 .sheet(isPresented: $showLandingBoardingPicker) {
                     if let stop = landingBoardingStop {

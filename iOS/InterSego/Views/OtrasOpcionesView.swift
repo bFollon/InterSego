@@ -67,31 +67,48 @@ struct OtrasOpcionesView: View {
         .navigationTitle("Más opciones")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showDatePicker) {
-            NavigationStack {
-                DatePicker(
-                    "Fecha",
-                    selection: $pickedDate,
-                    in: Date() ... (Calendar.current.date(byAdding: .day, value: 90, to: Date()) ?? Date()),
-                    displayedComponents: .date,
-                )
-                .datePickerStyle(.graphical)
-                .padding()
-                .navigationTitle("Consultar otro día")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancelar") { showDatePicker = false }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Aceptar") {
-                            showDatePicker = false
-                            AnalyticsService.shared.track("check_another_day")
-                            onCheckAnotherDay(pickedDate)
-                        }
-                    }
+            AnotherDayDatePickerSheet(
+                pickedDate: $pickedDate,
+                onCancel: { showDatePicker = false },
+                onConfirm: { date in
+                    showDatePicker = false
+                    AnalyticsService.shared.track("check_another_day")
+                    onCheckAnotherDay(date)
+                },
+            )
+        }
+    }
+}
+
+/// The "pick a date" step of the "Consultar otro día" flow — shared between `OtrasOpcionesView`'s
+/// own card and Landing's pinned pill (see `LandingSlot.extra*`), which must open this directly
+/// rather than routing through the "Más opciones" hub first.
+struct AnotherDayDatePickerSheet: View {
+    @Binding var pickedDate: Date
+    let onCancel: () -> Void
+    let onConfirm: (Date) -> Void
+
+    var body: some View {
+        NavigationStack {
+            DatePicker(
+                "Fecha",
+                selection: $pickedDate,
+                in: Date() ... (Calendar.current.date(byAdding: .day, value: 90, to: Date()) ?? Date()),
+                displayedComponents: .date,
+            )
+            .datePickerStyle(.graphical)
+            .padding()
+            .navigationTitle("Consultar otro día")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Aceptar") { onConfirm(pickedDate) }
                 }
             }
-            .presentationDetents([.medium])
         }
+        .presentationDetents([.medium])
     }
 }
