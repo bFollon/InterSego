@@ -641,6 +641,7 @@ fun AppNavigation(
     var landingBoardingError by remember { mutableStateOf<String?>(null) }
     var showNoServiceSheet by remember { mutableStateOf(false) }
     var noServiceStop by remember { mutableStateOf<BusStop?>(null) }
+    var showLandingAnotherDayPicker by remember { mutableStateOf(false) }
 
     val launchBoardingSearch: () -> Unit = remember(coroutineScope) {
         {
@@ -896,7 +897,7 @@ fun AppNavigation(
                 onNavigateToRouteList = { navController.navigate("route_selection") },
                 onPlanJourney = { navController.navigate("journey_planner") },
                 onShowReminders = { navController.navigate("reminders") },
-                onOpenAnotherDay = { navController.navigate("otras_opciones") },
+                onOpenAnotherDay = { showLandingAnotherDayPicker = true },
                 onShowFavorites = { navController.navigate("favorite_stops") },
                 onFindClosestStop = {
                     closestStopError = null
@@ -1449,6 +1450,17 @@ fun AppNavigation(
         ) {
             LaLigaBlockingDetailSheet()
         }
+    }
+
+    if (showLandingAnotherDayPicker) {
+        com.github.bfollon.intersego.ui.screens.AnotherDayDatePickerDialog(
+            onDismiss = { showLandingAnotherDayPicker = false },
+            onConfirm = { date ->
+                showLandingAnotherDayPicker = false
+                AnalyticsService.track("check_another_day")
+                navController.navigate("otras_opciones_route_selection/${date.toEpochDay()}")
+            },
+        )
     }
 }
 

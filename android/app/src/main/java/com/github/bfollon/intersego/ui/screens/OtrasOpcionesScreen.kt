@@ -122,35 +122,54 @@ fun OtrasOpcionesScreen(
     }
 
     if (showDatePicker) {
-        val todayEpochMillis = LocalDate.now().toEpochDay() * MILLIS_PER_DAY
-        val maxEpochMillis = LocalDate.now().plusDays(90).toEpochDay() * MILLIS_PER_DAY
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = todayEpochMillis,
-            selectableDates = object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long) =
-                    utcTimeMillis in todayEpochMillis..maxEpochMillis
-            }
-        )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let { millis ->
-                        showDatePicker = false
-                        AnalyticsService.track("check_another_day")
-                        onCheckAnotherDay(LocalDate.ofEpochDay(millis / MILLIS_PER_DAY))
-                    }
-                }) {
-                    Text("Aceptar")
-                }
+        AnotherDayDatePickerDialog(
+            onDismiss = { showDatePicker = false },
+            onConfirm = { date ->
+                showDatePicker = false
+                AnalyticsService.track("check_another_day")
+                onCheckAnotherDay(date)
             },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
+        )
+    }
+}
+
+/**
+ * The "pick a date" step of the "Consultar otro día" flow — shared between [OtrasOpcionesScreen]'s
+ * own card and Landing's pinned pill (see `LandingSlot.EXTRA_*`), which must open this directly
+ * rather than routing through the "Más opciones" hub first.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AnotherDayDatePickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate) -> Unit,
+) {
+    val todayEpochMillis = LocalDate.now().toEpochDay() * MILLIS_PER_DAY
+    val maxEpochMillis = LocalDate.now().plusDays(90).toEpochDay() * MILLIS_PER_DAY
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = todayEpochMillis,
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long) =
+                utcTimeMillis in todayEpochMillis..maxEpochMillis
         }
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                datePickerState.selectedDateMillis?.let { millis ->
+                    onConfirm(LocalDate.ofEpochDay(millis / MILLIS_PER_DAY))
+                }
+            }) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
     }
 }
