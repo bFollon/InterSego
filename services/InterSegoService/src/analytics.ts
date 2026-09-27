@@ -22,9 +22,9 @@ import { randomUUID } from 'crypto';
 // exists for Node — this posts directly to Aptabase's ingest API, which is
 // the same wire format every official SDK uses under the hood.
 //
-// One process run = one Aptabase "session" (a fresh UUID at startup); this
-// only affects the session-count stat in the dashboard, not per-event totals.
-const sessionId = randomUUID();
+// sessionId is generated fresh per event (see trackEvent), giving per-request
+// granularity in the dashboard rather than collapsing the whole process
+// lifetime into a single session.
 
 const appKey = process.env.APTABASE_APP_KEY;
 const host = process.env.APTABASE_HOST;
@@ -45,7 +45,7 @@ export function trackEvent(eventName: string, props?: Props): void {
 
   const body = {
     timestamp: new Date().toISOString(),
-    sessionId,
+    sessionId: randomUUID(),
     eventName,
     systemProps: {
       // Always false: this is a server process, not a mobile debug/release
